@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Masters Fit",
+    "slug": "masters-fit",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.svg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.svg",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.svg",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "scheme": "masters-fit",
+    "web": {
+      "favicon": "./assets/icon.svg"
+    },
+    "plugins": ["expo-router"]
+  }
+}
