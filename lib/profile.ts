@@ -4,6 +4,7 @@ import { getCurrentUser } from "./auth";
 export interface Profile {
   id: number;
   userId: number;
+  email?: string;
   age?: number;
   height?: number;
   weight?: number;
@@ -11,12 +12,15 @@ export interface Profile {
   goals?: string[];
   limitations?: string[];
   fitnessLevel?: string;
-  environment?: string[];
+  environment?: string;
   equipment?: string[];
   preferredStyles?: string[];
   availableDays?: string[];
-  intensityLevel?: number;
+  workoutDuration?: number;
+  intensityLevel?: string;
   medicalNotes?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface UpdateProfileParams {
@@ -47,8 +51,14 @@ export interface UpdateProfileParams {
 export async function fetchUserProfile(): Promise<Profile | null> {
   try {
     const user = await getCurrentUser();
-    const profile = await apiRequest<Profile>(`/profile/${user?.id}`);
-    return profile;
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const response = await apiRequest<{ success: boolean; profile: Profile }>(
+      `/profile/${user.id}`
+    );
+    return response.profile;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;
@@ -62,11 +72,19 @@ export async function updateUserProfile(
   params: UpdateProfileParams
 ): Promise<Profile | null> {
   try {
-    const profile = await apiRequest<Profile>("/api/user/profile", {
-      method: "PATCH",
-      body: JSON.stringify(params),
-    });
-    return profile;
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const response = await apiRequest<{ success: boolean; profile: Profile }>(
+      `/profile/user/${user.id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(params),
+      }
+    );
+    return response.profile;
   } catch (error) {
     console.error("Error updating user profile:", error);
     return null;

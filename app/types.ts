@@ -88,3 +88,52 @@ export interface Workout {
   created_at: Date;
   updated_at: Date;
 }
+
+// New types for workout session functionality
+export interface ExerciseLog {
+  id?: number;
+  planDayExerciseId: number;
+  setsCompleted: number;
+  repsCompleted: number;
+  weightUsed: number;
+  status: "complete" | "incomplete";
+  timeTaken?: number; // in seconds
+  notes?: string;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+export interface WorkoutLog {
+  id?: number;
+  workoutId: number;
+  status: "complete" | "incomplete" | "in_progress";
+  totalTimeTaken?: number; // in seconds
+  completedExercises?: number[]; // array of planDayExercise IDs
+  notes?: string;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+export interface WorkoutSession {
+  workoutId: number;
+  planDayId: number;
+  currentExerciseIndex: number;
+  startTime: Date;
+  exerciseLogs: ExerciseLog[];
+  isActive: boolean;
+}
+
+export interface ExerciseSessionData {
+  exerciseId: number;
+  planDayExerciseId: number;
+  targetSets: number;
+  targetReps: number;
+  targetWeight?: number;
+  setsCompleted: number;
+  repsCompleted: number;
+  weightUsed?: number;
+  timeTaken: number;
+  notes?: string;
+  isCompleted: boolean;
+  startTime?: Date;
+}

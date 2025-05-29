@@ -9,9 +9,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
-import { fetchActiveWorkout } from "@lib/workouts";
+import { fetchActiveWorkout, regenerateWorkoutPlan } from "@lib/workouts";
 import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
 import { getCurrentUser } from "@lib/auth";
+import WorkoutRegenerationModal from "../../components/WorkoutRegenerationModal";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(
@@ -22,6 +24,8 @@ export default function CalendarScreen() {
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [showRegenerationModal, setShowRegenerationModal] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     fetchWorkoutPlan();
@@ -45,6 +49,30 @@ export default function CalendarScreen() {
       console.error("Error fetching workout plan:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegenerate = async (data: { customFeedback?: string }) => {
+    try {
+      setRegenerating(true);
+      const user = await getCurrentUser();
+      if (!user) {
+        setError("User not found");
+        return;
+      }
+
+      const response = await regenerateWorkoutPlan(user.id, {
+        customFeedback: data.customFeedback,
+      });
+      if (response) {
+        setWorkoutPlan(response.workout);
+        setShowRegenerationModal(false);
+      }
+    } catch (err) {
+      setError("Failed to regenerate workout plan");
+      console.error("Error regenerating workout plan:", err);
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -132,6 +160,16 @@ export default function CalendarScreen() {
           <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
             {workoutPlan?.name}
           </Text>
+          {workoutPlan && (
+            <TouchableOpacity
+              style={styles.regenerateButton}
+              onPress={() => setShowRegenerationModal(true)}
+              disabled={regenerating}
+            >
+              <Ionicons name="refresh" size={20} color="#4f46e5" />
+              <Text style={styles.regenerateButtonText}>Regenerate</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.calendarContainer}>
@@ -246,6 +284,13 @@ export default function CalendarScreen() {
           </View>
         )}
       </ScrollView>
+
+      <WorkoutRegenerationModal
+        visible={showRegenerationModal}
+        onClose={() => setShowRegenerationModal(false)}
+        onRegenerate={handleRegenerate}
+        loading={regenerating}
+      />
     </SafeAreaView>
   );
 }
@@ -256,6 +301,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 16,
     paddingHorizontal: 20,
     backgroundColor: "#ffffff",
@@ -266,7 +314,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: "#111827",
-    textAlign: "center",
+    flex: 1,
   },
   description: {
     fontSize: 14,
@@ -439,5 +487,26 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
+  },
+  regenerateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    gap: 6,
+  },
+  regenerateButtonText: {
+    color: "#4f46e5",
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

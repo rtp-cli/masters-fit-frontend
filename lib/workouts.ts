@@ -1,5 +1,4 @@
 import { apiRequest } from "./api";
-import { WorkoutResponse } from "../../server/src/types/workout/responses";
 import { getCurrentUser } from "./auth";
 
 // Types
@@ -172,14 +171,11 @@ export function getWorkoutsForWeek(
 /**
  * Generate a workout plan for the current user
  */
-export async function generateWorkoutPlan(
-  userId: number
-): Promise<WorkoutResponse | null> {
+export async function generateWorkoutPlan(userId: number): Promise<any | null> {
   try {
-    const response = await apiRequest<WorkoutResponse>(
-      `/workouts/${userId}/generate`,
-      { method: "POST" }
-    );
+    const response = await apiRequest<any>(`/workouts/${userId}/generate`, {
+      method: "POST",
+    });
     return response;
   } catch (error) {
     console.error("Error generating workout plan:", error);
@@ -188,17 +184,44 @@ export async function generateWorkoutPlan(
 }
 
 /**
+ * Regenerate a workout plan with custom preferences and feedback
+ */
+export async function regenerateWorkoutPlan(
+  userId: number,
+  regenerationData: {
+    goals?: string[];
+    limitations?: string[];
+    fitnessLevel?: string;
+    environment?: string;
+    equipment?: string[];
+    preferredStyles?: string[];
+    availableDays?: string[];
+    intensityLevel?: string;
+    customFeedback?: string;
+  }
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(`/workouts/${userId}/regenerate`, {
+      method: "POST",
+      body: JSON.stringify(regenerationData),
+    });
+    return response;
+  } catch (error) {
+    console.error("Error regenerating workout plan:", error);
+    return null;
+  }
+}
+
+/**
  * Fetch active workout
  */
-export async function fetchActiveWorkout(): Promise<WorkoutResponse | null> {
+export async function fetchActiveWorkout(): Promise<any | null> {
   try {
     const user = await getCurrentUser();
     if (!user) {
       throw new Error("User not found");
     }
-    const response = await apiRequest<WorkoutResponse>(
-      `/workouts/${user.id}/active`
-    );
+    const response = await apiRequest<any>(`/workouts/${user.id}/active`);
     return response;
   } catch (error) {
     console.error("Error fetching active workout:", error);
@@ -225,4 +248,213 @@ export function getNextWorkout(workouts: Workout[]): Workout | null {
   });
 
   return futureWorkouts.length > 0 ? futureWorkouts[0] : null;
+}
+
+// New API functions for workout session functionality
+export interface CreateExerciseLogParams {
+  planDayExerciseId: number;
+  setsCompleted: number;
+  repsCompleted: number;
+  weightUsed: number;
+  isComplete: boolean;
+  timeTaken?: number;
+  notes?: string;
+}
+
+export interface CreateWorkoutLogParams {
+  workoutId: number;
+  planDayId: number;
+  timeTaken: number;
+  notes?: string;
+  isComplete: boolean;
+  completedExercises: number[];
+}
+
+/**
+ * Create an exercise log
+ */
+export async function createExerciseLog(
+  params: CreateExerciseLogParams
+): Promise<any | null> {
+  try {
+    const exerciseLog = await apiRequest("/logs/exercise", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+    return exerciseLog;
+  } catch (error) {
+    console.error("Error creating exercise log:", error);
+    return null;
+  }
+}
+
+/**
+ * Create a workout log
+ */
+export async function createWorkoutLog(
+  params: CreateWorkoutLogParams
+): Promise<any | null> {
+  try {
+    const workoutLog = await apiRequest("/logs/workout", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+    return workoutLog;
+  } catch (error) {
+    console.error("Error creating workout log:", error);
+    return null;
+  }
+}
+
+/**
+ * Get exercise logs for a specific plan day exercise
+ */
+export async function getExerciseLogs(
+  planDayExerciseId: number
+): Promise<any[]> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/exercise/${planDayExerciseId}`
+    );
+    return response.logs || [];
+  } catch (error) {
+    console.error("Error fetching exercise logs:", error);
+    return [];
+  }
+}
+
+/**
+ * Get workout logs for a specific workout
+ */
+export async function getWorkoutLogs(workoutId: number): Promise<any[]> {
+  try {
+    const response = await apiRequest<any>(`/logs/workout/${workoutId}/all`);
+    return response.logs || [];
+  } catch (error) {
+    console.error("Error fetching workout logs:", error);
+    return [];
+  }
+}
+
+/**
+ * Get existing workout log for a workout (without creating one)
+ */
+export async function getExistingWorkoutLog(
+  workoutId: number
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/${workoutId}/existing`
+    );
+    return response.log || null;
+  } catch (error) {
+    console.error("Error fetching existing workout log:", error);
+    return null;
+  }
+}
+
+/**
+ * Get or create workout log for a workout
+ */
+export async function getOrCreateWorkoutLog(
+  workoutId: number
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(`/logs/workout/${workoutId}`);
+    return response.log || null;
+  } catch (error) {
+    console.error("Error getting/creating workout log:", error);
+    return null;
+  }
+}
+
+/**
+ * Update workout log
+ */
+export async function updateWorkoutLog(
+  workoutId: number,
+  params: {
+    isComplete?: boolean;
+    totalTimeTaken?: number;
+    completedExercises?: number[];
+    notes?: string;
+  }
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(`/logs/workout/${workoutId}`, {
+      method: "PUT",
+      body: JSON.stringify(params),
+    });
+    return response.log || null;
+  } catch (error) {
+    console.error("Error updating workout log:", error);
+    return null;
+  }
+}
+
+/**
+ * Get completed exercises for a workout
+ */
+export async function getCompletedExercises(workoutId: number): Promise<{
+  completedExercises: number[];
+  count: number;
+}> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/${workoutId}/completed`
+    );
+    return {
+      completedExercises: response.completedExercises || [],
+      count: response.count || 0,
+    };
+  } catch (error) {
+    console.error("Error fetching completed exercises:", error);
+    return {
+      completedExercises: [],
+      count: 0,
+    };
+  }
+}
+
+/**
+ * Mark exercise as completed in workout
+ */
+export async function markExerciseCompleted(
+  workoutId: number,
+  planDayExerciseId: number
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/${workoutId}/exercise/${planDayExerciseId}`,
+      {
+        method: "POST",
+      }
+    );
+    return response.log || null;
+  } catch (error) {
+    console.error("Error marking exercise as completed:", error);
+    return null;
+  }
+}
+
+/**
+ * Mark workout as complete
+ */
+export async function markWorkoutComplete(
+  workoutId: number,
+  totalExerciseIds: number[]
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/${workoutId}/complete`,
+      {
+        method: "POST",
+        body: JSON.stringify({ totalExerciseIds }),
+      }
+    );
+    return response.log || null;
+  } catch (error) {
+    console.error("Error marking workout as complete:", error);
+    return null;
+  }
 }
