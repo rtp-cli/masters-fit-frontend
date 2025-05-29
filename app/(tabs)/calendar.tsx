@@ -9,10 +9,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
-import { fetchActiveWorkout, regenerateWorkoutPlan } from "@lib/workouts";
+import {
+  fetchActiveWorkout,
+  regenerateWorkoutPlan,
+  regenerateDailyWorkout,
+} from "@lib/workouts";
 import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
 import { getCurrentUser } from "@lib/auth";
 import WorkoutRegenerationModal from "../../components/WorkoutRegenerationModal";
+import DailyWorkoutRegenerationModal from "../../components/DailyWorkoutRegenerationModal";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function CalendarScreen() {
@@ -26,6 +31,11 @@ export default function CalendarScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [showDailyRegenerationModal, setShowDailyRegenerationModal] =
+    useState(false);
+  const [regeneratingDaily, setRegeneratingDaily] = useState(false);
+  const [selectedPlanDay, setSelectedPlanDay] =
+    useState<PlanDayWithExercises | null>(null);
 
   useEffect(() => {
     fetchWorkoutPlan();
@@ -74,6 +84,48 @@ export default function CalendarScreen() {
     } finally {
       setRegenerating(false);
     }
+  };
+
+  const handleDailyRegenerate = async (reason: string) => {
+    try {
+      setRegeneratingDaily(true);
+      const user = await getCurrentUser();
+      if (!user || !selectedPlanDay) {
+        setError("User or plan day not found");
+        return;
+      }
+
+      const response = await regenerateDailyWorkout(
+        user.id,
+        selectedPlanDay.id,
+        reason
+      );
+      if (response) {
+        // Update the workout plan with the new day data
+        setWorkoutPlan((prev) => {
+          if (!prev) return prev;
+          const updatedPlanDays = prev.planDays.map((day) =>
+            day.id === selectedPlanDay.id ? response.planDay : day
+          );
+          return {
+            ...prev,
+            planDays: updatedPlanDays,
+          };
+        });
+        setShowDailyRegenerationModal(false);
+        setSelectedPlanDay(null);
+      }
+    } catch (err) {
+      setError("Failed to regenerate daily workout");
+      console.error("Error regenerating daily workout:", err);
+    } finally {
+      setRegeneratingDaily(false);
+    }
+  };
+
+  const handleOpenDailyRegeneration = (planDay: PlanDayWithExercises) => {
+    setSelectedPlanDay(planDay);
+    setShowDailyRegenerationModal(true);
   };
 
   // Get the plan day and its index for the selected date
@@ -146,7 +198,7 @@ export default function CalendarScreen() {
   }
 
   const selectedPlanDayResult = getPlanDayForDate(selectedDate);
-  const selectedPlanDay = selectedPlanDayResult
+  const currentSelectedPlanDay = selectedPlanDayResult
     ? selectedPlanDayResult.day
     : null;
   const selectedPlanDayIndex = selectedPlanDayResult
@@ -200,7 +252,7 @@ export default function CalendarScreen() {
           />
         </View>
 
-        {!selectedPlanDay ? (
+        {!currentSelectedPlanDay ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>Rest Day</Text>
             <Text style={styles.restDayDescription}>
@@ -209,19 +261,33 @@ export default function CalendarScreen() {
           </View>
         ) : (
           <View style={styles.workoutDetails}>
-            {selectedPlanDayIndex !== null && (
-              <Text style={styles.workoutTitle}>
-                Day {selectedPlanDayIndex + 1}
-              </Text>
-            )}
+            <View style={styles.workoutHeader}>
+              {selectedPlanDayIndex !== null && (
+                <Text style={styles.workoutTitle}>
+                  Day {selectedPlanDayIndex + 1}
+                </Text>
+              )}
+              <TouchableOpacity
+                style={styles.dayRegenerateButton}
+                onPress={() =>
+                  handleOpenDailyRegeneration(currentSelectedPlanDay)
+                }
+                disabled={regeneratingDaily}
+              >
+                <Ionicons name="refresh" size={18} color="#4f46e5" />
+                <Text style={styles.dayRegenerateButtonText}>
+                  Regenerate Day
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-            {selectedPlanDay.description && (
+            {currentSelectedPlanDay.description && (
               <Text style={styles.workoutDescription}>
-                {selectedPlanDay.description}
+                {currentSelectedPlanDay.description}
               </Text>
             )}
 
-            {selectedPlanDay.exercises.map((exercise, index) => (
+            {currentSelectedPlanDay.exercises.map((exercise, index) => (
               <View key={exercise.id} style={styles.exerciseCard}>
                 <Text style={styles.exerciseName}>
                   {exercise.exercise.name}
@@ -290,6 +356,19 @@ export default function CalendarScreen() {
         onClose={() => setShowRegenerationModal(false)}
         onRegenerate={handleRegenerate}
         loading={regenerating}
+      />
+
+      <DailyWorkoutRegenerationModal
+        visible={showDailyRegenerationModal}
+        onClose={() => {
+          setShowDailyRegenerationModal(false);
+          setSelectedPlanDay(null);
+        }}
+        onRegenerate={handleDailyRegenerate}
+        loading={regeneratingDaily}
+        dayNumber={
+          selectedPlanDayIndex !== null ? selectedPlanDayIndex + 1 : undefined
+        }
       />
     </SafeAreaView>
   );
@@ -417,13 +496,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
   },
+  workoutHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+  },
   workoutTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingTop: 16,
   },
   workoutDescription: {
     fontSize: 16,
@@ -505,6 +588,27 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   regenerateButtonText: {
+    color: "#4f46e5",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  dayRegenerateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    gap: 6,
+  },
+  dayRegenerateButtonText: {
     color: "#4f46e5",
     fontWeight: "600",
     fontSize: 14,

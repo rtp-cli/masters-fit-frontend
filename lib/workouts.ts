@@ -188,22 +188,12 @@ export async function generateWorkoutPlan(userId: number): Promise<any | null> {
  */
 export async function regenerateWorkoutPlan(
   userId: number,
-  regenerationData: {
-    goals?: string[];
-    limitations?: string[];
-    fitnessLevel?: string;
-    environment?: string;
-    equipment?: string[];
-    preferredStyles?: string[];
-    availableDays?: string[];
-    intensityLevel?: string;
-    customFeedback?: string;
-  }
+  data: { customFeedback?: string }
 ): Promise<any | null> {
   try {
     const response = await apiRequest<any>(`/workouts/${userId}/regenerate`, {
       method: "POST",
-      body: JSON.stringify(regenerationData),
+      body: JSON.stringify(data),
     });
     return response;
   } catch (error) {
@@ -455,6 +445,29 @@ export async function markWorkoutComplete(
     return response.log || null;
   } catch (error) {
     console.error("Error marking workout as complete:", error);
+    return null;
+  }
+}
+
+/**
+ * Regenerate a single day's workout
+ */
+export async function regenerateDailyWorkout(
+  userId: number,
+  planDayId: number,
+  regenerationReason: string
+): Promise<{ success: boolean; planDay: any } | null> {
+  try {
+    const response = await apiRequest<{ success: boolean; planDay: any }>(
+      `/workouts/${userId}/days/${planDayId}/regenerate`,
+      {
+        method: "POST",
+        body: JSON.stringify({ regenerationReason }),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error regenerating daily workout:", error);
     return null;
   }
 }
