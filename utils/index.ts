@@ -18,8 +18,24 @@ export function formatDate(
 /**
  * Format a number with a specified number of decimal places
  */
-export function formatNumber(num: number, decimals: number = 0): string {
-  return num.toFixed(decimals);
+export function formatNumber(
+  num: number | string | undefined,
+  decimals: number = 0
+): string {
+  // Handle undefined, null, or empty string
+  if (num === undefined || num === null || num === "") {
+    return "0";
+  }
+
+  // Convert string to number if needed
+  const numValue = typeof num === "string" ? parseFloat(num) : num;
+
+  // Handle NaN or invalid numbers
+  if (isNaN(numValue)) {
+    return "0";
+  }
+
+  return numValue.toFixed(decimals);
 }
 
 /**

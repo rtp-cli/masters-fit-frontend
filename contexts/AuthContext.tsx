@@ -1,4 +1,10 @@
-import React, { createContext, useState, ReactNode, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  ReactNode,
+  useContext,
+  useEffect,
+} from "react";
 import { StyleSheet } from "react-native";
 import {
   checkEmailExists,
@@ -8,6 +14,8 @@ import {
   signup as apiSignup,
   login as apiLogin,
   clearAllData,
+  getCurrentUser,
+  saveUserToSecureStorage,
 } from "../lib/auth";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
@@ -19,6 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   isSigningUp: boolean;
   setIsSigningUp: (value: boolean) => void;
+  setUserData: (user: User | null) => void;
   checkEmail: (
     email: string
   ) => Promise<{ success: boolean; needsOnboarding?: boolean }>;
@@ -46,8 +55,26 @@ export function useAuth() {
 // Provider component that wraps the app
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSigningUp, setIsSigningUp] = useState(false);
+
+  // Initialize user from secure storage on app start
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const storedUser = await getCurrentUser();
+        if (storedUser) {
+          setUser(storedUser);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
 
   // Check if the email exists in the system
   const checkEmail = async (email: string) => {
@@ -114,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (result.success && result.user) {
         setUser(result.user);
+        await saveUserToSecureStorage(result.user);
         await SecureStore.deleteItemAsync("pendingEmail");
         return true;
       }
@@ -139,6 +167,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Update user data
+  const setUserData = (userData: User | null) => {
+    setUser(userData);
+  };
+
   // Create the context value object
   const value = {
     user,
@@ -146,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isSigningUp,
     setIsSigningUp,
+    setUserData,
     checkEmail,
     signup,
     login,

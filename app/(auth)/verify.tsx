@@ -20,7 +20,7 @@ export default function VerifyScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { isSigningUp } = useAuth();
+  const { isSigningUp, setUserData } = useAuth();
 
   // Redirect if no email
   useEffect(() => {
@@ -69,6 +69,11 @@ export default function VerifyScreen() {
       if (response.success) {
         if (response.token) {
           await SecureStore.setItemAsync("token", response.token);
+        }
+
+        // Set the user data in auth context if available
+        if (response.user) {
+          setUserData(response.user);
         }
 
         // If user is signing up or response indicates onboarding is needed, store email and go to onboarding
