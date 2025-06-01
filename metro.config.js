@@ -1,18 +1,6 @@
 const { getDefaultConfig } = require("@expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
 
-const defaultConfig = getDefaultConfig(__dirname);
+const config = getDefaultConfig(__dirname);
 
-module.exports = {
-  ...defaultConfig,
-  watchFolders: [__dirname],
-  resolver: {
-    ...defaultConfig.resolver,
-    sourceExts: ["jsx", "js", "ts", "tsx", "json"],
-    dedupedModules: ["react", "react-native"],
-  },
-  watcher: {
-    watchman: {
-      crawlSymlinks: false,
-    },
-  },
-};
+module.exports = withNativeWind(config, { input: "./global.css" });

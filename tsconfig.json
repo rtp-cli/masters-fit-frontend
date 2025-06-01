@@ -6,16 +6,40 @@
     "jsx": "react-native",
     "esModuleInterop": true,
     "paths": {
-      "@/*": ["*/"],
-      "@components/*": ["components/*"],
-      "@contexts/*": ["contexts/*"],
-      "@hooks/*": ["hooks/*"],
-      "@lib/*": ["lib/*"],
-      "@utils/*": ["utils/*"],
-      "@assets/*": ["assets/*"],
-      "@types/*": ["types/*"]
+      "@/*": [
+        "*/"
+      ],
+      "@components/*": [
+        "components/*"
+      ],
+      "@contexts/*": [
+        "contexts/*"
+      ],
+      "@hooks/*": [
+        "hooks/*"
+      ],
+      "@lib/*": [
+        "lib/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ],
+      "@assets/*": [
+        "assets/*"
+      ],
+      "@types/*": [
+        "types/*"
+      ]
     },
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ]
   },
-  "include": ["**/*.ts", "**/*.tsx", "types/**/*.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "types/**/*.d.ts",
+    "nativewind-env.d.ts"
+  ]
 }

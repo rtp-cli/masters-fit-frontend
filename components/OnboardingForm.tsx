@@ -2,15 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-  Dimensions,
-  StyleProp,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -126,12 +121,14 @@ export interface FormData {
   medicalNotes?: string;
 }
 
-// Onboarding steps
+// Onboarding steps - matching the exact flow from images
 enum OnboardingStep {
   PERSONAL_INFO = 0,
-  FITNESS_PROFILE = 1,
-  WORKOUT_PREFERENCES = 2,
-  SCHEDULE = 3,
+  FITNESS_GOALS = 1,
+  PHYSICAL_LIMITATIONS = 2,
+  FITNESS_LEVEL = 3,
+  WORKOUT_ENVIRONMENT = 4,
+  WORKOUT_STYLE = 5,
 }
 
 interface OnboardingFormProps {
@@ -156,9 +153,6 @@ const formatEnumValue = (value: string): string => {
     })
     .join(" ");
 };
-
-// Get screen dimensions
-const { width: screenWidth } = Dimensions.get("window");
 
 // Form validation helper
 const validateField = (field: string, value: any): string => {
@@ -192,7 +186,6 @@ type ArrayFields = Extract<
   | "availableDays"
 >;
 
-// Type for array values
 type ArrayValue = string;
 
 export default function OnboardingForm({
@@ -202,19 +195,19 @@ export default function OnboardingForm({
   isLoading = false,
   showNavigation = true,
   title,
-  submitButtonText = "Complete",
+  submitButtonText = "Generate My Plan",
 }: OnboardingFormProps) {
   const scrollRef = useRef<ScrollView | null>(null);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(
     OnboardingStep.PERSONAL_INFO
   );
 
-  // Initialize form data with default values and merge with initial data
+  // Initialize form data with default values matching the design
   const [formData, setFormData] = useState<FormData>({
     email: "",
-    age: 25,
+    age: 55,
     height: 170,
-    weight: 70,
+    weight: 165,
     gender: Gender.MALE,
     goals: [],
     limitations: [],
@@ -286,7 +279,6 @@ export default function OnboardingForm({
 
     switch (currentStep) {
       case OnboardingStep.PERSONAL_INFO:
-        // Validate personal info fields
         const ageError = validateField("Age", formData.age);
         const heightError = validateField("Height", formData.height);
         const weightError = validateField("Weight", formData.weight);
@@ -296,38 +288,35 @@ export default function OnboardingForm({
         if (weightError) newErrors.weight = weightError;
         break;
 
-      case OnboardingStep.FITNESS_PROFILE:
-        // Validate fitness profile fields
-        if (!formData.fitnessLevel) {
-          newErrors.fitnessLevel = "Please select your fitness level";
-        }
-
+      case OnboardingStep.FITNESS_GOALS:
         if (formData.goals.length === 0) {
           newErrors.goals = "Please select at least one goal";
         }
         break;
 
-      case OnboardingStep.WORKOUT_PREFERENCES:
-        // Validate workout preferences
-        if (formData.preferredStyles.length === 0) {
-          newErrors.preferredStyles =
-            "Please select at least one workout style";
-        }
+      case OnboardingStep.PHYSICAL_LIMITATIONS:
+        // Physical limitations are optional, no validation needed
+        break;
 
+      case OnboardingStep.FITNESS_LEVEL:
+        if (!formData.fitnessLevel) {
+          newErrors.fitnessLevel = "Please select your fitness level";
+        }
+        if (formData.availableDays.length === 0) {
+          newErrors.availableDays = "Please select at least one available day";
+        }
+        break;
+
+      case OnboardingStep.WORKOUT_ENVIRONMENT:
         if (!formData.environment) {
           newErrors.environment = "Please select an environment";
         }
         break;
 
-      case OnboardingStep.SCHEDULE:
-        // Validate schedule
-        if (formData.availableDays.length === 0) {
-          newErrors.availableDays = "Please select at least one day";
-        }
-
-        if (!formData.workoutDuration) {
-          newErrors.workoutDuration =
-            "Please specify your preferred workout duration";
+      case OnboardingStep.WORKOUT_STYLE:
+        if (formData.preferredStyles.length === 0) {
+          newErrors.preferredStyles =
+            "Please select at least one workout style";
         }
         break;
     }
@@ -355,343 +344,1896 @@ export default function OnboardingForm({
     }
   };
 
-  // Render step title and description
-  const renderStepHeader = () => {
-    let stepTitle = "";
-    let description = "";
-
+  // Get step configuration - matching exact titles from images
+  const getStepConfig = () => {
     switch (currentStep) {
       case OnboardingStep.PERSONAL_INFO:
-        stepTitle = "Personal Information";
-        description =
-          "Let's get to know you better. This information helps us create a personalized fitness experience.";
-        break;
-      case OnboardingStep.FITNESS_PROFILE:
-        stepTitle = "Fitness Profile";
-        description =
-          "Tell us about your current fitness level and any limitations you may have.";
-        break;
-      case OnboardingStep.WORKOUT_PREFERENCES:
-        stepTitle = "Workout Preferences";
-        description = "Let us know when and how you prefer to work out.";
-        break;
-      case OnboardingStep.SCHEDULE:
-        stepTitle = "Workout Schedule";
-        description = "Let us know when you prefer to work out.";
-        break;
+        return {
+          title: "Personal Information",
+          description:
+            "Tell us about yourself so we can create a personalized fitness plan.",
+        };
+      case OnboardingStep.FITNESS_GOALS:
+        return {
+          title: "Fitness Goals",
+          description:
+            "What do you want to achieve? Select all goals that apply to you.",
+        };
+      case OnboardingStep.PHYSICAL_LIMITATIONS:
+        return {
+          title: "Physical Limitations",
+          description:
+            "Help us understand any physical limitations or health concerns you may have.",
+        };
+      case OnboardingStep.FITNESS_LEVEL:
+        return {
+          title: "Fitness Experience & Schedule",
+          description:
+            "Tell us about your fitness background and when you're available to workout.",
+        };
+      case OnboardingStep.WORKOUT_ENVIRONMENT:
+        return {
+          title: "Workout Environment & Equipment",
+          description:
+            "Where will you workout and what equipment do you have access to?",
+        };
+      case OnboardingStep.WORKOUT_STYLE:
+        return {
+          title: "Workout Preferences",
+          description:
+            "What types of workouts do you enjoy? This helps us create workouts you'll love.",
+        };
+      default:
+        return { title: "", description: "" };
     }
-
-    return (
-      <View style={styles.stepHeader}>
-        {title && <Text style={styles.mainTitle}>{title}</Text>}
-        <Text style={styles.stepIndicator}>Step {currentStep + 1} of 4</Text>
-        <Text style={styles.stepTitle}>{stepTitle}</Text>
-        <Text style={styles.stepDescription}>{description}</Text>
-      </View>
-    );
   };
 
-  // Render a slider with labels
-  const renderSlider = (
-    field: keyof FormData,
-    label: string,
-    min: number,
-    max: number,
-    step: number = 1
-  ) => (
-    <View style={styles.sliderContainer}>
-      <Text style={styles.sliderLabel}>{label}</Text>
-      <Slider
-        style={styles.slider}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        value={formData[field] as number}
-        onValueChange={(value) => handleChange(field, value)}
-        minimumTrackTintColor="#4f46e5"
-        maximumTrackTintColor="#e5e7eb"
-        thumbTintColor="#4f46e5"
-      />
-      <Text style={styles.sliderValue}>{formData[field]}</Text>
-    </View>
-  );
-
-  // Render a multi-select option with icon
-  const renderMultiSelectOption = (
-    field: ArrayFields,
-    value: ArrayValue,
-    label: string,
-    iconName: keyof typeof Ionicons.glyphMap,
-    extraStyles?: StyleProp<ViewStyle> | undefined
-  ) => {
-    const values = formData[field] as ArrayValue[];
-    const isSelected = values.includes(value);
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.optionButton,
-          isSelected && styles.selectedOption,
-          extraStyles,
-        ]}
-        onPress={() => handleMultiSelectToggle(field, value)}
-      >
-        <Ionicons
-          name={iconName}
-          size={24}
-          color={isSelected ? "#ffffff" : "#4b5563"}
-          style={styles.optionIcon}
-        />
-        <Text
-          style={[styles.optionText, isSelected && styles.selectedOptionText]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // Render a single select option with icon
-  const renderSingleSelectOption = (
-    field: keyof FormData,
-    value: string,
-    label: string,
-    iconName: keyof typeof MaterialCommunityIcons.glyphMap,
-    extraStyles?: StyleProp<ViewStyle> | undefined
-  ) => {
-    const isSelected = formData[field] === value;
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.optionButton,
-          isSelected && styles.selectedOption,
-          extraStyles,
-        ]}
-        onPress={() => handleChange(field, value)}
-      >
-        <MaterialCommunityIcons
-          name={iconName}
-          size={24}
-          color={isSelected ? "#ffffff" : "#4b5563"}
-          style={styles.optionIcon}
-        />
-        <Text
-          style={[styles.optionText, isSelected && styles.selectedOptionText]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // Render content for the Personal Info step
+  // Render Personal Info step - matching image exactly
   const renderPersonalInfoStep = () => (
-    <View style={styles.stepContent}>
-      {renderSlider("age", "Age", 16, 100)}
-      {renderSlider("height", "Height (cm)", 120, 220)}
-      {renderSlider("weight", "Weight (kg)", 40, 200)}
-
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Gender</Text>
-        <View style={styles.optionsRow}>
-          {renderSingleSelectOption(
-            "gender",
-            Gender.MALE,
-            "Male",
-            "gender-male"
-          )}
-          {renderSingleSelectOption(
-            "gender",
-            Gender.FEMALE,
-            "Female",
-            "gender-female"
-          )}
-          {renderSingleSelectOption("gender", Gender.OTHER, "Other", "account")}
+    <View className="flex-1 px-6 pb-6">
+      {/* Age slider */}
+      <View className="mb-8">
+        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+          Age
+        </Text>
+        <View className="p-4">
+          <Slider
+            style={{ width: "100%", height: 20 }}
+            minimumValue={40}
+            maximumValue={80}
+            step={1}
+            value={formData.age}
+            onValueChange={(value) => handleChange("age", value)}
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
+          />
+          <View className="flex-row justify-between items-center mt-2">
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              40
+            </Text>
+            <Text className="text-base font-semibold text-neutral-dark-1">
+              {formData.age}
+            </Text>
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              80+
+            </Text>
+          </View>
         </View>
+        {errors.age && (
+          <Text className="text-red-500 text-xs mt-2">{errors.age}</Text>
+        )}
+      </View>
+
+      {/* Gender selection */}
+      <View className="mb-8">
+        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+          Gender
+        </Text>
+        <View className="flex-row justify-between">
+          <TouchableOpacity
+            className={`flex-1 p-4 rounded-xl items-center mx-1 ${
+              formData.gender === Gender.MALE ? "bg-primary" : "bg-white"
+            }`}
+            onPress={() => handleChange("gender", Gender.MALE)}
+          >
+            <View
+              className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
+                formData.gender === Gender.MALE
+                  ? "bg-white"
+                  : "bg-neutral-light-2"
+              }`}
+            >
+              <Ionicons
+                name="male"
+                size={14}
+                color={formData.gender === Gender.MALE ? "#BBDE51" : "#8A93A2"}
+              />
+            </View>
+            <Text
+              className={`font-medium text-xs ${
+                formData.gender === Gender.MALE
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Male
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className={`flex-1 p-4 rounded-xl items-center mx-1 ${
+              formData.gender === Gender.FEMALE ? "bg-primary" : "bg-white"
+            }`}
+            onPress={() => handleChange("gender", Gender.FEMALE)}
+          >
+            <View
+              className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
+                formData.gender === Gender.FEMALE
+                  ? "bg-white"
+                  : "bg-neutral-light-2"
+              }`}
+            >
+              <Ionicons
+                name="female"
+                size={14}
+                color={
+                  formData.gender === Gender.FEMALE ? "#BBDE51" : "#8A93A2"
+                }
+              />
+            </View>
+            <Text
+              className={`font-medium text-xs ${
+                formData.gender === Gender.FEMALE
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Female
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className={`flex-1 p-4 rounded-xl items-center mx-1 ${
+              formData.gender === Gender.OTHER ? "bg-primary" : "bg-white"
+            }`}
+            onPress={() => handleChange("gender", Gender.OTHER)}
+          >
+            <View
+              className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
+                formData.gender === Gender.OTHER
+                  ? "bg-white"
+                  : "bg-neutral-light-2"
+              }`}
+            >
+              <Ionicons
+                name="person"
+                size={14}
+                color={formData.gender === Gender.OTHER ? "#BBDE51" : "#8A93A2"}
+              />
+            </View>
+            <Text
+              className={`font-medium text-xs ${
+                formData.gender === Gender.OTHER
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Other
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Height slider */}
+      <View className="mb-8">
+        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+          Height
+        </Text>
+        <View className="p-4">
+          <Slider
+            style={{ width: "100%", height: 20 }}
+            minimumValue={120}
+            maximumValue={220}
+            step={1}
+            value={formData.height}
+            onValueChange={(value) => handleChange("height", value)}
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
+          />
+          <View className="flex-row justify-between items-center mt-2">
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              4'0"
+            </Text>
+            <Text className="text-base font-semibold text-neutral-dark-1">
+              {Math.floor(formData.height / 30.48)}'
+            </Text>
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              7'0"
+            </Text>
+          </View>
+        </View>
+        {errors.height && (
+          <Text className="text-red-500 text-xs mt-2">{errors.height}</Text>
+        )}
+      </View>
+
+      {/* Weight slider */}
+      <View className="mb-6">
+        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+          Weight (lbs)
+        </Text>
+        <View className="p-4">
+          <Slider
+            style={{ width: "100%", height: 20 }}
+            minimumValue={100}
+            maximumValue={300}
+            step={1}
+            value={formData.weight}
+            onValueChange={(value) => handleChange("weight", value)}
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
+          />
+          <View className="flex-row justify-between items-center mt-2">
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              100
+            </Text>
+            <Text className="text-base font-semibold text-neutral-dark-1">
+              {formData.weight}
+            </Text>
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              300+
+            </Text>
+          </View>
+        </View>
+        {errors.weight && (
+          <Text className="text-red-500 text-xs mt-2">{errors.weight}</Text>
+        )}
       </View>
     </View>
   );
 
-  // Render content for the Fitness Profile step
-  const renderFitnessProfileStep = () => (
-    <View style={styles.stepContent}>
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Current Fitness Level</Text>
-        <View style={styles.optionsColumn}>
-          {renderSingleSelectOption(
-            "fitnessLevel",
-            FitnessLevels.BEGINNER,
-            "Beginner",
-            "walk"
+  // Render Fitness Goals step - matching image colors exactly
+  const renderFitnessGoalsStep = () => (
+    <View className="flex-1 px-6 pb-6">
+      {/* Recovery - Blue background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.RECOVERY)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.RECOVERY)}
+      >
+        <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="medical-outline" size={16} color="#3B82F6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.RECOVERY)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Recovery
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.RECOVERY)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Recover from injury or surgery
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.RECOVERY) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Fat Loss - Green background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.WEIGHT_LOSS)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("goals", FitnessGoals.WEIGHT_LOSS)
+        }
+      >
+        <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="fitness-outline" size={16} color="#10B981" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.WEIGHT_LOSS)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Fat Loss
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.WEIGHT_LOSS)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Reduce body fat and improve composition
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.WEIGHT_LOSS) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Strength - Purple background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.STRENGTH)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.STRENGTH)}
+      >
+        <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.STRENGTH)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Strength
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.STRENGTH)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Build muscle and increase strength
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.STRENGTH) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Endurance - Orange background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.ENDURANCE)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.ENDURANCE)}
+      >
+        <View className="w-8 h-8 bg-orange-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="heart-outline" size={16} color="#F97316" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.ENDURANCE)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Endurance
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.ENDURANCE)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Improve stamina and cardiovascular health
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.ENDURANCE) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Mobility - Pink background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.MOBILITY)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.MOBILITY)}
+      >
+        <View className="w-8 h-8 bg-pink-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="body-outline" size={16} color="#EC4899" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.MOBILITY)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Mobility
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.MOBILITY)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Improve flexibility and joint health
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.MOBILITY) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Add other goals with appropriate colors */}
+      {Object.entries(FitnessGoals)
+        .filter(
+          ([key, value]) =>
+            ![
+              FitnessGoals.RECOVERY,
+              FitnessGoals.WEIGHT_LOSS,
+              FitnessGoals.STRENGTH,
+              FitnessGoals.ENDURANCE,
+              FitnessGoals.MOBILITY,
+            ].includes(value)
+        )
+        .map(([key, value]) => {
+          // Define specific colors and icons for each goal
+          const getGoalConfig = (goalKey: string) => {
+            switch (goalKey) {
+              case "MUSCLE_GAIN":
+                return {
+                  icon: "fitness-outline",
+                  color: "#8B5CF6",
+                  bgColor: "bg-purple-100",
+                  description: "Build lean muscle mass and strength",
+                };
+              case "FLEXIBILITY":
+                return {
+                  icon: "body-outline",
+                  color: "#EC4899",
+                  bgColor: "bg-pink-100",
+                  description: "Improve range of motion and flexibility",
+                };
+              case "GENERAL_FITNESS":
+                return {
+                  icon: "checkmark-circle-outline",
+                  color: "#10B981",
+                  bgColor: "bg-green-100",
+                  description: "Overall health and fitness improvement",
+                };
+              case "BALANCE":
+                return {
+                  icon: "git-branch-outline",
+                  color: "#F59E0B",
+                  bgColor: "bg-yellow-100",
+                  description: "Improve stability and coordination",
+                };
+              default:
+                return {
+                  icon: "star-outline",
+                  color: "#8A93A2",
+                  bgColor: "bg-neutral-light-2",
+                  description: "General fitness goal",
+                };
+            }
+          };
+
+          const config = getGoalConfig(key);
+
+          return (
+            <TouchableOpacity
+              key={key}
+              className={`p-4 rounded-xl mb-3 flex-row items-center ${
+                formData.goals.includes(value) ? "bg-primary" : "bg-white"
+              }`}
+              onPress={() => handleMultiSelectToggle("goals", value)}
+            >
+              <View
+                className={`w-8 h-8 ${config.bgColor} rounded-xl items-center justify-center mr-4`}
+              >
+                <Ionicons
+                  name={config.icon as any}
+                  size={16}
+                  color={config.color}
+                />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className={`font-medium text-sm ${
+                    formData.goals.includes(value)
+                      ? "text-secondary"
+                      : "text-neutral-dark-1"
+                  }`}
+                >
+                  {formatEnumValue(key)}
+                </Text>
+                <Text
+                  className={`text-xs ${
+                    formData.goals.includes(value)
+                      ? "text-secondary"
+                      : "text-neutral-medium-4"
+                  }`}
+                >
+                  {config.description}
+                </Text>
+              </View>
+              {formData.goals.includes(value) && (
+                <Ionicons name="checkmark-circle" size={16} color="#181917" />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+    </View>
+  );
+
+  // Render Physical Limitations step - matching image exactly
+  const renderPhysicalLimitationsStep = () => (
+    <View className="flex-1 px-6 pb-6">
+      {/* Recent Surgery - Red background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.limitations?.includes(
+            PhysicalLimitations.POST_SURGERY_RECOVERY
+          )
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle(
+            "limitations",
+            PhysicalLimitations.POST_SURGERY_RECOVERY
+          )
+        }
+      >
+        <View className="w-8 h-8 bg-red-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="medical-outline" size={16} color="#EF4444" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.limitations?.includes(
+                PhysicalLimitations.POST_SURGERY_RECOVERY
+              )
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Recent Surgery
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.limitations?.includes(
+                PhysicalLimitations.POST_SURGERY_RECOVERY
+              )
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Surgery within the last 12 months
+          </Text>
+        </View>
+        {formData.limitations?.includes(
+          PhysicalLimitations.POST_SURGERY_RECOVERY
+        ) && <Ionicons name="checkmark-circle" size={16} color="#181917" />}
+      </TouchableOpacity>
+
+      {/* Knee Issues - Orange background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.limitations?.includes(PhysicalLimitations.KNEE_PAIN)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("limitations", PhysicalLimitations.KNEE_PAIN)
+        }
+      >
+        <View className="w-8 h-8 bg-orange-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="body-outline" size={16} color="#F97316" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.limitations?.includes(PhysicalLimitations.KNEE_PAIN)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Knee Issues
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.limitations?.includes(PhysicalLimitations.KNEE_PAIN)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Pain or limited mobility in knees
+          </Text>
+        </View>
+        {formData.limitations?.includes(PhysicalLimitations.KNEE_PAIN) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Shoulder Issues - Blue background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.limitations?.includes(PhysicalLimitations.SHOULDER_PAIN)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle(
+            "limitations",
+            PhysicalLimitations.SHOULDER_PAIN
+          )
+        }
+      >
+        <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="body-outline" size={16} color="#3B82F6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.limitations?.includes(PhysicalLimitations.SHOULDER_PAIN)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Shoulder Issues
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.limitations?.includes(PhysicalLimitations.SHOULDER_PAIN)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Pain or limited mobility in shoulders
+          </Text>
+        </View>
+        {formData.limitations?.includes(PhysicalLimitations.SHOULDER_PAIN) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Back Pain - Purple background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.limitations?.includes(PhysicalLimitations.LOWER_BACK_PAIN)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle(
+            "limitations",
+            PhysicalLimitations.LOWER_BACK_PAIN
+          )
+        }
+      >
+        <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="body-outline" size={16} color="#8B5CF6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.limitations?.includes(
+                PhysicalLimitations.LOWER_BACK_PAIN
+              )
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Back Pain
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.limitations?.includes(
+                PhysicalLimitations.LOWER_BACK_PAIN
+              )
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Chronic or recurring back pain
+          </Text>
+        </View>
+        {formData.limitations?.includes(
+          PhysicalLimitations.LOWER_BACK_PAIN
+        ) && <Ionicons name="checkmark-circle" size={16} color="#181917" />}
+      </TouchableOpacity>
+
+      {/* Other Health Condition - Green background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.limitations?.includes(PhysicalLimitations.CHRONIC_FATIGUE)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle(
+            "limitations",
+            PhysicalLimitations.CHRONIC_FATIGUE
+          )
+        }
+      >
+        <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="medical-outline" size={16} color="#10B981" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.limitations?.includes(
+                PhysicalLimitations.CHRONIC_FATIGUE
+              )
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Other Health Condition
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.limitations?.includes(
+                PhysicalLimitations.CHRONIC_FATIGUE
+              )
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Any other health condition we should know
+          </Text>
+        </View>
+        {formData.limitations?.includes(
+          PhysicalLimitations.CHRONIC_FATIGUE
+        ) && <Ionicons name="checkmark-circle" size={16} color="#181917" />}
+      </TouchableOpacity>
+
+      {/* Add other limitations */}
+      {Object.entries(PhysicalLimitations)
+        .filter(
+          ([key, value]) =>
+            ![
+              PhysicalLimitations.POST_SURGERY_RECOVERY,
+              PhysicalLimitations.KNEE_PAIN,
+              PhysicalLimitations.SHOULDER_PAIN,
+              PhysicalLimitations.LOWER_BACK_PAIN,
+              PhysicalLimitations.CHRONIC_FATIGUE,
+            ].includes(value)
+        )
+        .map(([key, value]) => {
+          // Define specific colors and icons for each limitation
+          const getLimitationConfig = (limitationKey: string) => {
+            switch (limitationKey) {
+              case "NECK_PAIN":
+                return {
+                  icon: "arrow-up-outline",
+                  color: "#F97316",
+                  bgColor: "bg-orange-100",
+                  description: "Pain or stiffness in neck area",
+                };
+              case "HIP_PAIN":
+                return {
+                  icon: "body-outline",
+                  color: "#8B5CF6",
+                  bgColor: "bg-purple-100",
+                  description: "Pain or limited mobility in hips",
+                };
+              case "ANKLE_INSTABILITY":
+                return {
+                  icon: "walk-outline",
+                  color: "#06B6D4",
+                  bgColor: "bg-cyan-100",
+                  description: "Weak or unstable ankles",
+                };
+              case "WRIST_PAIN":
+                return {
+                  icon: "hand-left-outline",
+                  color: "#EC4899",
+                  bgColor: "bg-pink-100",
+                  description: "Pain or weakness in wrists",
+                };
+              case "ELBOW_PAIN":
+                return {
+                  icon: "remove-outline",
+                  color: "#F59E0B",
+                  bgColor: "bg-yellow-100",
+                  description: "Tennis elbow or other elbow issues",
+                };
+              case "ARTHRITIS":
+                return {
+                  icon: "medical-outline",
+                  color: "#EF4444",
+                  bgColor: "bg-red-100",
+                  description: "Joint inflammation and stiffness",
+                };
+              case "OSTEOPOROSIS":
+                return {
+                  icon: "body-outline",
+                  color: "#6366F1",
+                  bgColor: "bg-indigo-100",
+                  description: "Weak or brittle bones",
+                };
+              case "SCIATICA":
+                return {
+                  icon: "flash-outline",
+                  color: "#F97316",
+                  bgColor: "bg-orange-100",
+                  description: "Nerve pain down leg from lower back",
+                };
+              case "LIMITED_RANGE_OF_MOTION":
+                return {
+                  icon: "resize-outline",
+                  color: "#8B5CF6",
+                  bgColor: "bg-purple-100",
+                  description: "Restricted movement in joints",
+                };
+              case "BALANCE_ISSUES":
+                return {
+                  icon: "git-branch-outline",
+                  color: "#10B981",
+                  bgColor: "bg-green-100",
+                  description: "Difficulty with balance and stability",
+                };
+              case "BREATHING_ISSUES":
+                return {
+                  icon: "heart-outline",
+                  color: "#3B82F6",
+                  bgColor: "bg-blue-100",
+                  description: "Asthma or other breathing conditions",
+                };
+              default:
+                return {
+                  icon: "warning-outline",
+                  color: "#8A93A2",
+                  bgColor: "bg-neutral-light-2",
+                  description: "Physical limitation",
+                };
+            }
+          };
+
+          const config = getLimitationConfig(key);
+
+          return (
+            <TouchableOpacity
+              key={key}
+              className={`p-4 rounded-xl mb-3 flex-row items-center ${
+                formData.limitations?.includes(value)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() => handleMultiSelectToggle("limitations", value)}
+            >
+              <View
+                className={`w-8 h-8 ${config.bgColor} rounded-xl items-center justify-center mr-4`}
+              >
+                <Ionicons
+                  name={config.icon as any}
+                  size={16}
+                  color={config.color}
+                />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className={`font-medium text-sm ${
+                    formData.limitations?.includes(value)
+                      ? "text-secondary"
+                      : "text-neutral-dark-1"
+                  }`}
+                >
+                  {formatEnumValue(key)}
+                </Text>
+                <Text
+                  className={`text-xs ${
+                    formData.limitations?.includes(value)
+                      ? "text-secondary"
+                      : "text-neutral-medium-4"
+                  }`}
+                >
+                  {config.description}
+                </Text>
+              </View>
+              {formData.limitations?.includes(value) && (
+                <Ionicons name="checkmark-circle" size={16} color="#181917" />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+    </View>
+  );
+
+  // Render Fitness Level step - matching image exactly
+  const renderFitnessLevelStep = () => (
+    <View className="flex-1 px-6 pb-6">
+      <Text className="text-xs text-neutral-medium-4 mb-6">
+        Select your current fitness level to help us tailor your program.
+      </Text>
+
+      {/* Fitness Level Selection */}
+      <View className="mb-8">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Current Fitness Level
+        </Text>
+
+        {/* Beginner - Green background as in image */}
+        <TouchableOpacity
+          className={`p-4 rounded-xl mb-3 flex-row items-center ${
+            formData.fitnessLevel === FitnessLevels.BEGINNER
+              ? "bg-primary"
+              : "bg-white"
+          }`}
+          onPress={() => handleChange("fitnessLevel", FitnessLevels.BEGINNER)}
+        >
+          <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
+            <Ionicons name="walk-outline" size={16} color="#10B981" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className={`font-medium text-sm ${
+                formData.fitnessLevel === FitnessLevels.BEGINNER
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Beginner
+            </Text>
+            <Text
+              className={`text-xs ${
+                formData.fitnessLevel === FitnessLevels.BEGINNER
+                  ? "text-secondary"
+                  : "text-neutral-medium-4"
+              }`}
+            >
+              New to fitness or returning after a long break
+            </Text>
+          </View>
+          {formData.fitnessLevel === FitnessLevels.BEGINNER && (
+            <Ionicons name="checkmark-circle" size={16} color="#181917" />
           )}
-          {renderSingleSelectOption(
-            "fitnessLevel",
-            FitnessLevels.INTERMEDIATE,
-            "Intermediate",
-            "bike"
+        </TouchableOpacity>
+
+        {/* Intermediate - Blue background as in image */}
+        <TouchableOpacity
+          className={`p-4 rounded-xl mb-3 flex-row items-center ${
+            formData.fitnessLevel === FitnessLevels.INTERMEDIATE
+              ? "bg-primary"
+              : "bg-white"
+          }`}
+          onPress={() =>
+            handleChange("fitnessLevel", FitnessLevels.INTERMEDIATE)
+          }
+        >
+          <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
+            <Ionicons name="bicycle-outline" size={16} color="#3B82F6" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className={`font-medium text-sm ${
+                formData.fitnessLevel === FitnessLevels.INTERMEDIATE
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Intermediate
+            </Text>
+            <Text
+              className={`text-xs ${
+                formData.fitnessLevel === FitnessLevels.INTERMEDIATE
+                  ? "text-secondary"
+                  : "text-neutral-medium-4"
+              }`}
+            >
+              Consistent exercise for 6+ months
+            </Text>
+          </View>
+          {formData.fitnessLevel === FitnessLevels.INTERMEDIATE && (
+            <Ionicons name="checkmark-circle" size={16} color="#181917" />
           )}
-          {renderSingleSelectOption(
-            "fitnessLevel",
-            FitnessLevels.ADVANCED,
-            "Advanced",
-            "weight-lifter"
+        </TouchableOpacity>
+
+        {/* Advanced - Purple background as in image */}
+        <TouchableOpacity
+          className={`p-4 rounded-xl mb-3 flex-row items-center ${
+            formData.fitnessLevel === FitnessLevels.ADVANCED
+              ? "bg-primary"
+              : "bg-white"
+          }`}
+          onPress={() => handleChange("fitnessLevel", FitnessLevels.ADVANCED)}
+        >
+          <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
+            <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className={`font-medium text-sm ${
+                formData.fitnessLevel === FitnessLevels.ADVANCED
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Advanced
+            </Text>
+            <Text
+              className={`text-xs ${
+                formData.fitnessLevel === FitnessLevels.ADVANCED
+                  ? "text-secondary"
+                  : "text-neutral-medium-4"
+              }`}
+            >
+              Regular challenging workouts for 1+ years
+            </Text>
+          </View>
+          {formData.fitnessLevel === FitnessLevels.ADVANCED && (
+            <Ionicons name="checkmark-circle" size={16} color="#181917" />
           )}
+        </TouchableOpacity>
+        {errors.fitnessLevel && (
+          <Text className="text-red-500 text-xs mt-2">
+            {errors.fitnessLevel}
+          </Text>
+        )}
+      </View>
+
+      {/* Available Days */}
+      <View className="mb-8">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Available Days
+        </Text>
+        <Text className="text-xs text-neutral-medium-4 mb-4">
+          Select the days you're available to workout.
+        </Text>
+        <View className="flex-row flex-wrap">
+          {Object.entries(PreferredDays).map(([key, value]) => (
+            <TouchableOpacity
+              key={key}
+              className={`px-3 py-2 rounded-lg mr-2 mb-2 ${
+                formData.availableDays.includes(value)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() => handleMultiSelectToggle("availableDays", value)}
+            >
+              <Text
+                className={`font-medium text-sm ${
+                  formData.availableDays.includes(value)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                {value.charAt(0).toUpperCase() + value.slice(1, 3)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {errors.availableDays && (
+          <Text className="text-red-500 text-xs mt-2">
+            {errors.availableDays}
+          </Text>
+        )}
+      </View>
+
+      {/* Time Per Session slider */}
+      <View className="mb-8">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Time Per Session
+        </Text>
+        <View className="p-4">
+          <Slider
+            style={{ width: "100%", height: 20 }}
+            minimumValue={15}
+            maximumValue={60}
+            step={5}
+            value={formData.workoutDuration}
+            onValueChange={(value) => handleChange("workoutDuration", value)}
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
+          />
+          <View className="flex-row justify-between items-center mt-2">
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              15 min
+            </Text>
+            <Text className="text-sm font-semibold text-neutral-dark-1">
+              {formData.workoutDuration} min
+            </Text>
+            <Text className="text-xs text-neutral-medium-4 font-medium">
+              60+ min
+            </Text>
+          </View>
         </View>
       </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Your Fitness Goals</Text>
-        <View style={styles.optionsGrid}>
-          {Object.entries(FitnessGoals).map(([key, value], index) => (
-            <View key={key} style={styles.gridItem}>
-              {renderMultiSelectOption(
-                "goals",
-                value,
-                formatEnumValue(key),
-                "checkmark-circle",
-                index === Object.entries(FitnessGoals).length - 1 && {
-                  justifyContent: "center",
-                  alignItems: "center",
-                }
-              )}
-            </View>
+      {/* Intensity Level */}
+      <View className="mb-8">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Preferred Intensity Level
+        </Text>
+        <View className="flex-row justify-between">
+          {Object.entries(IntensityLevels).map(([key, value]) => (
+            <TouchableOpacity
+              key={key}
+              className={`flex-1 p-3 rounded-xl items-center mx-1 ${
+                formData.intensityLevel === value ? "bg-primary" : "bg-white"
+              }`}
+              onPress={() => handleChange("intensityLevel", value)}
+            >
+              <Text
+                className={`font-medium text-sm ${
+                  formData.intensityLevel === value
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                {formatEnumValue(key)}
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Any Health Limitations?</Text>
-        <View style={styles.optionsGrid}>
-          {Object.entries(PhysicalLimitations).map(([key, value]) => (
-            <View key={key} style={styles.gridItem}>
-              {renderMultiSelectOption(
-                "limitations",
-                value,
-                formatEnumValue(key),
-                "warning"
-              )}
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Medical Notes (Optional)</Text>
+      {/* Medical Notes */}
+      <View className="mb-6">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Medical Notes (Optional)
+        </Text>
+        <Text className="text-xs text-neutral-medium-4 mb-4">
+          Any additional medical information or concerns we should know about.
+        </Text>
         <TextInput
-          style={[styles.textArea]}
+          className="bg-white rounded-xl p-4 text-sm text-neutral-dark-1"
+          style={{
+            minHeight: 100,
+          }}
+          placeholder="Enter any medical conditions, injuries, or concerns..."
+          placeholderTextColor="#8A93A2"
           value={formData.medicalNotes}
-          onChangeText={(value) => handleChange("medicalNotes", value)}
-          placeholder="Enter any additional health information here..."
-          multiline
-          numberOfLines={4}
+          onChangeText={(text) => handleChange("medicalNotes", text)}
+          multiline={true}
           textAlignVertical="top"
         />
       </View>
     </View>
   );
 
-  // Render content for the Workout Preferences step
-  const renderWorkoutPreferencesStep = () => (
-    <View style={styles.stepContent}>
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Preferred Workout Styles</Text>
-        <View style={styles.optionsGrid}>
-          {Object.entries(PreferredStyles).map(([key, value]) => (
-            <View key={`style-${key}`} style={styles.gridItem}>
-              {renderMultiSelectOption(
-                "preferredStyles",
-                value,
-                formatEnumValue(key),
-                "barbell"
-              )}
+  // Render Workout Environment step - matching image exactly
+  const renderWorkoutEnvironmentStep = () => (
+    <View className="flex-1 px-6 pb-6">
+      <Text className="text-xs text-neutral-medium-4 mb-6">
+        Where will you be working out most often?
+      </Text>
+
+      {/* Environment selection */}
+      <View className="mb-8">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Workout Environment
+        </Text>
+        <View className="flex-row justify-between">
+          <TouchableOpacity
+            className={`flex-1 p-4 mx-1 rounded-xl items-center ${
+              formData.environment === WorkoutEnvironments.HOME
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleChange("environment", WorkoutEnvironments.HOME)
+            }
+          >
+            <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mb-3">
+              <Ionicons name="home-outline" size={16} color="#3B82F6" />
             </View>
-          ))}
+            <Text
+              className={`font-medium text-sm ${
+                formData.environment === WorkoutEnvironments.HOME
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Home
+            </Text>
+            <Text
+              className={`text-xs text-center mt-1 ${
+                formData.environment === WorkoutEnvironments.HOME
+                  ? "text-secondary"
+                  : "text-neutral-medium-4"
+              }`}
+            >
+              Workout at home
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className={`flex-1 p-4 mx-1 rounded-xl items-center ${
+              formData.environment === WorkoutEnvironments.GYM
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() => handleChange("environment", WorkoutEnvironments.GYM)}
+          >
+            <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mb-3">
+              <Ionicons name="fitness-outline" size={16} color="#8B5CF6" />
+            </View>
+            <Text
+              className={`font-medium text-sm ${
+                formData.environment === WorkoutEnvironments.GYM
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Gym
+            </Text>
+            <Text
+              className={`text-xs text-center mt-1 ${
+                formData.environment === WorkoutEnvironments.GYM
+                  ? "text-secondary"
+                  : "text-neutral-medium-4"
+              }`}
+            >
+              Go to a gym
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className={`flex-1 p-4 mx-1 rounded-xl items-center ${
+              formData.environment === WorkoutEnvironments.HYBRID
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleChange("environment", WorkoutEnvironments.HYBRID)
+            }
+          >
+            <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mb-3">
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={16}
+                color="#10B981"
+              />
+            </View>
+            <Text
+              className={`font-medium text-sm ${
+                formData.environment === WorkoutEnvironments.HYBRID
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Hybrid
+            </Text>
+            <Text
+              className={`text-xs text-center mt-1 ${
+                formData.environment === WorkoutEnvironments.HYBRID
+                  ? "text-secondary"
+                  : "text-neutral-medium-4"
+              }`}
+            >
+              Both home & gym
+            </Text>
+          </TouchableOpacity>
         </View>
+        {errors.environment && (
+          <Text className="text-red-500 text-xs mt-2">
+            {errors.environment}
+          </Text>
+        )}
       </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Where do you work out?</Text>
-        <View style={styles.optionsGrid}>
-          {Object.entries(WorkoutEnvironments).map(([key, value], index) => (
-            <View key={`env-${key}`} style={styles.gridItem}>
-              {renderSingleSelectOption(
-                "environment",
-                value,
-                formatEnumValue(key),
-                "map-marker",
-                index === Object.entries(WorkoutEnvironments).length - 1 && {
-                  justifyContent: "center",
-                  alignItems: "center",
-                }
-              )}
-            </View>
-          ))}
-        </View>
-      </View>
+      {/* Available Equipment section */}
+      <View className="mb-6">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Available Equipment
+        </Text>
+        <Text className="text-xs text-neutral-medium-4 mb-6">
+          Select all equipment you have access to.
+        </Text>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Available Equipment</Text>
-        <View style={styles.optionsGrid}>
-          {Object.entries(AvailableEquipment).map(([key, value]) => (
-            <View key={`equip-${key}`} style={styles.gridItem}>
-              {renderMultiSelectOption(
+        {/* Equipment options - All equipment from enum */}
+        <View className="flex-row flex-wrap justify-between">
+          {/* Dumbbells */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.DUMBBELLS)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle("equipment", AvailableEquipment.DUMBBELLS)
+            }
+          >
+            <View className="w-8 h-8 bg-red-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="barbell-outline" size={16} color="#EF4444" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.DUMBBELLS)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Dumbbells
+            </Text>
+          </TouchableOpacity>
+
+          {/* Kettlebells */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.KETTLEBELLS)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle(
                 "equipment",
-                value,
-                formatEnumValue(key),
-                "fitness"
-              )}
+                AvailableEquipment.KETTLEBELLS
+              )
+            }
+          >
+            <View className="w-8 h-8 bg-yellow-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="fitness-outline" size={16} color="#F59E0B" />
             </View>
-          ))}
-        </View>
-      </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.KETTLEBELLS)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Kettlebells
+            </Text>
+          </TouchableOpacity>
 
-      {renderSlider("workoutDuration", "Workout Duration (minutes)", 10, 90, 5)}
-
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Intensity Level</Text>
-        <View style={styles.optionsRow}>
-          {Object.entries(IntensityLevels).map(([key, value], index) => (
-            <View key={`intensity-${key}`} style={styles.gridItem}>
-              {renderSingleSelectOption(
-                "intensityLevel",
-                value,
-                formatEnumValue(key),
-                "fire",
-                index === Object.entries(IntensityLevels).length - 1 && {
-                  justifyContent: "center",
-                  alignItems: "center",
-                }
-              )}
+          {/* Resistance Bands */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.RESISTANCE_BANDS)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle(
+                "equipment",
+                AvailableEquipment.RESISTANCE_BANDS
+              )
+            }
+          >
+            <View className="w-8 h-8 bg-green-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="remove-outline" size={16} color="#10B981" />
             </View>
-          ))}
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(
+                  AvailableEquipment.RESISTANCE_BANDS
+                )
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Resistance Bands
+            </Text>
+          </TouchableOpacity>
+
+          {/* Machines */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.MACHINES)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle("equipment", AvailableEquipment.MACHINES)
+            }
+          >
+            <View className="w-8 h-8 bg-purple-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons
+                name="hardware-chip-outline"
+                size={16}
+                color="#8B5CF6"
+              />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.MACHINES)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Weight Machines
+            </Text>
+          </TouchableOpacity>
+
+          {/* Bodyweight */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.BODYWEIGHT)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle(
+                "equipment",
+                AvailableEquipment.BODYWEIGHT
+              )
+            }
+          >
+            <View className="w-8 h-8 bg-orange-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="body-outline" size={16} color="#F97316" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.BODYWEIGHT)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Bodyweight Only
+            </Text>
+          </TouchableOpacity>
+
+          {/* Medicine Ball */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.MEDICINE_BALL)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle(
+                "equipment",
+                AvailableEquipment.MEDICINE_BALL
+              )
+            }
+          >
+            <View className="w-8 h-8 bg-indigo-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="basketball-outline" size={16} color="#6366F1" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.MEDICINE_BALL)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Medicine Ball
+            </Text>
+          </TouchableOpacity>
+
+          {/* Foam Roller */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.FOAM_ROLLER)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle(
+                "equipment",
+                AvailableEquipment.FOAM_ROLLER
+              )
+            }
+          >
+            <View className="w-8 h-8 bg-pink-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="remove-outline" size={16} color="#EC4899" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.FOAM_ROLLER)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Foam Roller
+            </Text>
+          </TouchableOpacity>
+
+          {/* Treadmill */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.TREADMILL)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle("equipment", AvailableEquipment.TREADMILL)
+            }
+          >
+            <View className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="walk-outline" size={16} color="#3B82F6" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.TREADMILL)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Treadmill
+            </Text>
+          </TouchableOpacity>
+
+          {/* Exercise Bike */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.BIKE)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle("equipment", AvailableEquipment.BIKE)
+            }
+          >
+            <View className="w-8 h-8 bg-cyan-100 rounded-lg items-center justify-center mb-2">
+              <Ionicons name="bicycle-outline" size={16} color="#06B6D4" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.BIKE)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Exercise Bike
+            </Text>
+          </TouchableOpacity>
+
+          {/* Yoga Mat */}
+          <TouchableOpacity
+            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
+              formData.equipment?.includes(AvailableEquipment.YOGA_MAT)
+                ? "bg-primary"
+                : "bg-white"
+            }`}
+            onPress={() =>
+              handleMultiSelectToggle("equipment", AvailableEquipment.YOGA_MAT)
+            }
+          >
+            <View className="w-8 h-8 bg-teal-100 rounded-lg items-center justify-center mb-2">
+              <MaterialCommunityIcons name="yoga" size={16} color="#14B8A6" />
+            </View>
+            <Text
+              className={`font-medium text-sm text-center ${
+                formData.equipment?.includes(AvailableEquipment.YOGA_MAT)
+                  ? "text-secondary"
+                  : "text-neutral-dark-1"
+              }`}
+            >
+              Yoga Mat
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 
-  // Render content for the Schedule step
-  const renderScheduleStep = () => (
-    <View style={styles.stepContent}>
-      <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Available Days</Text>
-        <View style={styles.optionsGrid}>
-          {Object.entries(PreferredDays).map(([key, value], index) => (
-            <View key={`day-${key}`} style={styles.gridItem}>
-              {renderMultiSelectOption(
-                "availableDays",
-                value,
-                formatEnumValue(key),
-                "calendar",
-                index === Object.entries(PreferredDays).length - 1 && {
-                  justifyContent: "center",
-                  alignItems: "center",
-                }
-              )}
-            </View>
-          ))}
+  // Render Workout Style step - matching image exactly
+  const renderWorkoutStyleStep = () => (
+    <View className="flex-1 px-6 pb-6">
+      <Text className="text-xs text-neutral-medium-4 mb-6">
+        Select your preferred workout styles. You can choose multiple.
+      </Text>
+
+      {/* HIIT - Red background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.preferredStyles.includes(PreferredStyles.HIIT)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("preferredStyles", PreferredStyles.HIIT)
+        }
+      >
+        <View className="w-8 h-8 bg-red-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="flash-outline" size={16} color="#EF4444" />
         </View>
-      </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.preferredStyles.includes(PreferredStyles.HIIT)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            HIIT
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.preferredStyles.includes(PreferredStyles.HIIT)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            High intensity interval training
+          </Text>
+        </View>
+        {formData.preferredStyles.includes(PreferredStyles.HIIT) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Rehab/Recovery - Blue background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.preferredStyles.includes(PreferredStyles.REHAB)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("preferredStyles", PreferredStyles.REHAB)
+        }
+      >
+        <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="medical-outline" size={16} color="#3B82F6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.preferredStyles.includes(PreferredStyles.REHAB)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Rehab/Recovery
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.preferredStyles.includes(PreferredStyles.REHAB)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Therapeutic exercises for recovery
+          </Text>
+        </View>
+        {formData.preferredStyles.includes(PreferredStyles.REHAB) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Strength Training - Purple background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.preferredStyles.includes(PreferredStyles.STRENGTH)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("preferredStyles", PreferredStyles.STRENGTH)
+        }
+      >
+        <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.preferredStyles.includes(PreferredStyles.STRENGTH)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Strength Training
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.preferredStyles.includes(PreferredStyles.STRENGTH)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Focus on building muscle and strength
+          </Text>
+        </View>
+        {formData.preferredStyles.includes(PreferredStyles.STRENGTH) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Cardio - Green background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.preferredStyles.includes(PreferredStyles.CARDIO)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("preferredStyles", PreferredStyles.CARDIO)
+        }
+      >
+        <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="heart-outline" size={16} color="#10B981" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.preferredStyles.includes(PreferredStyles.CARDIO)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Cardio
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.preferredStyles.includes(PreferredStyles.CARDIO)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Focus on cardiovascular health
+          </Text>
+        </View>
+        {formData.preferredStyles.includes(PreferredStyles.CARDIO) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* CrossFit-Style - Orange background as in image */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.preferredStyles.includes(PreferredStyles.CROSSFIT)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("preferredStyles", PreferredStyles.CROSSFIT)
+        }
+      >
+        <View className="w-8 h-8 bg-orange-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="fitness-outline" size={16} color="#F97316" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.preferredStyles.includes(PreferredStyles.CROSSFIT)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            CrossFit-Style
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.preferredStyles.includes(PreferredStyles.CROSSFIT)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Mixed functional movements
+          </Text>
+        </View>
+        {formData.preferredStyles.includes(PreferredStyles.CROSSFIT) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Add other styles with neutral colors */}
+      {Object.entries(PreferredStyles)
+        .filter(
+          ([key, value]) =>
+            ![
+              PreferredStyles.HIIT,
+              PreferredStyles.REHAB,
+              PreferredStyles.STRENGTH,
+              PreferredStyles.CARDIO,
+              PreferredStyles.CROSSFIT,
+            ].includes(value)
+        )
+        .map(([key, value]) => {
+          // Define specific colors and icons for each workout style
+          const getStyleConfig = (styleKey: string) => {
+            switch (styleKey) {
+              case "FUNCTIONAL":
+                return {
+                  icon: "sync-outline",
+                  color: "#10B981",
+                  bgColor: "bg-green-100",
+                  description: "Real-world movement patterns",
+                };
+              case "PILATES":
+                return {
+                  icon: "ellipse-outline",
+                  color: "#EC4899",
+                  bgColor: "bg-pink-100",
+                  description: "Core strength and flexibility",
+                };
+              case "YOGA":
+                return {
+                  icon: "leaf-outline",
+                  color: "#14B8A6",
+                  bgColor: "bg-teal-100",
+                  description: "Mind-body connection and flexibility",
+                };
+              case "BALANCE":
+                return {
+                  icon: "git-branch-outline",
+                  color: "#F59E0B",
+                  bgColor: "bg-yellow-100",
+                  description: "Stability and coordination training",
+                };
+              case "MOBILITY":
+                return {
+                  icon: "resize-outline",
+                  color: "#8B5CF6",
+                  bgColor: "bg-purple-100",
+                  description: "Joint mobility and movement quality",
+                };
+              default:
+                return {
+                  icon: "body-outline",
+                  color: "#8A93A2",
+                  bgColor: "bg-neutral-light-2",
+                  description: "General workout style",
+                };
+            }
+          };
+
+          const config = getStyleConfig(key);
+
+          return (
+            <TouchableOpacity
+              key={key}
+              className={`p-4 rounded-xl mb-3 flex-row items-center ${
+                formData.preferredStyles.includes(value)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() => handleMultiSelectToggle("preferredStyles", value)}
+            >
+              <View
+                className={`w-8 h-8 ${config.bgColor} rounded-xl items-center justify-center mr-4`}
+              >
+                <Ionicons
+                  name={config.icon as any}
+                  size={16}
+                  color={config.color}
+                />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className={`font-medium text-sm ${
+                    formData.preferredStyles.includes(value)
+                      ? "text-secondary"
+                      : "text-neutral-dark-1"
+                  }`}
+                >
+                  {formatEnumValue(key)}
+                </Text>
+                <Text
+                  className={`text-xs ${
+                    formData.preferredStyles.includes(value)
+                      ? "text-secondary"
+                      : "text-neutral-medium-4"
+                  }`}
+                >
+                  {config.description}
+                </Text>
+              </View>
+              {formData.preferredStyles.includes(value) && (
+                <Ionicons name="checkmark-circle" size={16} color="#181917" />
+              )}
+            </TouchableOpacity>
+          );
+        })}
     </View>
   );
 
@@ -700,271 +2242,92 @@ export default function OnboardingForm({
     switch (currentStep) {
       case OnboardingStep.PERSONAL_INFO:
         return renderPersonalInfoStep();
-      case OnboardingStep.FITNESS_PROFILE:
-        return renderFitnessProfileStep();
-      case OnboardingStep.WORKOUT_PREFERENCES:
-        return renderWorkoutPreferencesStep();
-      case OnboardingStep.SCHEDULE:
-        return renderScheduleStep();
+      case OnboardingStep.FITNESS_GOALS:
+        return renderFitnessGoalsStep();
+      case OnboardingStep.PHYSICAL_LIMITATIONS:
+        return renderPhysicalLimitationsStep();
+      case OnboardingStep.FITNESS_LEVEL:
+        return renderFitnessLevelStep();
+      case OnboardingStep.WORKOUT_ENVIRONMENT:
+        return renderWorkoutEnvironmentStep();
+      case OnboardingStep.WORKOUT_STYLE:
+        return renderWorkoutStyleStep();
       default:
-        return null;
+        return (
+          <View>
+            <Text>Step not implemented yet</Text>
+          </View>
+        );
     }
   };
 
-  // Render navigation buttons
+  // Render navigation buttons matching the design
   const renderNavButtons = () => {
-    const isLastStep = currentStep === OnboardingStep.SCHEDULE;
+    const isLastStep = currentStep === OnboardingStep.WORKOUT_STYLE;
 
     return (
-      <View style={styles.buttonsContainer}>
-        {showNavigation && currentStep > 0 && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handlePrevious}
-            disabled={isLoading}
-          >
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-        )}
-
-        {onCancel && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={onCancel}
-            disabled={isLoading}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[
-            styles.actionButton,
-            isLoading && styles.buttonDisabled,
-            currentStep === 0 && !onCancel && styles.fullWidthButton,
-          ]}
-          onPress={isLastStep ? handleSubmit : handleNext}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <Text style={styles.actionButtonText}>
-              {isLastStep ? submitButtonText : "Next"}
-            </Text>
+      <View className="px-6 pb-8 pt-4 bg-neutral-light-1">
+        <View className="flex-row">
+          {currentStep > 0 && (
+            <TouchableOpacity
+              className="flex-1 py-4 items-center justify-center bg-white rounded-xl mr-3"
+              onPress={handlePrevious}
+              disabled={isLoading}
+            >
+              <Text className="text-neutral-dark-1 font-semibold text-lg">
+                Back
+              </Text>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+
+          <TouchableOpacity
+            className={`py-4 px-8 bg-black rounded-xl items-center justify-center ${
+              currentStep === 0 ? "flex-1" : "flex-1 ml-3"
+            } ${isLoading ? "opacity-70" : ""}`}
+            onPress={isLastStep ? handleSubmit : handleNext}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text className="text-white font-bold text-lg">
+                {isLastStep
+                  ? submitButtonText || "Generate My Plan"
+                  : "Continue"}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
 
+  const stepConfig = getStepConfig();
+
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-neutral-light-1">
       <ScrollView
         ref={scrollRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        scrollsToTop
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
       >
-        {renderStepHeader()}
-        {renderStepContent()}
-        {renderNavButtons()}
+        {/* Header with step indicator */}
+        <View className="px-6 pt-12 pb-6 bg-neutral-light-1">
+          <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
+            {stepConfig.title}
+          </Text>
+          <Text
+            className="text-sm text-neutral-medium-4"
+            style={{ lineHeight: 20 }}
+          >
+            {stepConfig.description}
+          </Text>
+        </View>
+
+        <View className="px-0 pt-6">{renderStepContent()}</View>
       </ScrollView>
+
+      {renderNavButtons()}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  } as ViewStyle,
-  scrollView: {
-    flex: 1,
-  } as ViewStyle,
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  } as ViewStyle,
-  stepHeader: {
-    paddingVertical: 20,
-  } as ViewStyle,
-  mainTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 16,
-    textAlign: "center",
-  } as TextStyle,
-  stepIndicator: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 8,
-  } as TextStyle,
-  stepTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-  } as TextStyle,
-  stepDescription: {
-    fontSize: 16,
-    color: "#6b7280",
-    lineHeight: 24,
-  } as TextStyle,
-  stepContent: {
-    marginTop: 20,
-  } as ViewStyle,
-  formGroup: {
-    marginBottom: 24,
-  } as ViewStyle,
-  formRow: {
-    flexDirection: "row",
-  } as ViewStyle,
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: 8,
-  } as TextStyle,
-  textInput: {
-    backgroundColor: "#f9fafb",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#1f2937",
-  } as TextStyle,
-  textArea: {
-    backgroundColor: "#f9fafb",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#1f2937",
-    height: 100,
-  } as TextStyle,
-  inputError: {
-    borderColor: "#ef4444",
-  } as TextStyle,
-  errorText: {
-    color: "#ef4444",
-    fontSize: 14,
-    marginTop: 8,
-  } as TextStyle,
-  optionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -4,
-  } as ViewStyle,
-  optionsColumn: {
-    marginHorizontal: -4,
-  } as ViewStyle,
-  optionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -4,
-  } as ViewStyle,
-  optionButton: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 4,
-    marginBottom: 8,
-    minWidth: 100,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "flex-start",
-  } as ViewStyle,
-  selectedOption: {
-    backgroundColor: "#4f46e5",
-  } as ViewStyle,
-  optionText: {
-    color: "#4b5563",
-    fontWeight: "500",
-  } as TextStyle,
-  selectedOptionText: {
-    color: "#ffffff",
-  } as TextStyle,
-  optionIcon: {
-    marginRight: 8,
-  } as ViewStyle,
-  gridItem: {
-    flex: 1,
-    minWidth: screenWidth / 2 - 32,
-    marginBottom: 8,
-  } as ViewStyle,
-  sliderContainer: {
-    marginVertical: 10,
-  } as ViewStyle,
-  slider: {
-    width: "100%",
-    height: 40,
-  } as ViewStyle,
-  sliderLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: 8,
-  } as TextStyle,
-  sliderValue: {
-    fontSize: 16,
-    color: "#4f46e5",
-    textAlign: "center",
-    marginTop: 8,
-  } as TextStyle,
-  buttonsContainer: {
-    flexDirection: "row",
-    marginTop: 30,
-    gap: 12,
-  } as ViewStyle,
-  backButton: {
-    flex: 1,
-    paddingVertical: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  } as ViewStyle,
-  backButtonText: {
-    color: "#4f46e5",
-    fontSize: 16,
-    fontWeight: "600",
-  } as TextStyle,
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-  } as ViewStyle,
-  cancelButtonText: {
-    color: "#6b7280",
-    fontSize: 16,
-    fontWeight: "600",
-  } as TextStyle,
-  actionButton: {
-    flex: 2,
-    backgroundColor: "#4f46e5",
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  } as ViewStyle,
-  fullWidthButton: {
-    flex: 1,
-  } as ViewStyle,
-  buttonDisabled: {
-    opacity: 0.7,
-  } as ViewStyle,
-  actionButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  } as TextStyle,
-});

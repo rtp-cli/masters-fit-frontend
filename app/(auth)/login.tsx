@@ -2,11 +2,11 @@ import { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -107,30 +107,45 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
-      <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-        <Ionicons name="arrow-back" size={24} color="#111827" />
-      </TouchableOpacity>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header with back button */}
+        <View className="flex-row items-center justify-between px-lg pt-md pb-sm">
+          <TouchableOpacity
+            className="w-10 h-10 justify-center items-center"
+            onPress={handleGoBack}
+            disabled={isLoading}
+          >
+            <Ionicons name="chevron-back" size={24} color="#525252" />
+          </TouchableOpacity>
+          <View className="flex-1" />
+        </View>
 
-      <View style={styles.content}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>
+        {/* Title and description */}
+        <View className="px-lg pt-2xl pb-lg">
+          <Text className="text-3xl font-bold text-text-primary mb-sm">
             {showNameField ? "Create Account" : "Welcome Back"}
           </Text>
-          <Text style={styles.subtitle}>
+          <Text className="text-sm text-text-muted" style={{ lineHeight: 20 }}>
             {showNameField
               ? "Please enter your name to continue"
               : "Enter your email to continue"}
           </Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email</Text>
+        {/* Form content */}
+        <View className="px-lg pt-lg">
+          {/* Email input */}
+          <View className="mb-lg">
+            <Text className="text-base font-medium text-text-primary mb-sm">
+              Email
+            </Text>
             <TextInput
-              style={[styles.textInput, emailError ? styles.inputError : null]}
+              className={`bg-background px-md py-md rounded-xl text-base border ${
+                emailError ? "border-red-500" : "border-neutral-medium-1"
+              }`}
               placeholder="Email address"
               value={email}
               onChangeText={setEmail}
@@ -138,113 +153,51 @@ export default function LoginScreen() {
               autoComplete="email"
               keyboardType="email-address"
               editable={!showNameField && !isLoading}
+              placeholderTextColor="#A8A8A8"
             />
             {emailError ? (
-              <Text style={styles.errorText}>{emailError}</Text>
+              <Text className="text-red-500 text-sm mt-sm">{emailError}</Text>
             ) : null}
           </View>
 
+          {/* Name input (conditional) */}
           {showNameField && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Full Name</Text>
+            <View className="mb-lg">
+              <Text className="text-base font-medium text-text-primary mb-sm">
+                Full Name
+              </Text>
               <TextInput
-                style={styles.textInput}
+                className="bg-background px-md py-md rounded-xl text-base border border-neutral-medium-1"
                 placeholder="Enter your full name"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
                 editable={!isLoading}
+                placeholderTextColor="#A8A8A8"
               />
             </View>
           )}
-
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              isLoading ? styles.buttonDisabled : null,
-            ]}
-            onPress={showNameField ? handleSignup : handleContinue}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Text style={styles.submitButtonText}>
-                {showNameField ? "Sign Up" : "Continue"}
-              </Text>
-            )}
-          </TouchableOpacity>
         </View>
+      </ScrollView>
+
+      {/* Bottom button */}
+      <View className="px-lg pb-2xl pt-md bg-background">
+        <TouchableOpacity
+          className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
+            isLoading ? "opacity-70" : ""
+          }`}
+          onPress={showNameField ? handleSignup : handleContinue}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text className="text-background font-bold text-lg">
+              {showNameField ? "Sign Up" : "Continue"}
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  backButton: {
-    padding: 16,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-  },
-  headerContainer: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-  },
-  formContainer: {
-    width: "100%",
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  inputError: {
-    borderColor: "#ef4444",
-  },
-  errorText: {
-    color: "#ef4444",
-    fontSize: 14,
-    marginTop: 8,
-  },
-  submitButton: {
-    backgroundColor: "#4f46e5",
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  submitButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../../contexts/AuthContext";
 import { getCurrentUser, getPendingEmail, getPendingUserId } from "@lib/auth";
 import { useRouter } from "expo-router";
-import { generateWorkoutPlan } from "@lib/workouts";
+import { generateWorkoutPlan, fetchActiveWorkout } from "@lib/workouts";
 import OnboardingForm, { FormData } from "../../components/OnboardingForm";
+import GeneratingPlanScreen from "../../components/ui/GeneratingPlanScreen";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -42,22 +43,11 @@ export default function OnboardingScreen() {
   }, []);
 
   const fetchWorkoutPlan = async () => {
-    try {
-      setError(null);
-      setGeneratingWorkout(true);
-      const user = await getCurrentUser();
-      if (!user) {
-        setError("User not found");
-        return;
-      }
-      await generateWorkoutPlan(user.id);
-    } catch (err) {
-      setError("Failed to load workout plan");
-      console.error("Error fetching workout plan:", err);
-    } finally {
-      setGeneratingWorkout(false);
-      router.replace("/(tabs)/calendar");
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("User not found");
     }
+    await generateWorkoutPlan(user.id);
   };
 
   // Submit onboarding data
@@ -84,53 +74,51 @@ export default function OnboardingScreen() {
         intensityLevel: formData.intensityLevel.toString(),
       };
 
+      // Step 1: Complete onboarding
+      console.log("Starting onboarding...");
       await completeOnboarding(onboardingData);
-    } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred. Please try again.");
-      console.error("Profile creation error:", error);
-    } finally {
+      console.log("Onboarding completed");
+
+      // Step 2: Show generating screen
       setIsLoading(false);
-      fetchWorkoutPlan();
+      setGeneratingWorkout(true);
+
+      // Step 3: Generate workout plan
+      console.log("Starting workout generation...");
+      await fetchWorkoutPlan();
+      console.log("Workout generation completed");
+
+      // Step 4: Navigate
+      console.log("Navigating to calendar...");
+      setGeneratingWorkout(false);
+      await fetchActiveWorkout();
+      router.replace("/(tabs)/calendar");
+    } catch (error) {
+      console.error("Error:", error);
+      setIsLoading(false);
+      setGeneratingWorkout(false);
+      Alert.alert("Error", "Something went wrong. Please try again.");
     }
   };
 
   if (generatingWorkout) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4f46e5" />
-        <Text style={styles.loadingText}>Generating your workout plan...</Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-neutral-light-1">
+        <StatusBar style="dark" />
+        <GeneratingPlanScreen />
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-neutral-light-1">
       <StatusBar style="dark" />
       <OnboardingForm
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        submitButtonText="Complete"
+        submitButtonText="Generate Plan"
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#4f46e5",
-    fontWeight: "500",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-});

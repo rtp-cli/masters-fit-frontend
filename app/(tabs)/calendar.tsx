@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
+import { useRouter } from "expo-router";
 import {
   fetchActiveWorkout,
   regenerateWorkoutPlan,
@@ -16,11 +18,10 @@ import {
 } from "@lib/workouts";
 import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
 import { getCurrentUser } from "@lib/auth";
-import WorkoutRegenerationModal from "../../components/WorkoutRegenerationModal";
-import DailyWorkoutRegenerationModal from "../../components/DailyWorkoutRegenerationModal";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function CalendarScreen() {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -31,9 +32,10 @@ export default function CalendarScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-  const [showDailyRegenerationModal, setShowDailyRegenerationModal] =
-    useState(false);
-  const [regeneratingDaily, setRegeneratingDaily] = useState(false);
+  const [regenerationType, setRegenerationType] = useState<"Week" | "Day">(
+    "Week"
+  );
+  const [customFeedback, setCustomFeedback] = useState("");
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithExercises | null>(null);
 
@@ -62,7 +64,7 @@ export default function CalendarScreen() {
     }
   };
 
-  const handleRegenerate = async (data: { customFeedback?: string }) => {
+  const handleRegenerate = async () => {
     try {
       setRegenerating(true);
       const user = await getCurrentUser();
@@ -71,61 +73,53 @@ export default function CalendarScreen() {
         return;
       }
 
-      const response = await regenerateWorkoutPlan(user.id, {
-        customFeedback: data.customFeedback,
-      });
-      if (response) {
-        setWorkoutPlan(response.workout);
-        setShowRegenerationModal(false);
+      if (regenerationType === "Week") {
+        const response = await regenerateWorkoutPlan(user.id, {
+          customFeedback: customFeedback.trim() || undefined,
+        });
+        if (response) {
+          setWorkoutPlan(response.workout);
+        }
+      } else if (regenerationType === "Day" && selectedPlanDay) {
+        const response = await regenerateDailyWorkout(
+          user.id,
+          selectedPlanDay.id,
+          customFeedback.trim() || "User requested regeneration"
+        );
+        if (response) {
+          setWorkoutPlan((prev) => {
+            if (!prev) return prev;
+            const updatedPlanDays = prev.planDays.map((day) =>
+              day.id === selectedPlanDay.id ? response.planDay : day
+            );
+            return {
+              ...prev,
+              planDays: updatedPlanDays,
+            };
+          });
+        }
       }
+
+      setShowRegenerationModal(false);
+      setCustomFeedback("");
     } catch (err) {
-      setError("Failed to regenerate workout plan");
-      console.error("Error regenerating workout plan:", err);
+      setError(
+        `Failed to regenerate ${regenerationType.toLowerCase()} workout`
+      );
+      console.error("Error regenerating workout:", err);
     } finally {
       setRegenerating(false);
     }
   };
 
-  const handleDailyRegenerate = async (reason: string) => {
-    try {
-      setRegeneratingDaily(true);
-      const user = await getCurrentUser();
-      if (!user || !selectedPlanDay) {
-        setError("User or plan day not found");
-        return;
-      }
-
-      const response = await regenerateDailyWorkout(
-        user.id,
-        selectedPlanDay.id,
-        reason
-      );
-      if (response) {
-        // Update the workout plan with the new day data
-        setWorkoutPlan((prev) => {
-          if (!prev) return prev;
-          const updatedPlanDays = prev.planDays.map((day) =>
-            day.id === selectedPlanDay.id ? response.planDay : day
-          );
-          return {
-            ...prev,
-            planDays: updatedPlanDays,
-          };
-        });
-        setShowDailyRegenerationModal(false);
-        setSelectedPlanDay(null);
-      }
-    } catch (err) {
-      setError("Failed to regenerate daily workout");
-      console.error("Error regenerating daily workout:", err);
-    } finally {
-      setRegeneratingDaily(false);
+  const handleOpenRegeneration = (planDay?: PlanDayWithExercises) => {
+    if (planDay) {
+      setSelectedPlanDay(planDay);
+      setRegenerationType("Day");
+    } else {
+      setRegenerationType("Week");
     }
-  };
-
-  const handleOpenDailyRegeneration = (planDay: PlanDayWithExercises) => {
-    setSelectedPlanDay(planDay);
-    setShowDailyRegenerationModal(true);
+    setShowRegenerationModal(true);
   };
 
   // Get the plan day and its index for the selected date
@@ -147,25 +141,27 @@ export default function CalendarScreen() {
     if (!workoutPlan) return {};
 
     const markedDates: any = {};
+    const today = new Date().toLocaleDateString("en-CA");
     const normalizedSelectedDate = new Date(selectedDate).toLocaleDateString(
       "en-CA"
     );
 
     workoutPlan.planDays.forEach((day) => {
       const dateStr = new Date(day.date).toLocaleDateString("en-CA");
-
       markedDates[dateStr] = {
         marked: true,
-        dotColor: "#4f46e5",
+        dotColor: "#BBDE51",
         selected: dateStr === normalizedSelectedDate,
-        selectedColor: "rgba(79, 70, 229, 0.1)",
+        selectedColor:
+          dateStr === normalizedSelectedDate ? "#181917" : undefined,
       };
     });
 
-    if (!markedDates[normalizedSelectedDate]) {
-      markedDates[normalizedSelectedDate] = {
-        selected: true,
-        selectedColor: "rgba(79, 70, 229, 0.1)",
+    // Mark today
+    if (!markedDates[today]) {
+      markedDates[today] = {
+        selected: today === normalizedSelectedDate,
+        selectedColor: today === normalizedSelectedDate ? "#181917" : undefined,
       };
     }
 
@@ -177,21 +173,33 @@ export default function CalendarScreen() {
     setSelectedDate(day.dateString);
   };
 
+  // Check if selected date is today
+  const isToday = () => {
+    const today = new Date().toLocaleDateString("en-CA");
+    const selected = new Date(selectedDate).toLocaleDateString("en-CA");
+    return today === selected;
+  };
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4f46e5" />
-        <Text style={styles.loadingText}>One moment...</Text>
+      <View className="flex-1 justify-center items-center bg-background">
+        <ActivityIndicator size="large" color="#BBDE51" />
+        <Text className="mt-md text-sm text-primary font-medium">
+          One moment...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchWorkoutPlan}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+      <View className="flex-1 justify-center items-center bg-background px-5">
+        <Text className="text-sm text-red-500 mb-md text-center">{error}</Text>
+        <TouchableOpacity
+          className="bg-secondary py-3 px-6 rounded-xl"
+          onPress={fetchWorkoutPlan}
+        >
+          <Text className="text-background font-semibold text-sm">Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -205,412 +213,316 @@ export default function CalendarScreen() {
     ? selectedPlanDayResult.index
     : null;
 
-  return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
-      <ScrollView style={styles.workoutList}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
-            {workoutPlan?.name}
-          </Text>
-          {workoutPlan && (
-            <TouchableOpacity
-              style={styles.regenerateButton}
-              onPress={() => setShowRegenerationModal(true)}
-              disabled={regenerating}
-            >
-              <Ionicons name="refresh" size={20} color="#4f46e5" />
-              <Text style={styles.regenerateButtonText}>Regenerate</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
-        <View style={styles.calendarContainer}>
+  return (
+    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Calendar */}
+        <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
           <RNCalendar
             current={selectedDate}
             onDayPress={handleDateSelect}
             markedDates={getMarkedDates()}
             minDate={new Date().toISOString().split("T")[0]}
             maxDate={
-              new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
                 .toISOString()
                 .split("T")[0]
             }
             disableAllTouchEventsForDisabledDays={true}
             theme={{
-              calendarBackground: "#ffffff",
-              textSectionTitleColor: "#6b7280",
-              selectedDayBackgroundColor: "#4f46e5",
-              selectedDayTextColor: "#ffffff",
-              todayTextColor: "#4f46e5",
-              dayTextColor: "#1f2937",
-              textDisabledColor: "#d1d5db",
-              dotColor: "#4f46e5",
-              arrowColor: "#4f46e5",
-              monthTextColor: "#1f2937",
-              indicatorColor: "#4f46e5",
+              calendarBackground: "#FFFFFF",
+              textSectionTitleColor: "#8A93A2",
+              selectedDayBackgroundColor: "#181917",
+              selectedDayTextColor: "#FFFFFF",
+              todayTextColor: "#BBDE51",
+              dayTextColor: "#181917",
+              textDisabledColor: "#C6C6C6",
+              dotColor: "#BBDE51",
+              arrowColor: "#181917",
+              monthTextColor: "#181917",
+              indicatorColor: "#BBDE51",
+              textDayFontFamily: "System",
+              textMonthFontFamily: "System",
+              textDayHeaderFontFamily: "System",
+              textDayFontWeight: "500",
+              textMonthFontWeight: "600",
+              textDayHeaderFontWeight: "500",
+              textDayFontSize: 14,
+              textMonthFontSize: 16,
+              textDayHeaderFontSize: 12,
             }}
           />
         </View>
 
-        {!currentSelectedPlanDay ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Rest Day</Text>
-            <Text style={styles.restDayDescription}>
-              Take this time to recover and prepare for your next workout!
+        {/* Regenerate Button */}
+        <View className="px-lg my-lg">
+          <TouchableOpacity
+            className="bg-primary py-md rounded-xl items-center flex-row justify-center"
+            onPress={() => handleOpenRegeneration()}
+            disabled={regenerating}
+          >
+            <Ionicons name="refresh" size={18} color="#181917" />
+            <Text className="text-secondary font-semibold text-sm ml-sm">
+              Regenerate Workout Flow
             </Text>
-          </View>
-        ) : (
-          <View style={styles.workoutDetails}>
-            <View style={styles.workoutHeader}>
-              {selectedPlanDayIndex !== null && (
-                <Text style={styles.workoutTitle}>
-                  Day {selectedPlanDayIndex + 1}
-                </Text>
-              )}
-              <TouchableOpacity
-                style={styles.dayRegenerateButton}
-                onPress={() =>
-                  handleOpenDailyRegeneration(currentSelectedPlanDay)
-                }
-                disabled={regeneratingDaily}
-              >
-                <Ionicons name="refresh" size={18} color="#4f46e5" />
-                <Text style={styles.dayRegenerateButtonText}>
-                  Regenerate Day
-                </Text>
-              </TouchableOpacity>
-            </View>
+          </TouchableOpacity>
+        </View>
 
-            {currentSelectedPlanDay.description && (
-              <Text style={styles.workoutDescription}>
-                {currentSelectedPlanDay.description}
-              </Text>
-            )}
-
-            {currentSelectedPlanDay.exercises.map((exercise, index) => (
-              <View key={exercise.id} style={styles.exerciseCard}>
-                <Text style={styles.exerciseName}>
-                  {exercise.exercise.name}
+        {/* Selected Date Workout */}
+        {selectedDate && (
+          <View className="px-lg">
+            {!currentSelectedPlanDay ? (
+              <View>
+                <Text className="text-base font-bold text-text-primary mb-md">
+                  {formatDate(selectedDate)}
                 </Text>
-                <View style={styles.exerciseDetails}>
-                  <Text style={{ color: "#4b5563" }}>
-                    {exercise.exercise.description}
+                <View className="bg-neutral-light-2 p-6 rounded-xl items-center">
+                  <Text className="text-base font-bold text-text-primary mb-xs">
+                    Rest Day
                   </Text>
-
-                  <View style={styles.exerciseMetricsRow}>
-                    {exercise.sets !== undefined && exercise.sets !== null && (
-                      <View style={styles.exerciseMetric}>
-                        <Text style={styles.exerciseMetricText}>
-                          Sets: {exercise.sets}
-                        </Text>
-                      </View>
-                    )}
-                    {exercise.reps !== undefined && exercise.reps !== null && (
-                      <View style={styles.exerciseMetric}>
-                        <Text style={styles.exerciseMetricText}>
-                          Reps: {exercise.reps}
-                        </Text>
-                      </View>
-                    )}
-                    {exercise.weight !== undefined &&
-                      exercise.weight !== null && (
-                        <View style={styles.exerciseMetric}>
-                          <Text style={styles.exerciseMetricText}>
-                            Weight: {exercise.weight}kg
-                          </Text>
-                        </View>
-                      )}
-                    {exercise.duration !== undefined &&
-                      exercise.duration !== null &&
-                      exercise.duration !== 0 && (
-                        <View style={styles.exerciseMetric}>
-                          <Text style={styles.exerciseMetricText}>
-                            Duration: {exercise.duration}s
-                          </Text>
-                        </View>
-                      )}
-                    {exercise.restTime !== undefined &&
-                      exercise.restTime !== null && (
-                        <View style={styles.exerciseMetric}>
-                          <Text style={styles.exerciseMetricText}>
-                            Rest: {exercise.restTime}s
-                          </Text>
-                        </View>
-                      )}
-                  </View>
-
-                  {exercise.exercise.instructions && (
-                    <Text style={styles.exerciseInstructions}>
-                      {exercise.exercise.instructions}
-                    </Text>
-                  )}
+                  <Text className="text-sm text-text-muted text-center leading-5">
+                    Take this time to recover and prepare for your next workout!
+                  </Text>
                 </View>
               </View>
-            ))}
+            ) : (
+              <View className="mb-lg">
+                {/* Workout Header */}
+                <View className="flex-row items-center justify-between mb-md">
+                  <View className="flex-1">
+                    <Text className="text-base font-bold text-text-primary">
+                      {currentSelectedPlanDay.description ||
+                        formatDate(selectedDate)}
+                    </Text>
+                    <View className="flex-row items-center mt-xs">
+                      <Text className="text-xs text-text-muted">
+                        {currentSelectedPlanDay.exercises.length} exercises
+                      </Text>
+                      {currentSelectedPlanDay.exercises.some(
+                        (ex) => ex.duration && ex.duration > 0
+                      ) && (
+                        <>
+                          <Text className="text-text-muted mx-xs">•</Text>
+                          <Text className="text-xs text-text-muted">
+                            {Math.round(
+                              currentSelectedPlanDay.exercises.reduce(
+                                (total, ex) => total + (ex.duration || 0),
+                                0
+                              ) / 60
+                            )}{" "}
+                            min
+                          </Text>
+                        </>
+                      )}
+                    </View>
+                  </View>
+                  {isToday() && (
+                    <TouchableOpacity
+                      className="bg-secondary py-2 px-4 rounded-xl"
+                      onPress={() => {
+                        router.push("/(tabs)/workout");
+                      }}
+                    >
+                      <Text className="text-background font-semibold text-sm">
+                        Start
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Exercises List */}
+                <View className="space-y-sm">
+                  <Text className="text-sm font-semibold text-text-primary mb-md">
+                    Exercises
+                  </Text>
+
+                  {currentSelectedPlanDay.exercises.map((exercise, index) => (
+                    <View
+                      key={exercise.id}
+                      className="bg-neutral-light-2 rounded-xl p-md mb-sm"
+                    >
+                      <View className="flex-col">
+                        <View className="flex-row items-center justify-between mb-xs">
+                          <View className="flex-1">
+                            <Text className="text-sm font-semibold text-text-primary mb-xs">
+                              {exercise.exercise.name}
+                            </Text>
+                            <View className="flex-row items-center">
+                              <Text className="text-xs text-text-muted">
+                                {exercise.sets && exercise.reps
+                                  ? `${exercise.sets} sets • ${exercise.reps} reps`
+                                  : exercise.duration
+                                  ? `${Math.round(exercise.duration / 60)} min`
+                                  : "Duration varies"}
+                              </Text>
+                              {exercise.exercise.name
+                                .toLowerCase()
+                                .includes("cardio") && (
+                                <>
+                                  <View className="w-1.5 h-1.5 bg-orange-500 rounded-full mx-xs" />
+                                  <Text className="text-xs text-orange-600 font-medium">
+                                    480 kcal
+                                  </Text>
+                                </>
+                              )}
+                              {exercise.exercise.name
+                                .toLowerCase()
+                                .includes("yoga") && (
+                                <>
+                                  <View className="w-1.5 h-1.5 bg-blue-500 rounded-full mx-xs" />
+                                  <Text className="text-xs text-blue-600 font-medium">
+                                    Flexibility
+                                  </Text>
+                                </>
+                              )}
+                            </View>
+                          </View>
+                        </View>
+
+                        {/* Exercise Notes */}
+                        {exercise.notes && (
+                          <View className="mt-xs">
+                            <Text className="text-xs text-text-muted leading-4">
+                              {exercise.notes}
+                            </Text>
+                          </View>
+                        )}
+
+                        {/* Exercise Instructions */}
+                        {exercise.exercise.instructions && (
+                          <View className="mt-xs">
+                            <Text className="text-xs text-text-muted leading-4 italic">
+                              {exercise.exercise.instructions}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
 
-      <WorkoutRegenerationModal
+      {/* Regeneration Modal */}
+      <Modal
         visible={showRegenerationModal}
-        onClose={() => setShowRegenerationModal(false)}
-        onRegenerate={handleRegenerate}
-        loading={regenerating}
-      />
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowRegenerationModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-background rounded-t-2xl p-lg">
+            {/* Modal Header */}
+            <View className="flex-row items-center justify-between mb-md">
+              <TouchableOpacity
+                onPress={() => setShowRegenerationModal(false)}
+                className="w-8 h-8 items-center justify-center"
+              >
+                <Ionicons name="close" size={20} color="#525252" />
+              </TouchableOpacity>
+              <Text className="text-base font-semibold text-text-primary">
+                Regenerate Workout Plan
+              </Text>
+              <View className="w-8" />
+            </View>
 
-      <DailyWorkoutRegenerationModal
-        visible={showDailyRegenerationModal}
-        onClose={() => {
-          setShowDailyRegenerationModal(false);
-          setSelectedPlanDay(null);
-        }}
-        onRegenerate={handleDailyRegenerate}
-        loading={regeneratingDaily}
-        dayNumber={
-          selectedPlanDayIndex !== null ? selectedPlanDayIndex + 1 : undefined
-        }
-      />
+            {/* Regeneration Type Toggle */}
+            <View className="mb-md">
+              <Text className="text-xs text-text-muted mb-sm">
+                Choose how you would like to generate your workout plan:
+              </Text>
+              <View className="flex-row bg-neutral-light-2 rounded-xl p-1">
+                <TouchableOpacity
+                  className={`flex-1 py-sm rounded-lg items-center ${
+                    regenerationType === "Week" ? "bg-background" : ""
+                  }`}
+                  onPress={() => setRegenerationType("Week")}
+                >
+                  <Text
+                    className={`font-medium text-sm ${
+                      regenerationType === "Week"
+                        ? "text-text-primary"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    Week
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`flex-1 py-sm rounded-lg items-center ${
+                    regenerationType === "Day" ? "bg-background" : ""
+                  }`}
+                  onPress={() => setRegenerationType("Day")}
+                >
+                  <Text
+                    className={`font-medium text-sm ${
+                      regenerationType === "Day"
+                        ? "text-text-primary"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    Day
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Feedback Input */}
+            <View className="mb-md">
+              <Text className="text-xs text-text-muted mb-sm">
+                Tell us why you want to regenerate this{" "}
+                {regenerationType.toLowerCase()}'s workout plan, and what you
+                would like to change:
+              </Text>
+              <TextInput
+                className="bg-neutral-light-2 p-sm rounded-xl min-h-[80px] text-sm"
+                placeholder="Add notes about your workout here..."
+                placeholderTextColor="#A8A8A8"
+                value={customFeedback}
+                onChangeText={setCustomFeedback}
+                multiline
+                textAlignVertical="top"
+              />
+              <Text className="text-xs text-text-muted mt-xs">
+                Only this {regenerationType.toLowerCase()}'s workout will be
+                changed. All other days will remain the same.
+              </Text>
+            </View>
+
+            {/* Action Button */}
+            <TouchableOpacity
+              className={`bg-primary py-sm rounded-xl items-center flex-row justify-center ${
+                regenerating ? "opacity-70" : ""
+              }`}
+              onPress={handleRegenerate}
+              disabled={regenerating}
+            >
+              {regenerating ? (
+                <ActivityIndicator size="small" color="#181917" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={16} color="#181917" />
+                  <Text className="text-secondary font-semibold text-sm ml-xs">
+                    Regenerate Workout Flow
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-    flex: 1,
-  },
-  description: {
-    fontSize: 14,
-    color: "#6b7280",
-    textAlign: "center",
-    marginTop: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#4f46e5",
-    fontWeight: "500",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#ef4444",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  retryButton: {
-    backgroundColor: "#4f46e5",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  retryButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  calendarContainer: {
-    backgroundColor: "#ffffff",
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  workoutList: {
-    flex: 1,
-  },
-  dateHeader: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 16,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    marginHorizontal: 16,
-    backgroundColor: "#f8fafc",
-    padding: 32,
-    borderRadius: 16,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  emptyStateText: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  restDayDescription: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  workoutDetails: {
-    backgroundColor: "#ffffff",
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  workoutHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-  },
-  workoutTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  workoutDescription: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginBottom: 24,
-    paddingHorizontal: 16,
-    lineHeight: 24,
-  },
-  exerciseCard: {
-    backgroundColor: "#f8fafc",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  exerciseDetails: {
-    flexDirection: "column",
-    gap: 8,
-  },
-  exerciseMetricsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  exerciseMetric: {
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  exerciseMetricText: {
-    fontSize: 14,
-    color: "#4f46e5",
-    fontWeight: "500",
-  },
-  exerciseInstructions: {
-    fontSize: 14,
-    color: "#4b5563",
-    lineHeight: 22,
-    backgroundColor: "#ffffff",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  regenerateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    gap: 6,
-  },
-  regenerateButtonText: {
-    color: "#4f46e5",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  dayRegenerateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    gap: 6,
-  },
-  dayRegenerateButtonText: {
-    color: "#4f46e5",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-});

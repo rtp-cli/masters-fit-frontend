@@ -23,7 +23,8 @@
     },
     "scheme": "masters-fit",
     "web": {
-      "favicon": "./assets/icon.svg"
+      "favicon": "./assets/icon.svg",
+      "bundler": "metro"
     },
     "plugins": ["expo-router"]
   }

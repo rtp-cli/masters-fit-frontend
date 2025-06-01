@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
+import { View, TouchableOpacity, Image } from "react-native";
 
 function TabBarIcon({
   name,
@@ -12,49 +12,88 @@ function TabBarIcon({
   return <Ionicons size={24} name={name} color={color} />;
 }
 
+function WorkoutTabIcon({ focused }: { focused: boolean }) {
+  return (
+    <View
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: "#000000",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 6,
+      }}
+    >
+      <Ionicons size={20} name="play" color="#ffffff" />
+    </View>
+  );
+}
+
+function HeaderLogo() {
+  return (
+    <Image
+      source={require("../../assets/logo.png")}
+      style={{
+        width: 120,
+        height: 30,
+        resizeMode: "contain",
+      }}
+    />
+  );
+}
+
 export default function TabLayout() {
   return (
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
           headerShown: true,
-          tabBarActiveTintColor: "#4f46e5",
-          tabBarInactiveTintColor: "#6b7280",
+          tabBarActiveTintColor: "#1f2937",
+          tabBarInactiveTintColor: "#9ca3af",
           tabBarStyle: {
             borderTopWidth: 1,
             borderTopColor: "#e5e7eb",
-            height: 60,
-            paddingBottom: 8,
-            paddingTop: 8,
+            height: 65,
+            paddingBottom: 12,
+            paddingTop: 6,
+            backgroundColor: "#ffffff",
           },
           headerStyle: {
             backgroundColor: "#ffffff",
-            height: 100,
+            height: 80,
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
+            shadowOffset: { width: 0, height: 1 },
             shadowOpacity: 0.05,
-            shadowRadius: 3,
-            elevation: 3,
+            shadowRadius: 2,
+            elevation: 2,
           },
           headerTitleStyle: {
             fontWeight: "bold",
             fontSize: 18,
           },
+          headerTitle: () => <HeaderLogo />,
+          headerTitleAlign: "center",
         }}
       >
         <Tabs.Screen
           name="dashboard"
           options={{
-            title: "Dashboard",
+            title: "Progress",
             tabBarIcon: ({ color }: { color: string }) => (
-              <TabBarIcon name="trending-up" color={color} />
+              <TabBarIcon name="bar-chart" color={color} />
             ),
           }}
         />
         <Tabs.Screen
           name="calendar"
           options={{
-            title: "Calendar",
+            title: "Plan",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="calendar" color={color} />
             ),
@@ -64,8 +103,8 @@ export default function TabLayout() {
           name="workout"
           options={{
             title: "Workout",
-            tabBarIcon: ({ color }: { color: string }) => (
-              <TabBarIcon name="play" color={color} />
+            tabBarIcon: ({ focused }: { focused: boolean }) => (
+              <WorkoutTabIcon focused={focused} />
             ),
           }}
         />
@@ -81,9 +120,9 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: "Settings",
+            title: "Profile",
             tabBarIcon: ({ color }: { color: string }) => (
-              <TabBarIcon name="settings" color={color} />
+              <TabBarIcon name="person" color={color} />
             ),
           }}
         />

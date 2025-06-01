@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Dimensions, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function GetStarted() {
   const router = useRouter();
@@ -22,78 +23,66 @@ export default function GetStarted() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View className="flex-1 justify-center items-center bg-white">
+        <Text className="text-base text-neutral-medium-4">Loading...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="dark" />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome to Masters Fit</Text>
-          <Text style={styles.subtitle}>
-            Your personalized fitness journey starts here
+
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5">
+        <TouchableOpacity className="w-10 h-10 justify-center items-center">
+          <Ionicons name="chevron-back" size={24} color="#374151" />
+        </TouchableOpacity>
+        <Image
+          source={require("../assets/logo.png")}
+          className="h-10 w-30"
+          resizeMode="contain"
+        />
+        <View className="w-10" />
+      </View>
+
+      <View className="flex-1 px-6 justify-between pb-12">
+        {/* Hero Section with Home Image */}
+        <View className="flex-1 justify-center items-center">
+          <Image
+            source={require("../assets/home.png")}
+            className="w-64 h-64"
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Text Content */}
+        <View className="items-center my-10">
+          <Text className="text-3xl font-bold text-text-primary text-center mb-4">
+            Welcome to MastersFit!
+          </Text>
+          <Text className="text-base text-neutral-medium-4 text-center leading-6 px-5">
+            AI-personalized fitness plans designed specifically for adults 40+
+            to help you achieve your fitness goals safely and effectively.
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleGetStarted}>
-          <Text style={styles.buttonText}>Get Started</Text>
+        {/* Get Started Button */}
+        <TouchableOpacity
+          className="bg-black py-4 px-6 rounded-md items-center flex-row justify-center"
+          onPress={handleGetStarted}
+        >
+          <Text className="text-white text-base font-semibold mr-2">
+            Get Started
+          </Text>
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color="#ffffff"
+            className="ml-1"
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#6b7280",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: "space-between",
-    paddingBottom: 48,
-    paddingTop: 48,
-  },
-  header: {
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "#6b7280",
-    textAlign: "center",
-    lineHeight: 28,
-  },
-  button: {
-    backgroundColor: "#4f46e5",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-});
