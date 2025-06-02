@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Switch,
@@ -10,8 +9,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@contexts/AuthContext";
 import { useRouter } from "expo-router";
+
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -43,283 +43,239 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0) || "U"}
+    <SafeAreaView className="flex-1 bg-neutral-light-1">
+      <ScrollView className="flex-1">
+        {/* Profile Section */}
+        <View className="p-6 bg-white items-center">
+          <View className="w-20 h-20 rounded-full bg-indigo-500 items-center justify-center mb-4">
+            <Text className="text-3xl font-bold text-white">
+              {user?.name?.charAt(0) || "M"}
             </Text>
           </View>
-          <Text style={styles.userName}>{user?.name || "User"}</Text>
-          <Text style={styles.userEmail}>
-            {user?.email || "user@example.com"}
+          <Text className="text-xl font-bold text-text-primary">
+            {user?.name || "Michael Thompson"}
           </Text>
-          <TouchableOpacity style={styles.editProfileButton}>
-            <Text style={styles.editProfileText}>Edit Profile</Text>
-          </TouchableOpacity>
         </View>
 
-        <View style={styles.settingsGroup}>
-          <Text style={styles.groupTitle}>Preferences</Text>
+        {/* Quick Actions */}
+        <View className="px-6 py-4">
+          <Text className="text-base font-semibold text-text-primary mb-4">
+            Quick Actions
+          </Text>
+          <View className="flex-row justify-between">
+            <TouchableOpacity className="items-center">
+              <View className="w-12 h-12 rounded-full bg-yellow-100 items-center justify-center mb-2">
+                <Ionicons name="person-outline" size={20} color="#F59E0B" />
+              </View>
+              <Text className="text-xs text-text-muted">Edit Profile</Text>
+            </TouchableOpacity>
 
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
+            <TouchableOpacity className="items-center">
+              <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mb-2">
+                <Ionicons
+                  name="help-circle-outline"
+                  size={20}
+                  color="#3B82F6"
+                />
+              </View>
+              <Text className="text-xs text-text-muted">Help</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity className="items-center">
+              <View className="w-12 h-12 rounded-full bg-orange-100 items-center justify-center mb-2">
+                <Ionicons name="share-outline" size={20} color="#F97316" />
+              </View>
+              <Text className="text-xs text-text-muted">Share</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Account Settings */}
+        <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <Text className="text-base font-semibold text-text-primary p-4 pb-2">
+            Account Settings
+          </Text>
+
+          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center flex-1">
+              <Ionicons name="person-outline" size={20} color="#6B7280" />
+              <Text className="text-sm text-text-primary ml-3">
+                Personal Information
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center flex-1">
               <Ionicons
                 name="notifications-outline"
-                size={24}
-                color="#4b5563"
+                size={20}
+                color="#6B7280"
               />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Push Notifications</Text>
-                <Text style={styles.settingDescription}>
-                  Receive workout reminders and updates
-                </Text>
-              </View>
+              <Text className="text-sm text-text-primary ml-3">
+                Notification Preferences
+              </Text>
             </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: "#e5e7eb", true: "#4f46e5" }}
-              thumbColor="#ffffff"
-            />
-          </View>
-
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="moon-outline" size={24} color="#4b5563" />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Dark Mode</Text>
-                <Text style={styles.settingDescription}>
-                  Switch between light and dark themes
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={darkModeEnabled}
-              onValueChange={setDarkModeEnabled}
-              trackColor={{ false: "#e5e7eb", true: "#4f46e5" }}
-              thumbColor="#ffffff"
-            />
-          </View>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="fitness-outline" size={24} color="#4b5563" />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Workout Preferences</Text>
-                <Text style={styles.settingDescription}>
-                  Update your workout settings
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="sync-outline" size={24} color="#4b5563" />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Data Synchronization</Text>
-                <Text style={styles.settingDescription}>
-                  Manage data syncing options
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.settingsGroup}>
-          <Text style={styles.groupTitle}>Support</Text>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="help-circle-outline" size={24} color="#4b5563" />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Help Center</Text>
-                <Text style={styles.settingDescription}>
-                  Get help with your fitness journey
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingInfo}>
+          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center flex-1">
               <Ionicons
-                name="document-text-outline"
-                size={24}
-                color="#4b5563"
+                name="phone-portrait-outline"
+                size={20}
+                color="#6B7280"
               />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Terms of Service</Text>
-                <Text style={styles.settingDescription}>
-                  Read our terms and conditions
-                </Text>
-              </View>
+              <Text className="text-sm text-text-primary ml-3">
+                Connected Devices & Apps
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            <View className="flex-row items-center">
+              <Text className="text-xs text-text-muted mr-2">3 connected</Text>
+              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingInfo}>
+          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center flex-1">
               <Ionicons
                 name="shield-checkmark-outline"
-                size={24}
-                color="#4b5563"
+                size={20}
+                color="#6B7280"
               />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Privacy Policy</Text>
-                <Text style={styles.settingDescription}>
-                  Learn how we protect your data
-                </Text>
-              </View>
+              <Text className="text-sm text-text-primary ml-3">
+                Privacy Settings
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center flex-1">
+              <Ionicons name="flag-outline" size={20} color="#6B7280" />
+              <Text className="text-sm text-text-primary ml-3">
+                Goals & Preferences
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.settingsGroup}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        {/* Fitness Preferences */}
+        <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+            Fitness Preferences
+          </Text>
+
+          {/* Preferred Workout Types */}
+          <View className="px-4 pb-3">
+            <Text className="text-sm font-medium text-text-primary mb-3">
+              Preferred Workout Types
+            </Text>
+            <View className="flex-row flex-wrap">
+              <View className="bg-primary rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-secondary">
+                  Strength Training
+                </Text>
+              </View>
+              <View className="bg-blue-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-blue-700">HIIT</Text>
+              </View>
+              <View className="bg-green-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-green-700">Yoga</Text>
+              </View>
+              <View className="bg-orange-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-orange-700">
+                  Walking
+                </Text>
+              </View>
+              <View className="bg-purple-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-purple-700">
+                  Cycling
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Fitness Goals */}
+          <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
+            <Text className="text-sm font-medium text-text-primary mb-3">
+              Fitness Goals
+            </Text>
+            <View className="flex-row flex-wrap">
+              <View className="bg-primary rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-secondary">
+                  Weight Loss
+                </Text>
+              </View>
+              <View className="bg-teal-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-teal-700">
+                  Muscle Gain
+                </Text>
+              </View>
+              <View className="bg-indigo-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-indigo-700">
+                  Endurance
+                </Text>
+              </View>
+              <View className="bg-pink-100 rounded-full px-3 py-1 mr-2 mb-2">
+                <Text className="text-xs font-medium text-pink-700">
+                  Flexibility
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Weekly Schedule */}
+        <View className="mx-6 mb-6 bg-white rounded-xl overflow-hidden">
+          <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+            Weekly Schedule
+          </Text>
+          <View className="flex-row justify-between px-4 pb-4">
+            {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+              <View
+                key={index}
+                className={`w-8 h-8 rounded-full items-center justify-center ${
+                  [0, 2, 4].includes(index)
+                    ? "bg-text-primary"
+                    : "bg-neutral-light-2"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-medium ${
+                    [0, 2, 4].includes(index) ? "text-white" : "text-text-muted"
+                  }`}
+                >
+                  {day}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Logout Button */}
+        <View className="mx-6 mb-8">
+          <TouchableOpacity
+            className="bg-white rounded-xl p-4 flex-row items-center justify-center"
+            onPress={handleLogout}
+          >
             <Ionicons
               name="log-out-outline"
               size={20}
-              color="#ef4444"
-              style={styles.logoutIcon}
+              color="#EF4444"
+              style={{ marginRight: 8 }}
             />
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text className="text-red-500 font-semibold">Log Out</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.versionInfo}>
-          <Text style={styles.versionText}>Masters Fit v1.0.0</Text>
+        {/* Version Info */}
+        <View className="items-center pb-8">
+          <Text className="text-xs text-text-muted">Masters Fit v1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  profileSection: {
-    padding: 24,
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#4f46e5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  userEmail: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  editProfileButton: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#4f46e5",
-    borderRadius: 20,
-  },
-  editProfileText: {
-    fontSize: 14,
-    color: "#4f46e5",
-    fontWeight: "600",
-  },
-  settingsGroup: {
-    marginTop: 20,
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    marginHorizontal: 16,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  groupTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginHorizontal: 16,
-    marginVertical: 12,
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-  },
-  settingInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  settingTextContainer: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    color: "#111827",
-    fontWeight: "500",
-  },
-  settingDescription: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-  },
-  logoutIcon: {
-    marginRight: 8,
-  },
-  logoutText: {
-    fontSize: 16,
-    color: "#ef4444",
-    fontWeight: "600",
-  },
-  versionInfo: {
-    alignItems: "center",
-    padding: 24,
-  },
-  versionText: {
-    fontSize: 14,
-    color: "#9ca3af",
-  },
-});

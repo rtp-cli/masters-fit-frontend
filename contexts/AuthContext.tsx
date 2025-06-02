@@ -26,8 +26,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isSigningUp: boolean;
+  isGeneratingWorkout: boolean;
   setIsSigningUp: (value: boolean) => void;
   setUserData: (user: User | null) => void;
+  setIsGeneratingWorkout: (value: boolean) => void;
   checkEmail: (
     email: string
   ) => Promise<{ success: boolean; needsOnboarding?: boolean }>;
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
 
   // Initialize user from secure storage on app start
   useEffect(() => {
@@ -140,12 +143,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userId: parseInt(pendingUserId),
       });
       if (result.success && result.user) {
-        setUser(result.user);
-        await saveUserToSecureStorage(result.user);
+        // Ensure needsOnboarding is set to false
+        const updatedUser = {
+          ...result.user,
+          needsOnboarding: false,
+        };
+        setUser(updatedUser);
+        await saveUserToSecureStorage(updatedUser);
         await SecureStore.deleteItemAsync("pendingEmail");
+        await SecureStore.deleteItemAsync("pendingUserId");
         return true;
       }
-      return false;
+      throw new Error("Onboarding API call failed");
     } catch (error) {
       console.error("Onboarding error:", error);
       return false;
@@ -169,7 +178,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Update user data
   const setUserData = (userData: User | null) => {
+    console.log("🔄 AuthContext - Setting user data:", userData);
     setUser(userData);
+    // Also save to SecureStore to maintain consistency
+    if (userData) {
+      saveUserToSecureStorage(userData);
+    }
   };
 
   // Create the context value object
@@ -178,8 +192,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isLoading,
     isSigningUp,
+    isGeneratingWorkout,
     setIsSigningUp,
     setUserData,
+    setIsGeneratingWorkout,
     checkEmail,
     signup,
     login,

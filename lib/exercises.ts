@@ -9,6 +9,7 @@ export interface Exercise {
   equipment: string[];
   instructions?: string;
   imageUrl?: string;
+  link?: string;
   difficulty: string;
   category?: string;
 }

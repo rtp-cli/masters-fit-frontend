@@ -2,6 +2,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
+  needsOnboarding?: boolean;
 }
 
 export interface AuthResponse {

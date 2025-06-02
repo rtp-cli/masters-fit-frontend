@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -107,8 +108,17 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="dark" />
+
+      {/* Header */}
+      <View className="flex-row items-center justify-center pt-5">
+        <Image
+          source={require("../../assets/logo.png")}
+          className="h-10 w-30"
+          resizeMode="contain"
+        />
+      </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header with back button */}
@@ -181,7 +191,7 @@ export default function LoginScreen() {
       </ScrollView>
 
       {/* Bottom button */}
-      <View className="px-lg pb-2xl pt-md bg-background">
+      <View className="px-lg pb-2xl pt-md bg-white">
         <TouchableOpacity
           className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
             isLoading ? "opacity-70" : ""

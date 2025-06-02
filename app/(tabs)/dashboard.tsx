@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   RefreshControl,
   ActivityIndicator,
@@ -10,17 +9,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { useDashboard, DashboardFilters } from "@hooks/useDashboard";
+import { useDashboard } from "@hooks/useDashboard";
 import { SimpleCircularProgress } from "@components/charts/CircularProgress";
 import { BarChart } from "@components/charts/BarChart";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
-import {
-  FilterSelector,
-  timeRangeOptions,
-  groupByOptions,
-} from "@components/FilterSelector";
 import { formatDate, formatNumber, getCurrentDate } from "@utils/index";
 import { fetchActiveWorkout } from "@lib/workouts";
 import {
@@ -44,42 +39,61 @@ const goalNames: Record<string, string> = {
 };
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const [filters, setFilters] = useState<DashboardFilters>({
-    timeRange: "1m",
-    groupBy: "exercise",
-  });
 
   // Today's schedule state
   const [todaysWorkout, setTodaysWorkout] =
     useState<PlanDayWithExercises | null>(null);
+  const [workoutInfo, setWorkoutInfo] = useState<{
+    name: string;
+    description: string;
+    startDate?: string;
+    endDate?: string;
+    planDays?: PlanDayWithExercises[];
+  } | null>(null);
   const [loadingToday, setLoadingToday] = useState(false);
 
   const {
-    dashboardData,
+    // Data
     weeklySummary,
     workoutConsistency,
     weightMetrics,
     weightAccuracy,
     goalProgress,
     totalVolumeMetrics,
+    dailyWorkoutProgress,
+
+    // State
     loading,
     error,
+
+    // Actions
+    fetchDashboardMetrics,
     refreshAllData,
   } = useDashboard(user?.id || 0);
 
   useEffect(() => {
     if (user?.id) {
-      refreshAllData(filters);
+      refreshAllData();
       fetchTodaysWorkout();
     }
-  }, [refreshAllData, filters, user?.id]);
+  }, [refreshAllData, user?.id]);
 
   const fetchTodaysWorkout = async () => {
     try {
       setLoadingToday(true);
       const workoutPlan = await fetchActiveWorkout();
       if (workoutPlan) {
+        // Store workout info (name and description are at workout level)
+        setWorkoutInfo({
+          name: workoutPlan.workout.name,
+          description: workoutPlan.workout.description,
+          startDate: workoutPlan.workout.startDate,
+          endDate: workoutPlan.workout.endDate,
+          planDays: workoutPlan.workout.planDays,
+        });
+
         const today = getCurrentDate();
         const todaysPlanDay = workoutPlan.workout.planDays.find(
           (day: PlanDayWithExercises) => {
@@ -98,13 +112,9 @@ export default function DashboardScreen() {
 
   const handleRefresh = () => {
     if (user?.id) {
-      refreshAllData(filters);
+      refreshAllData();
       fetchTodaysWorkout();
     }
-  };
-
-  const handleFilterChange = (key: keyof DashboardFilters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   if (error) {
@@ -114,15 +124,31 @@ export default function DashboardScreen() {
   // Show message if user is not authenticated
   if (!isAuthenticated || !user?.id) {
     return (
-      <SafeAreaView edges={["top"]} style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>
+      <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center py-12">
+          <Text className="text-base text-text-muted">
             Please log in to view your dashboard
           </Text>
         </View>
       </SafeAreaView>
     );
   }
+
+  // Calculate total workout duration
+  const totalDuration =
+    todaysWorkout?.exercises?.reduce((total, exercise) => {
+      return total + (exercise.duration || 0);
+    }, 0) || 0;
+
+  // Calculate workout completion rate for today
+  const todayCompletionRate = todaysWorkout?.exercises
+    ? todaysWorkout.exercises.reduce((sum, exercise) => {
+        // Use completed status instead of completionRate property
+        return sum + (exercise.completed ? 100 : 0);
+      }, 0) / todaysWorkout.exercises.length
+    : 0;
+
+  const isWorkoutCompleted = todayCompletionRate >= 100;
 
   // Prepare chart data
   const consistencyChartData = workoutConsistency.map((week) => ({
@@ -139,249 +165,329 @@ export default function DashboardScreen() {
   }));
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
+    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
       <ScrollView
-        style={styles.scrollView}
+        className="flex-1"
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>Dashboard</Text>
-          <Text style={styles.subtitle}>Your fitness progress at a glance</Text>
+        {/* Header with Streak */}
+        <View className="px-5 py-5 pt-3">
+          <View className="flex-row items-center justify-between mb-2">
+            <View>
+              <Text className="text-lg font-bold text-text-primary">
+                Hello, {user?.name || "User"}
+              </Text>
+              <Text className="text-sm text-text-muted mt-1">
+                {formatDate(new Date(), {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+            {weeklySummary && weeklySummary.streak > 0 && (
+              <View className="flex-row items-center bg-primary/10 px-3 py-2 rounded-full">
+                <Ionicons name="flame" size={16} color="#BBDE51" />
+                <Text className="text-sm font-bold text-secondary ml-2">
+                  {weeklySummary.streak} day streak
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
-        {loading && !dashboardData ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4f46e5" />
-            <Text style={styles.loadingText}>Loading your progress...</Text>
+        {loading && !totalVolumeMetrics ? (
+          <View className="flex-1 justify-center items-center py-12">
+            <ActivityIndicator size="large" color="#BBDE51" />
+            <Text className="mt-3 text-sm text-text-muted">
+              Loading your progress...
+            </Text>
           </View>
         ) : (
           <>
-            {/* Weekly Summary Card */}
-            {weeklySummary && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>This Week's Summary</Text>
-                <View style={styles.weeklySummaryCard}>
-                  <View style={styles.weeklyStatsRow}>
-                    <View style={styles.circularProgressContainer}>
-                      <SimpleCircularProgress
-                        size={80}
-                        strokeWidth={6}
-                        percentage={weeklySummary.workoutCompletionRate}
-                        color="#10b981"
-                      >
-                        <Text style={styles.percentageText}>
-                          {formatNumber(weeklySummary.workoutCompletionRate)}%
-                        </Text>
-                      </SimpleCircularProgress>
-                      <Text style={styles.progressLabel}>Workouts</Text>
-                    </View>
-
-                    <View style={styles.circularProgressContainer}>
-                      <SimpleCircularProgress
-                        size={80}
-                        strokeWidth={6}
-                        percentage={weeklySummary.exerciseCompletionRate}
-                        color="#3b82f6"
-                      >
-                        <Text style={styles.percentageText}>
-                          {formatNumber(weeklySummary.exerciseCompletionRate)}%
-                        </Text>
-                      </SimpleCircularProgress>
-                      <Text style={styles.progressLabel}>Exercises</Text>
-                    </View>
-
-                    <View style={styles.streakContainer}>
-                      <Text style={styles.streakNumber}>
-                        {weeklySummary.streak}
-                      </Text>
-                      <Text style={styles.streakLabel}>Day Streak</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.weeklyDetailsRow}>
-                    <View style={styles.weeklyDetail}>
-                      <Text style={styles.weeklyDetailNumber}>
-                        {weeklySummary.completedWorkoutsThisWeek}
-                      </Text>
-                      <Text style={styles.weeklyDetailLabel}>Completed</Text>
-                    </View>
-                    <View style={styles.weeklyDetail}>
-                      <Text style={styles.weeklyDetailNumber}>
-                        {weeklySummary.totalWorkoutsThisWeek}
-                      </Text>
-                      <Text style={styles.weeklyDetailLabel}>Planned</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Today's Schedule */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Today's Schedule</Text>
-              <View style={styles.todayScheduleCard}>
-                <View style={styles.todayHeader}>
-                  <View style={styles.todayDateContainer}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={20}
-                      color="#4f46e5"
-                    />
-                    <Text style={styles.todayDate}>
-                      {formatDate(new Date(), {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                      })}
+            {/* Today's Workout Card */}
+            <View className="px-5 mb-6">
+              <View className="bg-white rounded-2xl p-5 shadow-sm">
+                {/* Header with title and duration */}
+                <View className="flex-row items-center justify-between mb-6">
+                  <Text className="text-base font-bold text-text-primary">
+                    Today's Workout
+                  </Text>
+                  {todaysWorkout && totalDuration > 0 ? (
+                    <Text className="text-base font-semibold text-text-primary">
+                      {Math.floor(totalDuration / 60)} min
                     </Text>
-                  </View>
+                  ) : (
+                    <Text className="text-base font-semibold text-text-muted">
+                      Rest Day
+                    </Text>
+                  )}
                   {loadingToday && (
-                    <ActivityIndicator size="small" color="#4f46e5" />
+                    <ActivityIndicator size="small" color="#BBDE51" />
                   )}
                 </View>
 
                 {todaysWorkout ? (
-                  <View style={styles.workoutContainer}>
-                    <View style={styles.workoutHeader}>
-                      <View style={styles.workoutInfo}>
-                        <Text style={styles.workoutName}>
-                          {todaysWorkout.name || "Today's Workout"}
+                  <View>
+                    {/* Icon and workout details */}
+                    <View className="flex-row items-center mb-6">
+                      <View className="w-16 h-16 bg-primary rounded-full items-center justify-center mr-4">
+                        <Ionicons
+                          name="heart-outline"
+                          size={24}
+                          color="#181917"
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-base font-bold text-text-primary mb-1">
+                          {workoutInfo?.name || "Workout Session"}
                         </Text>
-                        <Text style={styles.workoutType}>
-                          {todaysWorkout.exercises?.length || 0} exercises
+                        <Text className="text-sm text-text-muted leading-5">
+                          {workoutInfo?.description ||
+                            `${
+                              todaysWorkout.exercises?.length || 0
+                            } exercises planned`}
                         </Text>
                       </View>
-                      <TouchableOpacity
-                        style={styles.startWorkoutButton}
-                        onPress={() => {
-                          // Navigate to workout screen - you can add navigation here
-                          Alert.alert("Workout", "Navigate to workout screen");
-                        }}
-                      >
-                        <Ionicons name="play" size={16} color="white" />
-                        <Text style={styles.startWorkoutText}>Start</Text>
-                      </TouchableOpacity>
                     </View>
 
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.exerciseScroll}
-                    >
-                      {todaysWorkout.exercises
-                        ?.slice(0, 5)
-                        .map(
-                          (
-                            planExercise: PlanDayWithExercise,
-                            index: number
-                          ) => (
-                            <View key={index} style={styles.exercisePreview}>
-                              <Text
-                                style={styles.exerciseName}
-                                numberOfLines={2}
-                              >
-                                {planExercise.exercise?.name || "Exercise"}
-                              </Text>
-                              <Text style={styles.exerciseDetails}>
-                                {planExercise.sets}×{planExercise.reps}
-                                {planExercise.weight &&
-                                  planExercise.weight > 0 &&
-                                  ` @ ${planExercise.weight}lbs`}
-                              </Text>
-                            </View>
-                          )
-                        )}
-                      {(todaysWorkout.exercises?.length || 0) > 5 && (
-                        <View style={styles.exercisePreview}>
-                          <Text style={styles.exerciseName}>
-                            +{(todaysWorkout.exercises?.length || 0) - 5} more
+                    {/* Action button */}
+                    {isWorkoutCompleted ? (
+                      <View className="bg-accent/10 border border-accent/20 rounded-xl p-4 flex-row items-center">
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={24}
+                          color="#10B981"
+                        />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-sm font-semibold text-accent">
+                            Workout Completed!
+                          </Text>
+                          <Text className="text-xs text-accent/70">
+                            Great job! {formatNumber(todayCompletionRate)}%
+                            completed
                           </Text>
                         </View>
-                      )}
-                    </ScrollView>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        className="bg-secondary rounded-xl p-4 items-center"
+                        onPress={() => {
+                          router.push("/workout");
+                        }}
+                      >
+                        <Text className="text-white font-semibold text-sm">
+                          Start Workout
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 ) : (
-                  <View style={styles.noWorkoutContainer}>
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={48}
-                      color="#10b981"
-                    />
-                    <Text style={styles.noWorkoutTitle}>
-                      No workout scheduled
+                  <View className="items-center py-8">
+                    <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
+                      <Ionicons name="bed-outline" size={24} color="#8A93A2" />
+                    </View>
+                    <Text className="text-base font-semibold text-text-primary mb-2">
+                      Rest Day
                     </Text>
-                    <Text style={styles.noWorkoutSubtitle}>
-                      Enjoy your rest day or plan a new workout!
+                    <Text className="text-sm text-text-muted text-center">
+                      Recovery is just as important as training
                     </Text>
                   </View>
                 )}
               </View>
             </View>
 
-            {/* Filters */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Analytics Filters</Text>
-              <View style={styles.filtersCard}>
-                <FilterSelector
-                  title="Time Range"
-                  options={timeRangeOptions}
-                  selectedValue={filters.timeRange || "1m"}
-                  onSelect={(value) => handleFilterChange("timeRange", value)}
-                />
-                <FilterSelector
-                  title="Group Weight Metrics By"
-                  options={groupByOptions}
-                  selectedValue={filters.groupBy || "exercise"}
-                  onSelect={(value) => handleFilterChange("groupBy", value)}
-                />
-              </View>
-            </View>
+            {/* Weekly Progress */}
+            {weeklySummary && (
+              <View className="px-5 mb-6">
+                <Text className="text-base font-semibold text-text-primary mb-4">
+                  Weekly Progress
+                </Text>
+                <View className="bg-white rounded-2xl p-5 shadow-sm">
+                  {/* Stats Row */}
+                  {/* <View className="flex-row justify-around mb-6 pb-4 border-b border-neutral-light-2">
+                    <View className="items-center">
+                      <Text className="text-lg font-bold text-accent">
+                        {weeklySummary.completedWorkoutsThisWeek}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Completed</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-lg font-bold text-text-primary">
+                        {weeklySummary.totalWorkoutsThisWeek}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Planned</Text>
+                    </View>
+                  </View> */}
 
-            {/* Workout Consistency Chart */}
-            {workoutConsistency.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Workout Consistency</Text>
-                <View style={styles.chartCard}>
-                  <Text style={styles.chartSubtitle}>
-                    Weekly completion rates over time
-                  </Text>
-                  <BarChart
-                    data={consistencyChartData}
-                    height={200}
-                    maxValue={100}
-                    color="#8b5cf6"
-                  />
+                  {/* Chart Section */}
+                  <View className="mb-4">
+                    <View
+                      className="flex-row justify-between items-end mb-4"
+                      style={{ height: 120 }}
+                    >
+                      {(() => {
+                        // Get the actual workout start date from the API response
+                        let weekStartDate = new Date();
+
+                        // Use the actual workout start date from the API response
+                        if (workoutInfo?.startDate) {
+                          weekStartDate = new Date(workoutInfo.startDate);
+                        } else if (todaysWorkout?.date) {
+                          // Fallback: use today's workout date and calculate Monday of that week
+                          const workoutDate = new Date(todaysWorkout.date);
+                          weekStartDate = new Date(workoutDate);
+                          const dayOfWeek = workoutDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                          const daysFromMonday =
+                            dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Sunday
+                          weekStartDate.setDate(
+                            workoutDate.getDate() - daysFromMonday
+                          );
+                        } else {
+                          // Final fallback: show the current week starting from Monday
+                          const today = new Date();
+                          const dayOfWeek = today.getDay();
+                          const daysFromMonday =
+                            dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                          weekStartDate.setDate(
+                            today.getDate() - daysFromMonday
+                          );
+                        }
+
+                        const workout7Days = [];
+                        const dayNames = [
+                          "Mon", // Start with Monday
+                          "Tue",
+                          "Wed",
+                          "Thu",
+                          "Fri",
+                          "Sat",
+                          "Sun", // End with Sunday
+                        ];
+
+                        for (let i = 0; i < 7; i++) {
+                          const date = new Date(weekStartDate);
+                          date.setDate(weekStartDate.getDate() + i);
+                          const dayName = dayNames[i]; // Use array index since we're starting from Monday
+                          const dateStr = date.toISOString().split("T")[0];
+                          const today = new Date();
+                          const todayStr = today.toISOString().split("T")[0];
+
+                          // Find corresponding data from dailyWorkoutProgress instead of workoutConsistency
+                          const dayData = dailyWorkoutProgress.find((day) => {
+                            return day.date === dateStr;
+                          });
+
+                          // Check if there's a planned workout for this day
+                          const hasPlannedWorkout =
+                            dayData?.hasPlannedWorkout || false;
+
+                          const isToday = dateStr === todayStr;
+                          const isFuture = date > today;
+
+                          let completionRate = 0;
+                          let status = "incomplete";
+
+                          if (dayData) {
+                            completionRate = dayData.completionRate;
+                            if (completionRate === 100) status = "complete";
+                            else if (completionRate > 0) status = "partial";
+                          } else if (!hasPlannedWorkout) {
+                            status = "rest";
+                          } else if (isFuture) {
+                            status = "upcoming";
+                          }
+
+                          workout7Days.push({
+                            dayName,
+                            dateStr,
+                            completionRate,
+                            status,
+                            isToday,
+                            isFuture,
+                          });
+                        }
+
+                        const FULL_HEIGHT = 100; // Full bar height in pixels
+                        const BASE_HEIGHT = 20; // Base height for incomplete/upcoming days
+
+                        return workout7Days.map((day, index) => (
+                          <View
+                            key={index}
+                            className="items-center flex-1 mx-1"
+                          >
+                            <View className="flex-1 justify-end mb-2">
+                              <View
+                                className="w-8 rounded-lg"
+                                style={{
+                                  height:
+                                    day.status === "rest"
+                                      ? FULL_HEIGHT // Rest days are full height
+                                      : day.status === "upcoming" ||
+                                        day.status === "incomplete"
+                                      ? BASE_HEIGHT // Base height for incomplete/upcoming
+                                      : Math.max(
+                                          (day.completionRate / 100) *
+                                            FULL_HEIGHT,
+                                          BASE_HEIGHT
+                                        ), // Proportional to completion
+                                  backgroundColor:
+                                    day.status === "complete"
+                                      ? "#10B981" // Complete - Green
+                                      : day.status === "partial"
+                                      ? "#FCD34D" // Partial - Yellow
+                                      : day.status === "rest"
+                                      ? "#000000" // Rest - Black
+                                      : "#9CA3AF", // Upcoming/Incomplete - Grey
+                                }}
+                              />
+                            </View>
+                            <Text
+                              className={`text-xs font-medium mb-1 ${
+                                day.isToday
+                                  ? "text-primary"
+                                  : "text-text-primary"
+                              }`}
+                            >
+                              {day.dayName}
+                            </Text>
+                            {day.status === "rest" ? (
+                              <Text className="text-xs text-primary font-medium">
+                                Rest
+                              </Text>
+                            ) : day.status === "upcoming" ? (
+                              <Text className="text-xs text-text-muted">-</Text>
+                            ) : day.completionRate > 0 ? (
+                              <Text className="text-xs text-accent font-medium">
+                                {Math.round(day.completionRate)}%
+                              </Text>
+                            ) : (
+                              <Text className="text-xs text-text-muted">
+                                0%
+                              </Text>
+                            )}
+                          </View>
+                        ));
+                      })()}
+                    </View>
+                  </View>
                 </View>
               </View>
             )}
 
-            {/* Weight Metrics Chart */}
-            {weightMetrics.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Total Weight Lifted</Text>
-                <View style={styles.chartCard}>
-                  <Text style={styles.chartSubtitle}>
-                    Top exercises by total weight (sets × reps × weight)
-                  </Text>
-                  <BarChart
-                    data={weightChartData}
-                    height={200}
-                    color="#f59e0b"
-                  />
-                </View>
-              </View>
-            )}
-
-            {/* Total Volume Chart (Strength Progress) */}
+            {/* Total Volume Chart */}
             {totalVolumeMetrics && totalVolumeMetrics.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Strength Progress</Text>
-                <View style={styles.chartCard}>
-                  <Text style={styles.chartSubtitle}>
-                    Total volume over time (sets × reps × weight)
+              <View className="px-5 mb-6">
+                <Text className="text-base font-semibold text-text-primary mb-4">
+                  Strength Progress
+                </Text>
+                <View className="bg-white rounded-2xl p-4 shadow-sm">
+                  <Text className="text-xs text-text-muted mb-4">
+                    Total volume lifted over time (sets × reps × weight)
                   </Text>
                   <LineChart
                     data={totalVolumeMetrics.map((metric) => ({
@@ -390,128 +496,248 @@ export default function DashboardScreen() {
                       date: metric.date,
                     }))}
                     height={200}
-                    color="#10b981"
+                    color="#BBDE51"
                   />
-                  <Text style={styles.chartNote}>
-                    Shows your strength progression over time
-                  </Text>
+                  <View className="flex-row justify-around mt-4 pt-4 border-t border-neutral-light-2">
+                    <View className="items-center">
+                      <Text className="text-base font-bold text-text-primary">
+                        {formatNumber(
+                          totalVolumeMetrics[totalVolumeMetrics.length - 1]
+                            ?.totalVolume || 0
+                        )}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Latest</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-base font-bold text-accent">
+                        {formatNumber(
+                          Math.max(
+                            ...totalVolumeMetrics.map((m) => m.totalVolume)
+                          )
+                        )}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Peak</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-base font-bold text-primary">
+                        {formatNumber(
+                          totalVolumeMetrics.reduce(
+                            (sum, m) => sum + m.totalVolume,
+                            0
+                          ) / totalVolumeMetrics.length
+                        )}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Average</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             )}
 
             {/* Weight Accuracy */}
-            {weightAccuracy && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Weight Accuracy</Text>
-                <View style={styles.card}>
-                  {weightAccuracy.hasPlannedWeights ? (
-                    <>
-                      <View style={styles.accuracyHeader}>
-                        <SimpleCircularProgress
-                          size={80}
-                          percentage={weightAccuracy.accuracyRate}
-                          strokeWidth={8}
-                          color="#10b981"
-                          backgroundColor="#e5e7eb"
-                        >
-                          <Text style={styles.accuracyRate}>
-                            {formatNumber(weightAccuracy.accuracyRate)}%
-                          </Text>
-                          <Text style={styles.accuracyLabel}>Accuracy</Text>
-                        </SimpleCircularProgress>
-                        <View style={styles.accuracyStats}>
-                          <Text style={styles.accuracyStatNumber}>
-                            {weightAccuracy.totalSets}
-                          </Text>
-                          <Text style={styles.accuracyStatLabel}>
-                            Total Sets
-                          </Text>
-                        </View>
+            {weightAccuracy && weightAccuracy.hasPlannedWeights && (
+              <View className="px-5 mb-6">
+                <Text className="text-base font-semibold text-text-primary mb-4">
+                  Weight Accuracy
+                </Text>
+                <View className="bg-white rounded-2xl p-5 shadow-sm">
+                  <View className="flex-row items-center mb-5">
+                    <View className="mr-5">
+                      <View className="items-center mb-3">
+                        <Text className="text-2xl font-bold text-text-primary">
+                          {formatNumber(weightAccuracy.accuracyRate)}%
+                        </Text>
+                        <Text className="text-sm text-text-muted">
+                          Accuracy
+                        </Text>
                       </View>
-
-                      {/* Weight Accuracy Pie Chart */}
-                      {weightAccuracy.chartData &&
-                        weightAccuracy.chartData.length > 0 && (
-                          <View style={styles.chartContainer}>
-                            <Text style={styles.chartSubtitle}>
-                              How often you follow the prescribed weights
-                            </Text>
-                            <PieChart
-                              data={weightAccuracy.chartData}
-                              size={200}
-                              showPercentages={true}
-                            />
-                          </View>
-                        )}
-
-                      <Text style={styles.accuracyNote}>
-                        Avg difference:{" "}
-                        {formatNumber(weightAccuracy.avgWeightDifference, 1)}{" "}
-                        lbs
-                      </Text>
-                    </>
-                  ) : (
-                    <View style={styles.noWeightAccuracyContainer}>
-                      <View style={styles.noWeightAccuracyIcon}>
-                        <Text style={styles.noWeightAccuracyEmoji}>⚖️</Text>
-                      </View>
-                      <Text style={styles.noWeightAccuracyTitle}>
-                        Weight Accuracy Not Available
-                      </Text>
-                      <Text style={styles.noWeightAccuracyMessage}>
-                        {weightAccuracy.hasExerciseData
-                          ? "Your workout plan doesn't specify target weights, so we can't track weight accuracy. Keep logging your workouts!"
-                          : "Start logging exercises with weights to see your accuracy metrics."}
+                      <Text className="text-xs text-text-muted text-center">
+                        Followed plan exactly
                       </Text>
                     </View>
-                  )}
+                    <View className="flex-1">
+                      {weightAccuracy.chartData &&
+                        weightAccuracy.chartData.length > 0 && (
+                          <PieChart
+                            data={weightAccuracy.chartData.filter(
+                              (item) => item.label !== "✅ Followed Plan"
+                            )}
+                            size={100}
+                          />
+                        )}
+                    </View>
+                  </View>
+                  <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
+                    <View className="items-center">
+                      <Text className="text-sm font-bold text-accent">
+                        {weightAccuracy.exactMatches}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Exact</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-sm font-bold text-orange-500">
+                        {weightAccuracy.higherWeight}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Above</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-sm font-bold text-red-500">
+                        {weightAccuracy.lowerWeight}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Below</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-sm font-bold text-text-primary">
+                        {weightAccuracy.totalSets}
+                      </Text>
+                      <Text className="text-xs text-text-muted">Total</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             )}
 
+            {/* Workout Summary Stats */}
+            <View className="px-5 mb-6">
+              <Text className="text-base font-semibold text-text-primary mb-4">
+                Workout Summary
+              </Text>
+              <View className="bg-white rounded-2xl p-5 shadow-sm">
+                <View className="flex-row justify-around">
+                  <View className="items-center">
+                    <Text className="text-lg font-bold text-primary">
+                      {formatNumber(
+                        goalProgress.reduce((sum, g) => sum + g.totalSets, 0) /
+                          4
+                      )}
+                    </Text>
+                    <Text className="text-xs text-text-muted text-center">
+                      Avg Sets/Goal
+                    </Text>
+                  </View>
+                  <View className="items-center">
+                    <Text className="text-lg font-bold text-accent">
+                      {formatNumber(
+                        goalProgress.reduce((sum, g) => sum + g.totalReps, 0) /
+                          4
+                      )}
+                    </Text>
+                    <Text className="text-xs text-text-muted text-center">
+                      Avg Reps/Goal
+                    </Text>
+                  </View>
+                  <View className="items-center">
+                    <Text className="text-lg font-bold text-secondary">
+                      {formatNumber(
+                        goalProgress.reduce(
+                          (sum, g) => sum + g.totalWeight,
+                          0
+                        ) / 1000,
+                        1
+                      )}{" "}
+                      lbs
+                    </Text>
+                    <Text className="text-xs text-text-muted text-center">
+                      Total Weight
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
             {/* Goal Progress */}
             {goalProgress.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Goal Progress</Text>
-                <View style={styles.goalsContainer}>
-                  {goalProgress.map((goal, index) => (
-                    <View key={index} style={styles.goalCard}>
-                      <View style={styles.goalHeader}>
-                        <Text style={styles.goalName}>
-                          {goalNames[goal.goal] || goal.goal}
-                        </Text>
-                        <Text style={styles.goalScore}>
-                          {goal.progressScore}%
-                        </Text>
+              <View className="px-5 mb-6">
+                <Text className="text-base font-semibold text-text-primary mb-4">
+                  Goals
+                </Text>
+                <View className="space-y-3">
+                  {goalProgress.slice(0, 4).map((goal, index) => (
+                    <View
+                      key={index}
+                      className="bg-white rounded-2xl p-5 shadow-sm"
+                    >
+                      <View className="flex-row items-center justify-between mb-4">
+                        <View className="flex-row items-center">
+                          <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mr-3">
+                            <Ionicons
+                              name={
+                                goal.goal === "weight_loss"
+                                  ? "trending-down"
+                                  : goal.goal === "muscle_gain"
+                                  ? "trending-up"
+                                  : goal.goal === "strength"
+                                  ? "barbell"
+                                  : "fitness"
+                              }
+                              size={18}
+                              color="#BBDE51"
+                            />
+                          </View>
+                          <View>
+                            <Text className="text-sm font-semibold text-text-primary">
+                              {goalNames[goal.goal] || goal.goal}
+                            </Text>
+                            <Text className="text-xs text-text-muted">
+                              {goal.completedWorkouts} workouts completed
+                            </Text>
+                          </View>
+                        </View>
+                        <View className="items-end">
+                          <Text className="text-base font-bold text-secondary">
+                            {goal.progressScore}%
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Progress
+                          </Text>
+                        </View>
                       </View>
 
-                      <View style={styles.goalProgressBar}>
+                      <View className="h-2 bg-neutral-light-2 rounded-full mb-4 overflow-hidden">
                         <View
-                          style={[
-                            styles.goalProgressFill,
-                            { width: `${goal.progressScore}%` },
-                          ]}
+                          className="h-full bg-secondary rounded-full"
+                          style={{ width: `${goal.progressScore}%` }}
                         />
                       </View>
 
-                      <View style={styles.goalStats}>
-                        <View style={styles.goalStat}>
-                          <Text style={styles.goalStatNumber}>
-                            {goal.completedWorkouts}
-                          </Text>
-                          <Text style={styles.goalStatLabel}>Workouts</Text>
-                        </View>
-                        <View style={styles.goalStat}>
-                          <Text style={styles.goalStatNumber}>
-                            {formatNumber(goal.totalWeight / 1000, 1)}k
-                          </Text>
-                          <Text style={styles.goalStatLabel}>lbs Total</Text>
-                        </View>
-                        <View style={styles.goalStat}>
-                          <Text style={styles.goalStatNumber}>
+                      <View className="flex-row justify-around">
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-text-primary">
                             {goal.totalSets}
                           </Text>
-                          <Text style={styles.goalStatLabel}>Sets</Text>
+                          <Text className="text-xs text-text-muted">Sets</Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-text-primary">
+                            {goal.totalWeight >= 1000
+                              ? `${formatNumber(goal.totalWeight / 1000, 1)}`
+                              : formatNumber(goal.totalWeight)}{" "}
+                            lbs
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Total Weight
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-accent">
+                            {goal.completedWorkouts > 0
+                              ? goal.totalWeight / goal.completedWorkouts >=
+                                1000
+                                ? `${formatNumber(
+                                    goal.totalWeight /
+                                      goal.completedWorkouts /
+                                      1000,
+                                    1
+                                  )}`
+                                : formatNumber(
+                                    goal.totalWeight / goal.completedWorkouts
+                                  )
+                              : "0"}{" "}
+                            lbs
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Avg/Workout
+                          </Text>
                         </View>
                       </View>
                     </View>
@@ -525,370 +751,3 @@ export default function DashboardScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#6b7280",
-  },
-  section: {
-    marginBottom: 24,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  weeklySummaryCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  weeklyStatsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  circularProgressContainer: {
-    alignItems: "center",
-  },
-  percentageText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 8,
-  },
-  streakContainer: {
-    alignItems: "center",
-  },
-  streakNumber: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#ef4444",
-  },
-  streakLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  weeklyDetailsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
-  },
-  weeklyDetail: {
-    alignItems: "center",
-  },
-  weeklyDetailNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#4f46e5",
-  },
-  weeklyDetailLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  filtersCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  chartCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  chartSubtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  accuracyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  accuracyRate: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  accuracyLabel: {
-    fontSize: 10,
-    color: "#6b7280",
-  },
-  accuracyStats: {
-    marginLeft: 20,
-    alignItems: "center",
-  },
-  accuracyStatNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#4f46e5",
-  },
-  accuracyStatLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  chartContainer: {
-    marginBottom: 16,
-  },
-  accuracyNote: {
-    fontSize: 12,
-    color: "#6b7280",
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-  goalsContainer: {
-    gap: 12,
-  },
-  goalCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  goalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  goalName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  goalScore: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4f46e5",
-  },
-  goalProgressBar: {
-    height: 8,
-    backgroundColor: "#e5e7eb",
-    borderRadius: 4,
-    marginBottom: 16,
-    overflow: "hidden",
-  },
-  goalProgressFill: {
-    height: "100%",
-    backgroundColor: "#4f46e5",
-    borderRadius: 4,
-  },
-  goalStats: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  goalStat: {
-    alignItems: "center",
-  },
-  goalStatNumber: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#374151",
-  },
-  goalStatLabel: {
-    fontSize: 11,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-  todayScheduleCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  todayHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  todayDateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  todayDate: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-    marginLeft: 8,
-  },
-  workoutContainer: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  workoutHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  workoutInfo: {
-    flexDirection: "column",
-  },
-  workoutName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  workoutType: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  startWorkoutButton: {
-    backgroundColor: "#4f46e5",
-    borderRadius: 8,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  startWorkoutText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "white",
-    marginLeft: 8,
-  },
-  exerciseScroll: {
-    marginTop: 16,
-  },
-  exercisePreview: {
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    padding: 12,
-    marginRight: 12,
-  },
-  exerciseName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  exerciseDetails: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  noWorkoutContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  noWorkoutTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginTop: 16,
-  },
-  noWorkoutSubtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "center",
-  },
-  chartNote: {
-    fontSize: 12,
-    color: "#6b7280",
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-  noWeightAccuracyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  noWeightAccuracyIcon: {
-    marginBottom: 16,
-  },
-  noWeightAccuracyEmoji: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#6b7280",
-  },
-  noWeightAccuracyTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginTop: 16,
-  },
-  noWeightAccuracyMessage: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "center",
-  },
-});

@@ -55,6 +55,12 @@ export interface TotalVolumeMetrics {
   label: string;
 }
 
+export interface DailyWorkoutProgress {
+  date: string;
+  completionRate: number;
+  hasPlannedWorkout: boolean;
+}
+
 export interface DashboardMetrics {
   weeklySummary: WeeklySummary;
   workoutConsistency: WorkoutConsistency[];
@@ -62,6 +68,7 @@ export interface DashboardMetrics {
   weightAccuracy: WeightAccuracyMetrics;
   goalProgress: GoalProgress[];
   totalVolumeMetrics: TotalVolumeMetrics[];
+  dailyWorkoutProgress: DailyWorkoutProgress[];
 }
 
 export interface DashboardFilters {
@@ -87,6 +94,9 @@ export const useDashboard = (userId: number) => {
   const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
   const [totalVolumeMetrics, setTotalVolumeMetrics] = useState<
     TotalVolumeMetrics[]
+  >([]);
+  const [dailyWorkoutProgress, setDailyWorkoutProgress] = useState<
+    DailyWorkoutProgress[]
   >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +127,7 @@ export const useDashboard = (userId: number) => {
           setWeightAccuracy(data.data.weightAccuracy);
           setGoalProgress(data.data.goalProgress);
           setTotalVolumeMetrics(data.data.totalVolumeMetrics);
+          setDailyWorkoutProgress(data.data.dailyWorkoutProgress);
         } else {
           throw new Error("Failed to fetch dashboard metrics");
         }
@@ -271,6 +282,33 @@ export const useDashboard = (userId: number) => {
     [userId]
   );
 
+  const fetchDailyWorkoutProgress = useCallback(
+    async (filters?: DashboardFilters) => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const data = await apiRequest<{
+          success: boolean;
+          data: DailyWorkoutProgress[];
+        }>(
+          `/dashboard/${userId}/daily-workout-progress?${queryParams.toString()}`
+        );
+
+        if (data.success) {
+          setDailyWorkoutProgress(data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching daily workout progress:", err);
+      }
+    },
+    [userId]
+  );
+
   const refreshAllData = useCallback(
     (filters?: DashboardFilters) => {
       fetchDashboardMetrics(filters);
@@ -287,6 +325,7 @@ export const useDashboard = (userId: number) => {
     weightAccuracy,
     goalProgress,
     totalVolumeMetrics,
+    dailyWorkoutProgress,
 
     // State
     loading,
@@ -300,6 +339,7 @@ export const useDashboard = (userId: number) => {
     fetchWeightAccuracy,
     fetchGoalProgress,
     fetchTotalVolumeMetrics,
+    fetchDailyWorkoutProgress,
     refreshAllData,
   };
 };

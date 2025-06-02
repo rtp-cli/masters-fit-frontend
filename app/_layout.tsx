@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { AuthProvider } from "@contexts/AuthContext";
+import DebugButton from "../components/DebugButton";
 import "../global.css";
 
 export default function RootLayout() {

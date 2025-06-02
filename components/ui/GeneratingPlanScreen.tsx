@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface GeneratingPlanScreenProps {
   onComplete?: () => void;
@@ -8,49 +9,138 @@ interface GeneratingPlanScreenProps {
 export default function GeneratingPlanScreen({
   onComplete,
 }: GeneratingPlanScreenProps) {
-  const [currentMessage, setCurrentMessage] = useState(
-    "Analyzing your profile..."
-  );
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const messages = [
-    "Analyzing your profile...",
-    "Matching with optimal exercises...",
-    "Creating your personalized plan...",
-    "Finalizing recommendations...",
+    {
+      text: "Analyzing your profile...",
+      icon: "person-outline" as const,
+      description: "Reviewing your fitness goals and preferences",
+    },
+    {
+      text: "Matching optimal exercises...",
+      icon: "fitness-outline" as const,
+      description: "Finding the best exercises for your fitness level",
+    },
+    {
+      text: "Creating your schedule...",
+      icon: "calendar-outline" as const,
+      description: "Building a weekly plan that fits your availability",
+    },
+    {
+      text: "Finalizing your plan...",
+      icon: "checkmark-circle-outline" as const,
+      description: "Putting the finishing touches on your workout",
+    },
   ];
 
   useEffect(() => {
-    let messageIndex = 0;
     const interval = setInterval(() => {
-      messageIndex = (messageIndex + 1) % messages.length;
-      setCurrentMessage(messages[messageIndex]);
-    }, 2000); // Change message every 2 seconds
+      setCurrentMessageIndex((prev) => {
+        const next = (prev + 1) % messages.length;
+        setProgress(((next + 1) / messages.length) * 100);
+        return next;
+      });
+    }, 2500); // Change message every 2.5 seconds
 
     return () => clearInterval(interval);
   }, []);
 
+  const currentMessage = messages[currentMessageIndex];
+
   return (
-    <View className="flex-1 bg-neutral-light-1 justify-center items-center px-6">
-      {/* Loading Spinner */}
-      <View className="mb-8">
-        <ActivityIndicator size="large" color="#BBDE51" />
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </View>
 
-      {/* Title */}
-      <Text className="text-2xl font-bold text-neutral-dark-1 text-center mb-4">
-        Creating Your Custom Plan
-      </Text>
+      <View style={styles.content}>
+        {/* Title */}
+        <Text style={styles.title}>Creating Your Custom Plan</Text>
 
-      {/* Subtitle */}
-      <Text className="text-base text-neutral-medium-4 text-center mb-8">
-        Claude is analyzing your profile and generating a personalized fitness
-        plan just for you.
-      </Text>
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>
+          Our AI is analyzing your profile and generating a personalized fitness
+          plan tailored specifically for you.
+        </Text>
 
-      {/* Current Status */}
-      <Text className="text-sm text-neutral-medium-4 text-center">
-        {currentMessage}
-      </Text>
+        {/* Loading Spinner - Centered */}
+        <View style={styles.spinnerContainer}>
+          <ActivityIndicator size="large" color="#BBDE51" />
+        </View>
+
+        {/* Current Status - Below spinner as smaller text */}
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>{currentMessage.text}</Text>
+          <Text style={styles.statusDescription}>
+            {currentMessage.description}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  logo: {
+    height: 40,
+    width: 120,
+  },
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#171717",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#737373",
+    textAlign: "center",
+    marginBottom: 48,
+    lineHeight: 24,
+  },
+  spinnerContainer: {
+    marginBottom: 24,
+  },
+  statusContainer: {
+    alignItems: "center",
+    maxWidth: 280,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#525252",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  statusDescription: {
+    fontSize: 12,
+    color: "#737373",
+    textAlign: "center",
+    lineHeight: 16,
+  },
+});

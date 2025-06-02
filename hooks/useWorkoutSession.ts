@@ -35,6 +35,7 @@ export interface UseWorkoutSessionReturn {
   updateExerciseData: (field: keyof ExerciseSessionData, value: any) => void;
   moveToNextExercise: () => void;
   resetSession: () => void;
+  refreshWorkout: () => Promise<void>;
 
   // Computed values
   currentExercise: PlanDayWithExercise | undefined;
@@ -90,7 +91,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     try {
       setIsLoading(true);
       const response = await fetchActiveWorkout();
-      console.log("Full API response:", response);
+      console.log("🔄 Full API response:", response);
 
       if (
         response &&
@@ -99,27 +100,53 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         response.workout.planDays.length > 0
       ) {
         const workout = response.workout;
-        console.log("Workout data:", workout);
-        console.log("Plan days:", workout.planDays);
+        console.log("📅 Workout data:", workout);
+        console.log("📋 Plan days:", workout.planDays);
 
         // Find today's plan day (similar to calendar logic)
         const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format
-        console.log("Today's date:", today);
+        console.log("🗓️  Today's date:", today);
+        console.log(
+          "🌍 Timezone:",
+          Intl.DateTimeFormat().resolvedOptions().timeZone
+        );
+
+        // Debug all plan days
+        workout.planDays.forEach((day: any, index: number) => {
+          const planDate = new Date(day.date).toLocaleDateString("en-CA");
+          console.log(`📆 Plan day ${index}:`, {
+            originalDate: day.date,
+            formattedDate: planDate,
+            matchesToday: planDate === today,
+            isCompleted: day.completed,
+          });
+        });
 
         const todaysPlan = workout.planDays.find((day: any) => {
           const planDate = new Date(day.date).toLocaleDateString("en-CA");
-          console.log("Comparing plan date:", planDate, "with today:", today);
+          console.log(
+            "🔍 Comparing plan date:",
+            planDate,
+            "with today:",
+            today
+          );
           return planDate === today;
         });
 
         if (!todaysPlan) {
-          console.log("No workout plan found for today");
+          console.log("❌ No workout plan found for today");
+          console.log(
+            "Available dates:",
+            workout.planDays.map((day: any) =>
+              new Date(day.date).toLocaleDateString("en-CA")
+            )
+          );
           setActiveWorkout(null);
           setIsLoading(false);
           return;
         }
 
-        console.log("Today's plan:", todaysPlan);
+        console.log("✅ Today's plan found:", todaysPlan);
 
         setActiveWorkout(todaysPlan);
 
@@ -140,21 +167,43 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
           })
         );
         setExerciseData(initialData);
-        console.log("Initialized exercise data:", initialData);
+        console.log("💪 Initialized exercise data:", initialData);
 
         // Check for existing logs and resume if needed
         await checkExistingLogs(todaysPlan, initialData);
       } else {
-        console.log("No workout data found in response");
+        console.log("❌ No workout data found in response");
         setActiveWorkout(null);
       }
     } catch (error) {
-      console.error("Error loading active workout:", error);
+      console.error("❌ Error loading active workout:", error);
       setActiveWorkout(null);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Refresh function that can be called externally
+  const refreshWorkout = useCallback(async () => {
+    console.log("🔄 Refreshing workout...");
+
+    // Clear current state first
+    setActiveWorkout(null);
+    setExerciseData([]);
+    setCurrentExerciseIndex(0);
+    setExerciseTimer(0);
+    setWorkoutTimer(0);
+    setIsWorkoutActive(false);
+
+    // Clear any running timers
+    if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
+    if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+    workoutStartTime.current = null;
+    exerciseStartTime.current = null;
+
+    // Load fresh data
+    await loadActiveWorkout();
+  }, []);
 
   const checkExistingLogs = async (
     planDay: PlanDayWithExercises,
@@ -338,40 +387,20 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       if (!activeWorkout) return false;
 
       try {
-        // Get the current completed exercises from the workout log
-        const completedData = await getCompletedExercises(
-          activeWorkout.workoutId
-        );
-        const completedExerciseIds = completedData.completedExercises || [];
+        // Calculate total time
+        const totalTime = workoutTimer;
 
-        // Determine completion based on whether ALL exercises are completed
-        const totalExerciseIds = activeWorkout.exercises.map((ex) => ex.id);
-        const allExercisesCompleted = totalExerciseIds.every((id) =>
-          completedExerciseIds.includes(id)
-        );
-
-        console.log("Ending workout:", {
-          totalExercises: totalExerciseIds.length,
-          completedExercises: completedExerciseIds.length,
-          isComplete: allExercisesCompleted,
-          completedExerciseIds,
-          totalExerciseIds,
-        });
-
-        // Update the workout log with final data
+        // Update workout log
         await updateWorkoutLog(activeWorkout.workoutId, {
-          isComplete: allExercisesCompleted,
-          totalTimeTaken: workoutTimer,
           notes: notes || "",
-          completedExercises: completedExerciseIds,
+          totalTimeTaken: totalTime,
+          isComplete: true,
         });
 
-        // Also mark workout as complete using the new endpoint
-        if (allExercisesCompleted) {
-          await markWorkoutComplete(activeWorkout.workoutId, totalExerciseIds);
-        }
+        // Mark workout as complete with all exercise IDs
+        const totalExerciseIds = activeWorkout.exercises.map((ex) => ex.id);
+        await markWorkoutComplete(activeWorkout.workoutId, totalExerciseIds);
 
-        setIsWorkoutActive(false);
         return true;
       } catch (error) {
         console.error("Error ending workout:", error);
@@ -386,8 +415,11 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setExerciseTimer(0);
     setWorkoutTimer(0);
     setIsWorkoutActive(false);
+    setExerciseData([]);
     if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
     if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+    workoutStartTime.current = null;
+    exerciseStartTime.current = null;
   }, []);
 
   const formatTime = useCallback((seconds: number): string => {
@@ -423,6 +455,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     updateExerciseData,
     moveToNextExercise,
     resetSession,
+    refreshWorkout,
 
     // Computed values
     currentExercise,

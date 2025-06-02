@@ -1,21 +1,103 @@
 import { View, Text, TouchableOpacity, Dimensions, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
 
 export default function GetStarted() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const pathname = usePathname();
+  const { isAuthenticated, isLoading, user, isGeneratingWorkout } = useAuth();
+  const hasRedirected = useRef(false);
+  const [isVerifyingUser, setIsVerifyingUser] = useState<boolean | null>(null);
 
-  // If user is already authenticated, redirect to main app
+  // Check if user is in verification flow
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      router.replace("/(tabs)/calendar");
+    const checkVerificationFlag = async () => {
+      try {
+        const flag = await SecureStore.getItemAsync("isVerifyingUser");
+        setIsVerifyingUser(!!flag);
+      } catch (error) {
+        setIsVerifyingUser(false);
+      }
+    };
+    checkVerificationFlag();
+  }, []);
+
+  // If user is already authenticated, redirect based on onboarding status
+  useEffect(() => {
+    // Don't redirect if we're generating a workout
+    if (isGeneratingWorkout) {
+      console.log("🚫 Skipping redirect - workout generation in progress");
+      return;
     }
-  }, [isAuthenticated, isLoading, router]);
+
+    // Don't redirect if user is in verification flow
+    if (isVerifyingUser) {
+      console.log("🚫 Skipping redirect - user in verification flow");
+      return;
+    }
+
+    // Don't redirect if we already have
+    if (hasRedirected.current) {
+      console.log("🚫 Skipping redirect - already redirected");
+      return;
+    }
+
+    if (isAuthenticated && !isLoading && user && isVerifyingUser !== null) {
+      // Check if user has completed onboarding
+      const needsOnboarding = user.needsOnboarding ?? true;
+
+      console.log("🔀 Main redirect logic:", {
+        isAuthenticated,
+        isLoading,
+        user: user?.email,
+        needsOnboarding,
+        isGeneratingWorkout,
+        hasRedirected: hasRedirected.current,
+        isVerifyingUser,
+        currentPath: pathname,
+      });
+
+      if (!needsOnboarding) {
+        // Only redirect to calendar if not already there
+        if (pathname !== "/(tabs)/calendar") {
+          console.log("✅ Redirecting to calendar - onboarding complete");
+          hasRedirected.current = true;
+          router.replace("/(tabs)/calendar");
+        } else {
+          console.log("🚫 Already on calendar page, skipping redirect");
+        }
+      } else {
+        // Only redirect to onboarding if not already there
+        if (pathname !== "/(auth)/onboarding") {
+          console.log("📋 Redirecting to onboarding - onboarding needed");
+          hasRedirected.current = true;
+          router.replace("/(auth)/onboarding");
+        } else {
+          console.log("🚫 Already on onboarding page, skipping redirect");
+        }
+      }
+    }
+  }, [
+    isAuthenticated,
+    isLoading,
+    user?.needsOnboarding,
+    isGeneratingWorkout,
+    isVerifyingUser,
+    pathname,
+    router,
+  ]);
+
+  // Reset redirect flag when authentication state changes (e.g., logout)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      hasRedirected.current = false;
+    }
+  }, [isAuthenticated]);
 
   const handleGetStarted = () => {
     router.push("/(auth)/login");
@@ -34,16 +116,12 @@ export default function GetStarted() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5">
-        <TouchableOpacity className="w-10 h-10 justify-center items-center">
-          <Ionicons name="chevron-back" size={24} color="#374151" />
-        </TouchableOpacity>
+      <View className="flex-row items-center justify-center pt-5">
         <Image
           source={require("../assets/logo.png")}
           className="h-10 w-30"
           resizeMode="contain"
         />
-        <View className="w-10" />
       </View>
 
       <View className="flex-1 px-6 justify-between pb-12">

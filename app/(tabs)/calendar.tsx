@@ -60,7 +60,25 @@ export default function CalendarScreen() {
   };
 
   const handleRegenerate = async (
-    data: { customFeedback?: string },
+    data: {
+      customFeedback?: string;
+      profileData?: {
+        age?: number;
+        height?: number;
+        weight?: number;
+        gender?: string;
+        goals?: string[];
+        limitations?: string[];
+        fitnessLevel?: string;
+        environment?: string[];
+        equipment?: string[];
+        workoutStyles?: string[];
+        availableDays?: string[];
+        workoutDuration?: number;
+        intensityLevel?: number;
+        medicalNotes?: string;
+      };
+    },
     selectedType?: "week" | "day"
   ) => {
     try {
@@ -71,20 +89,27 @@ export default function CalendarScreen() {
         return;
       }
 
-      const regenerateType = selectedType || (selectedPlanDay ? "day" : "week");
+      const regenerateType = selectedType || "week";
 
-      if (regenerateType === "day" && selectedPlanDay) {
-        // Regenerate single day
+      if (regenerateType === "day") {
+        const currentPlanDayResult = getPlanDayForDate(selectedDate);
+        const dayToRegenerate = selectedPlanDay || currentPlanDayResult?.day;
+
+        if (!dayToRegenerate) {
+          setError("No workout found for the selected day");
+          return;
+        }
+
         const response = await regenerateDailyWorkout(
           user.id,
-          selectedPlanDay.id,
+          dayToRegenerate.id,
           data.customFeedback || "User requested regeneration"
         );
         if (response) {
           setWorkoutPlan((prev) => {
             if (!prev) return prev;
             const updatedPlanDays = prev.planDays.map((day) =>
-              day.id === selectedPlanDay.id ? response.planDay : day
+              day.id === dayToRegenerate.id ? response.planDay : day
             );
             return {
               ...prev,
@@ -93,7 +118,6 @@ export default function CalendarScreen() {
           });
         }
       } else {
-        // Regenerate whole week
         const response = await regenerateWorkoutPlan(user.id, data);
         if (response) {
           setWorkoutPlan(response.workout);
@@ -103,7 +127,7 @@ export default function CalendarScreen() {
       setShowRegenerationModal(false);
       setSelectedPlanDay(null);
     } catch (err) {
-      const regenerateType = selectedType || (selectedPlanDay ? "day" : "week");
+      const regenerateType = selectedType || "week";
       setError(`Failed to regenerate ${regenerateType} workout`);
       console.error("Error regenerating workout:", err);
     } finally {
@@ -123,7 +147,10 @@ export default function CalendarScreen() {
     if (!workoutPlan) return null;
     const normalizedDate = new Date(date).toLocaleDateString("en-CA");
     const index = workoutPlan.planDays.findIndex((day) => {
-      const planDate = new Date(day.date).toLocaleDateString("en-CA");
+      // Safely handle the date conversion - day.date might be a string or Date
+      const planDate = day.date
+        ? new Date(day.date).toLocaleDateString("en-CA")
+        : null;
       return planDate === normalizedDate;
     });
     if (index === -1) return null;
@@ -141,14 +168,17 @@ export default function CalendarScreen() {
     );
 
     workoutPlan.planDays.forEach((day) => {
-      const dateStr = new Date(day.date).toLocaleDateString("en-CA");
-      markedDates[dateStr] = {
-        marked: true,
-        dotColor: "#BBDE51",
-        selected: dateStr === normalizedSelectedDate,
-        selectedColor:
-          dateStr === normalizedSelectedDate ? "#181917" : undefined,
-      };
+      // Safely handle the date conversion - day.date might be a string or Date
+      if (day.date) {
+        const dateStr = new Date(day.date).toLocaleDateString("en-CA");
+        markedDates[dateStr] = {
+          marked: true,
+          dotColor: "#BBDE51",
+          selected: dateStr === normalizedSelectedDate,
+          selectedColor:
+            dateStr === normalizedSelectedDate ? "#181917" : undefined,
+        };
+      }
     });
 
     // Mark today
@@ -420,7 +450,7 @@ export default function CalendarScreen() {
         }}
         onRegenerate={handleRegenerate}
         loading={regenerating}
-        regenerationType={selectedPlanDay ? "day" : "week"}
+        regenerationType="week"
       />
     </SafeAreaView>
   );

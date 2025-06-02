@@ -103,7 +103,15 @@ export async function verify(params: {
       // Store the auth token
       await SecureStore.setItemAsync("token", data.token);
       if (data.user) {
-        await SecureStore.setItemAsync("user", JSON.stringify(data.user));
+        // Include needsOnboarding from the response in the user object
+        const userWithOnboardingStatus = {
+          ...data.user,
+          needsOnboarding: data.needsOnboarding ?? false,
+        };
+        await SecureStore.setItemAsync(
+          "user",
+          JSON.stringify(userWithOnboardingStatus)
+        );
       }
     }
     return data;
@@ -216,6 +224,21 @@ export async function clearAllData(): Promise<void> {
     console.log("✅ All data cleared successfully");
   } catch (error) {
     console.error("❌ Error clearing data:", error);
+    throw error;
+  }
+}
+
+/**
+ * Debug function to reset authentication state completely
+ * This can help users who are stuck in an incorrect onboarding state
+ */
+export async function resetAuthState(): Promise<void> {
+  console.log("🔄 Resetting authentication state...");
+  try {
+    await clearAllData();
+    console.log("✅ Authentication state reset successfully");
+  } catch (error) {
+    console.error("❌ Error resetting auth state:", error);
     throw error;
   }
 }

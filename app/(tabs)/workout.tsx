@@ -12,8 +12,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useWorkoutSession } from "@hooks/useWorkoutSession";
 import { getCompletedExercises } from "@lib/workouts";
+// import ExerciseLink from "@components/ExerciseLink";
 
 export default function WorkoutScreen() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -61,7 +64,38 @@ export default function WorkoutScreen() {
     totalExercises,
     progressPercentage,
     formatTime,
+    refreshWorkout,
   } = hookResult;
+
+  // Refresh workout when tab is focused (to handle date changes and navigation)
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshWorkout();
+    }, [refreshWorkout])
+  );
+
+  // Check for date changes every minute to refresh workout at midnight
+  useEffect(() => {
+    const checkDateChange = async () => {
+      const currentDate = new Date().toLocaleDateString("en-CA");
+      const lastCheckDate = await AsyncStorage.getItem("lastWorkoutDate");
+
+      if (lastCheckDate && lastCheckDate !== currentDate) {
+        console.log("Date changed, refreshing workout...");
+        refreshWorkout();
+      }
+
+      await AsyncStorage.setItem("lastWorkoutDate", currentDate);
+    };
+
+    // Check immediately
+    checkDateChange();
+
+    // Check every minute for date changes
+    const dateCheckInterval = setInterval(checkDateChange, 60000);
+
+    return () => clearInterval(dateCheckInterval);
+  }, [refreshWorkout]);
 
   useEffect(() => {
     const checkWorkoutCompletion = async () => {
@@ -236,17 +270,38 @@ export default function WorkoutScreen() {
               color: "#8A93A2",
               textAlign: "center",
               lineHeight: 20,
+              marginBottom: 16,
             }}
           >
-            You don't have an active workout plan. Visit the Calendar tab to
-            start a new workout.
+            You don't have an active workout plan for today. Visit the Calendar
+            tab to start a new workout.
           </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#BBDE51",
+              borderRadius: 12,
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+            }}
+            onPress={refreshWorkout}
+          >
+            <Text
+              style={{
+                color: "#181917",
+                fontWeight: "600",
+                fontSize: 14,
+              }}
+            >
+              Refresh
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
   if (isWorkoutCompleted) {
+    const currentDate = new Date().toLocaleDateString("en-CA");
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
         <View
@@ -275,10 +330,40 @@ export default function WorkoutScreen() {
               color: "#8A93A2",
               textAlign: "center",
               lineHeight: 20,
+              marginBottom: 8,
             }}
           >
             Great job! You've completed all exercises in today's workout.
           </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#8A93A2",
+              textAlign: "center",
+              marginBottom: 16,
+            }}
+          >
+            Current date: {currentDate}
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#BBDE51",
+              borderRadius: 12,
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+            }}
+            onPress={refreshWorkout}
+          >
+            <Text
+              style={{
+                color: "#181917",
+                fontWeight: "600",
+                fontSize: 14,
+              }}
+            >
+              Refresh Workout
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -682,6 +767,14 @@ export default function WorkoutScreen() {
               {currentExercise?.exercise.instructions ||
                 "Keep your knees aligned with your toes. Lower until thighs are parallel to the floor. Engage your core throughout the movement."}
             </Text>
+
+            {/* Exercise Link (YouTube video or image) */}
+            {/* {currentExercise?.exercise.link && (
+              <ExerciseLink
+                link={currentExercise.exercise.link}
+                exerciseName={currentExercise.exercise.name}
+              />
+            )} */}
 
             {currentExercise?.exercise.equipment &&
               currentExercise.exercise.equipment !== "none" && (

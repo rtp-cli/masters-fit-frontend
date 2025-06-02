@@ -59,6 +59,7 @@ export interface Exercise {
   difficulty: string;
   equipment?: string;
   instructions?: string;
+  link?: string;
   muscles_targeted?: string[];
   created_at: Date;
   updated_at: Date;

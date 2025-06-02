@@ -6,9 +6,10 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from "react-native";
 import { useState, useEffect } from "react";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { verify, generateAuthCode } from "../../lib/auth";
@@ -18,6 +19,7 @@ import * as SecureStore from "expo-secure-store";
 
 export default function VerifyScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { email } = useLocalSearchParams<{ email: string }>();
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -74,16 +76,66 @@ export default function VerifyScreen() {
 
         // Set the user data in auth context if available
         if (response.user) {
-          setUserData(response.user);
+          console.log("🔍 Verify - Setting user data:", response.user);
+          // Include needsOnboarding from the response in the user object
+          const userWithOnboardingStatus = {
+            ...response.user,
+            needsOnboarding: response.needsOnboarding ?? false,
+          };
+          console.log(
+            "🔍 Verify - User with onboarding status:",
+            userWithOnboardingStatus
+          );
+          setUserData(userWithOnboardingStatus);
+          // Save the complete user data to SecureStore
+          await SecureStore.setItemAsync(
+            "user",
+            JSON.stringify(userWithOnboardingStatus)
+          );
+          console.log("🔍 Verify - User data saved to SecureStore");
         }
 
-        // If user is signing up or response indicates onboarding is needed, store email and go to onboarding
+        console.log("🔍 Verify - Response analysis:", {
+          isSigningUp,
+          responseNeedsOnboarding: response.needsOnboarding,
+          userNeedsOnboarding: response.user?.needsOnboarding,
+          willRedirectToOnboarding: isSigningUp || response.needsOnboarding,
+        });
+
+        // If user is signing up or response indicates onboarding is needed, store email and user ID
         if (isSigningUp || response.needsOnboarding) {
-          await SecureStore.setItemAsync("pendingEmail", email);
-          router.replace("/(auth)/onboarding");
+          await Promise.all([
+            SecureStore.setItemAsync("pendingEmail", email),
+            // Store the user ID for onboarding
+            response.user?.id
+              ? SecureStore.setItemAsync(
+                  "pendingUserId",
+                  response.user.id.toString()
+                )
+              : Promise.resolve(),
+            // Set flag to prevent index.tsx from redirecting
+            SecureStore.setItemAsync("isVerifyingUser", "true"),
+          ]);
+
+          // Only redirect if not already on onboarding page
+          if (pathname !== "/(auth)/onboarding") {
+            console.log("🔍 Verify - Redirecting to onboarding");
+            router.replace("/(auth)/onboarding");
+          } else {
+            console.log(
+              "🔍 Verify - Already on onboarding page, skipping redirect"
+            );
+          }
         } else {
-          // Otherwise go to main app
-          router.replace("/(tabs)/calendar");
+          // Only redirect if not already on calendar page
+          if (pathname !== "/(tabs)/calendar") {
+            console.log("🔍 Verify - Redirecting to calendar");
+            router.replace("/(tabs)/calendar");
+          } else {
+            console.log(
+              "🔍 Verify - Already on calendar page, skipping redirect"
+            );
+          }
         }
       } else {
         Alert.alert(
@@ -120,8 +172,17 @@ export default function VerifyScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="dark" />
+
+      {/* Header */}
+      <View className="flex-row items-center justify-center pt-5">
+        <Image
+          source={require("../../assets/logo.png")}
+          className="h-10 w-30"
+          resizeMode="contain"
+        />
+      </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header with back button */}
@@ -181,7 +242,7 @@ export default function VerifyScreen() {
       </ScrollView>
 
       {/* Bottom button */}
-      <View className="px-lg pb-2xl pt-md bg-background">
+      <View className="px-lg pb-2xl pt-md bg-white">
         <TouchableOpacity
           className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
             isLoading ? "opacity-70" : ""
