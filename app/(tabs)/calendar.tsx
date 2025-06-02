@@ -5,8 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
-  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
@@ -19,6 +17,7 @@ import {
 import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
+import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -32,10 +31,6 @@ export default function CalendarScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-  const [regenerationType, setRegenerationType] = useState<"Week" | "Day">(
-    "Week"
-  );
-  const [customFeedback, setCustomFeedback] = useState("");
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithExercises | null>(null);
 
@@ -64,7 +59,10 @@ export default function CalendarScreen() {
     }
   };
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (
+    data: { customFeedback?: string },
+    selectedType?: "week" | "day"
+  ) => {
     try {
       setRegenerating(true);
       const user = await getCurrentUser();
@@ -73,18 +71,14 @@ export default function CalendarScreen() {
         return;
       }
 
-      if (regenerationType === "Week") {
-        const response = await regenerateWorkoutPlan(user.id, {
-          customFeedback: customFeedback.trim() || undefined,
-        });
-        if (response) {
-          setWorkoutPlan(response.workout);
-        }
-      } else if (regenerationType === "Day" && selectedPlanDay) {
+      const regenerateType = selectedType || (selectedPlanDay ? "day" : "week");
+
+      if (regenerateType === "day" && selectedPlanDay) {
+        // Regenerate single day
         const response = await regenerateDailyWorkout(
           user.id,
           selectedPlanDay.id,
-          customFeedback.trim() || "User requested regeneration"
+          data.customFeedback || "User requested regeneration"
         );
         if (response) {
           setWorkoutPlan((prev) => {
@@ -98,14 +92,19 @@ export default function CalendarScreen() {
             };
           });
         }
+      } else {
+        // Regenerate whole week
+        const response = await regenerateWorkoutPlan(user.id, data);
+        if (response) {
+          setWorkoutPlan(response.workout);
+        }
       }
 
       setShowRegenerationModal(false);
-      setCustomFeedback("");
+      setSelectedPlanDay(null);
     } catch (err) {
-      setError(
-        `Failed to regenerate ${regenerationType.toLowerCase()} workout`
-      );
+      const regenerateType = selectedType || (selectedPlanDay ? "day" : "week");
+      setError(`Failed to regenerate ${regenerateType} workout`);
       console.error("Error regenerating workout:", err);
     } finally {
       setRegenerating(false);
@@ -113,12 +112,7 @@ export default function CalendarScreen() {
   };
 
   const handleOpenRegeneration = (planDay?: PlanDayWithExercises) => {
-    if (planDay) {
-      setSelectedPlanDay(planDay);
-      setRegenerationType("Day");
-    } else {
-      setRegenerationType("Week");
-    }
+    setSelectedPlanDay(planDay || null);
     setShowRegenerationModal(true);
   };
 
@@ -325,18 +319,20 @@ export default function CalendarScreen() {
                       )}
                     </View>
                   </View>
-                  {isToday() && (
-                    <TouchableOpacity
-                      className="bg-secondary py-2 px-4 rounded-xl"
-                      onPress={() => {
-                        router.push("/(tabs)/workout");
-                      }}
-                    >
-                      <Text className="text-background font-semibold text-sm">
-                        Start
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <View className="flex-row items-center space-x-sm">
+                    {isToday() && (
+                      <TouchableOpacity
+                        className="bg-secondary py-2 px-4 rounded-xl"
+                        onPress={() => {
+                          router.push("/(tabs)/workout");
+                        }}
+                      >
+                        <Text className="text-background font-semibold text-sm">
+                          Start
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
 
                 {/* Exercises List */}
@@ -415,114 +411,17 @@ export default function CalendarScreen() {
         )}
       </ScrollView>
 
-      {/* Regeneration Modal */}
-      <Modal
+      {/* Workout Regeneration Modal */}
+      <WorkoutRegenerationModal
         visible={showRegenerationModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowRegenerationModal(false)}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-background rounded-t-2xl p-lg">
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-md">
-              <TouchableOpacity
-                onPress={() => setShowRegenerationModal(false)}
-                className="w-8 h-8 items-center justify-center"
-              >
-                <Ionicons name="close" size={20} color="#525252" />
-              </TouchableOpacity>
-              <Text className="text-base font-semibold text-text-primary">
-                Regenerate Workout Plan
-              </Text>
-              <View className="w-8" />
-            </View>
-
-            {/* Regeneration Type Toggle */}
-            <View className="mb-md">
-              <Text className="text-xs text-text-muted mb-sm">
-                Choose how you would like to generate your workout plan:
-              </Text>
-              <View className="flex-row bg-neutral-light-2 rounded-xl p-1">
-                <TouchableOpacity
-                  className={`flex-1 py-sm rounded-lg items-center ${
-                    regenerationType === "Week" ? "bg-background" : ""
-                  }`}
-                  onPress={() => setRegenerationType("Week")}
-                >
-                  <Text
-                    className={`font-medium text-sm ${
-                      regenerationType === "Week"
-                        ? "text-text-primary"
-                        : "text-text-muted"
-                    }`}
-                  >
-                    Week
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`flex-1 py-sm rounded-lg items-center ${
-                    regenerationType === "Day" ? "bg-background" : ""
-                  }`}
-                  onPress={() => setRegenerationType("Day")}
-                >
-                  <Text
-                    className={`font-medium text-sm ${
-                      regenerationType === "Day"
-                        ? "text-text-primary"
-                        : "text-text-muted"
-                    }`}
-                  >
-                    Day
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Feedback Input */}
-            <View className="mb-md">
-              <Text className="text-xs text-text-muted mb-sm">
-                Tell us why you want to regenerate this{" "}
-                {regenerationType.toLowerCase()}'s workout plan, and what you
-                would like to change:
-              </Text>
-              <TextInput
-                className="bg-neutral-light-2 p-sm rounded-xl min-h-[80px] text-sm"
-                placeholder="Add notes about your workout here..."
-                placeholderTextColor="#A8A8A8"
-                value={customFeedback}
-                onChangeText={setCustomFeedback}
-                multiline
-                textAlignVertical="top"
-              />
-              <Text className="text-xs text-text-muted mt-xs">
-                Only this {regenerationType.toLowerCase()}'s workout will be
-                changed. All other days will remain the same.
-              </Text>
-            </View>
-
-            {/* Action Button */}
-            <TouchableOpacity
-              className={`bg-primary py-sm rounded-xl items-center flex-row justify-center ${
-                regenerating ? "opacity-70" : ""
-              }`}
-              onPress={handleRegenerate}
-              disabled={regenerating}
-            >
-              {regenerating ? (
-                <ActivityIndicator size="small" color="#181917" />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={16} color="#181917" />
-                  <Text className="text-secondary font-semibold text-sm ml-xs">
-                    Regenerate Workout Flow
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => {
+          setShowRegenerationModal(false);
+          setSelectedPlanDay(null);
+        }}
+        onRegenerate={handleRegenerate}
+        loading={regenerating}
+        regenerationType={selectedPlanDay ? "day" : "week"}
+      />
     </SafeAreaView>
   );
 }

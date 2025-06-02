@@ -188,7 +188,25 @@ export async function generateWorkoutPlan(userId: number): Promise<any | null> {
  */
 export async function regenerateWorkoutPlan(
   userId: number,
-  data: { customFeedback?: string }
+  data: {
+    customFeedback?: string;
+    profileData?: {
+      age?: number;
+      height?: number;
+      weight?: number;
+      gender?: string;
+      goals?: string[];
+      limitations?: string[];
+      fitnessLevel?: string;
+      environment?: string[];
+      equipment?: string[];
+      workoutStyles?: string[];
+      availableDays?: string[];
+      workoutDuration?: number;
+      intensityLevel?: number;
+      medicalNotes?: string;
+    };
+  }
 ): Promise<any | null> {
   try {
     const response = await apiRequest<any>(`/workouts/${userId}/regenerate`, {

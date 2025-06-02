@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   Modal,
   ActivityIndicator,
-  Alert,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
@@ -109,29 +108,91 @@ enum PreferredStyles {
 interface WorkoutRegenerationModalProps {
   visible: boolean;
   onClose: () => void;
-  onRegenerate: (data: { customFeedback?: string }) => void;
+  onRegenerate: (
+    data: {
+      customFeedback?: string;
+      profileData?: {
+        age?: number;
+        height?: number;
+        weight?: number;
+        gender?: string;
+        goals?: string[];
+        limitations?: string[];
+        fitnessLevel?: string;
+        environment?: string[];
+        equipment?: string[];
+        workoutStyles?: string[];
+        availableDays?: string[];
+        workoutDuration?: number;
+        intensityLevel?: number;
+        medicalNotes?: string;
+      };
+    },
+    selectedType?: "week" | "day"
+  ) => void;
   loading?: boolean;
+  regenerationType?: "day" | "week";
 }
+
+// Add StyleSheet for pure React Native styling
+const styles = StyleSheet.create({
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  toggleButtonActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleText: {
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  toggleTextActive: {
+    color: "#181917",
+  },
+  toggleTextInactive: {
+    color: "#8A93A2",
+  },
+});
 
 export default function WorkoutRegenerationModal({
   visible,
   onClose,
   onRegenerate,
   loading = false,
+  regenerationType = "week",
 }: WorkoutRegenerationModalProps) {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [showOnboardingForm, setShowOnboardingForm] = useState(false);
   const [customFeedback, setCustomFeedback] = useState("");
   const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [selectedType, setSelectedType] = useState<"week" | "day">(
+    regenerationType
+  );
 
   useEffect(() => {
     if (visible) {
       loadUserProfile();
       setCustomFeedback("");
       setShowOnboardingForm(false);
+      setSelectedType(regenerationType);
     }
-  }, [visible]);
+  }, [visible, regenerationType]);
 
   const loadUserProfile = async () => {
     try {
@@ -142,7 +203,7 @@ export default function WorkoutRegenerationModal({
       }
     } catch (error) {
       console.error("Error loading profile:", error);
-      Alert.alert("Error", "Failed to load your profile data");
+      console.error("Failed to load your profile data");
     } finally {
       setLoadingProfile(false);
     }
@@ -153,7 +214,7 @@ export default function WorkoutRegenerationModal({
       setUpdatingProfile(true);
       const user = await getCurrentUser();
       if (!user) {
-        Alert.alert("Error", "User not found");
+        console.error("User not found");
         return;
       }
 
@@ -180,21 +241,123 @@ export default function WorkoutRegenerationModal({
         medicalNotes: formData.medicalNotes,
       };
 
+      // Update the profile first
       await updateUserProfile(profileData);
 
       // Close the onboarding form and regenerate with the updated profile
       setShowOnboardingForm(false);
-      onRegenerate({ customFeedback: customFeedback.trim() || undefined });
+      onRegenerate(
+        {
+          customFeedback: customFeedback.trim() || undefined,
+          profileData: profileData,
+        },
+        selectedType
+      );
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update your profile");
+      console.error("Failed to update your profile");
     } finally {
       setUpdatingProfile(false);
     }
   };
 
+  const handleSaveProfileOnly = async (formData: FormData) => {
+    try {
+      setUpdatingProfile(true);
+      const user = await getCurrentUser();
+      if (!user) {
+        console.error("User not found");
+        return;
+      }
+
+      // Convert form data to profile update format
+      const profileData = {
+        age: formData.age,
+        height: formData.height,
+        weight: formData.weight,
+        gender: formData.gender.toString(),
+        goals: formData.goals.map((g) => g.toString()),
+        limitations: formData.limitations?.map((l) => l.toString()) || [],
+        fitnessLevel: formData.fitnessLevel.toString(),
+        environment: [formData.environment.toString()],
+        equipment: formData.equipment?.map((e) => e.toString()) || [],
+        workoutStyles: formData.preferredStyles.map((s) => s.toString()),
+        availableDays: formData.availableDays.map((d) => d.toString()),
+        workoutDuration: formData.workoutDuration,
+        intensityLevel:
+          formData.intensityLevel === "low"
+            ? 1
+            : formData.intensityLevel === "moderate"
+            ? 2
+            : 3,
+        medicalNotes: formData.medicalNotes,
+      };
+
+      // Only update the profile, don't regenerate
+      await updateUserProfile(profileData);
+
+      // Update the current profile state and close the form
+      setCurrentProfile({ ...currentProfile, ...profileData });
+      setShowOnboardingForm(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      console.error("Failed to save your profile");
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
+  const handleQuickSave = async () => {
+    const partialFormData = convertProfileToFormData(currentProfile);
+    const completeFormData: FormData = {
+      email: partialFormData.email || "",
+      age: partialFormData.age || 25,
+      height: partialFormData.height || 170,
+      weight: partialFormData.weight || 70,
+      gender: partialFormData.gender || Gender.MALE,
+      goals: partialFormData.goals || [],
+      limitations: partialFormData.limitations || [],
+      fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
+      environment: partialFormData.environment || WorkoutEnvironments.HOME,
+      equipment: partialFormData.equipment || [],
+      preferredStyles: partialFormData.preferredStyles || [],
+      availableDays: partialFormData.availableDays || [],
+      workoutDuration: partialFormData.workoutDuration || 30,
+      intensityLevel:
+        partialFormData.intensityLevel || IntensityLevels.MODERATE,
+      medicalNotes: partialFormData.medicalNotes || "",
+    };
+    await handleSaveProfileOnly(completeFormData);
+  };
+
+  const handleQuickSaveAndRegenerate = async () => {
+    const partialFormData = convertProfileToFormData(currentProfile);
+    const completeFormData: FormData = {
+      email: partialFormData.email || "",
+      age: partialFormData.age || 25,
+      height: partialFormData.height || 170,
+      weight: partialFormData.weight || 70,
+      gender: partialFormData.gender || Gender.MALE,
+      goals: partialFormData.goals || [],
+      limitations: partialFormData.limitations || [],
+      fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
+      environment: partialFormData.environment || WorkoutEnvironments.HOME,
+      equipment: partialFormData.equipment || [],
+      preferredStyles: partialFormData.preferredStyles || [],
+      availableDays: partialFormData.availableDays || [],
+      workoutDuration: partialFormData.workoutDuration || 30,
+      intensityLevel:
+        partialFormData.intensityLevel || IntensityLevels.MODERATE,
+      medicalNotes: partialFormData.medicalNotes || "",
+    };
+    await handleUpdateProfile(completeFormData);
+  };
+
   const handleRegenerateWithFeedback = () => {
-    onRegenerate({ customFeedback: customFeedback.trim() || undefined });
+    onRegenerate(
+      { customFeedback: customFeedback.trim() || undefined },
+      selectedType
+    );
   };
 
   const convertProfileToFormData = (profile: any): Partial<FormData> => {
@@ -250,9 +413,11 @@ export default function WorkoutRegenerationModal({
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4f46e5" />
-          <Text style={styles.loadingText}>Loading your preferences...</Text>
+        <View className="flex-1 justify-center items-center bg-background">
+          <ActivityIndicator size="large" color="#BBDE51" />
+          <Text className="mt-4 text-base text-primary font-medium">
+            Loading your preferences...
+          </Text>
         </View>
       </Modal>
     );
@@ -263,18 +428,77 @@ export default function WorkoutRegenerationModal({
       <Modal
         visible={visible}
         animationType="slide"
-        presentationStyle="fullScreen"
+        presentationStyle="pageSheet"
       >
-        <View style={styles.container}>
-          <OnboardingForm
-            title="Update Your Preferences"
-            initialData={convertProfileToFormData(currentProfile)}
-            onSubmit={handleUpdateProfile}
-            onCancel={() => setShowOnboardingForm(false)}
-            isLoading={updatingProfile}
-            submitButtonText="Update & Regenerate"
-            showNavigation={true}
-          />
+        <View className="flex-1 bg-background">
+          {/* Custom Header with Save/Cancel Options */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+            <TouchableOpacity
+              onPress={() => setShowOnboardingForm(false)}
+              className="py-2 px-3"
+              disabled={updatingProfile}
+            >
+              <Text className="text-base text-text-muted font-medium">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text className="text-base font-semibold text-text-primary">
+              Update Preferences
+            </Text>
+            <TouchableOpacity
+              onPress={handleQuickSave}
+              className="py-2 px-3"
+              disabled={updatingProfile}
+            >
+              <Text className="text-base text-primary font-medium">Save</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* OnboardingForm */}
+          <View className="flex-1">
+            <OnboardingForm
+              title="Update Your Preferences"
+              initialData={convertProfileToFormData(currentProfile)}
+              onSubmit={handleUpdateProfile}
+              onCancel={() => setShowOnboardingForm(false)}
+              isLoading={updatingProfile}
+              submitButtonText="Save & Regenerate"
+              showNavigation={false}
+            />
+          </View>
+
+          {/* Custom Bottom Buttons */}
+          <View className="px-5 pb-5 border-t border-neutral-light-2 bg-background">
+            <View className="flex-row space-x-3 pt-4">
+              <TouchableOpacity
+                className="flex-1 py-3 px-4 bg-neutral-light-2 rounded-xl items-center"
+                onPress={handleQuickSave}
+                disabled={updatingProfile}
+              >
+                <Text className="text-text-primary font-semibold text-sm">
+                  Save Changes
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 px-4 bg-primary rounded-xl items-center flex-row justify-center ${
+                  updatingProfile ? "opacity-70" : ""
+                }`}
+                onPress={handleQuickSaveAndRegenerate}
+                disabled={updatingProfile}
+              >
+                {updatingProfile ? (
+                  <ActivityIndicator size="small" color="#181917" />
+                ) : (
+                  <>
+                    <Ionicons name="refresh" size={16} color="#181917" />
+                    <Text className="text-secondary font-semibold text-sm ml-2">
+                      Save & Regenerate
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     );
@@ -285,75 +509,123 @@ export default function WorkoutRegenerationModal({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#6b7280" />
+      <View className="flex-1 bg-background">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+          <TouchableOpacity
+            onPress={onClose}
+            className="w-8 h-8 items-center justify-center"
+          >
+            <Ionicons name="close" size={20} color="#8A93A2" />
           </TouchableOpacity>
-          <Text style={styles.title}>Regenerate Workout Plan</Text>
-          <View style={styles.placeholder} />
+          <Text className="text-base font-semibold text-text-primary">
+            Regenerate Workout Plan
+          </Text>
+          <View className="w-8" />
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.sectionDescription}>
-            Choose how you'd like to regenerate your workout plan:
+        {/* Content */}
+        <View className="flex-1 px-5 py-5">
+          <Text className="text-base text-text-muted mb-6 text-center">
+            Choose how you would like to generate your workout plan:
           </Text>
 
-          <TouchableOpacity
-            style={styles.optionCard}
-            onPress={() => setShowOnboardingForm(true)}
-            disabled={loading}
-          >
-            <View style={styles.optionIcon}>
-              <Ionicons name="settings" size={24} color="#4f46e5" />
-            </View>
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Update Preferences</Text>
-              <Text style={styles.optionDescription}>
-                Modify your fitness goals, equipment, schedule, and other
-                preferences
+          {/* Week/Day Toggle - Pure React Native */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                selectedType === "week" && styles.toggleButtonActive,
+              ]}
+              onPress={() => setSelectedType("week")}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  selectedType === "week"
+                    ? styles.toggleTextActive
+                    : styles.toggleTextInactive,
+                ]}
+              >
+                Week
               </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                selectedType === "day" && styles.toggleButtonActive,
+              ]}
+              onPress={() => setSelectedType("day")}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  selectedType === "day"
+                    ? styles.toggleTextActive
+                    : styles.toggleTextInactive,
+                ]}
+              >
+                Day
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.feedbackSection}>
-            <Text style={styles.sectionTitle}>Custom Feedback</Text>
-            <Text style={styles.sectionSubtitle}>
-              Tell us what you'd like to change about your current workout plan
+          {/* Feedback Input */}
+          <View className="flex-1">
+            <Text className="text-sm text-text-muted mb-4">
+              Tell us why you want to regenerate this{" "}
+              {selectedType === "day" ? "day's" : "week's"} workout plan, and
+              what you would like to change:
             </Text>
             <TextInput
-              style={styles.textArea}
+              className="bg-neutral-light-2 p-4 rounded-xl min-h-[120px] text-sm text-text-primary"
+              placeholder="Add notes about your workout here..."
+              placeholderTextColor="#A8A8A8"
               value={customFeedback}
               onChangeText={setCustomFeedback}
-              placeholder="e.g., I want more cardio exercises, less upper body focus, shorter rest times..."
               multiline
-              numberOfLines={4}
               textAlignVertical="top"
             />
+            {selectedType === "day" && (
+              <Text className="text-xs text-text-muted mt-3">
+                Only this day's workout will be changed. All other days will
+                remain the same.
+              </Text>
+            )}
+
+            {/* Update Preferences Link */}
+            {selectedType === "week" && (
+              <TouchableOpacity
+                className="mt-4 py-2"
+                onPress={() => setShowOnboardingForm(true)}
+                disabled={loading}
+              >
+                <Text className="text-sm text-primary font-medium text-center">
+                  Need to update your fitness preferences? Tap here
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        <View style={styles.footer}>
+        {/* Action Button */}
+        <View className="px-5 pb-5">
           <TouchableOpacity
-            style={[styles.regenerateButton, loading && styles.buttonDisabled]}
+            className={`bg-primary py-4 rounded-xl items-center flex-row justify-center ${
+              loading ? "opacity-70" : ""
+            }`}
             onPress={handleRegenerateWithFeedback}
-            disabled={loading || !customFeedback.trim()}
+            disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+              <ActivityIndicator size="small" color="#181917" />
             ) : (
               <>
-                <Ionicons name="refresh" size={20} color="#ffffff" />
-                <Text style={styles.regenerateButtonText}>
-                  Regenerate with Feedback
+                <Ionicons name="refresh" size={18} color="#181917" />
+                <Text className="text-secondary font-semibold text-sm ml-2">
+                  Regenerate Workout Flow
                 </Text>
               </>
             )}
@@ -363,152 +635,3 @@ export default function WorkoutRegenerationModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#4f46e5",
-    fontWeight: "500",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
-  closeButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  placeholder: {
-    width: 32,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  sectionDescription: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginBottom: 24,
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  optionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#ffffff",
-    marginBottom: 20,
-  },
-  optionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#f0f9ff",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: "#6b7280",
-    lineHeight: 20,
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#e5e7eb",
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: "#9ca3af",
-    fontWeight: "500",
-  },
-  feedbackSection: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#374151",
-    backgroundColor: "#ffffff",
-    minHeight: 120,
-    textAlignVertical: "top",
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
-  },
-  regenerateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#4f46e5",
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  regenerateButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});

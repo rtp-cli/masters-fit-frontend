@@ -16,8 +16,8 @@ function WorkoutTabIcon({ focused }: { focused: boolean }) {
   return (
     <View
       style={{
-        width: 48,
-        height: 48,
+        width: 44,
+        height: 44,
         borderRadius: 24,
         backgroundColor: "#000000",
         alignItems: "center",
@@ -82,20 +82,20 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: "Progress",
-            tabBarIcon: ({ color }: { color: string }) => (
-              <TabBarIcon name="bar-chart" color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="calendar"
           options={{
             title: "Plan",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="calendar" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            title: "Progress",
+            tabBarIcon: ({ color }: { color: string }) => (
+              <TabBarIcon name="bar-chart" color={color} />
             ),
           }}
         />
