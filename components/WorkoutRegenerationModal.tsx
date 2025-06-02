@@ -580,13 +580,23 @@ export default function WorkoutRegenerationModal({
               what you would like to change:
             </Text>
             <TextInput
-              className="bg-neutral-light-2 p-4 rounded-xl min-h-[120px] text-sm text-text-primary"
+              style={{
+                backgroundColor: "#FFFFFF", // background color (white)
+                borderWidth: 1,
+                borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
+                borderRadius: 8,
+                minHeight: 120,
+                fontSize: 14,
+                color: "#181917",
+                paddingHorizontal: 16,
+                paddingVertical: 24,
+                textAlignVertical: "top",
+              }}
               placeholder="Add notes about your workout here..."
               placeholderTextColor="#A8A8A8"
               value={customFeedback}
               onChangeText={setCustomFeedback}
               multiline
-              textAlignVertical="top"
             />
             {selectedType === "day" && (
               <Text className="text-xs text-text-muted mt-3">

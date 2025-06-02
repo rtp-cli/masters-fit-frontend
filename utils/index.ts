@@ -57,25 +57,6 @@ export function formatDuration(minutes: number): string {
 }
 
 /**
- * Calculate BMI based on height (cm) and weight (kg)
- */
-export function calculateBMI(height: number, weight: number): number {
-  // Convert height from cm to meters
-  const heightInMeters = height / 100;
-  return weight / (heightInMeters * heightInMeters);
-}
-
-/**
- * Get BMI category
- */
-export function getBMICategory(bmi: number): string {
-  if (bmi < 18.5) return "Underweight";
-  if (bmi < 25) return "Normal weight";
-  if (bmi < 30) return "Overweight";
-  return "Obese";
-}
-
-/**
  * Get intensity level text from numeric value
  */
 export function getIntensityText(level: number): string {

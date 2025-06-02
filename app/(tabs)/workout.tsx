@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Slider from "@react-native-community/slider";
 import { useWorkoutSession } from "@hooks/useWorkoutSession";
 import { getCompletedExercises } from "@lib/workouts";
 // import ExerciseLink from "@components/ExerciseLink";
@@ -669,7 +670,7 @@ export default function WorkoutScreen() {
 
                 {/* Weight Input */}
                 {currentData.targetWeight !== undefined && (
-                  <View style={{ alignItems: "center" }}>
+                  <View style={{ alignItems: "center", paddingHorizontal: 10 }}>
                     <Text
                       style={{
                         fontSize: 12,
@@ -678,78 +679,63 @@ export default function WorkoutScreen() {
                         marginBottom: 8,
                       }}
                     >
-                      Weight Used (kg)
+                      Weight Used (lbs)
                     </Text>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+
+                    {/* Weight Display */}
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "bold",
+                        color: "#000000",
+                        marginBottom: 16,
+                        textAlign: "center",
+                      }}
                     >
-                      <TouchableOpacity
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 18,
-                          backgroundColor: "#f0f0f0",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginRight: 16,
-                        }}
-                        onPress={() =>
-                          updateExerciseData(
-                            "weightUsed",
-                            Math.max(0, (currentData.weightUsed || 0) - 1)
-                          )
+                      {currentData.weightUsed || 0} lbs
+                    </Text>
+
+                    {/* Weight Slider */}
+                    <View style={{ width: "100%", paddingHorizontal: 10 }}>
+                      <Slider
+                        style={{ width: "100%", height: 40 }}
+                        minimumValue={0}
+                        maximumValue={200}
+                        step={5}
+                        value={currentData.weightUsed || 0}
+                        onValueChange={(value) =>
+                          updateExerciseData("weightUsed", value)
                         }
+                        minimumTrackTintColor="#BBDE51"
+                        maximumTrackTintColor="#E8E8E8"
+                        thumbTintColor="#BBDE51"
+                      />
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          marginTop: 8,
+                        }}
                       >
                         <Text
                           style={{
-                            fontSize: 18,
+                            fontSize: 12,
                             color: "#8A93A2",
-                            fontWeight: "bold",
+                            fontWeight: "500",
                           }}
                         >
-                          -
+                          0 lbs
                         </Text>
-                      </TouchableOpacity>
-
-                      <Text
-                        style={{
-                          fontSize: 18,
-                          fontWeight: "bold",
-                          color: "#000000",
-                          minWidth: 50,
-                          textAlign: "center",
-                        }}
-                      >
-                        {currentData.weightUsed || 0}
-                      </Text>
-
-                      <TouchableOpacity
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 18,
-                          backgroundColor: "#BBDE51",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginLeft: 16,
-                        }}
-                        onPress={() =>
-                          updateExerciseData(
-                            "weightUsed",
-                            (currentData.weightUsed || 0) + 1
-                          )
-                        }
-                      >
                         <Text
                           style={{
-                            fontSize: 18,
-                            color: "#181917",
-                            fontWeight: "bold",
+                            fontSize: 12,
+                            color: "#8A93A2",
+                            fontWeight: "500",
                           }}
                         >
-                          +
+                          200+ lbs
                         </Text>
-                      </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
                 )}

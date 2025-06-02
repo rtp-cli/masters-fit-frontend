@@ -168,8 +168,8 @@ const validateField = (field: string, value: any): string => {
     return "Height must be between 120 and 220 cm";
   }
 
-  if (field === "Weight" && (value < 40 || value > 200)) {
-    return "Weight must be between 40 and 200 kg";
+  if (field === "Weight" && (value < 90 || value > 440)) {
+    return "Weight must be between 90 and 440 lbs";
   }
 
   return "";
@@ -1502,16 +1502,23 @@ export default function OnboardingForm({
           Any additional medical information or concerns we should know about.
         </Text>
         <TextInput
-          className="bg-white rounded-xl p-4 text-sm text-neutral-dark-1"
           style={{
+            backgroundColor: "#FFFFFF", // background color (white)
+            borderWidth: 1,
+            borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
+            borderRadius: 12, // rounded-xl
             minHeight: 100,
+            fontSize: 14,
+            color: "#525252", // neutral-dark-1
+            paddingHorizontal: 16,
+            paddingVertical: 24,
+            textAlignVertical: "top",
           }}
           placeholder="Enter any medical conditions, injuries, or concerns..."
           placeholderTextColor="#8A93A2"
           value={formData.medicalNotes}
           onChangeText={(text) => handleChange("medicalNotes", text)}
           multiline={true}
-          textAlignVertical="top"
         />
       </View>
     </View>

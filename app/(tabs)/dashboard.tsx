@@ -487,7 +487,7 @@ export default function DashboardScreen() {
                 </Text>
                 <View className="bg-white rounded-2xl p-4 shadow-sm">
                   <Text className="text-xs text-text-muted mb-4">
-                    Total volume lifted over time (sets × reps × weight)
+                    Total volume lifted over time (sets × reps × weight in lbs)
                   </Text>
                   <LineChart
                     data={totalVolumeMetrics.map((metric) => ({

@@ -431,7 +431,7 @@ export default function SearchScreen() {
                     <View style={styles.performanceItem}>
                       <Text variant="h2" style={styles.performanceValue}>
                         {exerciseResult.userStats.averageWeight
-                          ? `${exerciseResult.userStats.averageWeight}`
+                          ? `${exerciseResult.userStats.averageWeight} lbs`
                           : "N/A"}
                       </Text>
                       <Text
@@ -439,7 +439,7 @@ export default function SearchScreen() {
                         color="#6b7280"
                         style={styles.performanceLabel}
                       >
-                        Avg Weight
+                        Avg Weight (lbs)
                       </Text>
                     </View>
                   </View>
