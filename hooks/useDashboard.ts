@@ -130,30 +130,23 @@ export const useDashboard = (userId: number) => {
 
       try {
         const queryParams = new URLSearchParams();
-        if (filters?.startDate)
-          queryParams.append("startDate", filters.startDate);
-        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-        if (filters?.timeRange)
-          queryParams.append("timeRange", filters.timeRange);
+
+        // If no filters are provided, use wide date range to get all data
+        if (!filters?.startDate && !filters?.endDate && !filters?.timeRange) {
+          queryParams.append("startDate", "2020-01-01");
+          queryParams.append("endDate", "2030-12-31");
+        } else {
+          if (filters?.startDate)
+            queryParams.append("startDate", filters.startDate);
+          if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+          if (filters?.timeRange)
+            queryParams.append("timeRange", filters.timeRange);
+        }
 
         const data = await apiRequest<{
           success: boolean;
           data: DashboardMetrics;
         }>(`/dashboard/${userId}/metrics?${queryParams.toString()}`);
-
-        // Debug logging
-        console.log(
-          "🔍 Dashboard API Response:",
-          JSON.stringify(data, null, 2)
-        );
-        console.log(
-          "🔍 Has workoutTypeMetrics:",
-          !!data.data.workoutTypeMetrics
-        );
-        console.log(
-          "🔍 WorkoutTypeMetrics content:",
-          data.data.workoutTypeMetrics
-        );
 
         if (data.success) {
           setDashboardData(data.data);
@@ -172,7 +165,6 @@ export const useDashboard = (userId: number) => {
             dominantType: "",
             hasData: false,
           };
-          console.log("🔍 Setting workoutTypeMetrics:", workoutTypeData);
           setWorkoutTypeMetrics(workoutTypeData);
 
           setDailyWorkoutProgress(data.data.dailyWorkoutProgress);
@@ -272,9 +264,34 @@ export const useDashboard = (userId: number) => {
 
         if (data.success) {
           setWeightAccuracy(data.data);
+        } else {
+          // Fallback to empty state if request fails
+          setWeightAccuracy({
+            accuracyRate: 0,
+            totalSets: 0,
+            exactMatches: 0,
+            higherWeight: 0,
+            lowerWeight: 0,
+            avgWeightDifference: 0,
+            chartData: [],
+            hasPlannedWeights: false,
+            hasExerciseData: false,
+          });
         }
       } catch (err) {
         console.error("Error fetching weight accuracy:", err);
+        // Set fallback state on error to prevent UI glitching
+        setWeightAccuracy({
+          accuracyRate: 0,
+          totalSets: 0,
+          exactMatches: 0,
+          higherWeight: 0,
+          lowerWeight: 0,
+          avgWeightDifference: 0,
+          chartData: [],
+          hasPlannedWeights: false,
+          hasExerciseData: false,
+        });
       }
     },
     [userId]
@@ -349,9 +366,26 @@ export const useDashboard = (userId: number) => {
 
         if (data.success) {
           setWorkoutTypeMetrics(data.data);
+        } else {
+          // Fallback to empty state if request fails
+          setWorkoutTypeMetrics({
+            distribution: [],
+            totalExercises: 0,
+            totalSets: 0,
+            dominantType: "",
+            hasData: false,
+          });
         }
       } catch (err) {
         console.error("Error fetching workout type metrics:", err);
+        // Set fallback state on error to prevent UI glitching
+        setWorkoutTypeMetrics({
+          distribution: [],
+          totalExercises: 0,
+          totalSets: 0,
+          dominantType: "",
+          hasData: false,
+        });
       }
     },
     [userId]
@@ -379,6 +413,38 @@ export const useDashboard = (userId: number) => {
         }
       } catch (err) {
         console.error("Error fetching daily workout progress:", err);
+      }
+    },
+    [userId]
+  );
+
+  const fetchWeightProgression = useCallback(
+    async (filters?: DashboardFilters) => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const data = await apiRequest<{
+          success: boolean;
+          data: {
+            date: string;
+            avgWeight: number;
+            maxWeight: number;
+            label: string;
+          }[];
+        }>(`/dashboard/${userId}/weight-progression?${queryParams.toString()}`);
+
+        if (data.success) {
+          return data.data;
+        }
+        return [];
+      } catch (err) {
+        console.error("Error fetching weight progression:", err);
+        return [];
       }
     },
     [userId]
@@ -417,6 +483,7 @@ export const useDashboard = (userId: number) => {
     fetchTotalVolumeMetrics,
     fetchWorkoutTypeMetrics,
     fetchDailyWorkoutProgress,
+    fetchWeightProgression,
     refreshAllData,
   };
 };

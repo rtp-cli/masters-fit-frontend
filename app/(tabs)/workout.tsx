@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ export default function WorkoutScreen() {
   const [exerciseNotes, setExerciseNotes] = useState("");
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
   const [difficultyLevel, setDifficultyLevel] = useState(0.5);
+  const [isCompletingExercise, setIsCompletingExercise] = useState(false);
 
   // Wrap the hook in a try-catch to handle potential errors
   let hookResult;
@@ -107,16 +108,25 @@ export default function WorkoutScreen() {
           const completedData = await getCompletedExercises(
             activeWorkout.workoutId
           );
-          const completedCount = completedData.count || 0;
+          const completedExerciseIds = completedData.completedExercises || [];
 
-          if (completedCount === totalExercises) {
-            setIsWorkoutCompleted(true);
-          } else {
-            setIsWorkoutCompleted(false);
-          }
+          // Filter completed exercises to only those belonging to this plan day
+          const todaysCompletedExercises = completedExerciseIds.filter(
+            (exerciseId) =>
+              activeWorkout.exercises.some((ex) => ex.id === exerciseId)
+          );
+
+          // Check if ALL exercises for this specific plan day are completed
+          const allTodaysExercisesCompleted =
+            activeWorkout.exercises.length > 0 &&
+            activeWorkout.exercises.every((ex) =>
+              todaysCompletedExercises.includes(ex.id)
+            );
+
+          setIsWorkoutCompleted(allTodaysExercisesCompleted);
         } catch (error) {
           console.error("Error checking workout completion:", error);
-          setIsWorkoutCompleted(completedCount === totalExercises);
+          setIsWorkoutCompleted(false);
         }
       } else {
         setIsWorkoutCompleted(false);
@@ -127,25 +137,37 @@ export default function WorkoutScreen() {
   }, [activeWorkout, completedCount, totalExercises]);
 
   const handleCompleteExercise = async () => {
-    const success = await completeExercise(exerciseNotes);
-    if (success) {
-      setShowCompleteModal(false);
-      setExerciseNotes("");
+    setIsCompletingExercise(true);
+    try {
+      const success = await completeExercise(exerciseNotes);
+      if (success) {
+        setShowCompleteModal(false);
+        setExerciseNotes("");
 
-      const nextExerciseIndex = currentExerciseIndex + 1;
-      if (nextExerciseIndex >= totalExercises) {
-        const workoutSuccess = await endWorkout(workoutNotes);
-        if (workoutSuccess) {
-          Alert.alert("Workout Complete", "Your workout has been saved!");
-          setIsWorkoutCompleted(true);
+        // Scroll to top of the page
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+
+        const nextExerciseIndex = currentExerciseIndex + 1;
+        if (nextExerciseIndex >= totalExercises) {
+          // All exercises for TODAY are complete - don't end the entire workout!
+          // Just refresh to check if there are more days available
+          Alert.alert(
+            "Day Complete!",
+            "Great job! You've completed today's workout. Check back tomorrow for your next workout."
+          );
+
+          // Refresh the workout to potentially load the next day
+          setTimeout(() => {
+            refreshWorkout();
+          }, 2000);
         } else {
-          Alert.alert("Error", "Failed to save workout completion");
+          moveToNextExercise();
         }
       } else {
-        moveToNextExercise();
+        Alert.alert("Error", "Failed to save exercise completion");
       }
-    } else {
-      Alert.alert("Error", "Failed to save exercise completion");
+    } finally {
+      setIsCompletingExercise(false);
     }
   };
 
@@ -214,6 +236,8 @@ export default function WorkoutScreen() {
     const remaining = Math.max(0, totalDuration - elapsed);
     return Math.round(remaining / 60);
   };
+
+  const scrollViewRef = useRef<ScrollView>(null);
 
   if (isLoading) {
     return (
@@ -338,7 +362,11 @@ export default function WorkoutScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        ref={scrollViewRef}
+      >
         {/* Exercise Hero Image */}
         <View
           style={{
@@ -957,7 +985,7 @@ export default function WorkoutScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     style={{
                       backgroundColor: "#ef4444",
                       borderRadius: 20,
@@ -976,7 +1004,7 @@ export default function WorkoutScreen() {
                     >
                       End Workout
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
               </>
             )}
@@ -1029,15 +1057,17 @@ export default function WorkoutScreen() {
             >
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#f5f5f5",
+                  backgroundColor: isCompletingExercise ? "#e5e5e5" : "#f5f5f5",
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 16,
                   flex: 1,
                   alignItems: "center",
                   marginRight: 8,
+                  opacity: isCompletingExercise ? 0.6 : 1,
                 }}
                 onPress={() => setShowCompleteModal(false)}
+                disabled={isCompletingExercise}
               >
                 <Text
                   style={{ color: "#8A93A2", fontWeight: "600", fontSize: 14 }}
@@ -1047,20 +1077,31 @@ export default function WorkoutScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#BBDE51",
+                  backgroundColor: isCompletingExercise ? "#9BC332" : "#BBDE51",
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 16,
                   flex: 1,
                   alignItems: "center",
                   marginLeft: 8,
+                  opacity: isCompletingExercise ? 0.8 : 1,
+                  flexDirection: "row",
+                  justifyContent: "center",
                 }}
                 onPress={handleCompleteExercise}
+                disabled={isCompletingExercise}
               >
+                {isCompletingExercise && (
+                  <ActivityIndicator
+                    size="small"
+                    color="#181917"
+                    style={{ marginRight: 8 }}
+                  />
+                )}
                 <Text
                   style={{ color: "#181917", fontWeight: "600", fontSize: 14 }}
                 >
-                  Complete
+                  {isCompletingExercise ? "Completing..." : "Complete"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1069,7 +1110,7 @@ export default function WorkoutScreen() {
       </Modal>
 
       {/* End Workout Modal */}
-      <Modal visible={showEndWorkoutModal} transparent animationType="slide">
+      {/* <Modal visible={showEndWorkoutModal} transparent animationType="slide">
         <View
           style={{
             flex: 1,
@@ -1161,7 +1202,7 @@ export default function WorkoutScreen() {
             </View>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
     </SafeAreaView>
   );
 }

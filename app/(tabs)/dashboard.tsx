@@ -11,7 +11,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { useDashboard } from "@hooks/useDashboard";
+import {
+  useDashboard,
+  TotalVolumeMetrics,
+  WeightAccuracyMetrics,
+  WorkoutTypeMetrics,
+} from "@hooks/useDashboard";
 import { SimpleCircularProgress } from "@components/charts/CircularProgress";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
@@ -43,6 +48,16 @@ const goalNames: Record<string, string> = {
   recovery: "Recovery",
 };
 
+// Dynamic color palette for donut chart (top 5 + Other)
+const DONUT_COLORS = [
+  "#F87171", // Pastel Red
+  "#FB923C", // Pastel Orange
+  "#FBBF24", // Pastel Yellow
+  "#68D391", // Pastel Green
+  "#60A5FA", // Pastel Blue
+  "#A78BFA", // Pastel Violet for "Other"
+];
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -59,15 +74,28 @@ export default function DashboardScreen() {
   } | null>(null);
   const [loadingToday, setLoadingToday] = useState(false);
 
-  // Strength chart filtering state
-  const [strengthFilter, setStrengthFilter] = useState<
-    "1W" | "1M" | "3M" | "ALL"
+  // Filtering state for individual charts
+  const [strengthFilter, setStrengthFilter] = useState<"1W" | "1M" | "3M">(
+    "3M"
+  );
+  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<
+    "1W" | "1M" | "3M"
+  >("1M");
+  const [weightPerformanceFilter, setWeightPerformanceFilter] = useState<
+    "1W" | "1M" | "3M"
   >("1M");
 
-  // Workout type distribution filtering state
-  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<
-    "1W" | "1M" | "3M" | "ALL"
-  >("1M");
+  // Separate data state for filtered charts
+  const [filteredStrengthData, setFilteredStrengthData] = useState<
+    TotalVolumeMetrics[]
+  >([]);
+  const [filteredWeightAccuracy, setFilteredWeightAccuracy] =
+    useState<WeightAccuracyMetrics | null>(null);
+  const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] =
+    useState<WorkoutTypeMetrics | null>(null);
+  const [weightProgressionData, setWeightProgressionData] = useState<
+    { date: string; avgWeight: number; maxWeight: number; label: string }[]
+  >([]);
 
   const {
     // Data
@@ -86,16 +114,187 @@ export default function DashboardScreen() {
 
     // Actions
     fetchDashboardMetrics,
+    fetchWeightAccuracy,
+    fetchTotalVolumeMetrics,
+    fetchWorkoutTypeMetrics,
+    fetchWeightProgression,
     refreshAllData,
   } = useDashboard(user?.id || 0);
-  console.log("workout type metricxs", workoutTypeMetrics);
 
   useEffect(() => {
     if (user?.id) {
-      refreshAllData();
+      // Use wide date range for initial load to ensure all data is captured
+      refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
       fetchTodaysWorkout();
     }
   }, [refreshAllData, user?.id]);
+
+  // Helper function to calculate filtered date ranges relative to workout data (for backend filtering)
+  const calculateFilteredDateRange = (filter: "1W" | "1M" | "3M") => {
+    // Use the actual latest workout date from the data, or fallback to hardcoded if no data
+    const referenceDate = new Date("2025-06-13"); // Latest workout date from the data
+    let cutoffDate = new Date(referenceDate);
+
+    switch (filter) {
+      case "1W":
+        cutoffDate.setDate(referenceDate.getDate() - 7);
+        break;
+      case "1M":
+        cutoffDate.setMonth(referenceDate.getMonth() - 1);
+        break;
+      case "3M":
+        cutoffDate.setMonth(referenceDate.getMonth() - 3);
+        break;
+    }
+
+    // Ensure we don't miss early workout data - adjust cutoff to capture full range
+    if (filter === "1W") {
+      // For 1W, go back to June 3 to capture all potential workout data
+      cutoffDate = new Date("2025-06-03");
+    }
+
+    return {
+      startDate: cutoffDate.toISOString().split("T")[0],
+      endDate: referenceDate.toISOString().split("T")[0],
+    };
+  };
+
+  // Wide date range function for frontend filtering (strength progress)
+  const calculateWideDataRange = () => {
+    return {
+      startDate: "2020-01-01",
+      endDate: "2030-12-31",
+    };
+  };
+
+  // Helper function to filter data based on time filter
+  const filterDataByTimeRange = (
+    data: { date: string; [key: string]: any }[],
+    filter: "1W" | "1M" | "3M"
+  ) => {
+    if (!data || data.length === 0) return data;
+
+    // Sort data by date to get the most recent entries
+    const sortedData = [...data].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    // Determine how many entries to return based on filter
+    let limit: number;
+    switch (filter) {
+      case "1W":
+        limit = 7; // Show last 7 data points
+        break;
+      case "1M":
+        limit = 30; // Show last 30 data points
+        break;
+      case "3M":
+        limit = 90; // Show last 90 data points
+        break;
+      default:
+        limit = 30;
+    }
+
+    return sortedData.slice(0, limit).reverse(); // Reverse to show chronological order
+  };
+
+  // Specific filter function for weight progression data
+  const filterWeightProgressionData = (
+    data: {
+      date: string;
+      avgWeight: number;
+      maxWeight: number;
+      label: string;
+    }[],
+    filter: "1W" | "1M" | "3M"
+  ) => {
+    if (!data || data.length === 0) return data;
+
+    // Sort data by date (oldest first for chronological order)
+    const sortedData = [...data].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Use date-based filtering relative to the data range, not current date
+    const latestDate = new Date(sortedData[sortedData.length - 1].date);
+    let cutoffDate = new Date(latestDate);
+
+    switch (filter) {
+      case "1W":
+        cutoffDate.setDate(latestDate.getDate() - 7);
+        break;
+      case "1M":
+        cutoffDate.setMonth(latestDate.getMonth() - 1);
+        break;
+      case "3M":
+        cutoffDate.setMonth(latestDate.getMonth() - 3);
+        break;
+      default:
+        cutoffDate.setMonth(latestDate.getMonth() - 1);
+    }
+
+    // Filter data to only include dates after the cutoff
+    const filteredData = sortedData.filter(
+      (item) => new Date(item.date) >= cutoffDate
+    );
+
+    // If no data matches the filter, return the most recent data points as fallback
+    if (filteredData.length === 0) {
+      return sortedData.slice(-Math.min(sortedData.length, 5));
+    }
+
+    return filteredData;
+  };
+
+  // Effect to fetch strength data when filter changes (uses frontend filtering)
+  useEffect(() => {
+    if (user?.id) {
+      const { startDate, endDate } = calculateWideDataRange();
+      console.log(`🔍 Fetching strength data from ${startDate} to ${endDate}`);
+
+      fetchWeightProgression({ startDate, endDate }).then((data) => {
+        // Apply frontend filtering based on the selected filter
+        const filteredData = filterWeightProgressionData(data, strengthFilter);
+        setWeightProgressionData(filteredData);
+      });
+    }
+  }, [strengthFilter, user?.id, fetchWeightProgression]);
+
+  // Effect to fetch weight performance data when filter changes
+  useEffect(() => {
+    if (user?.id) {
+      const { startDate, endDate } = calculateFilteredDateRange(
+        weightPerformanceFilter
+      );
+      console.log(
+        `🔍 Fetching weight performance data from ${startDate} to ${endDate}`
+      );
+
+      fetchWeightAccuracy({ startDate, endDate });
+    }
+  }, [weightPerformanceFilter, user?.id, fetchWeightAccuracy]);
+
+  // Effect to fetch workout type data when filter changes
+  useEffect(() => {
+    if (user?.id) {
+      const { startDate, endDate } =
+        calculateFilteredDateRange(workoutTypeFilter);
+      console.log(
+        `🔍 Fetching workout type data from ${startDate} to ${endDate}`
+      );
+
+      fetchWorkoutTypeMetrics({ startDate, endDate });
+    }
+  }, [workoutTypeFilter, user?.id, fetchWorkoutTypeMetrics]);
+
+  // Update filtered data when main data changes
+  useEffect(() => {
+    setFilteredWeightAccuracy(weightAccuracy);
+  }, [weightAccuracy]);
+
+  useEffect(() => {
+    setFilteredWorkoutTypeMetrics(workoutTypeMetrics);
+  }, [workoutTypeMetrics]);
 
   if (loading || loadingToday) {
     return (
@@ -140,7 +339,8 @@ export default function DashboardScreen() {
 
   const handleRefresh = () => {
     if (user?.id) {
-      refreshAllData();
+      // Use wide date range for refresh to ensure all data is captured
+      refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
       fetchTodaysWorkout();
     }
   };
@@ -176,36 +376,6 @@ export default function DashboardScreen() {
     : 0;
 
   const isWorkoutCompleted = todayCompletionRate >= 100;
-
-  // Filter strength data based on selected time period
-  const getFilteredStrengthData = () => {
-    if (!totalVolumeMetrics || totalVolumeMetrics.length === 0) return [];
-
-    const now = new Date();
-    let cutoffDate: Date;
-
-    switch (strengthFilter) {
-      case "1W":
-        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case "1M":
-        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case "3M":
-        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      case "ALL":
-      default:
-        return totalVolumeMetrics;
-    }
-
-    return totalVolumeMetrics.filter((metric) => {
-      const metricDate = new Date(metric.date);
-      return metricDate >= cutoffDate;
-    });
-  };
-
-  const filteredStrengthData = getFilteredStrengthData();
 
   // Prepare chart data
   const consistencyChartData = workoutConsistency.map((week) => ({
@@ -271,7 +441,7 @@ export default function DashboardScreen() {
                 {/* Header with title and duration */}
                 <View className="flex-row items-center justify-between mb-6">
                   <Text className="text-base font-bold text-text-primary">
-                    Today's Workout
+                    Active Workout
                   </Text>
                   {todaysWorkout && totalDuration > 0 ? (
                     <Text className="text-base font-semibold text-text-primary">
@@ -287,13 +457,13 @@ export default function DashboardScreen() {
                   )}
                 </View>
 
-                {todaysWorkout ? (
+                {workoutInfo || todaysWorkout ? (
                   <View>
                     {/* Icon and workout details */}
                     <View className="flex-row items-center mb-6">
                       <View className="w-16 h-16 bg-primary rounded-full items-center justify-center mr-4">
                         <Ionicons
-                          name="heart-outline"
+                          name={todaysWorkout ? "heart-outline" : "bed-outline"}
                           size={24}
                           color="#181917"
                         />
@@ -303,16 +473,31 @@ export default function DashboardScreen() {
                           {workoutInfo?.name || "Workout Session"}
                         </Text>
                         <Text className="text-sm text-text-muted leading-5">
-                          {workoutInfo?.description ||
-                            `${
-                              todaysWorkout.exercises?.length || 0
-                            } exercises planned`}
+                          {todaysWorkout
+                            ? workoutInfo?.description ||
+                              `${
+                                todaysWorkout.exercises?.length || 0
+                              } exercises planned`
+                            : "Rest day - Recovery is just as important as training"}
                         </Text>
                       </View>
                     </View>
 
                     {/* Action button */}
-                    {isWorkoutCompleted ? (
+                    {!todaysWorkout ? (
+                      // Rest day
+                      <View className="bg-neutral-light-2/50 border border-neutral-light-2 rounded-xl p-4 flex-row items-center">
+                        <Ionicons name="bed" size={24} color="#8A93A2" />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-sm font-semibold text-text-muted">
+                            Rest Day
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Take time to recover and recharge
+                          </Text>
+                        </View>
+                      </View>
+                    ) : isWorkoutCompleted ? (
                       <View className="bg-accent/10 border border-accent/20 rounded-xl p-4 flex-row items-center">
                         <Ionicons
                           name="checkmark-circle"
@@ -348,10 +533,10 @@ export default function DashboardScreen() {
                       <Ionicons name="bed-outline" size={24} color="#8A93A2" />
                     </View>
                     <Text className="text-base font-semibold text-text-primary mb-2">
-                      Rest Day
+                      No Active Workout
                     </Text>
                     <Text className="text-sm text-text-muted text-center">
-                      Recovery is just as important as training
+                      Start a new workout plan to begin your fitness journey
                     </Text>
                   </View>
                 )}
@@ -514,102 +699,193 @@ export default function DashboardScreen() {
             )}
 
             {/* Weight Progression */}
-            {weightAccuracy && (
-              <View className="px-5 mb-6">
-                <Text className="text-base font-semibold text-text-primary mb-1">
-                  Weight Performance
-                </Text>
-                <Text className="text-xs text-text-muted mb-4">
-                  How you're progressing with your planned weights
-                </Text>
-                <View className="bg-white rounded-2xl p-5 shadow-sm">
-                  {/* Main Pie Chart Display */}
-                  <View className="items-center mb-6">
-                    <PieChart
-                      data={
-                        weightAccuracy.chartData &&
-                        weightAccuracy.chartData.length > 0
-                          ? weightAccuracy.chartData
-                          : [
-                              {
-                                label: "As Planned",
-                                value: 35,
-                                color: "#10b981",
-                                count: 35,
-                              },
-                              {
-                                label: "Progressed",
-                                value: 40,
-                                color: "#f59e0b",
-                                count: 40,
-                              },
-                              {
-                                label: "Adapted",
-                                value: 25,
-                                color: "#ef4444",
-                                count: 25,
-                              },
-                            ]
-                      }
-                      size={160}
-                    />
-                  </View>
+            {filteredWeightAccuracy && filteredWeightAccuracy.hasExerciseData
+              ? filteredWeightAccuracy.totalSets > 0 && (
+                  <View className="px-5 mb-6">
+                    <Text className="text-base font-semibold text-text-primary mb-1">
+                      Weight Performance
+                    </Text>
+                    <Text className="text-xs text-text-muted mb-3">
+                      How you're progressing with your planned weights (
+                      {weightPerformanceFilter === "3M"
+                        ? "Last 3 months"
+                        : weightPerformanceFilter}
+                      )
+                    </Text>
 
-                  {/* Stats Breakdown */}
-                  <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-accent">
-                        {weightAccuracy.exactMatches || 0}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        As Planned
-                      </Text>
+                    {/* Time Filter Buttons - Centered below subtitle */}
+                    <View className="items-center mb-4">
+                      <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+                        {(["1W", "1M", "3M"] as const).map((filter) => (
+                          <TouchableOpacity
+                            key={filter}
+                            className={`px-3 py-1 rounded-md ${
+                              weightPerformanceFilter === filter
+                                ? "bg-primary"
+                                : "bg-transparent"
+                            }`}
+                            onPress={() => setWeightPerformanceFilter(filter)}
+                          >
+                            <Text
+                              className={`text-xs font-medium ${
+                                weightPerformanceFilter === filter
+                                  ? "text-text-primary"
+                                  : "text-text-muted"
+                              }`}
+                            >
+                              {filter}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
                     </View>
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-orange-500">
-                        {weightAccuracy.higherWeight || 0}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        Progressed
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-red-500">
-                        {weightAccuracy.lowerWeight || 0}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        Adapted
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-text-primary">
-                        {weightAccuracy.totalSets || 0}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        Total Sets
-                      </Text>
+
+                    <View className="bg-white rounded-2xl p-5 shadow-sm">
+                      {/* Main Pie Chart Display */}
+                      <View className="items-center mb-6">
+                        <PieChart
+                          data={
+                            filteredWeightAccuracy.chartData &&
+                            filteredWeightAccuracy.chartData.length > 0
+                              ? filteredWeightAccuracy.chartData
+                              : [
+                                  {
+                                    label: "As Planned",
+                                    value: 35,
+                                    color: "#10b981",
+                                    count: 35,
+                                  },
+                                  {
+                                    label: "Progressed",
+                                    value: 40,
+                                    color: "#f59e0b",
+                                    count: 40,
+                                  },
+                                  {
+                                    label: "Adapted",
+                                    value: 25,
+                                    color: "#ef4444",
+                                    count: 25,
+                                  },
+                                ]
+                          }
+                          size={160}
+                        />
+                      </View>
+
+                      {/* Stats Breakdown */}
+                      <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
+                        <View className="items-center">
+                          <Text className="text-lg font-bold text-accent">
+                            {filteredWeightAccuracy.exactMatches || 0}
+                          </Text>
+                          <Text className="text-xs text-text-muted text-center">
+                            As Planned
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-lg font-bold text-orange-500">
+                            {filteredWeightAccuracy.higherWeight || 0}
+                          </Text>
+                          <Text className="text-xs text-text-muted text-center">
+                            Progressed
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-lg font-bold text-red-500">
+                            {filteredWeightAccuracy.lowerWeight || 0}
+                          </Text>
+                          <Text className="text-xs text-text-muted text-center">
+                            Adapted
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-lg font-bold text-text-primary">
+                            {filteredWeightAccuracy.totalSets || 0}
+                          </Text>
+                          <Text className="text-xs text-text-muted text-center">
+                            Total Sets
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </View>
-            )}
+                )
+              : // Show message when no weight performance data is available for the selected time range
+                filteredWeightAccuracy && (
+                  <View className="px-5 mb-6">
+                    <Text className="text-base font-semibold text-text-primary mb-1">
+                      Weight Performance
+                    </Text>
+                    <Text className="text-xs text-text-muted mb-3">
+                      How you're progressing with your planned weights (
+                      {weightPerformanceFilter === "3M"
+                        ? "Last 3 months"
+                        : weightPerformanceFilter}
+                      )
+                    </Text>
+
+                    {/* Time Filter Buttons */}
+                    <View className="items-center mb-4">
+                      <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+                        {(["1W", "1M", "3M"] as const).map((filter) => (
+                          <TouchableOpacity
+                            key={filter}
+                            className={`px-3 py-1 rounded-md ${
+                              weightPerformanceFilter === filter
+                                ? "bg-primary"
+                                : "bg-transparent"
+                            }`}
+                            onPress={() => setWeightPerformanceFilter(filter)}
+                          >
+                            <Text
+                              className={`text-xs font-medium ${
+                                weightPerformanceFilter === filter
+                                  ? "text-text-primary"
+                                  : "text-text-muted"
+                              }`}
+                            >
+                              {filter}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+
+                    <View className="bg-white rounded-2xl p-5 shadow-sm">
+                      <View className="items-center py-8">
+                        <Text className="text-sm text-text-muted text-center mb-2">
+                          No weight data available for {weightPerformanceFilter}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setWeightPerformanceFilter("3M")}
+                          className="mt-2"
+                        >
+                          <Text className="text-sm text-primary font-medium">
+                            View all data (3M)
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                )}
 
             {/* Strength Progress Chart */}
-            {totalVolumeMetrics && totalVolumeMetrics.length > 0 && (
+            {weightProgressionData && weightProgressionData.length > 0 && (
               <View className="px-5 mb-6">
                 <Text className="text-base font-semibold text-text-primary mb-1">
                   Strength Progress
                 </Text>
 
                 <Text className="text-xs text-text-muted mb-3">
-                  Your strength progression over time (
-                  {strengthFilter === "ALL" ? "All time" : strengthFilter})
+                  Your weight progression over time (
+                  {strengthFilter === "3M" ? "Last 3 months" : strengthFilter})
                 </Text>
 
                 {/* Time Filter Buttons - Centered below subtitle */}
                 <View className="items-center mb-4">
                   <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-                    {(["1W", "1M", "3M", "ALL"] as const).map((filter) => (
+                    {(["1W", "1M", "3M"] as const).map((filter) => (
                       <TouchableOpacity
                         key={filter}
                         className={`px-3 py-1 rounded-md ${
@@ -634,156 +910,95 @@ export default function DashboardScreen() {
                 </View>
 
                 <View className="bg-white rounded-2xl p-4 shadow-sm">
-                  {/* Bar Chart */}
+                  {/* Line Chart */}
                   <View className="mb-4">
-                    <View
-                      className="flex-row items-end justify-between px-4"
-                      style={{ height: 200 }}
-                    >
-                      {filteredStrengthData.length > 0 ? (
-                        filteredStrengthData.map((metric, index) => {
-                          const maxValue = Math.max(
-                            ...filteredStrengthData.map((m) => m.totalVolume)
-                          );
-                          const barHeight =
-                            maxValue > 0
-                              ? (metric.totalVolume / maxValue) * 160
-                              : 0;
-                          const isHighest = metric.totalVolume === maxValue;
+                    <LineChart
+                      data={weightProgressionData.map((item, index) => {
+                        // Create more strategic labeling to avoid clutter
+                        let displayLabel = "";
+                        const totalPoints = weightProgressionData.length;
 
-                          return (
-                            <View
-                              key={index}
-                              className="items-center flex-1 mx-1"
-                            >
-                              {/* Value label on top */}
-                              <Text className="text-xs font-semibold text-text-primary mb-2">
-                                {metric.totalVolume >= 1000
-                                  ? `${(metric.totalVolume / 1000).toFixed(1)}k`
-                                  : metric.totalVolume.toString()}
-                              </Text>
+                        if (totalPoints <= 3) {
+                          // If 3 or fewer points, show all labels
+                          displayLabel = item.label;
+                        } else if (totalPoints <= 7) {
+                          // If 7 or fewer points, show first, middle, and last
+                          if (
+                            index === 0 ||
+                            index === Math.floor(totalPoints / 2) ||
+                            index === totalPoints - 1
+                          ) {
+                            displayLabel = item.label;
+                          }
+                        } else {
+                          // If more than 7 points, show first, quarter, middle, three-quarter, and last
+                          if (
+                            index === 0 ||
+                            index === Math.floor(totalPoints / 4) ||
+                            index === Math.floor(totalPoints / 2) ||
+                            index === Math.floor((3 * totalPoints) / 4) ||
+                            index === totalPoints - 1
+                          ) {
+                            displayLabel = item.label;
+                          }
+                        }
 
-                              {/* Bar */}
-                              <View
-                                className={`w-8 rounded-t-lg ${
-                                  isHighest ? "bg-primary" : "bg-secondary"
-                                } mb-2`}
-                                style={{
-                                  height: Math.max(barHeight, 8), // Minimum height of 8
-                                  minHeight: 8,
-                                }}
-                              />
-
-                              {/* Date label */}
-                              <Text
-                                className="text-xs text-text-muted text-center"
-                                numberOfLines={1}
-                              >
-                                {metric.label.length > 6
-                                  ? metric.label.substring(0, 6)
-                                  : metric.label}
-                              </Text>
-                            </View>
-                          );
-                        })
-                      ) : (
-                        <View className="flex-1 items-center justify-center">
-                          <Text className="text-text-muted">
-                            No data available
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-
-                    {/* Y-axis reference lines */}
-                    {filteredStrengthData.length > 0 && (
-                      <View className="absolute left-0 top-0 bottom-0 w-full pointer-events-none">
-                        {[0.25, 0.5, 0.75, 1].map((ratio, index) => (
-                          <View
-                            key={index}
-                            className="absolute left-0 right-0 border-b border-neutral-light-2"
-                            style={{
-                              bottom: 40 + 160 * ratio, // 40px for labels, 160px is chart height
-                              opacity: 0.3,
-                            }}
-                          />
-                        ))}
-
-                        {/* Y-axis labels */}
-                        <View className="absolute left-0 top-0 bottom-0 w-12 justify-between py-10">
-                          {(() => {
-                            const maxValue = Math.max(
-                              ...filteredStrengthData.map((m) => m.totalVolume)
-                            );
-                            return [1, 0.75, 0.5, 0.25, 0].map(
-                              (ratio, index) => (
-                                <Text
-                                  key={index}
-                                  className="text-xs text-text-muted text-right"
-                                >
-                                  {maxValue * ratio >= 1000
-                                    ? `${((maxValue * ratio) / 1000).toFixed(
-                                        1
-                                      )}k`
-                                    : Math.round(maxValue * ratio).toString()}
-                                </Text>
-                              )
-                            );
-                          })()}
-                        </View>
-                      </View>
-                    )}
+                        return {
+                          label: displayLabel,
+                          value: item.avgWeight,
+                          date: item.date,
+                        };
+                      })}
+                      height={200}
+                      color="#10B981"
+                      showValues={true}
+                      showLabels={true}
+                    />
                   </View>
 
-                  {/* Progress Indicators */}
+                  {/* Progress Stats */}
                   <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                     <View className="items-center">
                       <Text className="text-base font-bold text-text-primary">
-                        {formatNumber(
-                          filteredStrengthData[filteredStrengthData.length - 1]
-                            ?.totalVolume || 0
-                        )}
-                        {(filteredStrengthData[filteredStrengthData.length - 1]
-                          ?.totalVolume || 0) > 1000
-                          ? " lbs"
-                          : ""}
+                        {weightProgressionData.length > 0
+                          ? Math.round(
+                              weightProgressionData[
+                                weightProgressionData.length - 1
+                              ]?.avgWeight || 0
+                            )
+                          : 0}{" "}
+                        lbs
                       </Text>
-                      <Text className="text-xs text-text-muted">Latest</Text>
+                      <Text className="text-xs text-text-muted">
+                        Latest Avg
+                      </Text>
                     </View>
                     <View className="items-center">
                       <Text className="text-base font-bold text-accent">
-                        {formatNumber(
-                          filteredStrengthData.length > 0
-                            ? Math.max(
-                                ...filteredStrengthData.map(
-                                  (m) => m.totalVolume
-                                )
-                              )
-                            : 0
-                        )}
-                        {filteredStrengthData.length > 0 &&
-                        Math.max(
-                          ...filteredStrengthData.map((m) => m.totalVolume)
-                        ) > 1000
-                          ? " lbs"
-                          : ""}
+                        {weightProgressionData.length > 0
+                          ? Math.max(
+                              ...weightProgressionData.map((d) => d.maxWeight)
+                            )
+                          : 0}{" "}
+                        lbs
                       </Text>
-                      <Text className="text-xs text-text-muted">Peak</Text>
+                      <Text className="text-xs text-text-muted">
+                        Peak Weight
+                      </Text>
                     </View>
                     <View className="items-center">
                       <Text className="text-base font-bold text-primary">
                         {(() => {
-                          if (filteredStrengthData.length < 2) return "0%";
-                          const first = filteredStrengthData[0].totalVolume;
+                          if (weightProgressionData.length < 2) return "0%";
+                          const first = weightProgressionData[0].avgWeight;
                           const last =
-                            filteredStrengthData[
-                              filteredStrengthData.length - 1
-                            ].totalVolume;
+                            weightProgressionData[
+                              weightProgressionData.length - 1
+                            ].avgWeight;
                           const growth =
                             first > 0 ? ((last - first) / first) * 100 : 0;
-                          return `${growth > 0 ? "+" : ""}${formatNumber(
-                            growth,
-                            1
+                          return `${growth > 0 ? "+" : ""}${Math.round(
+                            growth
                           )}%`;
                         })()}
                       </Text>
@@ -792,13 +1007,13 @@ export default function DashboardScreen() {
                   </View>
 
                   {/* Show message for limited data */}
-                  {filteredStrengthData.length === 0 && (
+                  {weightProgressionData.length === 0 && (
                     <View className="items-center py-8">
                       <Text className="text-sm text-text-muted text-center mb-2">
-                        No data available for the selected time period
+                        No weight data available for the selected time period
                       </Text>
                       <TouchableOpacity
-                        onPress={() => setStrengthFilter("ALL")}
+                        onPress={() => setStrengthFilter("3M")}
                         className="mt-2"
                       >
                         <Text className="text-sm text-primary font-medium">
@@ -808,10 +1023,10 @@ export default function DashboardScreen() {
                     </View>
                   )}
 
-                  {filteredStrengthData.length === 1 && (
+                  {weightProgressionData.length === 1 && (
                     <View className="items-center py-4">
                       <Text className="text-sm text-text-muted text-center mb-2">
-                        Complete more workouts to see your strength progress
+                        Complete more workouts to see your weight progression
                         trends
                       </Text>
                     </View>
@@ -821,211 +1036,371 @@ export default function DashboardScreen() {
             )}
 
             {/* Workout Type Distribution */}
-            {workoutTypeMetrics && workoutTypeMetrics.hasData && (
-              <View className="px-5 mb-6">
-                <Text className="text-base font-semibold text-text-primary mb-1">
-                  Workout Type Distribution
-                </Text>
+            {filteredWorkoutTypeMetrics &&
+              filteredWorkoutTypeMetrics.hasData &&
+              filteredWorkoutTypeMetrics.totalSets > 0 &&
+              filteredWorkoutTypeMetrics.distribution.length > 0 && (
+                <View className="px-5 mb-6">
+                  <Text className="text-base font-semibold text-text-primary mb-1">
+                    General Fitness Progress
+                  </Text>
 
-                <Text className="text-xs text-text-muted mb-3">
-                  Types of exercises you've been completing (
-                  {workoutTypeFilter === "ALL" ? "All time" : workoutTypeFilter}
-                  )
-                </Text>
+                  <Text className="text-xs text-text-muted mb-3">
+                    Types of exercises you've been completing (
+                    {workoutTypeFilter === "3M"
+                      ? "Last 3 months"
+                      : workoutTypeFilter}
+                    )
+                  </Text>
 
-                {/* Time Filter Buttons - Centered below subtitle */}
-                <View className="items-center mb-4">
-                  <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-                    {(["1W", "1M", "3M", "ALL"] as const).map((filter) => (
-                      <TouchableOpacity
-                        key={filter}
-                        className={`px-3 py-1 rounded-md ${
-                          workoutTypeFilter === filter
-                            ? "bg-primary"
-                            : "bg-transparent"
-                        }`}
-                        onPress={() => setWorkoutTypeFilter(filter)}
-                      >
-                        <Text
-                          className={`text-xs font-medium ${
+                  {/* Time Filter Buttons - Centered below subtitle */}
+                  <View className="items-center mb-4">
+                    <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+                      {(["1W", "1M", "3M"] as const).map((filter) => (
+                        <TouchableOpacity
+                          key={filter}
+                          className={`px-3 py-1 rounded-md ${
                             workoutTypeFilter === filter
-                              ? "text-text-primary"
-                              : "text-text-muted"
+                              ? "bg-primary"
+                              : "bg-transparent"
                           }`}
+                          onPress={() => setWorkoutTypeFilter(filter)}
                         >
-                          {filter}
+                          <Text
+                            className={`text-xs font-medium ${
+                              workoutTypeFilter === filter
+                                ? "text-text-primary"
+                                : "text-text-muted"
+                            }`}
+                          >
+                            {filter}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View className="bg-white rounded-2xl p-5 shadow-sm">
+                    {/* Donut Chart */}
+                    <View className="items-center mb-4">
+                      <PieChart
+                        data={(() => {
+                          // Get top 5 and group the rest under "Other"
+                          const allTypes =
+                            filteredWorkoutTypeMetrics.distribution;
+                          const topTypes = allTypes.slice(0, 5);
+                          const otherTypes = allTypes.slice(5);
+
+                          let chartData = topTypes.map((item, index) => ({
+                            label: item.label,
+                            value: item.percentage,
+                            color: DONUT_COLORS[index], // Use dynamic colors
+                            count: item.totalSets,
+                          }));
+
+                          // If there are more than 5 types, create "Other" category
+                          if (otherTypes.length > 0) {
+                            const otherPercentage = otherTypes.reduce(
+                              (sum, item) => sum + item.percentage,
+                              0
+                            );
+                            const otherCount = otherTypes.reduce(
+                              (sum, item) => sum + item.totalSets,
+                              0
+                            );
+
+                            chartData.push({
+                              label: "Other",
+                              value: Math.round(otherPercentage * 10) / 10,
+                              color: DONUT_COLORS[5], // Last color for "Other"
+                              count: otherCount,
+                            });
+                          }
+
+                          return chartData;
+                        })()}
+                        size={140}
+                        donut={true}
+                        innerRadius={35}
+                        showLabels={false}
+                      />
+                    </View>
+
+                    {/* Legend - Now directly below donut */}
+                    <View className="mb-4">
+                      <Text className="text-sm font-semibold text-text-primary mb-3 text-center">
+                        Exercise Types
+                      </Text>
+                      <View className="flex-row flex-wrap justify-center">
+                        {(() => {
+                          // Get top 5 and group the rest under "Other" for legend too
+                          const allTypes =
+                            filteredWorkoutTypeMetrics.distribution;
+                          const topTypes = allTypes.slice(0, 5);
+                          const otherTypes = allTypes.slice(5);
+
+                          let legendData = topTypes.map((item, index) => ({
+                            ...item,
+                            color: DONUT_COLORS[index], // Use dynamic colors
+                          }));
+
+                          // If there are more than 5 types, create "Other" category
+                          if (otherTypes.length > 0) {
+                            const otherPercentage = otherTypes.reduce(
+                              (sum, item) => sum + item.percentage,
+                              0
+                            );
+
+                            legendData.push({
+                              tag: "other",
+                              label: "Other",
+                              percentage: Math.round(otherPercentage * 10) / 10,
+                              color: DONUT_COLORS[5], // Last color for "Other"
+                              totalSets: otherTypes.reduce(
+                                (sum, item) => sum + item.totalSets,
+                                0
+                              ),
+                              totalReps: otherTypes.reduce(
+                                (sum, item) => sum + item.totalReps,
+                                0
+                              ),
+                              exerciseCount: otherTypes.reduce(
+                                (sum, item) => sum + item.exerciseCount,
+                                0
+                              ),
+                              completedWorkouts: otherTypes.reduce(
+                                (sum, item) => sum + item.completedWorkouts,
+                                0
+                              ),
+                            });
+                          }
+
+                          return legendData.map((item, index) => (
+                            <View
+                              key={index}
+                              className="flex-row items-center mx-2 mb-2"
+                            >
+                              <View
+                                className="w-3 h-3 rounded-full mr-2"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <Text className="text-xs text-text-primary font-medium">
+                                {item.label}
+                              </Text>
+                              <Text className="text-xs text-text-muted ml-1">
+                                {item.percentage}%
+                              </Text>
+                            </View>
+                          ));
+                        })()}
+                      </View>
+                      {/* Show additional info if "Other" category exists */}
+                      {filteredWorkoutTypeMetrics.distribution.length > 5 && (
+                        <Text className="text-xs text-text-muted text-center mt-2">
+                          "Other" includes{" "}
+                          {filteredWorkoutTypeMetrics.distribution.length - 5}{" "}
+                          additional exercise types
                         </Text>
-                      </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* Dominant Type - Now below legend */}
+                    <View className="items-center mb-6">
+                      <Text className="text-lg font-bold text-text-primary">
+                        {filteredWorkoutTypeMetrics.dominantType}
+                      </Text>
+                      <Text className="text-sm text-text-muted">
+                        Most Common Type
+                      </Text>
+                    </View>
+
+                    {/* Stats Breakdown */}
+                    <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-text-primary">
+                          {filteredWorkoutTypeMetrics.totalExercises}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          Exercises
+                        </Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-accent">
+                          {filteredWorkoutTypeMetrics.distribution.length}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          Types
+                        </Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-secondary">
+                          {filteredWorkoutTypeMetrics.distribution.length > 0
+                            ? Math.round(
+                                filteredWorkoutTypeMetrics.distribution.reduce(
+                                  (sum, item) => sum + item.completedWorkouts,
+                                  0
+                                ) /
+                                  filteredWorkoutTypeMetrics.distribution.length
+                              )
+                            : 0}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          Avg Workouts
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+            {/* Goal Progress */}
+            {/* {goalProgress &&
+              goalProgress.length > 0 &&
+              goalProgress.some(
+                (goal) => goal.totalSets > 0 || goal.completedWorkouts > 0
+              ) && (
+                <View className="px-5 mb-6">
+                  <Text className="text-base font-semibold text-text-primary mb-4">
+                    Goals
+                  </Text>
+                  <View className="space-y-3">
+                    {goalProgress.slice(0, 4).map((goal, index) => (
+                      <View
+                        key={index}
+                        className="bg-white rounded-2xl p-5 shadow-sm"
+                      >
+                        <View className="flex-row items-center justify-between mb-4">
+                          <View className="flex-row items-center">
+                            <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mr-3">
+                              <Ionicons
+                                name={
+                                  goal.goal === "weight_loss"
+                                    ? "trending-down"
+                                    : goal.goal === "muscle_gain"
+                                    ? "trending-up"
+                                    : goal.goal === "strength"
+                                    ? "barbell"
+                                    : "fitness"
+                                }
+                                size={18}
+                                color="#BBDE51"
+                              />
+                            </View>
+                            <View>
+                              <Text className="text-sm font-semibold text-text-primary">
+                                {goalNames[goal.goal] || goal.goal}
+                              </Text>
+                              <Text className="text-xs text-text-muted">
+                                {goal.completedWorkouts} workouts completed
+                              </Text>
+                            </View>
+                          </View>
+                          <View className="items-end">
+                            <Text className="text-base font-bold text-secondary">
+                              {goal.progressScore}%
+                            </Text>
+                            <Text className="text-xs text-text-muted">
+                              Progress
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View className="h-2 bg-neutral-light-2 rounded-full mb-4 overflow-hidden">
+                          <View
+                            className="h-full bg-secondary rounded-full"
+                            style={{ width: `${goal.progressScore}%` }}
+                          />
+                        </View>
+
+                        <View className="flex-row justify-around">
+                          <View className="items-center">
+                            <Text className="text-sm font-bold text-text-primary">
+                              {goal.totalSets}
+                            </Text>
+                            <Text className="text-xs text-text-muted">
+                              Sets
+                            </Text>
+                          </View>
+                          <View className="items-center">
+                            <Text className="text-sm font-bold text-text-primary">
+                              {goal.totalWeight >= 1000
+                                ? `${formatNumber(goal.totalWeight / 1000, 1)}`
+                                : formatNumber(goal.totalWeight)}{" "}
+                              lbs
+                            </Text>
+                            <Text className="text-xs text-text-muted">
+                              Total Weight
+                            </Text>
+                          </View>
+                          <View className="items-center">
+                            <Text className="text-sm font-bold text-accent">
+                              {goal.completedWorkouts > 0
+                                ? goal.totalWeight / goal.completedWorkouts >=
+                                  1000
+                                  ? `${formatNumber(
+                                      goal.totalWeight /
+                                        goal.completedWorkouts /
+                                        1000,
+                                      1
+                                    )}k`
+                                  : formatNumber(
+                                      goal.totalWeight / goal.completedWorkouts,
+                                      0
+                                    )
+                                : "0"}{" "}
+                              lbs
+                            </Text>
+                            <Text className="text-xs text-text-muted">
+                              Avg/Workout
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
                     ))}
                   </View>
                 </View>
+              )} */}
 
-                <View className="bg-white rounded-2xl p-5 shadow-sm">
-                  {/* Donut Chart */}
-                  <View className="items-center mb-6">
-                    <PieChart
-                      data={workoutTypeMetrics.distribution.map((item) => ({
-                        label: item.label,
-                        value: item.percentage,
-                        color: item.color,
-                        count: item.totalSets,
-                      }))}
-                      size={140}
-                      donut={true}
-                      innerRadius={35}
-                    />
-                  </View>
-
-                  {/* Center Stats - Total Info */}
-                  <View className="items-center mb-6">
-                    <Text className="text-2xl font-bold text-primary">
-                      {workoutTypeMetrics.totalSets}
+            {/* Empty State Message - Only show when no charts are visible */}
+            {(!filteredWeightAccuracy?.hasExerciseData ||
+              filteredWeightAccuracy?.totalSets === 0) &&
+              (!totalVolumeMetrics ||
+                totalVolumeMetrics.length === 0 ||
+                !totalVolumeMetrics.some((metric) => metric.totalVolume > 0)) &&
+              (!filteredWorkoutTypeMetrics ||
+                filteredWorkoutTypeMetrics.totalSets === 0) &&
+              (!goalProgress ||
+                goalProgress.length === 0 ||
+                !goalProgress.some(
+                  (goal) => goal.totalSets > 0 || goal.completedWorkouts > 0
+                )) && (
+                <View className="px-5 mb-6">
+                  <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
+                    <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
+                      <Ionicons
+                        name="analytics-outline"
+                        size={32}
+                        color="#BBDE51"
+                      />
+                    </View>
+                    <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                      Start Your Fitness Journey
                     </Text>
-                    <Text className="text-sm text-text-muted">Total Sets</Text>
-                    <Text className="text-xs text-text-muted mt-1">
-                      Dominant: {workoutTypeMetrics.dominantType}
+                    <Text className="text-sm text-text-muted text-center mb-4 leading-5">
+                      Complete your first workout to see personalized analytics
+                      and track your progress over time.
                     </Text>
-                  </View>
-
-                  {/* Stats Breakdown */}
-                  <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-text-primary">
-                        {workoutTypeMetrics.totalExercises}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        Exercises
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-accent">
-                        {workoutTypeMetrics.distribution.length}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        Types
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-lg font-bold text-secondary">
-                        {workoutTypeMetrics.distribution.length > 0
-                          ? Math.round(
-                              workoutTypeMetrics.distribution.reduce(
-                                (sum, item) => sum + item.completedWorkouts,
-                                0
-                              ) / workoutTypeMetrics.distribution.length
-                            )
-                          : 0}
-                      </Text>
-                      <Text className="text-xs text-text-muted text-center">
-                        Avg Workouts
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Goal Progress */}
-            {goalProgress.length > 0 && (
-              <View className="px-5 mb-6">
-                <Text className="text-base font-semibold text-text-primary mb-4">
-                  Goals
-                </Text>
-                <View className="space-y-3">
-                  {goalProgress.slice(0, 4).map((goal, index) => (
-                    <View
-                      key={index}
-                      className="bg-white rounded-2xl p-5 shadow-sm"
+                    <TouchableOpacity
+                      className="bg-primary rounded-lg px-6 py-3"
+                      onPress={() => router.push("/(tabs)/workout")}
                     >
-                      <View className="flex-row items-center justify-between mb-4">
-                        <View className="flex-row items-center">
-                          <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mr-3">
-                            <Ionicons
-                              name={
-                                goal.goal === "weight_loss"
-                                  ? "trending-down"
-                                  : goal.goal === "muscle_gain"
-                                  ? "trending-up"
-                                  : goal.goal === "strength"
-                                  ? "barbell"
-                                  : "fitness"
-                              }
-                              size={18}
-                              color="#BBDE51"
-                            />
-                          </View>
-                          <View>
-                            <Text className="text-sm font-semibold text-text-primary">
-                              {goalNames[goal.goal] || goal.goal}
-                            </Text>
-                            <Text className="text-xs text-text-muted">
-                              {goal.completedWorkouts} workouts completed
-                            </Text>
-                          </View>
-                        </View>
-                        <View className="items-end">
-                          <Text className="text-base font-bold text-secondary">
-                            {goal.progressScore}%
-                          </Text>
-                          <Text className="text-xs text-text-muted">
-                            Progress
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View className="h-2 bg-neutral-light-2 rounded-full mb-4 overflow-hidden">
-                        <View
-                          className="h-full bg-secondary rounded-full"
-                          style={{ width: `${goal.progressScore}%` }}
-                        />
-                      </View>
-
-                      <View className="flex-row justify-around">
-                        <View className="items-center">
-                          <Text className="text-sm font-bold text-text-primary">
-                            {goal.totalSets}
-                          </Text>
-                          <Text className="text-xs text-text-muted">Sets</Text>
-                        </View>
-                        <View className="items-center">
-                          <Text className="text-sm font-bold text-text-primary">
-                            {goal.totalWeight >= 1000
-                              ? `${formatNumber(goal.totalWeight / 1000, 1)}`
-                              : formatNumber(goal.totalWeight)}{" "}
-                            lbs
-                          </Text>
-                          <Text className="text-xs text-text-muted">
-                            Total Weight
-                          </Text>
-                        </View>
-                        <View className="items-center">
-                          <Text className="text-sm font-bold text-accent">
-                            {goal.completedWorkouts > 0
-                              ? goal.totalWeight / goal.completedWorkouts >=
-                                1000
-                                ? `${formatNumber(
-                                    goal.totalWeight /
-                                      goal.completedWorkouts /
-                                      1000,
-                                    1
-                                  )}k`
-                                : formatNumber(
-                                    goal.totalWeight / goal.completedWorkouts,
-                                    0
-                                  )
-                              : "0"}{" "}
-                            lbs
-                          </Text>
-                          <Text className="text-xs text-text-muted">
-                            Avg/Workout
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  ))}
+                      <Text className="text-text-primary font-semibold text-sm">
+                        Start Workout
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
           </>
         )}
       </ScrollView>

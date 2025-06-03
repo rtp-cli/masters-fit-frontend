@@ -218,20 +218,10 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       const workoutLog = await getExistingWorkoutLog(planDay.workoutId);
 
       if (workoutLog) {
-        // If workout is complete, don't allow resuming
-        if (workoutLog.isComplete) {
-          console.log("Workout is already completed");
-          setIsWorkoutActive(false);
-          // Mark all exercises as completed in local state
-          const completedData = initialData.map((data) => ({
-            ...data,
-            isCompleted: true,
-          }));
-          setExerciseData(completedData);
-          return;
-        }
+        // Note: Don't check workoutLog.isComplete here because that's for the entire
+        // multi-day workout. We need to check individual plan day completion instead.
 
-        // If workout is in progress, resume it
+        // If workout is in progress, resume the timer
         if (!workoutLog.isComplete) {
           setWorkoutTimer(workoutLog.totalTimeTaken || 0);
           setIsWorkoutActive(true);
@@ -241,9 +231,34 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         }
       }
 
-      // Check completed exercises
+      // Check completed exercises for THIS specific plan day
       const completedData = await getCompletedExercises(planDay.workoutId);
       const completedExerciseIds = completedData.completedExercises || [];
+
+      // Filter completed exercises to only those belonging to this plan day
+      const todaysCompletedExercises = completedExerciseIds.filter(
+        (exerciseId) => planDay.exercises.some((ex) => ex.id === exerciseId)
+      );
+
+      // Check if ALL exercises for this specific plan day are completed
+      const allTodaysExercisesCompleted =
+        planDay.exercises.length > 0 &&
+        planDay.exercises.every((ex) =>
+          todaysCompletedExercises.includes(ex.id)
+        );
+
+      // If all today's exercises are completed, show completion state but don't block loading
+      if (allTodaysExercisesCompleted) {
+        console.log("All exercises for this plan day are completed");
+        setIsWorkoutActive(false);
+        // Mark all exercises as completed in local state
+        const completedData = initialData.map((data) => ({
+          ...data,
+          isCompleted: true,
+        }));
+        setExerciseData(completedData);
+        return;
+      }
 
       // Check exercise logs and update local state
       const updatedData = [...initialData];
@@ -284,8 +299,8 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
       if (nextIncompleteIndex !== -1) {
         setCurrentExerciseIndex(nextIncompleteIndex);
-      } else if (workoutLog?.isComplete) {
-        // All exercises completed
+      } else {
+        // All exercises completed for this day
         setCurrentExerciseIndex(0);
       }
 
