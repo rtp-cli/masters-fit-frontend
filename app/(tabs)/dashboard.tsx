@@ -97,6 +97,17 @@ export default function DashboardScreen() {
     }
   }, [refreshAllData, user?.id]);
 
+  if (loading || loadingToday) {
+    return (
+      <View className="flex-1 justify-center items-center bg-background">
+        <ActivityIndicator size="large" color="#BBDE51" />
+        <Text className="mt-md text-sm text-primary font-medium">
+          One moment...
+        </Text>
+      </View>
+    );
+  }
+
   const fetchTodaysWorkout = async () => {
     try {
       setLoadingToday(true);
