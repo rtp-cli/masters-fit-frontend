@@ -32,7 +32,9 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   const maxValue = Math.max(...data.map((item) => item.value));
   const minValue = Math.min(...data.map((item) => item.value));
-  const valueRange = maxValue - minValue || 1;
+  // Handle single data point case - create a small range for visualization
+  const valueRange =
+    data.length === 1 ? maxValue * 0.2 || 1 : maxValue - minValue || 1;
   const chartHeight = height - 60; // Leave space for labels
 
   return (
@@ -44,8 +46,13 @@ export const LineChart: React.FC<LineChartProps> = ({
       >
         {data.map((item, index) => {
           // Calculate point height relative to min/max values
-          const pointHeight =
-            ((item.value - minValue) / valueRange) * chartHeight;
+          let pointHeight;
+          if (data.length === 1) {
+            // For single data point, position it in the middle-upper area
+            pointHeight = chartHeight * 0.7;
+          } else {
+            pointHeight = ((item.value - minValue) / valueRange) * chartHeight;
+          }
           const pointY = chartHeight - pointHeight;
 
           return (
@@ -91,7 +98,9 @@ export const LineChart: React.FC<LineChartProps> = ({
       {/* Y-axis reference */}
       <View style={styles.yAxisContainer}>
         <Text style={styles.yAxisText}>{maxValue.toLocaleString()}</Text>
-        <Text style={styles.yAxisText}>{minValue.toLocaleString()}</Text>
+        {data.length > 1 && (
+          <Text style={styles.yAxisText}>{minValue.toLocaleString()}</Text>
+        )}
       </View>
     </View>
   );

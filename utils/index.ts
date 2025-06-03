@@ -16,6 +16,89 @@ export function formatDate(
 }
 
 /**
+ * Convert any date input to UTC Date object
+ */
+export function toUTCDate(dateInput: string | Date | null | undefined): Date {
+  if (!dateInput) {
+    return new Date();
+  }
+
+  if (typeof dateInput === "string") {
+    // If it's just a date string (YYYY-MM-DD), treat as local date
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      return new Date(dateInput + "T00:00:00.000Z");
+    }
+    return new Date(dateInput);
+  }
+
+  return new Date(dateInput);
+}
+
+/**
+ * Format date for display in local timezone
+ */
+export function formatDateForDisplay(
+  dateInput: Date | string | null | undefined,
+  options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }
+): string {
+  if (!dateInput) {
+    return "";
+  }
+
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  return new Intl.DateTimeFormat("en-US", options).format(date);
+}
+
+/**
+ * Format date as YYYY-MM-DD string in UTC
+ */
+export function formatDateAsString(
+  dateInput: Date | string | null | undefined
+): string {
+  if (!dateInput) {
+    return getCurrentDate();
+  }
+
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  return date.toISOString().split("T")[0];
+}
+
+/**
+ * Format date as YYYY-MM-DD string in local timezone (for display)
+ */
+export function formatDateAsLocalString(
+  dateInput: Date | string | null | undefined
+): string {
+  if (!dateInput) {
+    return new Date().toLocaleDateString("en-CA");
+  }
+
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  return date.toLocaleDateString("en-CA");
+}
+
+/**
+ * Check if two dates are the same day (in local timezone)
+ */
+export function isSameDay(date1: Date | string, date2: Date | string): boolean {
+  const d1 = typeof date1 === "string" ? new Date(date1) : date1;
+  const d2 = typeof date2 === "string" ? new Date(date2) : date2;
+
+  return d1.toLocaleDateString("en-CA") === d2.toLocaleDateString("en-CA");
+}
+
+/**
+ * Get today's date as YYYY-MM-DD in local timezone
+ */
+export function getTodayString(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+/**
  * Format a number with a specified number of decimal places
  */
 export function formatNumber(
@@ -167,4 +250,215 @@ export function getDayOfMonth(date: Date): number {
  */
 export function generateUniqueId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+/**
+ * Calculate total time for a single exercise including rest periods
+ * @param duration Duration per set in seconds
+ * @param sets Number of sets
+ * @param restTime Rest time between sets in seconds
+ * @returns Total exercise time in seconds
+ */
+export function calculateExerciseTime(
+  duration: number = 0,
+  sets: number = 1,
+  restTime: number = 0
+): number {
+  if (duration <= 0 || sets <= 0) return 0;
+
+  const workTime = duration * sets;
+  const totalRestTime = sets > 1 ? restTime * (sets - 1) : 0;
+
+  return workTime + totalRestTime;
+}
+
+/**
+ * Calculate total workout duration from exercises
+ * @param exercises Array of exercises with duration, sets, and restTime
+ * @returns Total workout time in seconds
+ */
+export function calculateWorkoutDuration(
+  exercises: Array<{
+    duration?: number;
+    sets?: number;
+    restTime?: number;
+  }>
+): number {
+  return exercises.reduce((total, exercise) => {
+    return (
+      total +
+      calculateExerciseTime(
+        exercise.duration || 0,
+        exercise.sets || 1,
+        exercise.restTime || 0
+      )
+    );
+  }, 0);
+}
+
+/**
+ * Format exercise duration for display
+ * @param duration Duration per set in seconds
+ * @param sets Number of sets
+ * @param restTime Rest time between sets in seconds
+ * @returns Formatted duration string (e.g., "8.5 min")
+ */
+export function formatExerciseDuration(
+  duration: number = 0,
+  sets: number = 1,
+  restTime: number = 0
+): string {
+  const totalSeconds = calculateExerciseTime(duration, sets, restTime);
+  const minutes = totalSeconds / 60;
+
+  if (minutes < 1) {
+    return `${Math.round(totalSeconds)}s`;
+  } else if (minutes < 60) {
+    return `${Math.round(minutes * 10) / 10} min`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round((minutes % 60) * 10) / 10;
+    return `${hours}h ${remainingMinutes}m`;
+  }
+}
+
+/**
+ * Format enum values for display by removing underscores and capitalizing properly
+ * @param value The enum value to format (e.g., "muscle_gain", "weight_loss")
+ * @returns Formatted string (e.g., "Muscle Gain", "Weight Loss")
+ */
+export function formatEnumValue(value: string): string {
+  if (!value) return "";
+  return value
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+/**
+ * Format equipment array for display
+ * @param equipment Array of equipment strings or single equipment string
+ * @returns Formatted equipment string
+ */
+export function formatEquipment(
+  equipment: string | string[] | null | undefined
+): string {
+  if (!equipment) return "None";
+
+  if (Array.isArray(equipment)) {
+    if (equipment.length === 0) return "None";
+    return equipment.map((item) => formatEnumValue(item)).join(", ");
+  }
+
+  // Handle single string with underscore formatting
+  if (equipment === "none") return "None";
+  return formatEnumValue(equipment);
+}
+
+/**
+ * Format muscle groups array for display
+ * @param muscleGroups Array of muscle group strings
+ * @returns Formatted muscle groups string
+ */
+export function formatMuscleGroups(
+  muscleGroups: string[] | null | undefined
+): string {
+  if (!muscleGroups || muscleGroups.length === 0) return "Unknown";
+  return muscleGroups.map((group) => formatEnumValue(group)).join(", ");
+}
+
+/**
+ * Format difficulty level for display
+ * @param difficulty The difficulty level (e.g., "beginner", "intermediate", "advanced")
+ * @returns Formatted difficulty string
+ */
+export function formatDifficulty(
+  difficulty: string | null | undefined
+): string {
+  if (!difficulty) return "Unknown";
+  return formatEnumValue(difficulty);
+}
+
+/**
+ * Format fitness goals for display
+ * @param goals Array of fitness goal strings
+ * @returns Formatted goals string
+ */
+export function formatFitnessGoals(goals: string[] | null | undefined): string {
+  if (!goals || goals.length === 0) return "None";
+  return goals.map((goal) => formatEnumValue(goal)).join(", ");
+}
+
+/**
+ * Format physical limitations for display
+ * @param limitations Array of limitation strings
+ * @returns Formatted limitations string
+ */
+export function formatPhysicalLimitations(
+  limitations: string[] | null | undefined
+): string {
+  if (!limitations || limitations.length === 0) return "None";
+  return limitations
+    .map((limitation) => formatEnumValue(limitation))
+    .join(", ");
+}
+
+/**
+ * Format preferred days for display
+ * @param days Array of day strings
+ * @returns Formatted days string
+ */
+export function formatPreferredDays(days: string[] | null | undefined): string {
+  if (!days || days.length === 0) return "None";
+  return days.map((day) => formatEnumValue(day)).join(", ");
+}
+
+/**
+ * Format workout environment for display
+ * @param environment The workout environment string
+ * @returns Formatted environment string
+ */
+export function formatWorkoutEnvironment(
+  environment: string | null | undefined
+): string {
+  if (!environment) return "Unknown";
+  return formatEnumValue(environment);
+}
+
+/**
+ * Format fitness level for display
+ * @param level The fitness level string
+ * @returns Formatted level string
+ */
+export function formatFitnessLevel(level: string | null | undefined): string {
+  if (!level) return "Unknown";
+  return formatEnumValue(level);
+}
+
+/**
+ * Format gender for display
+ * @param gender The gender string
+ * @returns Formatted gender string
+ */
+export function formatGender(gender: string | null | undefined): string {
+  if (!gender) return "Unknown";
+  return formatEnumValue(gender);
+}
+
+/**
+ * Format workout styles for display
+ * @param styles Array of workout style strings
+ * @returns Formatted styles string
+ */
+export function formatWorkoutStyles(
+  styles: string[] | null | undefined
+): string {
+  if (!styles || styles.length === 0) return "None";
+  return styles
+    .map((style) => {
+      // Special case for HIIT - keep it uppercase
+      if (style.toUpperCase() === "HIIT") return "HIIT";
+      return formatEnumValue(style);
+    })
+    .join(", ");
 }

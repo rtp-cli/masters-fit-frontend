@@ -1,7 +1,12 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import Text from './Text';
-import Card from './Card';
+import React from "react";
+import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
+import Text from "./Text";
+import Card from "./Card";
+import {
+  formatMuscleGroups,
+  formatDifficulty,
+  formatEquipment,
+} from "../utils";
 
 interface Exercise {
   id: number;
@@ -42,41 +47,43 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
   };
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.8} 
+    <TouchableOpacity
+      activeOpacity={0.8}
       onPress={handlePress}
-      style={[
-        styles.container,
-        selected && styles.selectedContainer,
-      ]}
+      style={[styles.container, selected && styles.selectedContainer]}
     >
-      <Card variant={selected ? 'outlined' : 'default'}>
+      <Card variant={selected ? "outlined" : "default"}>
         <View style={styles.content}>
           <View style={styles.header}>
             <View style={styles.headerContent}>
               <Text variant="title">{exercise.name}</Text>
               <Text variant="bodySmall" color="#6b7280">
-                {exercise.muscleGroups.join(', ')} • {exercise.difficulty}
+                {formatMuscleGroups(exercise.muscleGroups)} •{" "}
+                {formatDifficulty(exercise.difficulty)}
               </Text>
             </View>
-            
+
             {exercise.imageUrl && (
               <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: exercise.imageUrl }} 
-                  style={styles.image} 
+                <Image
+                  source={{ uri: exercise.imageUrl }}
+                  style={styles.image}
                   resizeMode="cover"
                 />
               </View>
             )}
           </View>
-          
+
           {expanded && (
             <View style={styles.expandedContent}>
-              <Text variant="bodySmall" color="#4b5563" style={styles.description}>
+              <Text
+                variant="bodySmall"
+                color="#4b5563"
+                style={styles.description}
+              >
                 {exercise.description}
               </Text>
-              
+
               {exercise.instructions && (
                 <View style={styles.section}>
                   <Text variant="subtitle" style={styles.sectionTitle}>
@@ -87,7 +94,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   </Text>
                 </View>
               )}
-              
+
               <View style={styles.section}>
                 <Text variant="subtitle" style={styles.sectionTitle}>
                   Equipment
@@ -95,14 +102,14 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 <View style={styles.tags}>
                   {exercise.equipment.map((item, index) => (
                     <View key={index} style={styles.tag}>
-                      <Text variant="caption">{item}</Text>
+                      <Text variant="caption">{formatEquipment(item)}</Text>
                     </View>
                   ))}
                 </View>
               </View>
-              
-              <TouchableOpacity 
-                style={styles.addButton} 
+
+              <TouchableOpacity
+                style={styles.addButton}
                 onPress={handleAddToWorkout}
               >
                 <Text variant="bodySmall" color="#ffffff" weight="semibold">
@@ -122,7 +129,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedContainer: {
-    shadowColor: '#4f46e5',
+    shadowColor: "#4f46e5",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -132,8 +139,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   headerContent: {
     flex: 1,
@@ -143,18 +150,18 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#f3f4f6',
+    overflow: "hidden",
+    backgroundColor: "#f3f4f6",
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   expandedContent: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: "#e5e7eb",
   },
   description: {
     marginBottom: 12,
@@ -167,11 +174,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   tag: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: "#f3f4f6",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -179,11 +186,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addButton: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: "#4f46e5",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
 });

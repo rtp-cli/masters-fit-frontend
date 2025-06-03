@@ -18,6 +18,7 @@ import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
+import { calculateWorkoutDuration, formatExerciseDuration } from "../../utils";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -338,9 +339,8 @@ export default function CalendarScreen() {
                           <Text className="text-text-muted mx-xs">•</Text>
                           <Text className="text-xs text-text-muted">
                             {Math.round(
-                              currentSelectedPlanDay.exercises.reduce(
-                                (total, ex) => total + (ex.duration || 0),
-                                0
+                              calculateWorkoutDuration(
+                                currentSelectedPlanDay.exercises
                               ) / 60
                             )}{" "}
                             min
@@ -387,7 +387,11 @@ export default function CalendarScreen() {
                                 {exercise.sets && exercise.reps
                                   ? `${exercise.sets} sets • ${exercise.reps} reps`
                                   : exercise.duration
-                                  ? `${Math.round(exercise.duration / 60)} min`
+                                  ? formatExerciseDuration(
+                                      exercise.duration,
+                                      exercise.sets,
+                                      exercise.restTime
+                                    )
                                   : "Duration varies"}
                               </Text>
                               {exercise.exercise.name

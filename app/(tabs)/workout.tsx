@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import { useWorkoutSession } from "@hooks/useWorkoutSession";
 import { getCompletedExercises } from "@lib/workouts";
+import { calculateWorkoutDuration, formatEquipment } from "../../utils";
 // import ExerciseLink from "@components/ExerciseLink";
 
 export default function WorkoutScreen() {
@@ -210,11 +211,9 @@ export default function WorkoutScreen() {
   };
 
   const getRemainingTime = () => {
-    const totalDuration =
-      activeWorkout?.exercises.reduce(
-        (total, ex) => total + (ex.duration || 600),
-        0
-      ) || 0;
+    const totalDuration = activeWorkout?.exercises
+      ? calculateWorkoutDuration(activeWorkout.exercises)
+      : 0;
     const elapsed = workoutTimer;
     const remaining = Math.max(0, totalDuration - elapsed);
     return Math.round(remaining / 60);
@@ -770,12 +769,7 @@ export default function WorkoutScreen() {
                     style={{ fontSize: 12, color: "#8A93A2", marginLeft: 6 }}
                   >
                     Equipment needed:{" "}
-                    {currentExercise.exercise.equipment
-                      .split("_")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                      )
-                      .join(" ")}
+                    {formatEquipment(currentExercise.exercise.equipment)}
                   </Text>
                 </View>
               )}

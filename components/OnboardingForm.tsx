@@ -144,14 +144,25 @@ interface OnboardingFormProps {
 // Helper function to format enum values for display
 const formatEnumValue = (value: string): string => {
   return value
-    .split("_")
-    .map((word) => {
-      if (word === "HIIT") {
-        return "HIIT";
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(" ");
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+// Helper function to convert centimeters to feet and inches
+const convertCmToFeetInches = (
+  cm: number
+): { feet: number; inches: number } => {
+  const totalInches = cm / 2.54;
+  const feet = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches % 12);
+  return { feet, inches };
+};
+
+// Helper function to format height display
+const formatHeight = (cm: number): string => {
+  const { feet, inches } = convertCmToFeetInches(cm);
+  return `${feet}'${inches}"`;
 };
 
 // Form validation helper
@@ -399,7 +410,7 @@ export default function OnboardingForm({
         <View className="p-4">
           <Slider
             style={{ width: "100%", height: 20 }}
-            minimumValue={40}
+            minimumValue={18}
             maximumValue={80}
             step={1}
             value={formData.age}
@@ -410,7 +421,7 @@ export default function OnboardingForm({
           />
           <View className="flex-row justify-between items-center mt-2">
             <Text className="text-xs text-neutral-medium-4 font-medium">
-              40
+              18
             </Text>
             <Text className="text-base font-semibold text-neutral-dark-1">
               {formData.age}
@@ -535,22 +546,22 @@ export default function OnboardingForm({
             style={{ width: "100%", height: 20 }}
             minimumValue={120}
             maximumValue={220}
-            step={1}
+            step={2.54}
             value={formData.height}
-            onValueChange={(value) => handleChange("height", value)}
+            onValueChange={(value) => handleChange("height", Math.round(value))}
             minimumTrackTintColor="#000000"
             maximumTrackTintColor="#E8E8E8"
             thumbTintColor="#000000"
           />
           <View className="flex-row justify-between items-center mt-2">
             <Text className="text-xs text-neutral-medium-4 font-medium">
-              4'0"
+              {formatHeight(120)}
             </Text>
             <Text className="text-base font-semibold text-neutral-dark-1">
-              {Math.floor(formData.height / 30.48)}'
+              {formatHeight(formData.height)}
             </Text>
             <Text className="text-xs text-neutral-medium-4 font-medium">
-              7'0"
+              {formatHeight(220)}
             </Text>
           </View>
         </View>
@@ -1103,7 +1114,7 @@ export default function OnboardingForm({
                 : "text-neutral-medium-4"
             }`}
           >
-            Any other health condition we should know
+            Any other health condition we should know about
           </Text>
         </View>
         {formData.limitations?.includes(

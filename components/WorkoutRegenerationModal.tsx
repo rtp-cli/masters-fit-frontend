@@ -246,6 +246,7 @@ export default function WorkoutRegenerationModal({
 
       // Close the onboarding form and regenerate with the updated profile
       setShowOnboardingForm(false);
+      console.log(profileData);
       onRegenerate(
         {
           customFeedback: customFeedback.trim() || undefined,

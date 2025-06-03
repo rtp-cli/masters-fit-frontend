@@ -24,6 +24,12 @@ import {
   ExerciseDetails,
   ExerciseUserStats,
 } from "@lib/search";
+import {
+  formatEquipment,
+  formatMuscleGroups,
+  formatDifficulty,
+  formatDate as utilFormatDate,
+} from "../../utils";
 
 type SearchType = "date" | "exercise" | "general";
 
@@ -163,23 +169,6 @@ export default function SearchScreen() {
     }
   };
 
-  // Format equipment array
-  const formatEquipment = (equipment: string[] | null | undefined) => {
-    if (!equipment || equipment.length === 0) return "None";
-    return equipment.join(", ");
-  };
-
-  // Format muscle groups array safely
-  const formatMuscleGroups = (muscleGroups: string[] | null | undefined) => {
-    if (!muscleGroups || muscleGroups.length === 0) return "Unknown";
-    return muscleGroups.join(", ");
-  };
-
-  // Format difficulty safely
-  const formatDifficulty = (difficulty: string | null | undefined) => {
-    return difficulty || "Unknown";
-  };
-
   // Format description safely
   const formatDescription = (description: string | null | undefined) => {
     return description || "No description available";
@@ -296,6 +285,16 @@ export default function SearchScreen() {
                 {formatDescription(exerciseResult.exercise.description)}
               </Text>
 
+              {/* Exercise Info */}
+              <Text
+                variant="bodySmall"
+                color="#6b7280"
+                style={styles.exerciseDetails}
+              >
+                {formatMuscleGroups(exerciseResult.exercise.muscleGroups)} •{" "}
+                {formatDifficulty(exerciseResult.exercise.difficulty)}
+              </Text>
+
               {/* Muscle Groups */}
               <View style={styles.muscleGroupsSection}>
                 <Text variant="title" style={styles.sectionTitle}>
@@ -312,7 +311,7 @@ export default function SearchScreen() {
                             variant="bodySmall"
                             style={styles.muscleGroupText}
                           >
-                            {muscle || "Unknown"}
+                            {formatMuscleGroups([muscle])}
                           </Text>
                         </View>
                       )
@@ -657,18 +656,17 @@ export default function SearchScreen() {
                             color="#6b7280"
                             style={styles.exerciseDetails}
                           >
-                            {safeArrayJoin(exercise?.exercise?.muscleGroups) +
-                              " • " +
-                              safeString(
-                                exercise?.exercise?.difficulty || "Unknown"
-                              )}
+                            {formatMuscleGroups(
+                              exercise?.exercise?.muscleGroups
+                            )}{" "}
+                            • {formatDifficulty(exercise?.exercise?.difficulty)}
                           </Text>
                           {exercise?.exercise?.equipment &&
                             Array.isArray(exercise.exercise.equipment) &&
                             exercise.exercise.equipment.length > 0 && (
                               <Text variant="caption" color="#6b7280">
                                 {"Equipment: " +
-                                  safeArrayJoin(exercise.exercise.equipment)}
+                                  formatEquipment(exercise.exercise.equipment)}
                               </Text>
                             )}
                           <View style={styles.exerciseProgressContainer}>
@@ -743,9 +741,8 @@ export default function SearchScreen() {
                     color="#6b7280"
                     style={styles.exerciseDetails}
                   >
-                    {`${
-                      safeArrayJoin(exercise?.muscleGroups) || "Unknown"
-                    } • ${safeString(exercise?.difficulty || "Unknown")}`}
+                    {formatMuscleGroups(exercise?.muscleGroups)} •{" "}
+                    {formatDifficulty(exercise?.difficulty)}
                   </Text>
                   {exercise?.description && (
                     <Text
@@ -758,9 +755,7 @@ export default function SearchScreen() {
                   )}
                   <View style={styles.exerciseTags}>
                     <Text variant="caption" color="#4b5563">
-                      {`Equipment: ${
-                        safeArrayJoin(exercise?.equipment) || "None"
-                      }`}
+                      {`Equipment: ${formatEquipment(exercise?.equipment)}`}
                     </Text>
                   </View>
                 </View>

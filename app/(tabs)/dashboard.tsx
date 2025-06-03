@@ -16,7 +16,13 @@ import { SimpleCircularProgress } from "@components/charts/CircularProgress";
 import { BarChart } from "@components/charts/BarChart";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
-import { formatDate, formatNumber, getCurrentDate } from "@utils/index";
+import {
+  formatDate,
+  formatNumber,
+  formatDuration,
+  calculateWorkoutDuration,
+  getCurrentDate,
+} from "../../utils";
 import { fetchActiveWorkout } from "@lib/workouts";
 import {
   WorkoutWithDetails,
@@ -134,11 +140,10 @@ export default function DashboardScreen() {
     );
   }
 
-  // Calculate total workout duration
-  const totalDuration =
-    todaysWorkout?.exercises?.reduce((total, exercise) => {
-      return total + (exercise.duration || 0);
-    }, 0) || 0;
+  // Calculate total workout duration (properly accounting for sets and rest)
+  const totalDuration = todaysWorkout?.exercises
+    ? calculateWorkoutDuration(todaysWorkout.exercises)
+    : 0;
 
   // Calculate workout completion rate for today
   const todayCompletionRate = todaysWorkout?.exercises
@@ -163,6 +168,9 @@ export default function DashboardScreen() {
         : metric.name,
     value: metric.totalWeight,
   }));
+
+  // Debug logging for dailyWorkoutProgress
+  console.log("\n=== DAILY WORKOUT PROGRESS DATA ===", dailyWorkoutProgress);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-background">
@@ -331,24 +339,14 @@ export default function DashboardScreen() {
                       style={{ height: 120 }}
                     >
                       {(() => {
-                        // Get the actual workout start date from the API response
+                        // Use the workout start date as the base, not the current week's Monday
                         let weekStartDate = new Date();
 
                         // Use the actual workout start date from the API response
                         if (workoutInfo?.startDate) {
                           weekStartDate = new Date(workoutInfo.startDate);
-                        } else if (todaysWorkout?.date) {
-                          // Fallback: use today's workout date and calculate Monday of that week
-                          const workoutDate = new Date(todaysWorkout.date);
-                          weekStartDate = new Date(workoutDate);
-                          const dayOfWeek = workoutDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                          const daysFromMonday =
-                            dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Sunday
-                          weekStartDate.setDate(
-                            workoutDate.getDate() - daysFromMonday
-                          );
                         } else {
-                          // Final fallback: show the current week starting from Monday
+                          // Fallback: use current week's Monday
                           const today = new Date();
                           const dayOfWeek = today.getDay();
                           const daysFromMonday =
@@ -359,25 +357,20 @@ export default function DashboardScreen() {
                         }
 
                         const workout7Days = [];
-                        const dayNames = [
-                          "Mon", // Start with Monday
-                          "Tue",
-                          "Wed",
-                          "Thu",
-                          "Fri",
-                          "Sat",
-                          "Sun", // End with Sunday
-                        ];
 
                         for (let i = 0; i < 7; i++) {
                           const date = new Date(weekStartDate);
                           date.setDate(weekStartDate.getDate() + i);
-                          const dayName = dayNames[i]; // Use array index since we're starting from Monday
+
+                          // Generate day name dynamically based on actual date
+                          const dayName = date.toLocaleDateString("en-US", {
+                            weekday: "short",
+                          });
                           const dateStr = date.toISOString().split("T")[0];
                           const today = new Date();
                           const todayStr = today.toISOString().split("T")[0];
 
-                          // Find corresponding data from dailyWorkoutProgress instead of workoutConsistency
+                          // Find corresponding data from dailyWorkoutProgress
                           const dayData = dailyWorkoutProgress.find((day) => {
                             return day.date === dateStr;
                           });
@@ -392,15 +385,38 @@ export default function DashboardScreen() {
                           let completionRate = 0;
                           let status = "incomplete";
 
-                          if (dayData) {
+                          // Debug logging
+                          console.log(
+                            `\n=== Day ${i}: ${dayName} (${dateStr}) ===`
+                          );
+                          console.log("dayData:", dayData);
+                          console.log("hasPlannedWorkout:", hasPlannedWorkout);
+                          console.log("isToday:", isToday);
+                          console.log("isFuture:", isFuture);
+
+                          // First check if it's a rest day (no planned workout)
+                          if (!hasPlannedWorkout) {
+                            status = "rest";
+                            completionRate = 0;
+                            console.log("→ Setting as REST DAY");
+                          } else if (dayData) {
+                            // Only process completion rate if there's a planned workout
                             completionRate = dayData.completionRate;
                             if (completionRate === 100) status = "complete";
                             else if (completionRate > 0) status = "partial";
-                          } else if (!hasPlannedWorkout) {
-                            status = "rest";
+                            else if (isFuture) status = "upcoming";
+                            else status = "incomplete";
+                            console.log(
+                              `→ Setting as WORKOUT DAY: ${status}, completion: ${completionRate}%`
+                            );
                           } else if (isFuture) {
                             status = "upcoming";
+                            console.log("→ Setting as UPCOMING");
                           }
+
+                          console.log(
+                            `Final status: ${status}, completion: ${completionRate}%`
+                          );
 
                           workout7Days.push({
                             dayName,
@@ -483,12 +499,18 @@ export default function DashboardScreen() {
             {totalVolumeMetrics && totalVolumeMetrics.length > 0 && (
               <View className="px-5 mb-6">
                 <Text className="text-base font-semibold text-text-primary mb-4">
-                  Strength Progress
+                  {totalVolumeMetrics[0]?.totalVolume > 1000
+                    ? "Strength Progress"
+                    : "Workout Volume"}
                 </Text>
                 <View className="bg-white rounded-2xl p-4 shadow-sm">
                   <Text className="text-xs text-text-muted mb-4">
-                    Total volume lifted over time (sets × reps × weight in lbs)
+                    {totalVolumeMetrics[0]?.totalVolume > 1000
+                      ? "Total weight lifted over time (sets × reps × weight in lbs)"
+                      : "Total workout volume over time (sets × reps)"}
                   </Text>
+
+                  {/* Always show LineChart, regardless of data points */}
                   <LineChart
                     data={totalVolumeMetrics.map((metric) => ({
                       label: metric.label,
@@ -498,6 +520,17 @@ export default function DashboardScreen() {
                     height={200}
                     color="#BBDE51"
                   />
+
+                  {/* Show message for single data point */}
+                  {totalVolumeMetrics.length === 1 && (
+                    <View className="items-center py-4">
+                      <Text className="text-sm text-text-muted text-center mb-2">
+                        Complete more workouts to see your progress trends over
+                        time
+                      </Text>
+                    </View>
+                  )}
+
                   <View className="flex-row justify-around mt-4 pt-4 border-t border-neutral-light-2">
                     <View className="items-center">
                       <Text className="text-base font-bold text-text-primary">
@@ -505,6 +538,10 @@ export default function DashboardScreen() {
                           totalVolumeMetrics[totalVolumeMetrics.length - 1]
                             ?.totalVolume || 0
                         )}
+                        {(totalVolumeMetrics[totalVolumeMetrics.length - 1]
+                          ?.totalVolume || 0) > 1000
+                          ? " lbs"
+                          : ""}
                       </Text>
                       <Text className="text-xs text-text-muted">Latest</Text>
                     </View>
@@ -515,6 +552,11 @@ export default function DashboardScreen() {
                             ...totalVolumeMetrics.map((m) => m.totalVolume)
                           )
                         )}
+                        {Math.max(
+                          ...totalVolumeMetrics.map((m) => m.totalVolume)
+                        ) > 1000
+                          ? " lbs"
+                          : ""}
                       </Text>
                       <Text className="text-xs text-text-muted">Peak</Text>
                     </View>
@@ -526,6 +568,14 @@ export default function DashboardScreen() {
                             0
                           ) / totalVolumeMetrics.length
                         )}
+                        {totalVolumeMetrics.reduce(
+                          (sum, m) => sum + m.totalVolume,
+                          0
+                        ) /
+                          totalVolumeMetrics.length >
+                        1000
+                          ? " lbs"
+                          : ""}
                       </Text>
                       <Text className="text-xs text-text-muted">Average</Text>
                     </View>
@@ -534,65 +584,112 @@ export default function DashboardScreen() {
               </View>
             )}
 
-            {/* Weight Accuracy */}
-            {weightAccuracy && weightAccuracy.hasPlannedWeights && (
+            {/* Weight Progression */}
+            {weightAccuracy && (
               <View className="px-5 mb-6">
                 <Text className="text-base font-semibold text-text-primary mb-4">
-                  Weight Accuracy
+                  Weight Progression
                 </Text>
                 <View className="bg-white rounded-2xl p-5 shadow-sm">
-                  <View className="flex-row items-center mb-5">
-                    <View className="mr-5">
-                      <View className="items-center mb-3">
-                        <Text className="text-2xl font-bold text-text-primary">
-                          {formatNumber(weightAccuracy.accuracyRate)}%
-                        </Text>
-                        <Text className="text-sm text-text-muted">
-                          Accuracy
-                        </Text>
-                      </View>
-                      <Text className="text-xs text-text-muted text-center">
-                        Followed plan exactly
-                      </Text>
-                    </View>
-                    <View className="flex-1">
-                      {weightAccuracy.chartData &&
-                        weightAccuracy.chartData.length > 0 && (
-                          <PieChart
-                            data={weightAccuracy.chartData.filter(
-                              (item) => item.label !== "✅ Followed Plan"
+                  {weightAccuracy.hasPlannedWeights &&
+                  weightAccuracy.totalSets > 0 ? (
+                    <>
+                      <View className="flex-row items-center mb-5">
+                        <View className="mr-5">
+                          <View className="items-center mb-3">
+                            <Text className="text-2xl font-bold text-primary">
+                              {weightAccuracy.avgWeightDifference > 0
+                                ? "+"
+                                : ""}
+                              {formatNumber(weightAccuracy.avgWeightDifference)}{" "}
+                              lbs
+                            </Text>
+                            <Text className="text-sm text-text-muted">
+                              Avg Progression
+                            </Text>
+                          </View>
+                          <Text className="text-xs text-text-muted text-center">
+                            vs planned weights
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          {weightAccuracy.chartData &&
+                            weightAccuracy.chartData.length > 0 && (
+                              <PieChart
+                                data={weightAccuracy.chartData}
+                                size={100}
+                              />
                             )}
-                            size={100}
-                          />
-                        )}
-                    </View>
-                  </View>
-                  <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
-                    <View className="items-center">
-                      <Text className="text-sm font-bold text-accent">
-                        {weightAccuracy.exactMatches}
+                        </View>
+                      </View>
+                      <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-accent">
+                            {weightAccuracy.exactMatches}
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            As Planned
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-orange-500">
+                            {weightAccuracy.higherWeight}
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Progressed
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-red-500">
+                            {weightAccuracy.lowerWeight}
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Adapted
+                          </Text>
+                        </View>
+                        <View className="items-center">
+                          <Text className="text-sm font-bold text-text-primary">
+                            {weightAccuracy.totalSets}
+                          </Text>
+                          <Text className="text-xs text-text-muted">
+                            Total Sets
+                          </Text>
+                        </View>
+                      </View>
+                    </>
+                  ) : weightAccuracy.hasPlannedWeights ? (
+                    <View className="items-center py-8">
+                      <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
+                        <Ionicons
+                          name="barbell-outline"
+                          size={24}
+                          color="#8A93A2"
+                        />
+                      </View>
+                      <Text className="text-base font-semibold text-text-primary mb-2">
+                        Start Logging Weights
                       </Text>
-                      <Text className="text-xs text-text-muted">Exact</Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-sm font-bold text-orange-500">
-                        {weightAccuracy.higherWeight}
+                      <Text className="text-sm text-text-muted text-center">
+                        Complete workouts with weights to track your progression
                       </Text>
-                      <Text className="text-xs text-text-muted">Above</Text>
                     </View>
-                    <View className="items-center">
-                      <Text className="text-sm font-bold text-red-500">
-                        {weightAccuracy.lowerWeight}
+                  ) : (
+                    <View className="items-center py-8">
+                      <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
+                        <Ionicons
+                          name="fitness-outline"
+                          size={24}
+                          color="#8A93A2"
+                        />
+                      </View>
+                      <Text className="text-base font-semibold text-text-primary mb-2">
+                        Bodyweight Focus
                       </Text>
-                      <Text className="text-xs text-text-muted">Below</Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-sm font-bold text-text-primary">
-                        {weightAccuracy.totalSets}
+                      <Text className="text-sm text-text-muted text-center">
+                        This plan emphasizes bodyweight exercises for strength
                       </Text>
-                      <Text className="text-xs text-text-muted">Total</Text>
                     </View>
-                  </View>
+                  )}
                 </View>
               </View>
             )}

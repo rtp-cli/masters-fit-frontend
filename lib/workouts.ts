@@ -1,5 +1,6 @@
 import { apiRequest } from "./api";
 import { getCurrentUser } from "./auth";
+import { formatDateAsString, getTodayString, isSameDay } from "../utils";
 
 // Types
 export interface Workout {
@@ -118,7 +119,7 @@ export async function completeWorkout(
         method: "POST",
         body: JSON.stringify({
           workoutId: id,
-          date: new Date().toISOString().split("T")[0],
+          date: formatDateAsString(new Date()),
           duration: workout.duration,
           caloriesBurned,
           notes,
