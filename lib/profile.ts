@@ -17,7 +17,7 @@ export interface Profile {
   preferredStyles?: string[];
   availableDays?: string[];
   workoutDuration?: number;
-  intensityLevel?: string;
+  intensityLevel?: string | number;
   medicalNotes?: string;
   created_at?: Date;
   updated_at?: Date;
@@ -38,7 +38,7 @@ export interface UpdateProfileParams {
   preferredTime?: string;
   weeklyTarget?: number;
   workoutDuration?: number;
-  intensityLevel?: number;
+  intensityLevel?: string;
   medicalNotes?: string;
   aerobicLevel?: number;
   strengthLevel?: number;

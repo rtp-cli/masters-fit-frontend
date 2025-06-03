@@ -48,7 +48,13 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["System"],
+        sans: ["Inter_400Regular", "System", "Arial", "sans-serif"],
+        body: ["Inter_400Regular", "System"],
+        heading: ["Inter_700Bold", "System"],
+        regular: ["Inter_400Regular"],
+        medium: ["Inter_500Medium"],
+        semibold: ["Inter_600SemiBold"],
+        bold: ["Inter_700Bold"],
       },
       fontSize: {
         xs: "12px",

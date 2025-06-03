@@ -185,18 +185,6 @@ export default function VerifyScreen() {
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header with back button */}
-        <View className="flex-row items-center justify-between px-lg pt-md pb-sm">
-          <TouchableOpacity
-            className="w-10 h-10 justify-center items-center"
-            onPress={handleGoBack}
-            disabled={isLoading}
-          >
-            <Ionicons name="chevron-back" size={24} color="#525252" />
-          </TouchableOpacity>
-          <View className="flex-1" />
-        </View>
-
         {/* Title and description */}
         <View className="px-lg pt-2xl pb-lg">
           <Text className="text-3xl font-bold text-text-primary mb-sm">

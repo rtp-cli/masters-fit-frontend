@@ -25,6 +25,7 @@ export interface UseWorkoutSessionReturn {
   exerciseTimer: number;
   workoutTimer: number;
   isWorkoutActive: boolean;
+  isPaused: boolean;
   exerciseData: ExerciseSessionData[];
   isLoading: boolean;
 
@@ -36,6 +37,7 @@ export interface UseWorkoutSessionReturn {
   moveToNextExercise: () => void;
   resetSession: () => void;
   refreshWorkout: () => Promise<void>;
+  togglePause: () => void;
 
   // Computed values
   currentExercise: PlanDayWithExercise | undefined;
@@ -53,6 +55,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   const [exerciseTimer, setExerciseTimer] = useState(0);
   const [workoutTimer, setWorkoutTimer] = useState(0);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [exerciseData, setExerciseData] = useState<ExerciseSessionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,7 +66,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
   // Timer management
   useEffect(() => {
-    if (isWorkoutActive) {
+    if (isWorkoutActive && !isPaused) {
       workoutTimerRef.current = setInterval(() => {
         setWorkoutTimer((prev) => prev + 1);
       }, 1000);
@@ -80,7 +83,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
       if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     };
-  }, [isWorkoutActive]);
+  }, [isWorkoutActive, isPaused]);
 
   // Load active workout on mount
   useEffect(() => {
@@ -194,6 +197,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setExerciseTimer(0);
     setWorkoutTimer(0);
     setIsWorkoutActive(false);
+    setIsPaused(false);
 
     // Clear any running timers
     if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
@@ -420,6 +424,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     workoutStartTime.current = null;
     exerciseStartTime.current = null;
+    setIsPaused(false);
   }, []);
 
   const formatTime = useCallback((seconds: number): string => {
@@ -429,6 +434,10 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       .toString()
       .padStart(2, "0")}`;
   }, []);
+
+  const togglePause = useCallback(() => {
+    setIsPaused(!isPaused);
+  }, [isPaused]);
 
   // Computed values
   const currentExercise = activeWorkout?.exercises[currentExerciseIndex];
@@ -445,6 +454,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     exerciseTimer,
     workoutTimer,
     isWorkoutActive,
+    isPaused,
     exerciseData,
     isLoading,
 
@@ -456,6 +466,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     moveToNextExercise,
     resetSession,
     refreshWorkout,
+    togglePause,
 
     // Computed values
     currentExercise,

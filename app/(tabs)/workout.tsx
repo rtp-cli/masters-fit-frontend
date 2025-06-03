@@ -26,7 +26,6 @@ export default function WorkoutScreen() {
   const [workoutNotes, setWorkoutNotes] = useState("");
   const [exerciseNotes, setExerciseNotes] = useState("");
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [difficultyLevel, setDifficultyLevel] = useState(0.5);
 
   // Wrap the hook in a try-catch to handle potential errors
@@ -52,6 +51,7 @@ export default function WorkoutScreen() {
     exerciseTimer,
     workoutTimer,
     isWorkoutActive,
+    isPaused,
     exerciseData,
     isLoading,
     startWorkout,
@@ -67,6 +67,7 @@ export default function WorkoutScreen() {
     progressPercentage,
     formatTime,
     refreshWorkout,
+    togglePause,
   } = hookResult;
 
   // Refresh workout when tab is focused (to handle date changes and navigation)
@@ -152,7 +153,6 @@ export default function WorkoutScreen() {
     const success = await endWorkout(workoutNotes);
     if (success) {
       setShowEndWorkoutModal(false);
-      setIsPaused(false);
       Alert.alert("Workout Ended", "Your workout progress has been saved!");
       resetSession();
       setWorkoutNotes("");
@@ -160,10 +160,6 @@ export default function WorkoutScreen() {
     } else {
       Alert.alert("Error", "Failed to save workout");
     }
-  };
-
-  const togglePause = () => {
-    setIsPaused(!isPaused);
   };
 
   const getExerciseStatus = (exerciseIndex: number) => {
@@ -335,35 +331,6 @@ export default function WorkoutScreen() {
           >
             Great job! You've completed all exercises in today's workout.
           </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#8A93A2",
-              textAlign: "center",
-              marginBottom: 16,
-            }}
-          >
-            Current date: {currentDate}
-          </Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#BBDE51",
-              borderRadius: 12,
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-            }}
-            onPress={refreshWorkout}
-          >
-            <Text
-              style={{
-                color: "#181917",
-                fontWeight: "600",
-                fontSize: 14,
-              }}
-            >
-              Refresh Workout
-            </Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,18 +6,72 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import { useRouter } from "expo-router";
+import { fetchUserProfile, Profile } from "@lib/profile";
+import { useDashboard } from "@hooks/useDashboard";
+import {
+  formatEnumValue,
+  formatFitnessGoals,
+  formatWorkoutStyles,
+  formatEquipment,
+  getIntensityText,
+} from "@utils/index";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  // State for user data
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+
+  // Dashboard data for statistics
+  const {
+    weeklySummary,
+    workoutConsistency,
+    loading: dashboardLoading,
+    fetchWeeklySummary,
+  } = useDashboard(user?.id || 0);
+
+  // Load user profile and dashboard data
+  const loadUserData = async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      const [profileData] = await Promise.all([
+        fetchUserProfile(),
+        fetchWeeklySummary(),
+      ]);
+      setProfile(profileData);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh data
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadUserData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    loadUserData();
+  }, [user?.id]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -42,18 +96,179 @@ export default function SettingsScreen() {
     );
   };
 
+  // Format goals for display with colors
+  const formatGoalsWithColors = (goals: string[] | undefined) => {
+    if (!goals || goals.length === 0) return [];
+    return goals.map((goal) => {
+      const baseColor =
+        goal === "weight_loss"
+          ? "red"
+          : goal === "muscle_gain"
+          ? "purple"
+          : goal === "strength"
+          ? "orange"
+          : goal === "endurance"
+          ? "blue"
+          : goal === "flexibility"
+          ? "pink"
+          : goal === "general_fitness"
+          ? "green"
+          : "gray";
+
+      return {
+        label: formatEnumValue(goal),
+        color: `bg-${baseColor}-100 text-${baseColor}-700`,
+      };
+    });
+  };
+
+  // Format workout styles for display with colors
+  const formatWorkoutStylesWithColors = (styles: string[] | undefined) => {
+    if (!styles || styles.length === 0) return [];
+    return styles.map((style) => {
+      const baseColor =
+        style === "HIIT"
+          ? "blue"
+          : style === "strength"
+          ? "purple"
+          : style === "cardio"
+          ? "orange"
+          : style === "yoga"
+          ? "green"
+          : style === "pilates"
+          ? "pink"
+          : "gray";
+
+      return {
+        label: style === "HIIT" ? "HIIT" : formatEnumValue(style),
+        color: `bg-${baseColor}-100 text-${baseColor}-700`,
+      };
+    });
+  };
+
+  // Format available days for display
+  const formatAvailableDays = (days: string[] | undefined) => {
+    if (!days || days.length === 0) return [];
+    const dayMap: { [key: string]: string } = {
+      monday: "M",
+      tuesday: "T",
+      wednesday: "W",
+      thursday: "T",
+      friday: "F",
+      saturday: "S",
+      sunday: "S",
+    };
+
+    return [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ].map((day, index) => ({
+      day: dayMap[day],
+      active: days.includes(day),
+      index,
+    }));
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (user?.name) {
+      return user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return "U";
+  };
+
+  // Get fitness level display
+  const getFitnessLevelDisplay = (level: string | undefined) => {
+    if (!level) return "Not specified";
+    return formatEnumValue(level);
+  };
+
+  // Handle environment display with robust error handling
+  const getEnvironmentDisplay = (environment: string | undefined | null) => {
+    if (!environment || environment === "") return "Not specified";
+    try {
+      return formatEnumValue(environment);
+    } catch (error) {
+      console.error("Environment formatting error:", error);
+      return environment;
+    }
+  };
+
+  // Get intensity level display with robust error handling
+  const getIntensityLevelDisplay = (
+    level: string | number | undefined | null
+  ) => {
+    if (!level || level === "") return "Not specified";
+
+    try {
+      // Handle string intensity levels ("low", "moderate", "high") - primary case
+      if (typeof level === "string") {
+        // Handle legacy numeric strings like "3" -> convert to proper text
+        if (level === "1") return "Low";
+        if (level === "2") return "Moderate";
+        if (level === "3") return "High";
+
+        // Handle proper enum strings
+        return formatEnumValue(level);
+      }
+
+      // Handle numeric intensity levels (1-5 scale) - fallback for legacy data
+      if (typeof level === "number") {
+        if (level <= 3) {
+          // Convert 1-3 scale to proper enum values
+          return level === 1 ? "Low" : level === 2 ? "Moderate" : "High";
+        } else {
+          // Use 1-5 scale
+          return getIntensityText(level);
+        }
+      }
+    } catch (error) {
+      console.error("Intensity level formatting error:", error);
+      return String(level);
+    }
+
+    return "Not specified";
+  };
+
+  if (loading && !profile) {
+    return (
+      <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#BBDE51" />
+        <Text className="text-text-muted mt-2">Loading your profile...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-neutral-light-1">
-      <ScrollView className="flex-1">
+      <ScrollView
+        className="flex-1"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
         {/* Profile Section */}
-        <View className="p-6 bg-white items-center">
+        <View className="p-6 items-center">
           <View className="w-20 h-20 rounded-full bg-indigo-500 items-center justify-center mb-4">
             <Text className="text-3xl font-bold text-white">
-              {user?.name?.charAt(0) || "M"}
+              {getUserInitials()}
             </Text>
           </View>
           <Text className="text-xl font-bold text-text-primary">
-            {user?.name || "Michael Thompson"}
+            {user?.name || "User"}
+          </Text>
+          <Text className="text-sm text-text-muted mt-1">
+            {user?.email || "No email provided"}
           </Text>
         </View>
 
@@ -63,7 +278,10 @@ export default function SettingsScreen() {
             Quick Actions
           </Text>
           <View className="flex-row justify-between">
-            <TouchableOpacity className="items-center">
+            <TouchableOpacity
+              className="items-center"
+              onPress={() => router.push("/profile-edit")}
+            >
               <View className="w-12 h-12 rounded-full bg-yellow-100 items-center justify-center mb-2">
                 <Ionicons name="person-outline" size={20} color="#F59E0B" />
               </View>
@@ -90,23 +308,249 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Account Settings */}
+        {/* Personal Information */}
+        {profile && (
+          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+            <Text className="text-base font-semibold text-text-primary p-4 pb-2">
+              Personal Information
+            </Text>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">Age</Text>
+                <Text className="text-sm text-text-muted">
+                  {profile.age ? `${profile.age} years` : "Not specified"}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">Height</Text>
+                <Text className="text-sm text-text-muted">
+                  {profile.height ? `${profile.height} cm` : "Not specified"}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">Weight</Text>
+                <Text className="text-sm text-text-muted">
+                  {profile.weight ? `${profile.weight} kg` : "Not specified"}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">Gender</Text>
+                <Text className="text-sm text-text-muted">
+                  {profile.gender
+                    ? formatEnumValue(profile.gender)
+                    : "Not specified"}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">Environment</Text>
+                <Text className="text-sm text-text-muted">
+                  {getEnvironmentDisplay(profile.environment)}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">Fitness Level</Text>
+                <Text className="text-sm text-text-muted">
+                  {getFitnessLevelDisplay(profile.fitnessLevel)}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">
+                  Workout Duration
+                </Text>
+                <Text className="text-sm text-text-muted">
+                  {profile.workoutDuration
+                    ? `${profile.workoutDuration} minutes`
+                    : "Not specified"}
+                </Text>
+              </View>
+            </View>
+
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-text-primary">
+                  Intensity Level
+                </Text>
+                <Text className="text-sm text-text-muted">
+                  {getIntensityLevelDisplay(profile.intensityLevel)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Fitness Goals */}
+        {profile?.goals && profile.goals.length > 0 && (
+          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+              Fitness Goals
+            </Text>
+            <View className="px-4 pb-4">
+              <View className="flex-row flex-wrap">
+                {formatGoalsWithColors(profile.goals).map((goal, index) => (
+                  <View
+                    key={index}
+                    className={`${goal.color} rounded-full px-3 py-1 mr-2 mb-2`}
+                  >
+                    <Text
+                      className={`text-xs font-medium ${
+                        goal.color.split(" ")[1]
+                      }`}
+                    >
+                      {goal.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Preferred Workout Types */}
+        {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
+          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+              Preferred Workout Types
+            </Text>
+            <View className="px-4 pb-4">
+              <View className="flex-row flex-wrap">
+                {formatWorkoutStylesWithColors(profile.preferredStyles).map(
+                  (style, index) => (
+                    <View
+                      key={index}
+                      className={`${style.color} rounded-full px-3 py-1 mr-2 mb-2`}
+                    >
+                      <Text
+                        className={`text-xs font-medium ${
+                          style.color.split(" ")[1]
+                        }`}
+                      >
+                        {style.label}
+                      </Text>
+                    </View>
+                  )
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Equipment Available */}
+        {profile?.equipment && profile.equipment.length > 0 && (
+          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+              Available Equipment
+            </Text>
+            <View className="px-4 pb-4">
+              <View className="flex-row flex-wrap">
+                {profile.equipment.map((item, index) => (
+                  <View
+                    key={index}
+                    className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2"
+                  >
+                    <Text className="text-xs font-medium text-gray-700">
+                      {formatEnumValue(item)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Weekly Schedule */}
+        {profile?.availableDays && profile.availableDays.length > 0 && (
+          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+              Weekly Schedule
+            </Text>
+            <View className="flex-row justify-between px-4 pb-4">
+              {formatAvailableDays(profile.availableDays).map((dayInfo) => (
+                <View
+                  key={dayInfo.index}
+                  className={`w-8 h-8 rounded-full items-center justify-center ${
+                    dayInfo.active ? "bg-text-primary" : "bg-neutral-light-2"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-medium ${
+                      dayInfo.active ? "text-white" : "text-text-muted"
+                    }`}
+                  >
+                    {dayInfo.day}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Limitations & Medical Notes */}
+        {((profile?.limitations && profile.limitations.length > 0) ||
+          profile?.medicalNotes) && (
+          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
+              Health Information
+            </Text>
+
+            {profile.limitations && profile.limitations.length > 0 && (
+              <View className="px-4 pb-3">
+                <Text className="text-sm font-medium text-text-primary mb-2">
+                  Limitations
+                </Text>
+                <View className="flex-row flex-wrap">
+                  {profile.limitations.map((limitation, index) => (
+                    <View
+                      key={index}
+                      className="bg-red-100 rounded-full px-3 py-1 mr-2 mb-2"
+                    >
+                      <Text className="text-xs font-medium text-red-700">
+                        {formatEnumValue(limitation)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {profile.medicalNotes && (
+              <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
+                <Text className="text-sm font-medium text-text-primary mb-2">
+                  Medical Notes
+                </Text>
+                <Text className="text-sm text-text-muted">
+                  {profile.medicalNotes}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* App Settings */}
         <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
           <Text className="text-base font-semibold text-text-primary p-4 pb-2">
-            Account Settings
+            App Settings
           </Text>
 
-          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-            <View className="flex-row items-center flex-1">
-              <Ionicons name="person-outline" size={20} color="#6B7280" />
-              <Text className="text-sm text-text-primary ml-3">
-                Personal Information
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+          <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">
               <Ionicons
                 name="notifications-outline"
@@ -114,28 +558,29 @@ export default function SettingsScreen() {
                 color="#6B7280"
               />
               <Text className="text-sm text-text-primary ml-3">
-                Notification Preferences
+                Push Notifications
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={setNotificationsEnabled}
+              trackColor={{ false: "#E5E7EB", true: "#BBDE51" }}
+              thumbColor={notificationsEnabled ? "#FFFFFF" : "#F3F4F6"}
+            />
+          </View>
 
-          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+          <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">
-              <Ionicons
-                name="phone-portrait-outline"
-                size={20}
-                color="#6B7280"
-              />
-              <Text className="text-sm text-text-primary ml-3">
-                Connected Devices & Apps
-              </Text>
+              <Ionicons name="moon-outline" size={20} color="#6B7280" />
+              <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
             </View>
-            <View className="flex-row items-center">
-              <Text className="text-xs text-text-muted mr-2">3 connected</Text>
-              <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-            </View>
-          </TouchableOpacity>
+            <Switch
+              value={darkModeEnabled}
+              onValueChange={setDarkModeEnabled}
+              trackColor={{ false: "#E5E7EB", true: "#BBDE51" }}
+              thumbColor={darkModeEnabled ? "#FFFFFF" : "#F3F4F6"}
+            />
+          </View>
 
           <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">
@@ -150,109 +595,6 @@ export default function SettingsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           </TouchableOpacity>
-
-          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-            <View className="flex-row items-center flex-1">
-              <Ionicons name="flag-outline" size={20} color="#6B7280" />
-              <Text className="text-sm text-text-primary ml-3">
-                Goals & Preferences
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Fitness Preferences */}
-        <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
-          <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-            Fitness Preferences
-          </Text>
-
-          {/* Preferred Workout Types */}
-          <View className="px-4 pb-3">
-            <Text className="text-sm font-medium text-text-primary mb-3">
-              Preferred Workout Types
-            </Text>
-            <View className="flex-row flex-wrap">
-              <View className="bg-primary rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-secondary">
-                  Strength Training
-                </Text>
-              </View>
-              <View className="bg-blue-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-blue-700">HIIT</Text>
-              </View>
-              <View className="bg-green-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-green-700">Yoga</Text>
-              </View>
-              <View className="bg-orange-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-orange-700">
-                  Walking
-                </Text>
-              </View>
-              <View className="bg-purple-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-purple-700">
-                  Cycling
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Fitness Goals */}
-          <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
-            <Text className="text-sm font-medium text-text-primary mb-3">
-              Fitness Goals
-            </Text>
-            <View className="flex-row flex-wrap">
-              <View className="bg-primary rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-secondary">
-                  Weight Loss
-                </Text>
-              </View>
-              <View className="bg-teal-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-teal-700">
-                  Muscle Gain
-                </Text>
-              </View>
-              <View className="bg-indigo-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-indigo-700">
-                  Endurance
-                </Text>
-              </View>
-              <View className="bg-pink-100 rounded-full px-3 py-1 mr-2 mb-2">
-                <Text className="text-xs font-medium text-pink-700">
-                  Flexibility
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Weekly Schedule */}
-        <View className="mx-6 mb-6 bg-white rounded-xl overflow-hidden">
-          <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-            Weekly Schedule
-          </Text>
-          <View className="flex-row justify-between px-4 pb-4">
-            {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
-              <View
-                key={index}
-                className={`w-8 h-8 rounded-full items-center justify-center ${
-                  [0, 2, 4].includes(index)
-                    ? "bg-text-primary"
-                    : "bg-neutral-light-2"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-medium ${
-                    [0, 2, 4].includes(index) ? "text-white" : "text-text-muted"
-                  }`}
-                >
-                  {day}
-                </Text>
-              </View>
-            ))}
-          </View>
         </View>
 
         {/* Logout Button */}

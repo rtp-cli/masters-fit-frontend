@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { BarChart as RNBarChart } from "react-native-chart-kit";
 
 interface DataPoint {
   label: string;
@@ -22,100 +23,84 @@ export const BarChart: React.FC<BarChartProps> = ({
   maxValue,
   color = "#4f46e5",
 }) => {
-  // Safely calculate max value with fallbacks
-  const dataMaxValue =
-    data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
-  const calculatedMaxValue = maxValue || dataMaxValue;
-
-  // Ensure we have a valid max value to prevent division by zero
-  const safeMaxValue = calculatedMaxValue > 0 ? calculatedMaxValue : 1;
-  const barMaxHeight = height - 40; // Leave space for labels
-
-  const renderBar = (item: DataPoint, index: number) => {
-    // Safely calculate bar height with proper fallbacks
-    const rawBarHeight = (item.value / safeMaxValue) * barMaxHeight;
-    const barHeight =
-      isNaN(rawBarHeight) || !isFinite(rawBarHeight)
-        ? 0
-        : Math.max(rawBarHeight, 0);
-    const barColor = item.color || color;
-
+  if (!data || data.length === 0) {
     return (
-      <View key={index} style={styles.barContainer}>
-        <View style={styles.barWrapper}>
-          {showValues && (
-            <Text style={styles.valueText}>
-              {typeof item.value === "number"
-                ? item.value.toFixed(0)
-                : item.value}
-            </Text>
-          )}
-          <View
-            style={[
-              styles.bar,
-              {
-                height: barHeight,
-                backgroundColor: barColor,
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.labelText} numberOfLines={2}>
-          {item.label}
-        </Text>
+      <View style={[styles.container, { height }]}>
+        <Text style={styles.noDataText}>No data available</Text>
       </View>
     );
+  }
+
+  // Transform data for react-native-chart-kit
+  const chartData = {
+    labels: data.map((item) => item.label),
+    datasets: [
+      {
+        data: data.map((item) => item.value),
+        color: () => color, // Function that returns color
+      },
+    ],
   };
 
+  const chartConfig = {
+    backgroundColor: "#ffffff",
+    backgroundGradientFrom: "#ffffff",
+    backgroundGradientTo: "#ffffff",
+    decimalPlaces: 0, // optional, defaults to 2dp
+    color: (opacity = 1) =>
+      color
+        .replace(/rgb\(([^)]+)\)/, `rgba($1, ${opacity})`)
+        .replace(
+          /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
+          `rgba($1,$2,$3, ${opacity})`
+        ) || `rgba(79, 70, 229, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: "", // solid background lines with no dashes
+      stroke: "#e3e3e3",
+      strokeWidth: 1,
+    },
+  };
+
+  const screenWidth = Dimensions.get("window").width;
+  const chartWidth = Math.max(screenWidth - 40, 300); // Ensure minimum width
+
   return (
-    <View style={[styles.container, { height: height + 30 }]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chartContainer}
-      >
-        {data.map((item, index) => renderBar(item, index))}
-      </ScrollView>
+    <View style={styles.container}>
+      <RNBarChart
+        data={chartData}
+        width={chartWidth}
+        height={height}
+        chartConfig={chartConfig}
+        style={styles.chart}
+        showValuesOnTopOfBars={showValues}
+        withHorizontalLabels={true}
+        withVerticalLabels={true}
+        fromZero={true}
+        segments={4}
+        yAxisLabel=""
+        yAxisSuffix=""
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    alignItems: "center",
     paddingVertical: 10,
   },
-  chartContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: 10,
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
-  barContainer: {
-    alignItems: "center",
-    marginHorizontal: 8,
-    minWidth: 60,
-  },
-  barWrapper: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    height: "100%",
-    paddingBottom: 25,
-  },
-  bar: {
-    width: 24,
-    borderRadius: 4,
-    minHeight: 4,
-  },
-  valueText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
-  },
-  labelText: {
-    fontSize: 11,
-    color: "#6b7280",
+  noDataText: {
     textAlign: "center",
-    marginTop: 8,
-    width: 60,
+    color: "#9ca3af",
+    fontSize: 16,
+    paddingVertical: 50,
   },
 });

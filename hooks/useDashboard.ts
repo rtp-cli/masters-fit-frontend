@@ -55,6 +55,25 @@ export interface TotalVolumeMetrics {
   label: string;
 }
 
+export interface WorkoutTypeDistribution {
+  tag: string;
+  label: string;
+  totalSets: number;
+  totalReps: number;
+  exerciseCount: number;
+  completedWorkouts: number;
+  percentage: number;
+  color: string;
+}
+
+export interface WorkoutTypeMetrics {
+  distribution: WorkoutTypeDistribution[];
+  totalExercises: number;
+  totalSets: number;
+  dominantType: string;
+  hasData: boolean;
+}
+
 export interface DailyWorkoutProgress {
   date: string;
   completionRate: number;
@@ -68,6 +87,7 @@ export interface DashboardMetrics {
   weightAccuracy: WeightAccuracyMetrics;
   goalProgress: GoalProgress[];
   totalVolumeMetrics: TotalVolumeMetrics[];
+  workoutTypeMetrics: WorkoutTypeMetrics;
   dailyWorkoutProgress: DailyWorkoutProgress[];
 }
 
@@ -95,6 +115,8 @@ export const useDashboard = (userId: number) => {
   const [totalVolumeMetrics, setTotalVolumeMetrics] = useState<
     TotalVolumeMetrics[]
   >([]);
+  const [workoutTypeMetrics, setWorkoutTypeMetrics] =
+    useState<WorkoutTypeMetrics | null>(null);
   const [dailyWorkoutProgress, setDailyWorkoutProgress] = useState<
     DailyWorkoutProgress[]
   >([]);
@@ -119,6 +141,20 @@ export const useDashboard = (userId: number) => {
           data: DashboardMetrics;
         }>(`/dashboard/${userId}/metrics?${queryParams.toString()}`);
 
+        // Debug logging
+        console.log(
+          "🔍 Dashboard API Response:",
+          JSON.stringify(data, null, 2)
+        );
+        console.log(
+          "🔍 Has workoutTypeMetrics:",
+          !!data.data.workoutTypeMetrics
+        );
+        console.log(
+          "🔍 WorkoutTypeMetrics content:",
+          data.data.workoutTypeMetrics
+        );
+
         if (data.success) {
           setDashboardData(data.data);
           setWeeklySummary(data.data.weeklySummary);
@@ -127,6 +163,18 @@ export const useDashboard = (userId: number) => {
           setWeightAccuracy(data.data.weightAccuracy);
           setGoalProgress(data.data.goalProgress);
           setTotalVolumeMetrics(data.data.totalVolumeMetrics);
+
+          // Handle workoutTypeMetrics with fallback
+          const workoutTypeData = data.data.workoutTypeMetrics || {
+            distribution: [],
+            totalExercises: 0,
+            totalSets: 0,
+            dominantType: "",
+            hasData: false,
+          };
+          console.log("🔍 Setting workoutTypeMetrics:", workoutTypeData);
+          setWorkoutTypeMetrics(workoutTypeData);
+
           setDailyWorkoutProgress(data.data.dailyWorkoutProgress);
         } else {
           throw new Error("Failed to fetch dashboard metrics");
@@ -282,6 +330,33 @@ export const useDashboard = (userId: number) => {
     [userId]
   );
 
+  const fetchWorkoutTypeMetrics = useCallback(
+    async (filters?: DashboardFilters) => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const data = await apiRequest<{
+          success: boolean;
+          data: WorkoutTypeMetrics;
+        }>(
+          `/dashboard/${userId}/workout-type-metrics?${queryParams.toString()}`
+        );
+
+        if (data.success) {
+          setWorkoutTypeMetrics(data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching workout type metrics:", err);
+      }
+    },
+    [userId]
+  );
+
   const fetchDailyWorkoutProgress = useCallback(
     async (filters?: DashboardFilters) => {
       try {
@@ -325,6 +400,7 @@ export const useDashboard = (userId: number) => {
     weightAccuracy,
     goalProgress,
     totalVolumeMetrics,
+    workoutTypeMetrics,
     dailyWorkoutProgress,
 
     // State
@@ -339,6 +415,7 @@ export const useDashboard = (userId: number) => {
     fetchWeightAccuracy,
     fetchGoalProgress,
     fetchTotalVolumeMetrics,
+    fetchWorkoutTypeMetrics,
     fetchDailyWorkoutProgress,
     refreshAllData,
   };

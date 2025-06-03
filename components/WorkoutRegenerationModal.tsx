@@ -119,9 +119,9 @@ interface WorkoutRegenerationModalProps {
         goals?: string[];
         limitations?: string[];
         fitnessLevel?: string;
-        environment?: string[];
+        environment?: string;
         equipment?: string[];
-        workoutStyles?: string[];
+        preferredStyles?: string[];
         availableDays?: string[];
         workoutDuration?: number;
         intensityLevel?: number;
@@ -227,22 +227,17 @@ export default function WorkoutRegenerationModal({
         goals: formData.goals.map((g) => g.toString()),
         limitations: formData.limitations?.map((l) => l.toString()) || [],
         fitnessLevel: formData.fitnessLevel.toString(),
-        environment: [formData.environment.toString()],
+        environment: formData.environment.toString(),
         equipment: formData.equipment?.map((e) => e.toString()) || [],
-        workoutStyles: formData.preferredStyles.map((s) => s.toString()),
+        preferredStyles: formData.preferredStyles.map((s) => s.toString()),
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
-        intensityLevel:
-          formData.intensityLevel === "low"
-            ? 1
-            : formData.intensityLevel === "moderate"
-            ? 2
-            : 3,
+        intensityLevel: formData.intensityLevel.toString(),
         medicalNotes: formData.medicalNotes,
       };
 
       // Update the profile first
-      await updateUserProfile(profileData);
+      await updateUserProfile(profileData as any);
 
       // Close the onboarding form and regenerate with the updated profile
       setShowOnboardingForm(false);
@@ -280,22 +275,17 @@ export default function WorkoutRegenerationModal({
         goals: formData.goals.map((g) => g.toString()),
         limitations: formData.limitations?.map((l) => l.toString()) || [],
         fitnessLevel: formData.fitnessLevel.toString(),
-        environment: [formData.environment.toString()],
+        environment: formData.environment.toString(),
         equipment: formData.equipment?.map((e) => e.toString()) || [],
-        workoutStyles: formData.preferredStyles.map((s) => s.toString()),
+        preferredStyles: formData.preferredStyles.map((s) => s.toString()),
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
-        intensityLevel:
-          formData.intensityLevel === "low"
-            ? 1
-            : formData.intensityLevel === "moderate"
-            ? 2
-            : 3,
+        intensityLevel: formData.intensityLevel.toString(),
         medicalNotes: formData.medicalNotes,
       };
 
       // Only update the profile, don't regenerate
-      await updateUserProfile(profileData);
+      await updateUserProfile(profileData as any);
 
       // Update the current profile state and close the form
       setCurrentProfile({ ...currentProfile, ...profileData });
@@ -447,11 +437,15 @@ export default function WorkoutRegenerationModal({
               Update Preferences
             </Text>
             <TouchableOpacity
-              onPress={handleQuickSave}
+              onPress={handleQuickSaveAndRegenerate}
               className="py-2 px-3"
               disabled={updatingProfile}
             >
-              <Text className="text-base text-primary font-medium">Save</Text>
+              {updatingProfile ? (
+                <ActivityIndicator size="small" color="#BBDE51" />
+              ) : (
+                <Text className="text-base text-primary font-medium">Save</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -463,42 +457,9 @@ export default function WorkoutRegenerationModal({
               onSubmit={handleUpdateProfile}
               onCancel={() => setShowOnboardingForm(false)}
               isLoading={updatingProfile}
-              submitButtonText="Save & Regenerate"
+              submitButtonText="Save"
               showNavigation={false}
             />
-          </View>
-
-          {/* Custom Bottom Buttons */}
-          <View className="px-5 pb-5 border-t border-neutral-light-2 bg-background">
-            <View className="flex-row space-x-3 pt-4">
-              <TouchableOpacity
-                className="flex-1 py-3 px-4 bg-neutral-light-2 rounded-xl items-center"
-                onPress={handleQuickSave}
-                disabled={updatingProfile}
-              >
-                <Text className="text-text-primary font-semibold text-sm">
-                  Save Changes
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className={`flex-1 py-3 px-4 bg-primary rounded-xl items-center flex-row justify-center ${
-                  updatingProfile ? "opacity-70" : ""
-                }`}
-                onPress={handleQuickSaveAndRegenerate}
-                disabled={updatingProfile}
-              >
-                {updatingProfile ? (
-                  <ActivityIndicator size="small" color="#181917" />
-                ) : (
-                  <>
-                    <Ionicons name="refresh" size={16} color="#181917" />
-                    <Text className="text-secondary font-semibold text-sm ml-2">
-                      Save & Regenerate
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>

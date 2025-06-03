@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { LineChart as RNLineChart } from "react-native-chart-kit";
 
 export interface LineChartData {
   label: string;
@@ -30,160 +31,109 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   }
 
-  const maxValue = Math.max(...data.map((item) => item.value));
-  const minValue = Math.min(...data.map((item) => item.value));
-  // Handle single data point case - create a small range for visualization
-  const valueRange =
-    data.length === 1 ? maxValue * 0.2 || 1 : maxValue - minValue || 1;
-  const chartHeight = height - 60; // Leave space for labels
+  // Transform data for react-native-chart-kit
+  const values = data.map((item) => item.value);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+
+  // Calculate a reasonable baseline (10% below min value, but not below 0)
+  const baseline = Math.max(0, Math.floor(minValue * 0.9));
+
+  const chartData = {
+    labels: data.map((item) => item.label),
+    datasets: [
+      {
+        data: data.map((item) => item.value),
+        color: () => color, // Function that returns color
+        strokeWidth: 3, // optional
+      },
+      // Add invisible baseline dataset for better scaling
+      {
+        data: data.map(() => baseline),
+        color: () => "transparent",
+        strokeWidth: 0,
+        withDots: false,
+      },
+    ],
+  };
+
+  const chartConfig = {
+    backgroundColor: "#ffffff",
+    backgroundGradientFrom: "#ffffff",
+    backgroundGradientTo: "#ffffff",
+    decimalPlaces: 0, // optional, defaults to 2dp
+    color: (opacity = 1) =>
+      color
+        .replace(/rgb\(([^)]+)\)/, `rgba($1, ${opacity})`)
+        .replace(
+          /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
+          `rgba($1,$2,$3, ${opacity})`
+        ) || `rgba(79, 70, 229, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: "4",
+      strokeWidth: "2",
+      stroke: color,
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: "", // solid background lines with no dashes
+      stroke: "#e3e3e3",
+      strokeWidth: 1,
+    },
+    formatYLabel: (value: string) => {
+      const num = parseFloat(value);
+      return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : num.toString();
+    },
+  };
+
+  // Handle single data point case by duplicating it
+  if (data.length === 1) {
+    chartData.labels = [data[0].label, data[0].label];
+    chartData.datasets[0].data = [data[0].value, data[0].value];
+  }
+
+  const screenWidth = Dimensions.get("window").width;
+  const chartWidth = Math.max(screenWidth - 40, 300); // Ensure minimum width
 
   return (
-    <View style={[styles.container, { height: height + 30 }]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chartContainer}
-      >
-        {data.map((item, index) => {
-          // Calculate point height relative to min/max values
-          let pointHeight;
-          if (data.length === 1) {
-            // For single data point, position it in the middle-upper area
-            pointHeight = chartHeight * 0.7;
-          } else {
-            pointHeight = ((item.value - minValue) / valueRange) * chartHeight;
-          }
-          const pointY = chartHeight - pointHeight;
-
-          return (
-            <View key={index} style={styles.pointContainer}>
-              <View style={styles.pointWrapper}>
-                {showValues && (
-                  <Text style={styles.valueText}>
-                    {item.value.toLocaleString()}
-                  </Text>
-                )}
-
-                {/* Vertical line to represent the point */}
-                <View style={styles.verticalLine}>
-                  <View
-                    style={[
-                      styles.point,
-                      {
-                        backgroundColor: color,
-                        marginTop: pointY,
-                      },
-                    ]}
-                  />
-                </View>
-
-                {/* Connect to next point with a line (if not last point) */}
-                {index < data.length - 1 && (
-                  <View
-                    style={[styles.connectionLine, { backgroundColor: color }]}
-                  />
-                )}
-              </View>
-
-              {showLabels && (
-                <Text style={styles.labelText} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
-
-      {/* Y-axis reference */}
-      <View style={styles.yAxisContainer}>
-        <Text style={styles.yAxisText}>{maxValue.toLocaleString()}</Text>
-        {data.length > 1 && (
-          <Text style={styles.yAxisText}>{minValue.toLocaleString()}</Text>
-        )}
-      </View>
+    <View style={styles.container}>
+      <RNLineChart
+        data={chartData}
+        width={chartWidth}
+        height={height}
+        chartConfig={chartConfig}
+        bezier
+        style={styles.chart}
+        withHorizontalLabels={true}
+        withVerticalLabels={showLabels}
+        withDots={true}
+        withShadow={false}
+        withScrollableDot={false}
+        fromZero={false}
+        segments={4}
+        yAxisInterval={1}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 10,
+    alignItems: "center",
     backgroundColor: "#ffffff",
     borderRadius: 8,
   },
-  chartContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: 15,
-  },
-  pointContainer: {
-    alignItems: "center",
-    marginHorizontal: 15,
-    minWidth: 60,
-  },
-  pointWrapper: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    height: "100%",
-    paddingBottom: 25,
-    position: "relative",
-  },
-  verticalLine: {
-    height: "100%",
-    width: 2,
-    backgroundColor: "#e5e7eb",
-    position: "relative",
-    justifyContent: "flex-end",
-  },
-  point: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    position: "absolute",
-    left: -3,
-    borderWidth: 2,
-    borderColor: "#ffffff",
-  },
-  connectionLine: {
-    position: "absolute",
-    height: 2,
-    width: 30,
-    left: 8,
-    top: "50%",
-  },
-  valueText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
-    position: "absolute",
-    top: -20,
-  },
-  labelText: {
-    fontSize: 11,
-    color: "#6b7280",
-    textAlign: "center",
-    marginTop: 8,
-    width: 60,
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
   noDataText: {
     textAlign: "center",
     color: "#9ca3af",
     fontSize: 16,
     paddingVertical: 50,
-  },
-  yAxisContainer: {
-    position: "absolute",
-    left: 5,
-    top: 10,
-    height: "100%",
-    justifyContent: "space-between",
-    paddingVertical: 20,
-  },
-  yAxisText: {
-    fontSize: 10,
-    color: "#6b7280",
-    textAlign: "left",
   },
 });
