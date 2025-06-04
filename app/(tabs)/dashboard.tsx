@@ -92,6 +92,33 @@ export default function DashboardScreen() {
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
   >([]);
+  const [rawWeightAccuracyData, setRawWeightAccuracyData] = useState<
+    {
+      date: string;
+      totalSets: number;
+      exactMatches: number;
+      higherWeight: number;
+      lowerWeight: number;
+      label: string;
+    }[]
+  >([]);
+  const [rawWorkoutTypeData, setRawWorkoutTypeData] = useState<
+    {
+      date: string;
+      workoutTypes: {
+        tag: string;
+        label: string;
+        totalSets: number;
+        totalReps: number;
+        exerciseCount: number;
+      }[];
+      label: string;
+    }[]
+  >([]);
+  const [filteredWeightAccuracy, setFilteredWeightAccuracy] =
+    useState<WeightAccuracyMetrics | null>(null);
+  const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] =
+    useState<WorkoutTypeMetrics | null>(null);
 
   const {
     // Data
@@ -114,6 +141,8 @@ export default function DashboardScreen() {
     fetchTotalVolumeMetrics,
     fetchWorkoutTypeMetrics,
     fetchWeightProgression,
+    fetchWeightAccuracyByDate,
+    fetchWorkoutTypeByDate,
     refreshAllData,
   } = useDashboard(user?.id || 0);
 
@@ -122,49 +151,27 @@ export default function DashboardScreen() {
       // Load general dashboard data with wide range for things like weekly summary, consistency, etc.
       refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
 
-      // Load filtered data based on the default filter states shown in UI
-      // This ensures consistency between what the filter buttons show and actual data
-      fetchWeightAccuracy({
-        timeRange: weightPerformanceFilter.toLowerCase() as "1w" | "1m" | "3m",
+      // Load raw data with wide range for frontend filtering
+      const { startDate, endDate } = calculateWideDataRange();
+
+      // Load raw weight accuracy data
+      fetchWeightAccuracyByDate({ startDate, endDate }).then((data) => {
+        setRawWeightAccuracyData(data);
       });
 
-      fetchWorkoutTypeMetrics({
-        timeRange: workoutTypeFilter.toLowerCase() as "1w" | "1m" | "3m",
+      // Load raw workout type data
+      fetchWorkoutTypeByDate({ startDate, endDate }).then((data) => {
+        setRawWorkoutTypeData(data);
       });
 
       fetchTodaysWorkout();
     }
   }, [
     user?.id,
-    weightPerformanceFilter,
-    workoutTypeFilter,
     refreshAllData,
-    fetchWeightAccuracy,
-    fetchWorkoutTypeMetrics,
-  ]); // Added necessary dependencies
-
-  // Helper function to calculate filtered date ranges relative to current date (for backend filtering)
-  const calculateFilteredDateRange = (filter: "1W" | "1M" | "3M") => {
-    const currentDate = new Date();
-    let cutoffDate = new Date(currentDate);
-
-    switch (filter) {
-      case "1W":
-        cutoffDate.setDate(currentDate.getDate() - 7);
-        break;
-      case "1M":
-        cutoffDate.setMonth(currentDate.getMonth() - 1);
-        break;
-      case "3M":
-        cutoffDate.setMonth(currentDate.getMonth() - 3);
-        break;
-    }
-
-    return {
-      startDate: cutoffDate.toISOString().split("T")[0],
-      endDate: currentDate.toISOString().split("T")[0],
-    };
-  };
+    fetchWeightAccuracyByDate,
+    fetchWorkoutTypeByDate,
+  ]);
 
   // Wide date range function for frontend filtering (strength progress)
   const calculateWideDataRange = () => {
@@ -172,37 +179,6 @@ export default function DashboardScreen() {
       startDate: "2020-01-01",
       endDate: "2030-12-31",
     };
-  };
-
-  // Helper function to filter data based on time filter
-  const filterDataByTimeRange = (
-    data: { date: string; [key: string]: any }[],
-    filter: "1W" | "1M" | "3M"
-  ) => {
-    if (!data || data.length === 0) return data;
-
-    // Sort data by date to get the most recent entries
-    const sortedData = [...data].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-
-    // Determine how many entries to return based on filter
-    let limit: number;
-    switch (filter) {
-      case "1W":
-        limit = 7; // Show last 7 data points
-        break;
-      case "1M":
-        limit = 30; // Show last 30 data points
-        break;
-      case "3M":
-        limit = 90; // Show last 90 data points
-        break;
-      default:
-        limit = 30;
-    }
-
-    return sortedData.slice(0, limit).reverse(); // Reverse to show chronological order
   };
 
   // Specific filter function for weight progression data
@@ -253,6 +229,235 @@ export default function DashboardScreen() {
     return filteredData;
   };
 
+  // Frontend filtering function for weight accuracy data
+  const filterWeightAccuracyData = (
+    data: {
+      date: string;
+      totalSets: number;
+      exactMatches: number;
+      higherWeight: number;
+      lowerWeight: number;
+      label: string;
+    }[],
+    filter: "1W" | "1M" | "3M"
+  ): WeightAccuracyMetrics | null => {
+    if (!data || data.length === 0) return null;
+
+    // Filter data by date range
+    const filteredData = filterDataByDateRange(data, filter);
+
+    // Aggregate the filtered data
+    const totalSets = filteredData.reduce((sum, day) => sum + day.totalSets, 0);
+    const exactMatches = filteredData.reduce(
+      (sum, day) => sum + day.exactMatches,
+      0
+    );
+    const higherWeight = filteredData.reduce(
+      (sum, day) => sum + day.higherWeight,
+      0
+    );
+    const lowerWeight = filteredData.reduce(
+      (sum, day) => sum + day.lowerWeight,
+      0
+    );
+
+    if (totalSets === 0) return null;
+
+    const accuracyRate = (exactMatches / totalSets) * 100;
+
+    // Create chart data
+    const chartData = [];
+    if (exactMatches > 0) {
+      chartData.push({
+        label: "As Planned",
+        value: Math.round((exactMatches / totalSets) * 100 * 100) / 100,
+        color: "#10b981",
+        count: exactMatches,
+      });
+    }
+    if (higherWeight > 0) {
+      chartData.push({
+        label: "Progressed",
+        value: Math.round((higherWeight / totalSets) * 100 * 100) / 100,
+        color: "#f59e0b",
+        count: higherWeight,
+      });
+    }
+    if (lowerWeight > 0) {
+      chartData.push({
+        label: "Adapted",
+        value: Math.round((lowerWeight / totalSets) * 100 * 100) / 100,
+        color: "#ef4444",
+        count: lowerWeight,
+      });
+    }
+
+    return {
+      accuracyRate: Math.round(accuracyRate * 100) / 100,
+      totalSets,
+      exactMatches,
+      higherWeight,
+      lowerWeight,
+      avgWeightDifference: 0, // Not calculated in raw data
+      chartData,
+      hasPlannedWeights: totalSets > 0,
+      hasExerciseData: totalSets > 0,
+    };
+  };
+
+  // Frontend filtering function for workout type data
+  const filterWorkoutTypeData = (
+    data: {
+      date: string;
+      workoutTypes: {
+        tag: string;
+        label: string;
+        totalSets: number;
+        totalReps: number;
+        exerciseCount: number;
+      }[];
+      label: string;
+    }[],
+    filter: "1W" | "1M" | "3M"
+  ): WorkoutTypeMetrics | null => {
+    if (!data || data.length === 0) return null;
+
+    // Filter data by date range
+    const filteredData = filterDataByDateRange(data, filter);
+
+    // Aggregate workout types across all days
+    const typeAggregates = new Map<
+      string,
+      {
+        tag: string;
+        label: string;
+        totalSets: number;
+        totalReps: number;
+        exerciseCount: number;
+        completedWorkouts: number;
+      }
+    >();
+
+    filteredData.forEach((day) => {
+      day.workoutTypes.forEach((type) => {
+        if (!typeAggregates.has(type.tag)) {
+          typeAggregates.set(type.tag, {
+            tag: type.tag,
+            label: type.label,
+            totalSets: 0,
+            totalReps: 0,
+            exerciseCount: 0,
+            completedWorkouts: 0,
+          });
+        }
+
+        const aggregate = typeAggregates.get(type.tag)!;
+        aggregate.totalSets += type.totalSets;
+        aggregate.totalReps += type.totalReps;
+        aggregate.exerciseCount += type.exerciseCount;
+        aggregate.completedWorkouts += 1; // Count days where this type appeared
+      });
+    });
+
+    const totalSets = Array.from(typeAggregates.values()).reduce(
+      (sum, type) => sum + type.totalSets,
+      0
+    );
+    const totalExercises = Array.from(typeAggregates.values()).reduce(
+      (sum, type) => sum + type.exerciseCount,
+      0
+    );
+
+    if (totalSets === 0) return null;
+
+    // Create distribution with percentages and colors
+    const distribution = Array.from(typeAggregates.values())
+      .map((type) => ({
+        ...type,
+        percentage:
+          totalSets > 0
+            ? Math.round((type.totalSets / totalSets) * 100 * 10) / 10
+            : 0,
+        color: "#6b7280", // Default color - you may want to add a color mapping
+      }))
+      .sort((a, b) => b.totalSets - a.totalSets);
+
+    const dominantType =
+      distribution.length > 0 ? distribution[0].label : "None";
+
+    return {
+      distribution,
+      totalExercises,
+      totalSets,
+      dominantType,
+      hasData: distribution.length > 0 && totalSets > 0,
+    };
+  };
+
+  // Helper function to filter date-based data by time range
+  const filterDataByDateRange = <T extends { date: string }>(
+    data: T[],
+    filter: "1W" | "1M" | "3M"
+  ): T[] => {
+    if (!data || data.length === 0) return data;
+
+    // Sort data by date (oldest first)
+    const sortedData = [...data].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Use date-based filtering relative to the data range, not current date
+    const latestDate = new Date(sortedData[sortedData.length - 1].date);
+    let cutoffDate = new Date(latestDate);
+
+    switch (filter) {
+      case "1W":
+        cutoffDate.setDate(latestDate.getDate() - 7);
+        break;
+      case "1M":
+        cutoffDate.setMonth(latestDate.getMonth() - 1);
+        break;
+      case "3M":
+        cutoffDate.setMonth(latestDate.getMonth() - 3);
+        break;
+      default:
+        cutoffDate.setMonth(latestDate.getMonth() - 1);
+    }
+
+    // Filter data to only include dates after the cutoff
+    const filteredData = sortedData.filter(
+      (item) => new Date(item.date) >= cutoffDate
+    );
+
+    // If no data matches the filter, return the most recent data points as fallback
+    if (filteredData.length === 0) {
+      return sortedData.slice(-Math.min(sortedData.length, 5));
+    }
+
+    return filteredData;
+  };
+
+  // Frontend filtering effects for weight accuracy and workout type
+  useEffect(() => {
+    if (rawWeightAccuracyData.length > 0) {
+      const filteredData = filterWeightAccuracyData(
+        rawWeightAccuracyData,
+        weightPerformanceFilter
+      );
+      setFilteredWeightAccuracy(filteredData);
+    }
+  }, [rawWeightAccuracyData, weightPerformanceFilter]);
+
+  useEffect(() => {
+    if (rawWorkoutTypeData.length > 0) {
+      const filteredData = filterWorkoutTypeData(
+        rawWorkoutTypeData,
+        workoutTypeFilter
+      );
+      setFilteredWorkoutTypeMetrics(filteredData);
+    }
+  }, [rawWorkoutTypeData, workoutTypeFilter]);
+
   // Effect to fetch strength data when filter changes (uses frontend filtering)
   useEffect(() => {
     if (user?.id) {
@@ -266,39 +471,6 @@ export default function DashboardScreen() {
       });
     }
   }, [strengthFilter, user?.id, fetchWeightProgression]);
-
-  // Effect to fetch weight performance data when filter changes
-  useEffect(() => {
-    if (user?.id) {
-      const { startDate, endDate } = calculateFilteredDateRange(
-        weightPerformanceFilter
-      );
-      console.log(
-        `🔍 Fetching weight performance data from ${startDate} to ${endDate}`
-      );
-
-      // Use timeRange parameter instead of manual date calculation
-      fetchWeightAccuracy({
-        timeRange: weightPerformanceFilter.toLowerCase() as "1w" | "1m" | "3m",
-      });
-    }
-  }, [weightPerformanceFilter, user?.id, fetchWeightAccuracy]);
-
-  // Effect to fetch workout type data when filter changes
-  useEffect(() => {
-    if (user?.id) {
-      const { startDate, endDate } =
-        calculateFilteredDateRange(workoutTypeFilter);
-      console.log(
-        `🔍 Fetching workout type data from ${startDate} to ${endDate}`
-      );
-
-      // Use timeRange parameter instead of manual date calculation
-      fetchWorkoutTypeMetrics({
-        timeRange: workoutTypeFilter.toLowerCase() as "1w" | "1m" | "3m",
-      });
-    }
-  }, [workoutTypeFilter, user?.id, fetchWorkoutTypeMetrics]);
 
   // Update filtered data when main data changes
   useEffect(() => {
@@ -351,13 +523,15 @@ export default function DashboardScreen() {
       // Refresh general dashboard data with wide range
       refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
 
-      // Refresh filtered data based on current filter states to maintain user selection
-      fetchWeightAccuracy({
-        timeRange: weightPerformanceFilter.toLowerCase() as "1w" | "1m" | "3m",
+      // Refresh raw data for frontend filtering
+      const { startDate, endDate } = calculateWideDataRange();
+
+      fetchWeightAccuracyByDate({ startDate, endDate }).then((data) => {
+        setRawWeightAccuracyData(data);
       });
 
-      fetchWorkoutTypeMetrics({
-        timeRange: workoutTypeFilter.toLowerCase() as "1w" | "1m" | "3m",
+      fetchWorkoutTypeByDate({ startDate, endDate }).then((data) => {
+        setRawWorkoutTypeData(data);
       });
 
       fetchTodaysWorkout();
@@ -718,9 +892,9 @@ export default function DashboardScreen() {
             )}
 
             {/* Weight Performance */}
-            {weightAccuracy &&
-              weightAccuracy.hasExerciseData &&
-              weightAccuracy.totalSets > 0 && (
+            {filteredWeightAccuracy &&
+              filteredWeightAccuracy.hasExerciseData &&
+              filteredWeightAccuracy.totalSets > 0 && (
                 <View className="px-5 mb-6">
                   <Text className="text-base font-semibold text-text-primary mb-1">
                     Weight Performance
@@ -765,9 +939,9 @@ export default function DashboardScreen() {
                     <View className="items-center mb-6">
                       <PieChart
                         data={
-                          weightAccuracy.chartData &&
-                          weightAccuracy.chartData.length > 0
-                            ? weightAccuracy.chartData
+                          filteredWeightAccuracy.chartData &&
+                          filteredWeightAccuracy.chartData.length > 0
+                            ? filteredWeightAccuracy.chartData
                             : [
                                 {
                                   label: "As Planned",
@@ -797,7 +971,7 @@ export default function DashboardScreen() {
                     <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                       <View className="items-center">
                         <Text className="text-lg font-bold text-accent">
-                          {weightAccuracy.exactMatches || 0}
+                          {filteredWeightAccuracy.exactMatches || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           As Planned
@@ -805,7 +979,7 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-orange-500">
-                          {weightAccuracy.higherWeight || 0}
+                          {filteredWeightAccuracy.higherWeight || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Progressed
@@ -813,7 +987,7 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-red-500">
-                          {weightAccuracy.lowerWeight || 0}
+                          {filteredWeightAccuracy.lowerWeight || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Adapted
@@ -821,7 +995,7 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-text-primary">
-                          {weightAccuracy.totalSets || 0}
+                          {filteredWeightAccuracy.totalSets || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Total Sets
@@ -833,9 +1007,9 @@ export default function DashboardScreen() {
               )}
 
             {/* Show message when no weight performance data is available for the selected time range */}
-            {weightAccuracy &&
-              (!weightAccuracy.hasExerciseData ||
-                weightAccuracy.totalSets === 0) && (
+            {filteredWeightAccuracy &&
+              (!filteredWeightAccuracy.hasExerciseData ||
+                filteredWeightAccuracy.totalSets === 0) && (
                 <View className="px-5 mb-6">
                   <Text className="text-base font-semibold text-text-primary mb-1">
                     Weight Performance
@@ -1058,11 +1232,11 @@ export default function DashboardScreen() {
               </View>
             )}
 
-            {/* Workout Type Distribution */}
-            {workoutTypeMetrics &&
-              workoutTypeMetrics.hasData &&
-              workoutTypeMetrics.totalSets > 0 &&
-              workoutTypeMetrics.distribution.length > 0 && (
+            {/* Workout Type Progress/Distribution Chart */}
+            {filteredWorkoutTypeMetrics &&
+              filteredWorkoutTypeMetrics.hasData &&
+              filteredWorkoutTypeMetrics.totalSets > 0 &&
+              filteredWorkoutTypeMetrics.distribution.length > 0 && (
                 <View className="px-5 mb-6">
                   <Text className="text-base font-semibold text-text-primary mb-1">
                     General Fitness Progress
@@ -1109,7 +1283,8 @@ export default function DashboardScreen() {
                       <PieChart
                         data={(() => {
                           // Get top 5 and group the rest under "Other"
-                          const allTypes = workoutTypeMetrics.distribution;
+                          const allTypes =
+                            filteredWorkoutTypeMetrics.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1156,7 +1331,8 @@ export default function DashboardScreen() {
                       <View className="flex-row flex-wrap justify-center">
                         {(() => {
                           // Get top 5 and group the rest under "Other" for legend too
-                          const allTypes = workoutTypeMetrics.distribution;
+                          const allTypes =
+                            filteredWorkoutTypeMetrics.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1216,10 +1392,10 @@ export default function DashboardScreen() {
                         })()}
                       </View>
                       {/* Show additional info if "Other" category exists */}
-                      {workoutTypeMetrics.distribution.length > 5 && (
+                      {filteredWorkoutTypeMetrics.distribution.length > 5 && (
                         <Text className="text-xs text-text-muted text-center mt-2">
                           "Other" includes{" "}
-                          {workoutTypeMetrics.distribution.length - 5}{" "}
+                          {filteredWorkoutTypeMetrics.distribution.length - 5}{" "}
                           additional exercise types
                         </Text>
                       )}
@@ -1228,7 +1404,7 @@ export default function DashboardScreen() {
                     {/* Dominant Type - Now below legend */}
                     <View className="items-center mb-6">
                       <Text className="text-lg font-bold text-text-primary">
-                        {workoutTypeMetrics.dominantType}
+                        {filteredWorkoutTypeMetrics.dominantType}
                       </Text>
                       <Text className="text-sm text-text-muted">
                         Most Common Type
@@ -1239,7 +1415,7 @@ export default function DashboardScreen() {
                     <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                       <View className="items-center">
                         <Text className="text-lg font-bold text-text-primary">
-                          {workoutTypeMetrics.totalExercises}
+                          {filteredWorkoutTypeMetrics.totalExercises}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Exercises
@@ -1247,7 +1423,7 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-accent">
-                          {workoutTypeMetrics.distribution.length}
+                          {filteredWorkoutTypeMetrics.distribution.length}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Types
@@ -1255,12 +1431,13 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-secondary">
-                          {workoutTypeMetrics.distribution.length > 0
+                          {filteredWorkoutTypeMetrics.distribution.length > 0
                             ? Math.round(
-                                workoutTypeMetrics.distribution.reduce(
+                                filteredWorkoutTypeMetrics.distribution.reduce(
                                   (sum, item) => sum + item.completedWorkouts,
                                   0
-                                ) / workoutTypeMetrics.distribution.length
+                                ) /
+                                  filteredWorkoutTypeMetrics.distribution.length
                               )
                             : 0}
                         </Text>
@@ -1274,7 +1451,7 @@ export default function DashboardScreen() {
               )}
 
             {/* Loading state for workout type metrics */}
-            {workoutTypeMetrics === null && (
+            {filteredWorkoutTypeMetrics === null && (
               <View className="px-5 mb-6">
                 <Text className="text-base font-semibold text-text-primary mb-1">
                   General Fitness Progress
@@ -1326,13 +1503,14 @@ export default function DashboardScreen() {
             )}
 
             {/* Empty State Message - Only show when no charts are visible */}
-            {(!weightAccuracy ||
-              !weightAccuracy.hasExerciseData ||
-              weightAccuracy.totalSets === 0) &&
+            {(!filteredWeightAccuracy ||
+              !filteredWeightAccuracy.hasExerciseData ||
+              filteredWeightAccuracy.totalSets === 0) &&
               (!totalVolumeMetrics ||
                 totalVolumeMetrics.length === 0 ||
                 !totalVolumeMetrics.some((metric) => metric.totalVolume > 0)) &&
-              (!workoutTypeMetrics || workoutTypeMetrics.totalSets === 0) &&
+              (!filteredWorkoutTypeMetrics ||
+                filteredWorkoutTypeMetrics.totalSets === 0) &&
               (!goalProgress ||
                 goalProgress.length === 0 ||
                 !goalProgress.some(

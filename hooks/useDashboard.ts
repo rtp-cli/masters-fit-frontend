@@ -478,6 +478,81 @@ export const useDashboard = (userId: number) => {
     [userId]
   );
 
+  const fetchWeightAccuracyByDate = useCallback(
+    async (filters?: DashboardFilters) => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const data = await apiRequest<{
+          success: boolean;
+          data: {
+            date: string;
+            totalSets: number;
+            exactMatches: number;
+            higherWeight: number;
+            lowerWeight: number;
+            label: string;
+          }[];
+        }>(
+          `/dashboard/${userId}/weight-accuracy-by-date?${queryParams.toString()}`
+        );
+
+        if (data.success) {
+          return data.data;
+        }
+        return [];
+      } catch (err) {
+        console.error("Error fetching weight accuracy by date:", err);
+        return [];
+      }
+    },
+    [userId]
+  );
+
+  const fetchWorkoutTypeByDate = useCallback(
+    async (filters?: DashboardFilters) => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const data = await apiRequest<{
+          success: boolean;
+          data: {
+            date: string;
+            workoutTypes: {
+              tag: string;
+              label: string;
+              totalSets: number;
+              totalReps: number;
+              exerciseCount: number;
+            }[];
+            label: string;
+          }[];
+        }>(
+          `/dashboard/${userId}/workout-type-by-date?${queryParams.toString()}`
+        );
+
+        if (data.success) {
+          return data.data;
+        }
+        return [];
+      } catch (err) {
+        console.error("Error fetching workout type by date:", err);
+        return [];
+      }
+    },
+    [userId]
+  );
+
   const refreshAllData = useCallback(
     (filters?: DashboardFilters) => {
       fetchDashboardMetrics(filters);
@@ -512,6 +587,8 @@ export const useDashboard = (userId: number) => {
     fetchWorkoutTypeMetrics,
     fetchDailyWorkoutProgress,
     fetchWeightProgression,
+    fetchWeightAccuracyByDate,
+    fetchWorkoutTypeByDate,
     refreshAllData,
   };
 };
