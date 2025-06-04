@@ -250,6 +250,13 @@ export default function CalendarScreen() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {workoutPlan?.name && (
+          <View className="flex justify-center items-center">
+            <Text className="text-lg font-bold text-text-primary mb-md">
+              {workoutPlan?.name}
+            </Text>
+          </View>
+        )}
         {/* Calendar */}
         <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
           <RNCalendar

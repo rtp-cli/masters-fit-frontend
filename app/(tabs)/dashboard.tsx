@@ -119,11 +119,29 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     if (user?.id) {
-      // Use wide date range for initial load to ensure all data is captured
+      // Load general dashboard data with wide range for things like weekly summary, consistency, etc.
       refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
+
+      // Load filtered data based on the default filter states shown in UI
+      // This ensures consistency between what the filter buttons show and actual data
+      fetchWeightAccuracy({
+        timeRange: weightPerformanceFilter.toLowerCase() as "1w" | "1m" | "3m",
+      });
+
+      fetchWorkoutTypeMetrics({
+        timeRange: workoutTypeFilter.toLowerCase() as "1w" | "1m" | "3m",
+      });
+
       fetchTodaysWorkout();
     }
-  }, [refreshAllData, user?.id]);
+  }, [
+    user?.id,
+    weightPerformanceFilter,
+    workoutTypeFilter,
+    refreshAllData,
+    fetchWeightAccuracy,
+    fetchWorkoutTypeMetrics,
+  ]); // Added necessary dependencies
 
   // Helper function to calculate filtered date ranges relative to current date (for backend filtering)
   const calculateFilteredDateRange = (filter: "1W" | "1M" | "3M") => {
@@ -330,8 +348,18 @@ export default function DashboardScreen() {
 
   const handleRefresh = () => {
     if (user?.id) {
-      // Use wide date range for refresh to ensure all data is captured
+      // Refresh general dashboard data with wide range
       refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
+
+      // Refresh filtered data based on current filter states to maintain user selection
+      fetchWeightAccuracy({
+        timeRange: weightPerformanceFilter.toLowerCase() as "1w" | "1m" | "3m",
+      });
+
+      fetchWorkoutTypeMetrics({
+        timeRange: workoutTypeFilter.toLowerCase() as "1w" | "1m" | "3m",
+      });
+
       fetchTodaysWorkout();
     }
   };

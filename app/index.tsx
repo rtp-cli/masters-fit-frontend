@@ -67,7 +67,7 @@ export default function GetStarted() {
         if (pathname !== "/(tabs)/calendar") {
           console.log("✅ Redirecting to calendar - onboarding complete");
           hasRedirected.current = true;
-          router.replace("/(tabs)/calendar");
+          router.replace("/(tabs)/dashboard");
         } else {
           console.log("🚫 Already on calendar page, skipping redirect");
         }

@@ -9,20 +9,20 @@ function TabBarIcon({
   name: keyof typeof Ionicons.glyphMap;
   color: string;
 }) {
-  return <Ionicons size={24} name={name} color={color} />;
+  return <Ionicons size={26} name={name} color={color} />;
 }
 
 function WorkoutTabIcon({ focused }: { focused: boolean }) {
   return (
     <View
       style={{
-        width: 44,
-        height: 44,
-        borderRadius: 24,
+        width: 50,
+        height: 50,
+        borderRadius: 28,
         backgroundColor: "#000000",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 16,
+        marginBottom: 30,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
@@ -30,7 +30,7 @@ function WorkoutTabIcon({ focused }: { focused: boolean }) {
         elevation: 6,
       }}
     >
-      <Ionicons size={20} name="play" color="#ffffff" />
+      <Ionicons size={24} name="play" color="#ffffff" />
     </View>
   );
 }
@@ -40,8 +40,8 @@ function HeaderLogo() {
     <Image
       source={require("../../assets/logo.png")}
       style={{
-        width: 120,
-        height: 30,
+        width: 130,
+        height: 32,
         resizeMode: "contain",
       }}
     />
@@ -59,14 +59,15 @@ export default function TabLayout() {
           tabBarStyle: {
             borderTopWidth: 1,
             borderTopColor: "#e5e7eb",
-            height: 65,
-            paddingBottom: 12,
-            paddingTop: 6,
+            height: 85,
+            paddingBottom: 20,
+            paddingTop: 10,
             backgroundColor: "#ffffff",
+            minHeight: 85,
           },
           headerStyle: {
             backgroundColor: "#ffffff",
-            height: 80,
+            height: 95,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 1 },
             shadowOpacity: 0.05,
@@ -82,20 +83,20 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen
-          name="calendar"
-          options={{
-            title: "Plan",
-            tabBarIcon: ({ color }: { color: string }) => (
-              <TabBarIcon name="calendar" color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="dashboard"
           options={{
             title: "Progress",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="bar-chart" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="calendar"
+          options={{
+            title: "Plan",
+            tabBarIcon: ({ color }: { color: string }) => (
+              <TabBarIcon name="calendar" color={color} />
             ),
           }}
         />

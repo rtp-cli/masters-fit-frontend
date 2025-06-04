@@ -47,82 +47,33 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     setUseFallback(false);
   }, [exerciseName]);
 
-  // Generate exercise-specific image URL
+  // Generate exercise-specific image URL - now uses a single generic gym image
   const getExerciseImageUrl = (
     exerciseName: string,
     width: number = 800,
     height: number = 600
-  ): string => {
-    // Clean up exercise name for search
-    const searchTerm = exerciseName
-      .toLowerCase()
-      .replace(/[^\w\s]/g, "") // Remove special characters
-      .replace(/\s+/g, "%20") // URL encode spaces
-      .trim();
+  ) => {
+    // Use a single generic gym image instead of random ones
+    const genericGymImage = require("../assets/gym-generic.jpg");
+    console.log("🖼️ Using generic gym image for exercise:", exerciseName);
 
-    // Try using Lorem Picsum with a seed based on exercise name for consistency
-    const seed = exerciseName.toLowerCase().replace(/\s+/g, "");
-    const url = `https://picsum.photos/seed/${seed}/${width}/${height}`;
-    console.log(
-      "🖼️ Generated exercise image URL:",
-      url,
-      "for exercise:",
-      exerciseName
-    );
-
-    return url;
+    return genericGymImage;
   };
 
-  // Alternative fitness image service
+  // Alternative fitness image service - also uses the same generic image
   const getFitnessImageUrl = (
     exerciseName: string,
     width: number = 800,
     height: number = 600
-  ): string => {
-    // Use a predefined set of fitness images based on exercise type
-    const exerciseKeywords = [
-      "fitness",
-      "gym",
-      "workout",
-      "exercise",
-      "training",
-      "sport",
-    ];
-    const exerciseLower = exerciseName.toLowerCase();
-
-    let keyword = "fitness"; // default
-
-    if (exerciseLower.includes("push") || exerciseLower.includes("press")) {
-      keyword = "pushup";
-    } else if (exerciseLower.includes("squat")) {
-      keyword = "squat";
-    } else if (
-      exerciseLower.includes("pull") ||
-      exerciseLower.includes("row")
-    ) {
-      keyword = "pullup";
-    } else if (exerciseLower.includes("run") || exerciseLower.includes("jog")) {
-      keyword = "running";
-    } else if (exerciseLower.includes("yoga")) {
-      keyword = "yoga";
-    } else if (exerciseLower.includes("stretch")) {
-      keyword = "stretching";
-    } else if (exerciseLower.includes("cardio")) {
-      keyword = "cardio";
-    }
-
-    // Use source.unsplash.com with specific fitness keywords
-    const url = `https://source.unsplash.com/${width}x${height}/?${keyword}`;
+  ) => {
+    // Use the same generic gym image instead of Unsplash
+    const genericGymImage = require("../assets/gym-generic.jpg");
     console.log(
-      "🖼️ Generated fitness image URL:",
-      url,
-      "for exercise:",
-      exerciseName,
-      "keyword:",
-      keyword
+      "🖼️ Using generic gym image (fallback) for exercise:",
+      exerciseName
     );
 
-    return url;
+    return genericGymImage;
   };
 
   const processExerciseLink = (url: string | null | undefined): LinkInfo => {
@@ -221,9 +172,9 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     console.log(
       "📱 No link provided for exercise:",
       exerciseName,
-      "- showing Unsplash image"
+      "- showing generic gym image"
     );
-    // Show Unsplash image when no link is available
+    // Show generic gym image when no link is available
     if (variant === "hero") {
       const imageUrl = useFallback
         ? getFitnessImageUrl(exerciseName, 800, 600)
@@ -233,7 +184,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         <View className="relative h-80">
           {!imageError ? (
             <Image
-              source={{ uri: imageUrl }}
+              source={imageUrl}
               className="w-full h-full"
               resizeMode="cover"
               onError={(error) => {
@@ -272,7 +223,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         <View className="relative rounded-lg overflow-hidden">
           {!imageError ? (
             <Image
-              source={{ uri: imageUrl }}
+              source={imageUrl}
               className="w-full h-48"
               resizeMode="cover"
               onError={(error) => {
@@ -318,12 +269,12 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     linkInfo
   );
 
-  // Only show YouTube videos, everything else gets Unsplash images
+  // Only show YouTube videos, everything else gets generic gym images
   if (!linkInfo.isValid || linkInfo.type !== "youtube") {
     console.log(
       "📱 Invalid link or not YouTube for exercise:",
       exerciseName,
-      "- showing Unsplash image"
+      "- showing generic gym image"
     );
     if (variant === "hero") {
       const imageUrl = useFallback
@@ -334,7 +285,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         <View className="relative h-80">
           {!imageError ? (
             <Image
-              source={{ uri: imageUrl }}
+              source={imageUrl}
               className="w-full h-full"
               resizeMode="cover"
               onError={(error) => {
@@ -373,7 +324,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         <View className="relative rounded-lg overflow-hidden">
           {!imageError ? (
             <Image
-              source={{ uri: imageUrl }}
+              source={imageUrl}
               className="w-full h-48"
               resizeMode="cover"
               onError={(error) => {

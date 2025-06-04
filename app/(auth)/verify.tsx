@@ -205,10 +205,10 @@ export default function VerifyScreen() {
             </Text>
             <TextInput
               className="bg-background px-md py-md rounded-xl text-base text-center tracking-widest border border-neutral-medium-1"
-              placeholder="Enter 6-digit code"
+              placeholder="Enter verification code"
               value={code}
               onChangeText={setCode}
-              keyboardType="number-pad"
+              keyboardType="default"
               maxLength={6}
               editable={!isLoading}
               autoFocus
