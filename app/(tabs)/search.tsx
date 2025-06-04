@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
 import {
   View,
-  StyleSheet,
+  Text,
   ScrollView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useAuth } from "@contexts/AuthContext";
-import Text from "@components/Text";
 import ExerciseLink from "@components/ExerciseLink";
 import ExerciseLinkModal from "@components/ExerciseLinkModal";
 import {
@@ -37,7 +38,10 @@ type SearchType = "date" | "exercise" | "general";
 
 export default function SearchScreen() {
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [exerciseQuery, setExerciseQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchType, setSearchType] = useState<SearchType>("general");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,52 +66,85 @@ export default function SearchScreen() {
     link?: string;
   } | null>(null);
 
-  // Determine search type based on query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchType("general");
-      return;
-    }
+  // Handle date selection from DateTimePicker
+  const handleDateChange = (date: Date) => {
+    // Hide the picker
+    setShowDatePicker(false);
 
-    // Check if it's a date (YYYY-MM-DD format)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (dateRegex.test(searchQuery)) {
-      setSearchType("date");
-    } else {
-      setSearchType("general");
-    }
-  }, [searchQuery]);
+    if (date) {
+      setSelectedDate(date);
+      // Format date in local timezone to avoid timezone conversion issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
 
-  // Perform search based on type
-  const performSearch = async () => {
-    if (!searchQuery.trim() || !user) return;
+      setDateQuery(formattedDate);
+      setExerciseQuery(""); // Clear exercise query
+
+      // Automatically perform date search
+      if (user) {
+        performDateSearchWithDate(formattedDate);
+      }
+    }
+  };
+
+  // Handle date picker cancellation
+  const handleDatePickerCancel = () => {
+    setShowDatePicker(false);
+  };
+
+  // Perform date search with formatted date
+  const performDateSearchWithDate = async (dateString: string) => {
+    if (!user) return;
+
+    // Clear current data before loading
+    setDateResult(null);
+    setExerciseResult(null);
+    setGeneralResults([]);
 
     setIsLoading(true);
 
     try {
-      if (searchType === "date") {
-        const result = await searchByDateAPI(user.id, searchQuery);
-        console.log("🔍 Date search result:", JSON.stringify(result, null, 2));
-        if (result.success) {
-          setDateResult(result.workout);
-          setExerciseResult(null);
-          setGeneralResults([]);
-        }
-      } else {
-        const result = await searchExercisesAPI(searchQuery);
-        console.log(
-          "🔍 General search result:",
-          JSON.stringify(result, null, 2)
-        );
-        if (result.success) {
-          setGeneralResults(result.exercises);
-          setDateResult(null);
-          setExerciseResult(null);
-        }
+      const result = await searchByDateAPI(user.id, dateString);
+      console.log("🔍 Date search result:", JSON.stringify(result, null, 2));
+      if (result.success) {
+        setDateResult(result.workout);
+        setSearchType("date");
       }
     } catch (error) {
-      console.error("Search error:", error);
-      Alert.alert("Error", "Failed to perform search. Please try again.");
+      console.error("Date search error:", error);
+      Alert.alert("Error", "Failed to search by date. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle exercise search
+  const performExerciseSearch = async () => {
+    if (!exerciseQuery.trim() || !user) return;
+
+    // Clear current data before loading
+    setDateResult(null);
+    setExerciseResult(null);
+    setGeneralResults([]);
+
+    setIsLoading(true);
+    setDateQuery(""); // Clear date query
+
+    try {
+      const result = await searchExercisesAPI(exerciseQuery);
+      console.log(
+        "🔍 Exercise search result:",
+        JSON.stringify(result, null, 2)
+      );
+      if (result.success) {
+        setGeneralResults(result.exercises);
+        setSearchType("general");
+      }
+    } catch (error) {
+      console.error("Exercise search error:", error);
+      Alert.alert("Error", "Failed to search exercises. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -116,6 +153,11 @@ export default function SearchScreen() {
   // Handle exercise selection for detailed view
   const handleExerciseSelect = async (exercise: Exercise) => {
     if (!user) return;
+
+    // Clear current data before loading
+    setDateResult(null);
+    setExerciseResult(null);
+    setGeneralResults([]);
 
     setIsLoading(true);
     try {
@@ -126,8 +168,6 @@ export default function SearchScreen() {
           userStats: result.userStats,
         });
         setSearchType("exercise");
-        setDateResult(null);
-        setGeneralResults([]);
       }
     } catch (error) {
       console.error("Exercise search error:", error);
@@ -140,14 +180,23 @@ export default function SearchScreen() {
     }
   };
 
-  // Clear search results
+  // Clear all search results
   const clearSearch = () => {
-    setSearchQuery("");
+    setExerciseQuery("");
+    setDateQuery("");
+    setSelectedDate(null);
     setDateResult(null);
     setExerciseResult(null);
     setGeneralResults([]);
     setSelectedExercise(null);
     setSearchType("general");
+  };
+
+  // Handle date search submission
+  const handleDateSubmit = () => {
+    if (dateQuery.trim()) {
+      performDateSearchWithDate(dateQuery);
+    }
   };
 
   // Handle exercise link modal
@@ -288,84 +337,197 @@ export default function SearchScreen() {
     return isNaN(num) ? 0 : num;
   };
 
+  // Calculate completion rate for workout based on completed exercises
+  const calculateWorkoutCompletionRate = (exercises: any[]) => {
+    if (!exercises || exercises.length === 0) return 0;
+    const completedCount = exercises.filter(
+      (ex) => ex.completed === true
+    ).length;
+    return Math.round((completedCount / exercises.length) * 100);
+  };
+
+  // Get individual muscle groups for display
+  const getIndividualMuscleGroups = (muscleGroups: string[] | undefined) => {
+    if (!muscleGroups || !Array.isArray(muscleGroups)) return [];
+
+    // Split comma-separated muscle groups and clean them
+    const individual = muscleGroups
+      .flatMap((group) =>
+        group.split(",").map((m) =>
+          m
+            .trim()
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase())
+        )
+      )
+      .filter((m) => m.length > 0);
+
+    // Remove duplicates
+    return [...new Set(individual)];
+  };
+
+  // Format equipment with proper spacing and capitalization
+  const formatEquipmentProperly = (equipment: any) => {
+    if (!equipment) return "None";
+    if (Array.isArray(equipment)) {
+      return equipment
+        .map((item) =>
+          String(item)
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase())
+        )
+        .join(", ");
+    }
+    return String(equipment)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  // Format difficulty properly
+  const formatDifficultyProperly = (difficulty: any) => {
+    if (!difficulty) return "";
+    return String(difficulty)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  // Format muscle groups properly for display
+  const formatMuscleGroupProperly = (group: string) => {
+    return group.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  // Generate vibrant colors for performance stats
+  const getVibrantColors = () => [
+    "bg-red-100",
+    "bg-orange-100",
+    "bg-yellow-100",
+    "bg-green-100",
+    "bg-blue-100",
+    "bg-indigo-100",
+    "bg-purple-100",
+    "bg-pink-100",
+    "bg-teal-100",
+  ];
+
   return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Search Input */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons
-              name="search"
-              size={20}
-              color="#9CA3AF"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by Date"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={performSearch}
-              placeholderTextColor="#9CA3AF"
-            />
-            {searchQuery.length > 0 && (
+    <SafeAreaView edges={["top"]} className="flex-1 bg-neutral-light-1">
+      <ScrollView className="flex-1">
+        {/* Search Inputs */}
+        <View className="p-4">
+          <View className="flex-row space-x-3">
+            {/* Exercise Search */}
+            <View className="flex-1">
+              <View className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm">
+                <Ionicons
+                  name="search"
+                  size={18}
+                  color="#9CA3AF"
+                  className="mr-3"
+                />
+                <TextInput
+                  className="flex-1 text-text-primary"
+                  placeholder="Search exercises"
+                  value={exerciseQuery}
+                  onChangeText={setExerciseQuery}
+                  onSubmitEditing={performExerciseSearch}
+                  placeholderTextColor="#9CA3AF"
+                />
+                {exerciseQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setExerciseQuery("")}
+                    className="p-1"
+                  >
+                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Date Search */}
+            <View className="flex-1">
               <TouchableOpacity
-                onPress={clearSearch}
-                style={styles.clearButton}
+                className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm"
+                onPress={() => setShowDatePicker(true)}
               >
-                <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                <Ionicons
+                  name="calendar"
+                  size={18}
+                  color="#9CA3AF"
+                  className="mr-3"
+                />
+                <Text
+                  className={`flex-1 text-sm ${
+                    selectedDate ? "text-text-primary" : "text-text-muted"
+                  }`}
+                >
+                  {selectedDate
+                    ? selectedDate.toLocaleDateString("en-US", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "numeric",
+                      })
+                    : "Select date"}
+                </Text>
+                {selectedDate && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedDate(null);
+                      setDateQuery("");
+                      setDateResult(null);
+                    }}
+                    className="p-1"
+                  >
+                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
-            )}
+            </View>
           </View>
         </View>
 
+        {/* Date Picker */}
+        <DateTimePickerModal
+          isVisible={showDatePicker}
+          mode="date"
+          date={selectedDate || new Date()}
+          onConfirm={handleDateChange}
+          onCancel={handleDatePickerCancel}
+          maximumDate={new Date()}
+          minimumDate={
+            new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+          }
+        />
+
         {/* Loading Indicator */}
         {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#22C55E" />
-            <Text variant="body" color="#6b7280" style={styles.loadingText}>
-              Searching...
-            </Text>
+          <View className="py-12 items-center">
+            <ActivityIndicator size="large" color="#BBDE51" />
+            <Text className="mt-3 text-sm text-text-muted">Searching...</Text>
           </View>
         )}
 
         {/* Exercise Detail View */}
         {exerciseResult && (
-          <View style={styles.exerciseDetailContainer}>
-            {/* Cover Image/Video at the top */}
-            <ExerciseLink
-              link={exerciseResult.exercise.link}
-              exerciseName={exerciseResult.exercise.name}
-              variant="hero"
-            />
+          <View className="px-4 pb-4">
+            <View className="bg-white rounded-2xl p-5 shadow-sm">
+              {/* Exercise Link at the top inside card */}
+              <View className="mb-4 -mx-5 -mt-5">
+                <ExerciseLink
+                  link={exerciseResult.exercise.link}
+                  exerciseName={exerciseResult.exercise.name}
+                  variant="hero"
+                />
+              </View>
 
-            <View style={styles.exerciseDetailCard}>
-              {/* Exercise Title with Category Tag and Edit Link */}
+              {/* Exercise Title with Edit Link */}
               <View className="flex-row items-start justify-between mb-2">
                 <View className="flex-1">
-                  <View className="flex-row items-center mb-2">
-                    <Text variant="h3" className="flex-1 mr-2">
-                      {formatName(exerciseResult.exercise.name)}
-                    </Text>
-                    {/* Category Tag based on primary muscle group */}
-                    {exerciseResult.exercise.muscleGroups &&
-                      exerciseResult.exercise.muscleGroups.length > 0 && (
-                        <View className="bg-primary px-3 py-1 rounded-full">
-                          <Text
-                            variant="caption"
-                            color="#181917"
-                            weight="semibold"
-                          >
-                            {formatMuscleGroups([
-                              exerciseResult.exercise.muscleGroups[0],
-                            ])}
-                          </Text>
-                        </View>
-                      )}
-                  </View>
+                  <Text className="text-xl font-bold text-text-primary mr-2">
+                    {formatName(exerciseResult.exercise.name)}
+                  </Text>
                 </View>
                 <TouchableOpacity
-                  className="p-2 rounded-lg bg-primary/10 ml-2"
+                  className="flex-row items-center bg-primary/10 px-3 py-2 rounded-lg ml-2"
                   onPress={() =>
                     handleOpenLinkModal({
                       id: exerciseResult.exercise.id,
@@ -374,46 +536,46 @@ export default function SearchScreen() {
                     })
                   }
                 >
-                  <Ionicons name="link" size={16} color="#BBDE51" />
+                  <Ionicons
+                    name="link"
+                    size={14}
+                    color="#BBDE51"
+                    className="mr-1"
+                  />
+                  <Text className="text-xs font-medium text-primary">
+                    {exerciseResult.exercise.link ? "Update Link" : "Add Link"}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Description */}
-              <Text variant="bodySmall" color="#6b7280" className="mb-4">
+              <Text className="text-sm text-text-muted mb-6">
                 {formatDescription(exerciseResult.exercise.description)}
               </Text>
 
               {/* Muscle Groups */}
-              <View style={styles.muscleGroupsSection}>
-                <Text
-                  variant="bodySmall"
-                  weight="semibold"
-                  style={styles.sectionTitle}
-                >
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-text-primary mb-3">
                   Muscle Groups
                 </Text>
-                <View style={styles.muscleGroupsContainer}>
-                  {exerciseResult.exercise.muscleGroups &&
-                  Array.isArray(exerciseResult.exercise.muscleGroups) &&
-                  exerciseResult.exercise.muscleGroups.length > 0 ? (
-                    exerciseResult.exercise.muscleGroups.map(
-                      (muscle: string, index: number) => (
-                        <View key={index} style={styles.muscleGroupTag}>
-                          <Text
-                            variant="caption"
-                            style={styles.muscleGroupText}
-                          >
-                            {formatMuscleGroups([muscle])}
-                          </Text>
-                        </View>
-                      )
-                    )
+                <View className="flex-row flex-wrap">
+                  {getIndividualMuscleGroups(
+                    exerciseResult.exercise.muscleGroups
+                  ).length > 0 ? (
+                    getIndividualMuscleGroups(
+                      exerciseResult.exercise.muscleGroups
+                    ).map((muscle: string, index: number) => (
+                      <View
+                        key={index}
+                        className="bg-primary rounded-full px-3 py-1 mr-2 mb-2"
+                      >
+                        <Text className="text-xs font-semibold text-text-primary">
+                          {muscle}
+                        </Text>
+                      </View>
+                    ))
                   ) : (
-                    <Text
-                      variant="bodySmall"
-                      color="#9ca3af"
-                      style={styles.noDataText}
-                    >
+                    <Text className="text-sm text-text-muted italic">
                       No muscle groups specified
                     </Text>
                   )}
@@ -421,170 +583,122 @@ export default function SearchScreen() {
               </View>
 
               {/* Equipment */}
-              <View style={styles.detailSection}>
-                <Text
-                  variant="bodySmall"
-                  weight="semibold"
-                  style={styles.sectionTitle}
-                >
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-text-primary mb-2">
                   Equipment
                 </Text>
-                <Text variant="bodySmall" color="#4b5563">
-                  {formatEquipment(exerciseResult.exercise.equipment)}
+                <Text className="text-sm text-text-muted">
+                  {formatEquipmentProperly(exerciseResult.exercise.equipment)}
                 </Text>
               </View>
 
               {/* Instructions */}
-              <View style={styles.detailSection}>
-                <Text
-                  variant="bodySmall"
-                  weight="semibold"
-                  style={styles.sectionTitle}
-                >
+              <View className="mb-6">
+                <Text className="text-sm font-semibold text-text-primary mb-2">
                   Instructions
                 </Text>
-                <Text variant="bodySmall" color="#4b5563">
+                <Text className="text-sm text-text-muted">
                   {formatInstructions(exerciseResult.exercise.instructions)}
                 </Text>
               </View>
 
               {/* User Performance Stats */}
               {exerciseResult.userStats && (
-                <View style={styles.performanceSection}>
-                  <Text variant="title" style={styles.performanceSectionTitle}>
+                <View className="mt-6 pt-6 border-t border-neutral-light-2">
+                  <Text className="text-lg font-semibold text-text-primary mb-4">
                     Your Performance
                   </Text>
 
-                  <View style={styles.performanceGrid}>
-                    <View
-                      style={[styles.performanceItem, styles.performanceCard1]}
-                    >
-                      <Text variant="h2" style={styles.performanceValue}>
+                  <View className="flex-row justify-around mb-4 flex-wrap">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-text-primary mb-1">
                         {`${exerciseResult.userStats.totalAssignments || 0}`}
                       </Text>
-                      <Text
-                        variant="caption"
-                        color="#1F2937"
-                        style={styles.performanceLabel}
-                      >
-                        Times assigned
+                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                        Assigned
                       </Text>
                     </View>
-                    <View
-                      style={[styles.performanceItem, styles.performanceCard2]}
-                    >
-                      <Text variant="h2" style={styles.performanceValue}>
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-text-primary mb-1">
                         {`${exerciseResult.userStats.totalCompletions || 0}`}
                       </Text>
-                      <Text
-                        variant="caption"
-                        color="#1F2937"
-                        style={styles.performanceLabel}
-                      >
-                        Completed
+                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                        Done
                       </Text>
                     </View>
-                    <View
-                      style={[styles.performanceItem, styles.performanceCard3]}
-                    >
-                      <Text variant="h2" style={styles.performanceValue}>
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-yellow-100 mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-text-primary mb-1">
                         {`${exerciseResult.userStats.completionRate || 0}%`}
                       </Text>
-                      <Text
-                        variant="caption"
-                        color="#1F2937"
-                        style={styles.performanceLabel}
-                      >
-                        Success Rate
+                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                        Success
                       </Text>
                     </View>
                   </View>
 
-                  <View style={styles.performanceGrid}>
-                    <View
-                      style={[styles.performanceItem, styles.performanceCard4]}
-                    >
-                      <Text variant="h2" style={styles.performanceValue}>
+                  <View className="flex-row justify-around mb-4 flex-wrap">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-text-primary mb-1">
                         {`${exerciseResult.userStats.averageSets || 0}`}
                       </Text>
-                      <Text
-                        variant="caption"
-                        color="#1F2937"
-                        style={styles.performanceLabel}
-                      >
+                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
                         Avg Sets
                       </Text>
                     </View>
-                    <View
-                      style={[styles.performanceItem, styles.performanceCard5]}
-                    >
-                      <Text variant="h2" style={styles.performanceValue}>
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-purple-100 mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-text-primary mb-1">
                         {`${exerciseResult.userStats.averageReps || 0}`}
                       </Text>
-                      <Text
-                        variant="caption"
-                        color="#1F2937"
-                        style={styles.performanceLabel}
-                      >
+                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
                         Avg Reps
                       </Text>
                     </View>
-                    <View
-                      style={[styles.performanceItem, styles.performanceCard6]}
-                    >
-                      <Text variant="h2" style={styles.performanceValue}>
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-pink-100 mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-text-primary mb-1">
                         {exerciseResult.userStats.averageWeight
                           ? `${exerciseResult.userStats.averageWeight}`
                           : "N/A"}
                       </Text>
-                      <Text
-                        variant="caption"
-                        color="#1F2937"
-                        style={styles.performanceLabel}
-                      >
+                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
                         Avg Weight
                       </Text>
                     </View>
                   </View>
 
-                  {/* Personal Records */}
-                  <View style={styles.personalRecordsSection}>
-                    <Text
-                      variant="bodySmall"
-                      weight="semibold"
-                      style={styles.personalRecordsTitle}
-                    >
+                  {/* Personal Records - styled like performance section */}
+                  <View className="mt-5">
+                    <Text className="text-lg font-semibold text-text-primary mb-4">
                       Personal Records
                     </Text>
-                    <View style={styles.recordsGrid}>
-                      <View style={[styles.recordItem, styles.recordCard1]}>
-                        <Text variant="h3" style={styles.recordValue}>
+                    <View className="flex-row justify-around">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-teal-100 shadow-sm">
+                        <Text className="text-s font-bold text-text-primary mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxSets || 0
                           }`}
                         </Text>
-                        <Text variant="caption" style={styles.recordLabel}>
+                        <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
                           Max Sets
                         </Text>
                       </View>
-                      <View style={[styles.recordItem, styles.recordCard2]}>
-                        <Text variant="h3" style={styles.recordValue}>
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-indigo-100 shadow-sm">
+                        <Text className="text-s font-bold text-text-primary mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxReps || 0
                           }`}
                         </Text>
-                        <Text variant="caption" style={styles.recordLabel}>
+                        <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
                           Max Reps
                         </Text>
                       </View>
-                      <View style={[styles.recordItem, styles.recordCard3]}>
-                        <Text variant="h3" style={styles.recordValue}>
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-orange-100 shadow-sm">
+                        <Text className="text-s font-bold text-text-primary mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxWeight ||
                             0
                           }`}
                         </Text>
-                        <Text variant="caption" style={styles.recordLabel}>
+                        <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
                           Max Weight
                         </Text>
                       </View>
@@ -593,13 +707,9 @@ export default function SearchScreen() {
 
                   {/* Last Performed */}
                   {exerciseResult.userStats.lastPerformed && (
-                    <View style={styles.lastPerformedSection}>
-                      <Text
-                        variant="bodySmall"
-                        color="#6b7280"
-                        style={styles.lastPerformedLabel}
-                      >
-                        Last performed{" "}
+                    <View className="mt-5 items-center">
+                      <Text className="text-sm text-text-muted text-center">
+                        Last performed:{" "}
                         {formatLastPerformedDate(
                           exerciseResult.userStats.lastPerformed
                         )}
@@ -614,78 +724,79 @@ export default function SearchScreen() {
 
         {/* Date Search Results */}
         {dateResult && (
-          <View style={styles.resultsContainer}>
-            <Text variant="title" style={styles.sectionTitle}>
-              {"Workout for " + formatDate(searchQuery)}
-            </Text>
-            <View style={styles.workoutCard}>
-              <View style={styles.workoutHeader}>
-                <Text variant="title" style={styles.workoutName}>
+          <View className="px-4">
+            <View className="bg-white rounded-2xl p-5 shadow-sm">
+              <View className="flex-row justify-between items-center mb-3">
+                <Text className="text-lg font-bold text-text-primary flex-1">
                   {safeString(dateResult.name)}
                 </Text>
                 <View
-                  style={[
-                    styles.completionBadge,
-                    {
-                      backgroundColor: dateResult.completed
-                        ? "#22C55E"
-                        : "#F59E0B",
-                    },
-                  ]}
+                  className={`px-3 py-1 rounded-full ${
+                    dateResult.planDay?.exercises
+                      ? calculateWorkoutCompletionRate(
+                          dateResult.planDay.exercises
+                        ) === 100
+                        ? "bg-green-500"
+                        : "bg-yellow-500"
+                      : "bg-gray-500"
+                  }`}
                 >
-                  <Text variant="caption" style={styles.completionBadgeText}>
-                    {dateResult.completed ? "Completed" : "In Progress"}
+                  <Text className="text-xs font-semibold text-white">
+                    {dateResult.planDay?.exercises
+                      ? calculateWorkoutCompletionRate(
+                          dateResult.planDay.exercises
+                        ) === 100
+                        ? "Completed"
+                        : "In Progress"
+                      : "No Exercises"}
                   </Text>
                 </View>
               </View>
 
-              <Text
-                variant="body"
-                color="#6b7280"
-                style={styles.workoutDescription}
-              >
+              <Text className="text-sm text-text-muted mb-4">
                 {safeString(dateResult.description)}
               </Text>
 
-              <View style={styles.completionRateContainer}>
-                <Text
-                  variant="body"
-                  weight="medium"
-                  color="#374151"
-                  style={styles.completionRateLabel}
-                >
+              <View className="mb-5">
+                <Text className="text-sm font-medium text-text-primary mb-2">
                   Overall Progress
                 </Text>
-                <View style={styles.progressBar}>
+                <View className="h-2 bg-neutral-light-2 rounded-full mb-2 overflow-hidden">
                   <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${safeNumber(
-                          dateResult.overallCompletionRate
-                        )}%`,
-                      },
-                    ]}
+                    className="h-full bg-green-500 rounded-full"
+                    style={{
+                      width: `${
+                        dateResult.planDay?.exercises
+                          ? calculateWorkoutCompletionRate(
+                              dateResult.planDay.exercises
+                            )
+                          : 0
+                      }%`,
+                    }}
                   />
                 </View>
-                <Text variant="bodySmall" color="#6b7280">
-                  {safeString(dateResult.overallCompletionRate) + "% Complete"}
+                <Text className="text-sm text-text-muted">
+                  {dateResult.planDay?.exercises
+                    ? calculateWorkoutCompletionRate(
+                        dateResult.planDay.exercises
+                      )
+                    : 0}
+                  % Complete
                 </Text>
               </View>
 
               {dateResult.planDay?.exercises &&
                 Array.isArray(dateResult.planDay.exercises) && (
                   <View>
-                    <Text variant="title" style={styles.exercisesTitle}>
-                      {"Exercises (" +
-                        safeString(dateResult.planDay.exercises.length) +
-                        ")"}
+                    <Text className="text-lg font-semibold text-text-primary mb-4">
+                      Exercises (
+                      {safeString(dateResult.planDay.exercises.length)})
                     </Text>
                     {dateResult.planDay.exercises.map(
                       (exercise: any, index: number) => (
                         <TouchableOpacity
                           key={index}
-                          style={styles.exerciseItem}
+                          className="bg-neutral-light-1 rounded-xl p-4 mb-3"
                           onPress={() => {
                             try {
                               if (exercise?.exercise?.id) {
@@ -722,84 +833,85 @@ export default function SearchScreen() {
                             }
                           }}
                         >
-                          <View style={styles.exerciseItemHeader}>
-                            <Text variant="title" style={styles.exerciseName}>
+                          <View className="flex-row justify-between items-center mb-2">
+                            <Text className="text-base font-semibold text-text-primary flex-1">
                               {safeString(
                                 exercise?.exercise?.name || "Unknown"
                               )}
                             </Text>
-                            <View style={styles.exerciseItemRightSection}>
+                            <View className="flex-row items-center">
                               <View
-                                style={[
-                                  styles.exerciseCompletionBadge,
-                                  {
-                                    backgroundColor:
-                                      safeNumber(exercise?.completionRate) ===
-                                      100
-                                        ? "#22C55E"
-                                        : safeNumber(exercise?.completionRate) >
-                                          0
-                                        ? "#F59E0B"
-                                        : "#EF4444",
-                                  },
-                                ]}
+                                className={`px-2 py-1 rounded-lg ${
+                                  exercise?.completed === true
+                                    ? "bg-green-500"
+                                    : exercise?.completed === false
+                                    ? "bg-red-500"
+                                    : "bg-yellow-500"
+                                }`}
                               >
-                                <Text
-                                  variant="caption"
-                                  style={styles.exerciseCompletionBadgeText}
-                                >
-                                  {safeString(exercise?.completionRate || 0) +
-                                    "%"}
+                                <Text className="text-xs font-semibold text-white">
+                                  {exercise?.completed === true
+                                    ? "Done"
+                                    : exercise?.completed === false
+                                    ? "Not Done"
+                                    : "Pending"}
                                 </Text>
                               </View>
                               <Ionicons
                                 name="chevron-forward"
                                 size={16}
                                 color="#9CA3AF"
-                                style={styles.exerciseChevron}
+                                className="ml-2"
                               />
                             </View>
                           </View>
-                          <Text
-                            variant="bodySmall"
-                            color="#6b7280"
-                            style={styles.exerciseDetails}
-                          >
-                            {formatMuscleGroups(
+
+                          {/* Individual muscle group tags */}
+                          <View className="flex-row flex-wrap mb-2">
+                            {getIndividualMuscleGroups(
                               exercise?.exercise?.muscleGroups
-                            )}{" "}
-                            • {formatDifficulty(exercise?.exercise?.difficulty)}
-                          </Text>
-                          {exercise?.exercise?.equipment &&
-                            Array.isArray(exercise.exercise.equipment) &&
-                            exercise.exercise.equipment.length > 0 && (
-                              <Text variant="caption" color="#6b7280">
-                                {"Equipment: " +
-                                  formatEquipment(exercise.exercise.equipment)}
-                              </Text>
+                            )
+                              .slice(0, 3)
+                              .map((muscle: string, muscleIndex: number) => (
+                                <View
+                                  key={muscleIndex}
+                                  className="bg-primary rounded-full px-2 py-1 mr-1 mb-1"
+                                >
+                                  <Text className="text-xs font-medium text-text-primary">
+                                    {muscle}
+                                  </Text>
+                                </View>
+                              ))}
+                            {getIndividualMuscleGroups(
+                              exercise?.exercise?.muscleGroups
+                            ).length > 3 && (
+                              <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
+                                <Text className="text-xs font-medium text-text-muted">
+                                  +
+                                  {getIndividualMuscleGroups(
+                                    exercise?.exercise?.muscleGroups
+                                  ).length - 3}
+                                </Text>
+                              </View>
                             )}
-                          <View style={styles.exerciseProgressContainer}>
-                            <Text
-                              variant="bodySmall"
-                              weight="medium"
-                              color="#374151"
-                              style={styles.exerciseProgressLabel}
-                            >
-                              Progress
-                            </Text>
-                            <View style={styles.exerciseProgressBar}>
-                              <View
-                                style={[
-                                  styles.exerciseProgressFill,
-                                  {
-                                    width: `${safeNumber(
-                                      exercise?.completionRate
-                                    )}%`,
-                                  },
-                                ]}
-                              />
-                            </View>
                           </View>
+
+                          <Text className="text-sm text-text-muted mb-2">
+                            {formatDifficultyProperly(
+                              exercise?.exercise?.difficulty
+                            )}
+                            {exercise?.exercise?.equipment &&
+                              Array.isArray(exercise.exercise.equipment) &&
+                              exercise.exercise.equipment.length > 0 && (
+                                <Text>
+                                  {" "}
+                                  •{" "}
+                                  {formatEquipmentProperly(
+                                    exercise.exercise.equipment
+                                  )}
+                                </Text>
+                              )}
+                          </Text>
                         </TouchableOpacity>
                       )
                     )}
@@ -811,14 +923,14 @@ export default function SearchScreen() {
 
         {/* General Exercise Search Results */}
         {generalResults.length > 0 && (
-          <View style={styles.resultsContainer}>
-            <Text variant="title" style={styles.sectionTitle}>
-              {`Exercise Results (${safeString(generalResults.length)})`}
+          <View className="px-4">
+            <Text className="text-lg font-semibold text-text-primary mb-4">
+              Exercise Results ({safeString(generalResults.length)})
             </Text>
             {generalResults.map((exercise: any, index: number) => (
               <TouchableOpacity
                 key={`general-exercise-${exercise?.id || index}`}
-                style={styles.exerciseCard}
+                className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center"
                 onPress={() => {
                   try {
                     handleExerciseSelect({
@@ -841,32 +953,46 @@ export default function SearchScreen() {
                   }
                 }}
               >
-                <View style={styles.exerciseInfo}>
-                  <Text variant="title">
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-text-primary">
                     {safeString(exercise?.name || "Unknown Exercise")}
                   </Text>
-                  <Text
-                    variant="bodySmall"
-                    color="#6b7280"
-                    style={styles.exerciseDetails}
-                  >
-                    {formatMuscleGroups(exercise?.muscleGroups)} •{" "}
-                    {formatDifficulty(exercise?.difficulty)}
+
+                  {/* Individual muscle group tags */}
+                  <View className="flex-row flex-wrap my-2">
+                    {getIndividualMuscleGroups(exercise?.muscleGroups)
+                      .slice(0, 3)
+                      .map((muscle: string, muscleIndex: number) => (
+                        <View
+                          key={muscleIndex}
+                          className="bg-primary rounded-full px-2 py-1 mr-1 mb-1"
+                        >
+                          <Text className="text-xs font-medium text-text-primary">
+                            {muscle}
+                          </Text>
+                        </View>
+                      ))}
+                    {getIndividualMuscleGroups(exercise?.muscleGroups).length >
+                      3 && (
+                      <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
+                        <Text className="text-xs font-medium text-text-muted">
+                          +
+                          {getIndividualMuscleGroups(exercise?.muscleGroups)
+                            .length - 3}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Text className="text-sm text-text-muted mb-1">
+                    {formatDifficultyProperly(exercise?.difficulty)} •{" "}
+                    {formatEquipmentProperly(exercise?.equipment)}
                   </Text>
                   {exercise?.description && (
-                    <Text
-                      variant="bodySmall"
-                      color="#6b7280"
-                      style={styles.exerciseDescription}
-                    >
+                    <Text className="text-sm text-text-muted mb-2">
                       {safeString(exercise.description)}
                     </Text>
                   )}
-                  <View style={styles.exerciseTags}>
-                    <Text variant="caption" color="#4b5563">
-                      {`Equipment: ${formatEquipment(exercise?.equipment)}`}
-                    </Text>
-                  </View>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </TouchableOpacity>
@@ -879,57 +1005,40 @@ export default function SearchScreen() {
           !dateResult &&
           !exerciseResult &&
           generalResults.length === 0 &&
-          searchQuery.trim() && (
-            <View style={styles.emptyState}>
-              <Ionicons name="search" size={40} color="#D1D5DB" />
-              <Text
-                variant="title"
-                color="#6b7280"
-                style={styles.emptyStateText}
-              >
+          (exerciseQuery.trim() || dateQuery.trim()) && (
+            <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-sm">
+              <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+              <Text className="text-lg font-semibold text-text-muted mt-4">
                 No results found
               </Text>
-              <Text
-                variant="bodySmall"
-                color="#9ca3af"
-                style={styles.emptyStateSubtext}
-              >
+              <Text className="text-sm text-text-muted text-center mt-2">
                 Try searching for a date (YYYY-MM-DD) or exercise name
               </Text>
             </View>
           )}
 
         {/* How to Search Instructions */}
-        {!searchQuery.trim() && (
-          <View style={styles.instructionsContainer}>
-            <Text variant="h4" style={styles.instructionsTitle}>
+        {!exerciseQuery.trim() && !dateQuery.trim() && (
+          <View className="px-4">
+            <Text className="text-lg font-semibold text-text-primary mb-5 ml-2">
               How to Search
             </Text>
 
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionIcon}>
-                <Ionicons name="calendar-outline" size={20} color="#22C55E" />
+            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+                <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
               </View>
-              <Text
-                variant="bodySmall"
-                color="#4b5563"
-                style={styles.instructionText}
-              >
-                Search by date (e.g., 2024-01-15) to see the workout for that
-                day
+              <Text className="flex-1 text-sm text-text-muted">
+                Search by date to see the workout for that day
               </Text>
             </View>
 
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionIcon}>
-                <Ionicons name="barbell-outline" size={20} color="#22C55E" />
+            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+                <Ionicons name="barbell-outline" size={20} color="#F59E0B" />
               </View>
-              <Text
-                variant="bodySmall"
-                color="#4b5563"
-                style={styles.instructionText}
-              >
-                Search by exercise name to see exercises
+              <Text className="flex-1 text-sm text-text-muted">
+                Search by exercise name to see exercises and performance stats
               </Text>
             </View>
           </View>
@@ -946,388 +1055,3 @@ export default function SearchScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  searchContainer: {
-    padding: 16,
-    backgroundColor: "#F8F9FA",
-  },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    color: "#1F2937",
-  },
-  clearButton: {
-    padding: 4,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 12,
-  },
-  exerciseDetailContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  exerciseDetailCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginTop: -20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  exerciseDetailHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  exerciseDetailName: {
-    flex: 1,
-  },
-  editLinkButton: {
-    padding: 4,
-  },
-  exerciseDetailDescription: {
-    marginBottom: 24,
-  },
-  muscleGroupsSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-    color: "#1F2937",
-  },
-  muscleGroupsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  muscleGroupTag: {
-    backgroundColor: "#BBDE51",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  muscleGroupText: {
-    color: "#181917",
-    fontWeight: "600",
-  },
-  detailSection: {
-    marginBottom: 20,
-  },
-  exerciseLinkContainer: {
-    marginVertical: 16,
-  },
-  noDataText: {
-    fontStyle: "italic",
-  },
-  performanceSection: {
-    marginTop: 24,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  performanceSectionTitle: {
-    marginBottom: 16,
-    color: "#1F2937",
-  },
-  performanceGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  performanceItem: {
-    flex: 1,
-    alignItems: "center",
-    marginHorizontal: 4,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  performanceCard1: {
-    backgroundColor: "#E0F2FE",
-  },
-  performanceCard2: {
-    backgroundColor: "#DCFCE7",
-  },
-  performanceCard3: {
-    backgroundColor: "#FEF3C7",
-  },
-  performanceCard4: {
-    backgroundColor: "#FCE7F3",
-  },
-  performanceCard5: {
-    backgroundColor: "#EDE9FE",
-  },
-  performanceCard6: {
-    backgroundColor: "#FEE2E2",
-  },
-  performanceValue: {
-    color: "#1F2937",
-    fontWeight: "700",
-  },
-  performanceLabel: {
-    marginTop: 4,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  personalRecordsSection: {
-    marginTop: 20,
-  },
-  personalRecordsTitle: {
-    marginBottom: 12,
-    color: "#1F2937",
-  },
-  recordsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  recordItem: {
-    flex: 1,
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 16,
-    marginHorizontal: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  recordCard1: {
-    backgroundColor: "#BBF7D0",
-  },
-  recordCard2: {
-    backgroundColor: "#DBEAFE",
-  },
-  recordCard3: {
-    backgroundColor: "#FED7AA",
-  },
-  recordValue: {
-    color: "#1F2937",
-    fontWeight: "700",
-  },
-  recordLabel: {
-    color: "#1F2937",
-    marginTop: 4,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  lastPerformedSection: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  lastPerformedLabel: {
-    textAlign: "center",
-  },
-  resultsContainer: {
-    padding: 16,
-  },
-  workoutCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  workoutHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  workoutName: {
-    flex: 1,
-  },
-  completionBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  completionBadgeText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  workoutDescription: {
-    marginBottom: 16,
-  },
-  completionRateContainer: {
-    marginBottom: 20,
-  },
-  completionRateLabel: {
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#22C55E",
-    borderRadius: 4,
-  },
-  exercisesTitle: {
-    marginBottom: 16,
-  },
-  exerciseItem: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  exerciseItemHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  exerciseName: {
-    flex: 1,
-  },
-  exerciseDetails: {
-    marginBottom: 8,
-  },
-  exerciseItemRightSection: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  exerciseCompletionBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  exerciseCompletionBadgeText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  exerciseProgressContainer: {
-    marginTop: 8,
-  },
-  exerciseProgressLabel: {
-    marginBottom: 4,
-  },
-  exerciseProgressBar: {
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 3,
-  },
-  exerciseProgressFill: {
-    height: "100%",
-    backgroundColor: "#22C55E",
-    borderRadius: 3,
-  },
-  exerciseChevron: {
-    marginLeft: 8,
-  },
-  exerciseCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  exerciseInfo: {
-    flex: 1,
-  },
-  exerciseDescription: {
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  exerciseTags: {
-    marginTop: 8,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 40,
-    margin: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  emptyStateText: {
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    marginTop: 8,
-    textAlign: "center",
-  },
-  instructionsContainer: {
-    padding: 16,
-  },
-  instructionsTitle: {
-    marginBottom: 20,
-    fontWeight: "400",
-    marginLeft: 10,
-  },
-  instructionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  instructionIcon: {
-    backgroundColor: "#FEF3C7",
-    padding: 8,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  instructionText: {
-    flex: 1,
-  },
-});

@@ -525,25 +525,17 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     if (variant === "hero") {
       return (
         <TouchableOpacity
-          className="relative h-80"
+          className="h-80 border border-gray-300 rounded-lg bg-white items-center justify-center"
           onPress={() => setShowVideo(true)}
         >
-          <Image
-            source={{ uri: linkInfo.thumbnailUrl }}
-            className="w-full h-full border border-grey-light-1"
-            resizeMode="cover"
-          />
-
-          <View className="absolute bottom-4 right-4 bg-red-600 rounded-lg flex-row items-center px-3 py-2">
-            <Ionicons name="logo-youtube" size={16} color="#FFFFFF" />
-            <Text
-              variant="bodySmall"
-              color="#FFFFFF"
-              className="ml-2 font-semibold"
-            >
-              YouTube
-            </Text>
-          </View>
+          <Ionicons name="play-circle-outline" size={48} color="#6B7280" />
+          <Text
+            variant="bodySmall"
+            color="#6B7280"
+            className="mt-2 text-center"
+          >
+            YouTube Video: {exerciseName}
+          </Text>
         </TouchableOpacity>
       );
     }
@@ -551,30 +543,17 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     return (
       <View className={`my-2 ${style ? "" : ""}`}>
         <TouchableOpacity
-          className="relative rounded-lg overflow-hidden"
+          className="border border-gray-300 rounded-lg bg-white p-4 items-center justify-center h-32"
           onPress={() => setShowVideo(true)}
         >
-          <Image
-            source={{ uri: linkInfo.thumbnailUrl }}
-            className="w-full h-48 bg-neutral-light-2"
-            resizeMode="cover"
-          />
-          <View className="absolute inset-0 items-center justify-center bg-black/30">
-            <View className="bg-white/90 rounded-full w-16 h-16 items-center justify-center">
-              <Ionicons name="play" size={24} color="#FFFFFF" />
-            </View>
-          </View>
-
-          <View className="absolute bottom-2 right-2 bg-red-600 rounded-lg flex-row items-center px-2 py-1">
-            <Ionicons name="logo-youtube" size={12} color="#FFFFFF" />
-            <Text
-              variant="caption"
-              color="#FFFFFF"
-              className="ml-1 text-xs font-semibold"
-            >
-              YouTube
-            </Text>
-          </View>
+          <Ionicons name="play-circle-outline" size={32} color="#6B7280" />
+          <Text
+            variant="bodySmall"
+            color="#6B7280"
+            className="mt-2 text-center"
+          >
+            YouTube Video: {exerciseName}
+          </Text>
         </TouchableOpacity>
       </View>
     );

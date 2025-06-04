@@ -426,7 +426,7 @@ export default function SettingsScreen() {
 
         {/* Preferred Workout Types */}
         {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
-          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Preferred Workout Types
             </Text>
@@ -455,7 +455,7 @@ export default function SettingsScreen() {
 
         {/* Equipment Available */}
         {profile?.equipment && profile.equipment.length > 0 && (
-          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Available Equipment
             </Text>
@@ -478,7 +478,7 @@ export default function SettingsScreen() {
 
         {/* Weekly Schedule */}
         {profile?.availableDays && profile.availableDays.length > 0 && (
-          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Weekly Schedule
             </Text>
@@ -506,7 +506,7 @@ export default function SettingsScreen() {
         {/* Limitations & Medical Notes */}
         {((profile?.limitations && profile.limitations.length > 0) ||
           profile?.medicalNotes) && (
-          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Health Information
             </Text>
@@ -545,7 +545,7 @@ export default function SettingsScreen() {
         )}
 
         {/* App Settings */}
-        <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+        <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
           <Text className="text-base font-semibold text-text-primary p-4 pb-2">
             App Settings
           </Text>
