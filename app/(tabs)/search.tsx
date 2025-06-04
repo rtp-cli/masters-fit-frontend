@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "@contexts/AuthContext";
 import ExerciseLink from "@components/ExerciseLink";
 import ExerciseLinkModal from "@components/ExerciseLinkModal";
@@ -67,8 +68,8 @@ export default function SearchScreen() {
   } | null>(null);
 
   // Handle date selection from DateTimePicker
-  const handleDateChange = (date: Date) => {
-    // Hide the picker
+  const handleDateChange = (event: any, date?: Date) => {
+    // Hide picker after date selection on both platforms
     setShowDatePicker(false);
 
     if (date) {
@@ -417,7 +418,7 @@ export default function SearchScreen() {
           <View className="flex-row space-x-3">
             {/* Exercise Search */}
             <View className="flex-1">
-              <View className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm">
+              <View className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm h-12">
                 <Ionicons
                   name="search"
                   size={18}
@@ -425,7 +426,7 @@ export default function SearchScreen() {
                   className="mr-3"
                 />
                 <TextInput
-                  className="flex-1 text-text-primary"
+                  className="flex-1 text-text-primary text-sm"
                   placeholder="Search exercises"
                   value={exerciseQuery}
                   onChangeText={setExerciseQuery}
@@ -443,60 +444,197 @@ export default function SearchScreen() {
               </View>
             </View>
 
-            {/* Date Search */}
-            <View className="flex-1">
-              <TouchableOpacity
-                className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm"
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Ionicons
-                  name="calendar"
-                  size={18}
-                  color="#9CA3AF"
-                  className="mr-3"
-                />
-                <Text
-                  className={`flex-1 text-sm ${
-                    selectedDate ? "text-text-primary" : "text-text-muted"
-                  }`}
-                >
-                  {selectedDate
-                    ? selectedDate.toLocaleDateString("en-US", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        year: "numeric",
-                      })
-                    : "Select date"}
-                </Text>
-                {selectedDate && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedDate(null);
-                      setDateQuery("");
-                      setDateResult(null);
-                    }}
-                    className="p-1"
-                  >
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-                  </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-            </View>
+            {/* Date Picker Icon */}
+            <TouchableOpacity
+              className="bg-white rounded-xl shadow-sm h-12 w-12 items-center justify-center"
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Ionicons
+                name="calendar"
+                size={20}
+                color={selectedDate ? "#BBDE51" : "#9CA3AF"}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Date Picker */}
-        <DateTimePickerModal
-          isVisible={showDatePicker}
-          mode="date"
-          date={selectedDate || new Date()}
-          onConfirm={handleDateChange}
-          onCancel={handleDatePickerCancel}
-          maximumDate={new Date()}
-          minimumDate={
-            new Date(new Date().setFullYear(new Date().getFullYear() - 1))
-          }
-        />
+        {/* Date Picker - iOS and Android handled separately */}
+        {showDatePicker && (
+          <>
+            {Platform.OS === "ios" ? (
+              <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showDatePicker}
+                onRequestClose={() => setShowDatePicker(false)}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "flex-end",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "white",
+                      borderTopLeftRadius: 20,
+                      borderTopRightRadius: 20,
+                      padding: 20,
+                      minHeight: 320,
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 20,
+                      }}
+                    >
+                      <TouchableOpacity
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text style={{ color: "#9CA3AF", fontSize: 16 }}>
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          fontWeight: "600",
+                          color: "#374151",
+                        }}
+                      >
+                        Select Date
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowDatePicker(false);
+                          // Use the currently selected date to perform search
+                          const currentDate = selectedDate || new Date();
+                          const year = currentDate.getFullYear();
+                          const month = String(
+                            currentDate.getMonth() + 1
+                          ).padStart(2, "0");
+                          const day = String(currentDate.getDate()).padStart(
+                            2,
+                            "0"
+                          );
+                          const formattedDate = `${year}-${month}-${day}`;
+
+                          setDateQuery(formattedDate);
+                          setExerciseQuery("");
+
+                          if (user) {
+                            performDateSearchWithDate(formattedDate);
+                          }
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#BBDE51",
+                            fontSize: 16,
+                            fontWeight: "500",
+                          }}
+                        >
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View
+                      style={{
+                        height: 200,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <DateTimePicker
+                        value={selectedDate || new Date()}
+                        onChange={(event, date) => {
+                          // Always update selectedDate when user changes the picker
+                          if (date) {
+                            setSelectedDate(date);
+                          }
+                        }}
+                        mode="date"
+                        display="spinner"
+                        maximumDate={new Date()}
+                        minimumDate={
+                          new Date(
+                            new Date().setFullYear(new Date().getFullYear() - 1)
+                          )
+                        }
+                        style={{
+                          height: 200,
+                          width: "100%",
+                        }}
+                        textColor="#374151"
+                        locale="en"
+                      />
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+            ) : (
+              // Android - native modal
+              <DateTimePicker
+                value={selectedDate || new Date()}
+                onChange={(event, date) => {
+                  setShowDatePicker(false);
+
+                  if (event.type === "set" && date) {
+                    setSelectedDate(date);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const day = String(date.getDate()).padStart(2, "0");
+                    const formattedDate = `${year}-${month}-${day}`;
+
+                    setDateQuery(formattedDate);
+                    setExerciseQuery("");
+
+                    if (user) {
+                      performDateSearchWithDate(formattedDate);
+                    }
+                  }
+                }}
+                mode="date"
+                display="default"
+                maximumDate={new Date()}
+                minimumDate={
+                  new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+                }
+              />
+            )}
+          </>
+        )}
+
+        {/* Date Search Results Header */}
+        {selectedDate && dateResult && (
+          <View className="px-4 pb-2">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm text-text-muted">
+                Showing results for{" "}
+                {selectedDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedDate(null);
+                  setDateQuery("");
+                  setDateResult(null);
+                }}
+                className="p-1"
+              >
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Loading Indicator */}
         {isLoading && (
