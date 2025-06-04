@@ -230,7 +230,9 @@ export async function fetchActiveWorkout(): Promise<any | null> {
     if (!user) {
       throw new Error("User not found");
     }
-    const response = await apiRequest<any>(`/workouts/${user.id}/active`);
+    const response = await apiRequest<any>(
+      `/workouts/${user.id}/active-workout`
+    );
     return response;
   } catch (error) {
     console.error("Error fetching active workout:", error);
