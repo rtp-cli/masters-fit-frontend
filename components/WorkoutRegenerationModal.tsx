@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   StyleSheet,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
@@ -558,6 +559,13 @@ export default function WorkoutRegenerationModal({
               value={customFeedback}
               onChangeText={setCustomFeedback}
               multiline
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={() => {
+                Keyboard.dismiss();
+              }}
+              enablesReturnKeyAutomatically={true}
+              scrollEnabled={true}
             />
             {selectedType === "day" && (
               <Text className="text-xs text-text-muted mt-3">

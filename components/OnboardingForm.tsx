@@ -6,6 +6,9 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  StyleSheet,
+  Keyboard,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -1530,6 +1533,13 @@ export default function OnboardingForm({
           value={formData.medicalNotes}
           onChangeText={(text) => handleChange("medicalNotes", text)}
           multiline={true}
+          returnKeyType="done"
+          blurOnSubmit={true}
+          onSubmitEditing={() => {
+            Keyboard.dismiss();
+          }}
+          enablesReturnKeyAutomatically={true}
+          scrollEnabled={true}
         />
       </View>
     </View>
