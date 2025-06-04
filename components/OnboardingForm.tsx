@@ -216,9 +216,9 @@ export default function OnboardingForm({
   // Initialize form data with default values matching the design
   const [formData, setFormData] = useState<FormData>({
     email: "",
-    age: 55,
-    height: 170,
-    weight: 165,
+    age: 30, // Changed from 55 to 30 (more centered on 18-80 range)
+    height: 170, // Keep as is (centered on 120-220 cm range)
+    weight: 150, // Changed from 165 to 150 (more centered on 100-300 lbs range)
     gender: Gender.MALE,
     goals: [],
     limitations: [],

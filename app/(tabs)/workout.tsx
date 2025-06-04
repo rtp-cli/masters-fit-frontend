@@ -675,9 +675,12 @@ export default function WorkoutScreen() {
                         minimumValue={0}
                         maximumValue={200}
                         step={5}
-                        value={currentData.weightUsed || 0}
+                        value={Number(currentData.weightUsed || 0)}
                         onValueChange={(value) =>
-                          updateExerciseData("weightUsed", value)
+                          updateExerciseData(
+                            "weightUsed",
+                            Math.round(Number(value))
+                          )
                         }
                         minimumTrackTintColor="#BBDE51"
                         maximumTrackTintColor="#E8E8E8"
