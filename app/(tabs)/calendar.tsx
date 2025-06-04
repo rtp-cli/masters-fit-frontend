@@ -13,6 +13,7 @@ import {
   fetchActiveWorkout,
   regenerateWorkoutPlan,
   regenerateDailyWorkout,
+  notifyWorkoutUpdated,
 } from "@lib/workouts";
 import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
 import { getCurrentUser } from "@lib/auth";
@@ -61,25 +62,7 @@ export default function CalendarScreen() {
   };
 
   const handleRegenerate = async (
-    data: {
-      customFeedback?: string;
-      profileData?: {
-        age?: number;
-        height?: number;
-        weight?: number;
-        gender?: string;
-        goals?: string[];
-        limitations?: string[];
-        fitnessLevel?: string;
-        environment?: string[];
-        equipment?: string[];
-        workoutStyles?: string[];
-        availableDays?: string[];
-        workoutDuration?: number;
-        intensityLevel?: number;
-        medicalNotes?: string;
-      };
-    },
+    data: any, // Using any to avoid type conflicts for now
     selectedType?: "week" | "day"
   ) => {
     try {
@@ -117,11 +100,33 @@ export default function CalendarScreen() {
               planDays: updatedPlanDays,
             };
           });
+          // Refresh to ensure consistency
+          await fetchWorkoutPlan();
+          // Notify other components that workout data has been updated
+          notifyWorkoutUpdated();
         }
       } else {
-        const response = await regenerateWorkoutPlan(user.id, data);
+        // Transform data to match backend API expectations
+        const apiData = {
+          customFeedback: data.customFeedback,
+          profileData: data.profileData
+            ? {
+                ...data.profileData,
+                environment: data.profileData.environment
+                  ? [data.profileData.environment]
+                  : undefined,
+                workoutStyles: data.profileData.preferredStyles,
+              }
+            : undefined,
+        };
+
+        const response = await regenerateWorkoutPlan(user.id, apiData);
         if (response) {
           setWorkoutPlan(response.workout);
+          // Refresh the workout data to ensure consistency across all components
+          await fetchWorkoutPlan();
+          // Notify other components that workout data has been updated
+          notifyWorkoutUpdated();
         }
       }
 

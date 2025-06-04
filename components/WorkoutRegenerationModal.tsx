@@ -309,7 +309,7 @@ export default function WorkoutRegenerationModal({
       goals: partialFormData.goals || [],
       limitations: partialFormData.limitations || [],
       fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
-      environment: partialFormData.environment || WorkoutEnvironments.HOME,
+      environment: partialFormData.environment || [WorkoutEnvironments.HOME],
       equipment: partialFormData.equipment || [],
       preferredStyles: partialFormData.preferredStyles || [],
       availableDays: partialFormData.availableDays || [],
@@ -332,7 +332,7 @@ export default function WorkoutRegenerationModal({
       goals: partialFormData.goals || [],
       limitations: partialFormData.limitations || [],
       fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
-      environment: partialFormData.environment || WorkoutEnvironments.HOME,
+      environment: partialFormData.environment || [WorkoutEnvironments.HOME],
       equipment: partialFormData.equipment || [],
       preferredStyles: partialFormData.preferredStyles || [],
       availableDays: partialFormData.availableDays || [],
@@ -368,12 +368,14 @@ export default function WorkoutRegenerationModal({
     }
 
     // Handle environment - convert from string to enum if needed
-    let environment = WorkoutEnvironments.HOME;
+    let environment = [WorkoutEnvironments.HOME];
     if (profile.environment) {
       if (Array.isArray(profile.environment)) {
-        environment = profile.environment[0] as WorkoutEnvironments;
+        environment = profile.environment.map(
+          (e: string) => e as WorkoutEnvironments
+        );
       } else {
-        environment = profile.environment as WorkoutEnvironments;
+        environment = [profile.environment as WorkoutEnvironments];
       }
     }
 

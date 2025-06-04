@@ -10,6 +10,7 @@ import {
   markExerciseCompleted,
   markWorkoutComplete,
   CreateExerciseLogParams,
+  subscribeToWorkoutUpdates,
 } from "@lib/workouts";
 import {
   WorkoutSession,
@@ -208,6 +209,16 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     // Load fresh data
     await loadActiveWorkout();
   }, []);
+
+  // Subscribe to workout updates
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkoutUpdates(() => {
+      console.log("🔄 Received workout update notification, refreshing...");
+      refreshWorkout();
+    });
+
+    return unsubscribe;
+  }, [refreshWorkout]);
 
   const checkExistingLogs = async (
     planDay: PlanDayWithExercises,

@@ -36,6 +36,29 @@ export interface UpdateWorkoutParams {
   caloriesBurned?: number;
 }
 
+// Simple event system for workout data updates
+const workoutUpdateListeners: Array<() => void> = [];
+
+export const subscribeToWorkoutUpdates = (listener: () => void) => {
+  workoutUpdateListeners.push(listener);
+  return () => {
+    const index = workoutUpdateListeners.indexOf(listener);
+    if (index > -1) {
+      workoutUpdateListeners.splice(index, 1);
+    }
+  };
+};
+
+export const notifyWorkoutUpdated = () => {
+  workoutUpdateListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      console.error("Error in workout update listener:", error);
+    }
+  });
+};
+
 /**
  * Fetch all workouts for the current user
  */
