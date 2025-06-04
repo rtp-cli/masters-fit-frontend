@@ -89,10 +89,6 @@ export default function DashboardScreen() {
   const [filteredStrengthData, setFilteredStrengthData] = useState<
     TotalVolumeMetrics[]
   >([]);
-  const [filteredWeightAccuracy, setFilteredWeightAccuracy] =
-    useState<WeightAccuracyMetrics | null>(null);
-  const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] =
-    useState<WorkoutTypeMetrics | null>(null);
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
   >([]);
@@ -129,33 +125,26 @@ export default function DashboardScreen() {
     }
   }, [refreshAllData, user?.id]);
 
-  // Helper function to calculate filtered date ranges relative to workout data (for backend filtering)
+  // Helper function to calculate filtered date ranges relative to current date (for backend filtering)
   const calculateFilteredDateRange = (filter: "1W" | "1M" | "3M") => {
-    // Use the actual latest workout date from the data, or fallback to hardcoded if no data
-    const referenceDate = new Date("2025-06-13"); // Latest workout date from the data
-    let cutoffDate = new Date(referenceDate);
+    const currentDate = new Date();
+    let cutoffDate = new Date(currentDate);
 
     switch (filter) {
       case "1W":
-        cutoffDate.setDate(referenceDate.getDate() - 7);
+        cutoffDate.setDate(currentDate.getDate() - 7);
         break;
       case "1M":
-        cutoffDate.setMonth(referenceDate.getMonth() - 1);
+        cutoffDate.setMonth(currentDate.getMonth() - 1);
         break;
       case "3M":
-        cutoffDate.setMonth(referenceDate.getMonth() - 3);
+        cutoffDate.setMonth(currentDate.getMonth() - 3);
         break;
-    }
-
-    // Ensure we don't miss early workout data - adjust cutoff to capture full range
-    if (filter === "1W") {
-      // For 1W, go back to June 3 to capture all potential workout data
-      cutoffDate = new Date("2025-06-03");
     }
 
     return {
       startDate: cutoffDate.toISOString().split("T")[0],
-      endDate: referenceDate.toISOString().split("T")[0],
+      endDate: currentDate.toISOString().split("T")[0],
     };
   };
 
@@ -270,7 +259,10 @@ export default function DashboardScreen() {
         `🔍 Fetching weight performance data from ${startDate} to ${endDate}`
       );
 
-      fetchWeightAccuracy({ startDate, endDate });
+      // Use timeRange parameter instead of manual date calculation
+      fetchWeightAccuracy({
+        timeRange: weightPerformanceFilter.toLowerCase() as "1w" | "1m" | "3m",
+      });
     }
   }, [weightPerformanceFilter, user?.id, fetchWeightAccuracy]);
 
@@ -283,18 +275,17 @@ export default function DashboardScreen() {
         `🔍 Fetching workout type data from ${startDate} to ${endDate}`
       );
 
-      fetchWorkoutTypeMetrics({ startDate, endDate });
+      // Use timeRange parameter instead of manual date calculation
+      fetchWorkoutTypeMetrics({
+        timeRange: workoutTypeFilter.toLowerCase() as "1w" | "1m" | "3m",
+      });
     }
   }, [workoutTypeFilter, user?.id, fetchWorkoutTypeMetrics]);
 
   // Update filtered data when main data changes
   useEffect(() => {
-    setFilteredWeightAccuracy(weightAccuracy);
+    // No need to update filteredWeightAccuracy directly, as it's handled by the component
   }, [weightAccuracy]);
-
-  useEffect(() => {
-    setFilteredWorkoutTypeMetrics(workoutTypeMetrics);
-  }, [workoutTypeMetrics]);
 
   if (loading || loadingToday) {
     return (
@@ -698,177 +689,181 @@ export default function DashboardScreen() {
               </View>
             )}
 
-            {/* Weight Progression */}
-            {filteredWeightAccuracy && filteredWeightAccuracy.hasExerciseData
-              ? filteredWeightAccuracy.totalSets > 0 && (
-                  <View className="px-5 mb-6">
-                    <Text className="text-base font-semibold text-text-primary mb-1">
-                      Weight Performance
-                    </Text>
-                    <Text className="text-xs text-text-muted mb-3">
-                      How you're progressing with your planned weights (
-                      {weightPerformanceFilter === "3M"
-                        ? "Last 3 months"
-                        : weightPerformanceFilter}
-                      )
-                    </Text>
+            {/* Weight Performance */}
+            {weightAccuracy &&
+              weightAccuracy.hasExerciseData &&
+              weightAccuracy.totalSets > 0 && (
+                <View className="px-5 mb-6">
+                  <Text className="text-base font-semibold text-text-primary mb-1">
+                    Weight Performance
+                  </Text>
+                  <Text className="text-xs text-text-muted mb-3">
+                    How you're progressing with your planned weights (
+                    {weightPerformanceFilter === "3M"
+                      ? "Last 3 months"
+                      : weightPerformanceFilter}
+                    )
+                  </Text>
 
-                    {/* Time Filter Buttons - Centered below subtitle */}
-                    <View className="items-center mb-4">
-                      <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-                        {(["1W", "1M", "3M"] as const).map((filter) => (
-                          <TouchableOpacity
-                            key={filter}
-                            className={`px-3 py-1 rounded-md ${
-                              weightPerformanceFilter === filter
-                                ? "bg-primary"
-                                : "bg-transparent"
-                            }`}
-                            onPress={() => setWeightPerformanceFilter(filter)}
-                          >
-                            <Text
-                              className={`text-xs font-medium ${
-                                weightPerformanceFilter === filter
-                                  ? "text-text-primary"
-                                  : "text-text-muted"
-                              }`}
-                            >
-                              {filter}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-
-                    <View className="bg-white rounded-2xl p-5 shadow-sm">
-                      {/* Main Pie Chart Display */}
-                      <View className="items-center mb-6">
-                        <PieChart
-                          data={
-                            filteredWeightAccuracy.chartData &&
-                            filteredWeightAccuracy.chartData.length > 0
-                              ? filteredWeightAccuracy.chartData
-                              : [
-                                  {
-                                    label: "As Planned",
-                                    value: 35,
-                                    color: "#10b981",
-                                    count: 35,
-                                  },
-                                  {
-                                    label: "Progressed",
-                                    value: 40,
-                                    color: "#f59e0b",
-                                    count: 40,
-                                  },
-                                  {
-                                    label: "Adapted",
-                                    value: 25,
-                                    color: "#ef4444",
-                                    count: 25,
-                                  },
-                                ]
-                          }
-                          size={160}
-                        />
-                      </View>
-
-                      {/* Stats Breakdown */}
-                      <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
-                        <View className="items-center">
-                          <Text className="text-lg font-bold text-accent">
-                            {filteredWeightAccuracy.exactMatches || 0}
-                          </Text>
-                          <Text className="text-xs text-text-muted text-center">
-                            As Planned
-                          </Text>
-                        </View>
-                        <View className="items-center">
-                          <Text className="text-lg font-bold text-orange-500">
-                            {filteredWeightAccuracy.higherWeight || 0}
-                          </Text>
-                          <Text className="text-xs text-text-muted text-center">
-                            Progressed
-                          </Text>
-                        </View>
-                        <View className="items-center">
-                          <Text className="text-lg font-bold text-red-500">
-                            {filteredWeightAccuracy.lowerWeight || 0}
-                          </Text>
-                          <Text className="text-xs text-text-muted text-center">
-                            Adapted
-                          </Text>
-                        </View>
-                        <View className="items-center">
-                          <Text className="text-lg font-bold text-text-primary">
-                            {filteredWeightAccuracy.totalSets || 0}
-                          </Text>
-                          <Text className="text-xs text-text-muted text-center">
-                            Total Sets
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                )
-              : // Show message when no weight performance data is available for the selected time range
-                filteredWeightAccuracy && (
-                  <View className="px-5 mb-6">
-                    <Text className="text-base font-semibold text-text-primary mb-1">
-                      Weight Performance
-                    </Text>
-                    <Text className="text-xs text-text-muted mb-3">
-                      How you're progressing with your planned weights (
-                      {weightPerformanceFilter === "3M"
-                        ? "Last 3 months"
-                        : weightPerformanceFilter}
-                      )
-                    </Text>
-
-                    {/* Time Filter Buttons */}
-                    <View className="items-center mb-4">
-                      <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-                        {(["1W", "1M", "3M"] as const).map((filter) => (
-                          <TouchableOpacity
-                            key={filter}
-                            className={`px-3 py-1 rounded-md ${
-                              weightPerformanceFilter === filter
-                                ? "bg-primary"
-                                : "bg-transparent"
-                            }`}
-                            onPress={() => setWeightPerformanceFilter(filter)}
-                          >
-                            <Text
-                              className={`text-xs font-medium ${
-                                weightPerformanceFilter === filter
-                                  ? "text-text-primary"
-                                  : "text-text-muted"
-                              }`}
-                            >
-                              {filter}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-
-                    <View className="bg-white rounded-2xl p-5 shadow-sm">
-                      <View className="items-center py-8">
-                        <Text className="text-sm text-text-muted text-center mb-2">
-                          No weight data available for {weightPerformanceFilter}
-                        </Text>
+                  {/* Time Filter Buttons - Centered below subtitle */}
+                  <View className="items-center mb-4">
+                    <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+                      {(["1W", "1M", "3M"] as const).map((filter) => (
                         <TouchableOpacity
-                          onPress={() => setWeightPerformanceFilter("3M")}
-                          className="mt-2"
+                          key={filter}
+                          className={`px-3 py-1 rounded-md ${
+                            weightPerformanceFilter === filter
+                              ? "bg-primary"
+                              : "bg-transparent"
+                          }`}
+                          onPress={() => setWeightPerformanceFilter(filter)}
                         >
-                          <Text className="text-sm text-primary font-medium">
-                            View all data (3M)
+                          <Text
+                            className={`text-xs font-medium ${
+                              weightPerformanceFilter === filter
+                                ? "text-text-primary"
+                                : "text-text-muted"
+                            }`}
+                          >
+                            {filter}
                           </Text>
                         </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View className="bg-white rounded-2xl p-5 shadow-sm">
+                    {/* Main Pie Chart Display */}
+                    <View className="items-center mb-6">
+                      <PieChart
+                        data={
+                          weightAccuracy.chartData &&
+                          weightAccuracy.chartData.length > 0
+                            ? weightAccuracy.chartData
+                            : [
+                                {
+                                  label: "As Planned",
+                                  value: 35,
+                                  color: "#10b981",
+                                  count: 35,
+                                },
+                                {
+                                  label: "Progressed",
+                                  value: 40,
+                                  color: "#f59e0b",
+                                  count: 40,
+                                },
+                                {
+                                  label: "Adapted",
+                                  value: 25,
+                                  color: "#ef4444",
+                                  count: 25,
+                                },
+                              ]
+                        }
+                        size={160}
+                      />
+                    </View>
+
+                    {/* Stats Breakdown */}
+                    <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-accent">
+                          {weightAccuracy.exactMatches || 0}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          As Planned
+                        </Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-orange-500">
+                          {weightAccuracy.higherWeight || 0}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          Progressed
+                        </Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-red-500">
+                          {weightAccuracy.lowerWeight || 0}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          Adapted
+                        </Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-lg font-bold text-text-primary">
+                          {weightAccuracy.totalSets || 0}
+                        </Text>
+                        <Text className="text-xs text-text-muted text-center">
+                          Total Sets
+                        </Text>
                       </View>
                     </View>
                   </View>
-                )}
+                </View>
+              )}
+
+            {/* Show message when no weight performance data is available for the selected time range */}
+            {weightAccuracy &&
+              (!weightAccuracy.hasExerciseData ||
+                weightAccuracy.totalSets === 0) && (
+                <View className="px-5 mb-6">
+                  <Text className="text-base font-semibold text-text-primary mb-1">
+                    Weight Performance
+                  </Text>
+                  <Text className="text-xs text-text-muted mb-3">
+                    How you're progressing with your planned weights (
+                    {weightPerformanceFilter === "3M"
+                      ? "Last 3 months"
+                      : weightPerformanceFilter}
+                    )
+                  </Text>
+
+                  {/* Time Filter Buttons */}
+                  <View className="items-center mb-4">
+                    <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+                      {(["1W", "1M", "3M"] as const).map((filter) => (
+                        <TouchableOpacity
+                          key={filter}
+                          className={`px-3 py-1 rounded-md ${
+                            weightPerformanceFilter === filter
+                              ? "bg-primary"
+                              : "bg-transparent"
+                          }`}
+                          onPress={() => setWeightPerformanceFilter(filter)}
+                        >
+                          <Text
+                            className={`text-xs font-medium ${
+                              weightPerformanceFilter === filter
+                                ? "text-text-primary"
+                                : "text-text-muted"
+                            }`}
+                          >
+                            {filter}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View className="bg-white rounded-2xl p-5 shadow-sm">
+                    <View className="items-center py-8">
+                      <Text className="text-sm text-text-muted text-center mb-2">
+                        No weight data available for {weightPerformanceFilter}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setWeightPerformanceFilter("3M")}
+                        className="mt-2"
+                      >
+                        <Text className="text-sm text-primary font-medium">
+                          View all data (3M)
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              )}
 
             {/* Strength Progress Chart */}
             {weightProgressionData && weightProgressionData.length > 0 && (
@@ -1036,10 +1031,10 @@ export default function DashboardScreen() {
             )}
 
             {/* Workout Type Distribution */}
-            {filteredWorkoutTypeMetrics &&
-              filteredWorkoutTypeMetrics.hasData &&
-              filteredWorkoutTypeMetrics.totalSets > 0 &&
-              filteredWorkoutTypeMetrics.distribution.length > 0 && (
+            {workoutTypeMetrics &&
+              workoutTypeMetrics.hasData &&
+              workoutTypeMetrics.totalSets > 0 &&
+              workoutTypeMetrics.distribution.length > 0 && (
                 <View className="px-5 mb-6">
                   <Text className="text-base font-semibold text-text-primary mb-1">
                     General Fitness Progress
@@ -1086,8 +1081,7 @@ export default function DashboardScreen() {
                       <PieChart
                         data={(() => {
                           // Get top 5 and group the rest under "Other"
-                          const allTypes =
-                            filteredWorkoutTypeMetrics.distribution;
+                          const allTypes = workoutTypeMetrics.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1134,8 +1128,7 @@ export default function DashboardScreen() {
                       <View className="flex-row flex-wrap justify-center">
                         {(() => {
                           // Get top 5 and group the rest under "Other" for legend too
-                          const allTypes =
-                            filteredWorkoutTypeMetrics.distribution;
+                          const allTypes = workoutTypeMetrics.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1195,10 +1188,10 @@ export default function DashboardScreen() {
                         })()}
                       </View>
                       {/* Show additional info if "Other" category exists */}
-                      {filteredWorkoutTypeMetrics.distribution.length > 5 && (
+                      {workoutTypeMetrics.distribution.length > 5 && (
                         <Text className="text-xs text-text-muted text-center mt-2">
                           "Other" includes{" "}
-                          {filteredWorkoutTypeMetrics.distribution.length - 5}{" "}
+                          {workoutTypeMetrics.distribution.length - 5}{" "}
                           additional exercise types
                         </Text>
                       )}
@@ -1207,7 +1200,7 @@ export default function DashboardScreen() {
                     {/* Dominant Type - Now below legend */}
                     <View className="items-center mb-6">
                       <Text className="text-lg font-bold text-text-primary">
-                        {filteredWorkoutTypeMetrics.dominantType}
+                        {workoutTypeMetrics.dominantType}
                       </Text>
                       <Text className="text-sm text-text-muted">
                         Most Common Type
@@ -1218,7 +1211,7 @@ export default function DashboardScreen() {
                     <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                       <View className="items-center">
                         <Text className="text-lg font-bold text-text-primary">
-                          {filteredWorkoutTypeMetrics.totalExercises}
+                          {workoutTypeMetrics.totalExercises}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Exercises
@@ -1226,7 +1219,7 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-accent">
-                          {filteredWorkoutTypeMetrics.distribution.length}
+                          {workoutTypeMetrics.distribution.length}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Types
@@ -1234,13 +1227,12 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-secondary">
-                          {filteredWorkoutTypeMetrics.distribution.length > 0
+                          {workoutTypeMetrics.distribution.length > 0
                             ? Math.round(
-                                filteredWorkoutTypeMetrics.distribution.reduce(
+                                workoutTypeMetrics.distribution.reduce(
                                   (sum, item) => sum + item.completedWorkouts,
                                   0
-                                ) /
-                                  filteredWorkoutTypeMetrics.distribution.length
+                                ) / workoutTypeMetrics.distribution.length
                               )
                             : 0}
                         </Text>
@@ -1253,122 +1245,66 @@ export default function DashboardScreen() {
                 </View>
               )}
 
-            {/* Goal Progress */}
-            {/* {goalProgress &&
-              goalProgress.length > 0 &&
-              goalProgress.some(
-                (goal) => goal.totalSets > 0 || goal.completedWorkouts > 0
-              ) && (
-                <View className="px-5 mb-6">
-                  <Text className="text-base font-semibold text-text-primary mb-4">
-                    Goals
-                  </Text>
-                  <View className="space-y-3">
-                    {goalProgress.slice(0, 4).map((goal, index) => (
-                      <View
-                        key={index}
-                        className="bg-white rounded-2xl p-5 shadow-sm"
+            {/* Loading state for workout type metrics */}
+            {workoutTypeMetrics === null && (
+              <View className="px-5 mb-6">
+                <Text className="text-base font-semibold text-text-primary mb-1">
+                  General Fitness Progress
+                </Text>
+                <Text className="text-xs text-text-muted mb-3">
+                  Types of exercises you've been completing (
+                  {workoutTypeFilter === "3M"
+                    ? "Last 3 months"
+                    : workoutTypeFilter}
+                  )
+                </Text>
+
+                {/* Time Filter Buttons */}
+                <View className="items-center mb-4">
+                  <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+                    {(["1W", "1M", "3M"] as const).map((filter) => (
+                      <TouchableOpacity
+                        key={filter}
+                        className={`px-3 py-1 rounded-md ${
+                          workoutTypeFilter === filter
+                            ? "bg-primary"
+                            : "bg-transparent"
+                        }`}
+                        onPress={() => setWorkoutTypeFilter(filter)}
                       >
-                        <View className="flex-row items-center justify-between mb-4">
-                          <View className="flex-row items-center">
-                            <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mr-3">
-                              <Ionicons
-                                name={
-                                  goal.goal === "weight_loss"
-                                    ? "trending-down"
-                                    : goal.goal === "muscle_gain"
-                                    ? "trending-up"
-                                    : goal.goal === "strength"
-                                    ? "barbell"
-                                    : "fitness"
-                                }
-                                size={18}
-                                color="#BBDE51"
-                              />
-                            </View>
-                            <View>
-                              <Text className="text-sm font-semibold text-text-primary">
-                                {goalNames[goal.goal] || goal.goal}
-                              </Text>
-                              <Text className="text-xs text-text-muted">
-                                {goal.completedWorkouts} workouts completed
-                              </Text>
-                            </View>
-                          </View>
-                          <View className="items-end">
-                            <Text className="text-base font-bold text-secondary">
-                              {goal.progressScore}%
-                            </Text>
-                            <Text className="text-xs text-text-muted">
-                              Progress
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View className="h-2 bg-neutral-light-2 rounded-full mb-4 overflow-hidden">
-                          <View
-                            className="h-full bg-secondary rounded-full"
-                            style={{ width: `${goal.progressScore}%` }}
-                          />
-                        </View>
-
-                        <View className="flex-row justify-around">
-                          <View className="items-center">
-                            <Text className="text-sm font-bold text-text-primary">
-                              {goal.totalSets}
-                            </Text>
-                            <Text className="text-xs text-text-muted">
-                              Sets
-                            </Text>
-                          </View>
-                          <View className="items-center">
-                            <Text className="text-sm font-bold text-text-primary">
-                              {goal.totalWeight >= 1000
-                                ? `${formatNumber(goal.totalWeight / 1000, 1)}`
-                                : formatNumber(goal.totalWeight)}{" "}
-                              lbs
-                            </Text>
-                            <Text className="text-xs text-text-muted">
-                              Total Weight
-                            </Text>
-                          </View>
-                          <View className="items-center">
-                            <Text className="text-sm font-bold text-accent">
-                              {goal.completedWorkouts > 0
-                                ? goal.totalWeight / goal.completedWorkouts >=
-                                  1000
-                                  ? `${formatNumber(
-                                      goal.totalWeight /
-                                        goal.completedWorkouts /
-                                        1000,
-                                      1
-                                    )}k`
-                                  : formatNumber(
-                                      goal.totalWeight / goal.completedWorkouts,
-                                      0
-                                    )
-                                : "0"}{" "}
-                              lbs
-                            </Text>
-                            <Text className="text-xs text-text-muted">
-                              Avg/Workout
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
+                        <Text
+                          className={`text-xs font-medium ${
+                            workoutTypeFilter === filter
+                              ? "text-text-primary"
+                              : "text-text-muted"
+                          }`}
+                        >
+                          {filter}
+                        </Text>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 </View>
-              )} */}
+
+                <View className="bg-white rounded-2xl p-5 shadow-sm">
+                  <View className="items-center py-8">
+                    <ActivityIndicator size="large" color="#BBDE51" />
+                    <Text className="mt-3 text-sm text-text-muted">
+                      Loading workout data...
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
 
             {/* Empty State Message - Only show when no charts are visible */}
-            {(!filteredWeightAccuracy?.hasExerciseData ||
-              filteredWeightAccuracy?.totalSets === 0) &&
+            {(!weightAccuracy ||
+              !weightAccuracy.hasExerciseData ||
+              weightAccuracy.totalSets === 0) &&
               (!totalVolumeMetrics ||
                 totalVolumeMetrics.length === 0 ||
                 !totalVolumeMetrics.some((metric) => metric.totalVolume > 0)) &&
-              (!filteredWorkoutTypeMetrics ||
-                filteredWorkoutTypeMetrics.totalSets === 0) &&
+              (!workoutTypeMetrics || workoutTypeMetrics.totalSets === 0) &&
               (!goalProgress ||
                 goalProgress.length === 0 ||
                 !goalProgress.some(

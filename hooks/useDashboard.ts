@@ -250,6 +250,11 @@ export const useDashboard = (userId: number) => {
   const fetchWeightAccuracy = useCallback(
     async (filters?: DashboardFilters) => {
       try {
+        console.log(`🔄 fetchWeightAccuracy called with filters:`, filters);
+
+        // Clear current state to prevent stale data display
+        setWeightAccuracy(null);
+
         const queryParams = new URLSearchParams();
         if (filters?.startDate)
           queryParams.append("startDate", filters.startDate);
@@ -257,10 +262,19 @@ export const useDashboard = (userId: number) => {
         if (filters?.timeRange)
           queryParams.append("timeRange", filters.timeRange);
 
+        // Add cache busting parameter to ensure fresh data
+        queryParams.append("_t", Date.now().toString());
+
+        console.log(
+          `🌐 Making API call to: /dashboard/${userId}/weight-accuracy?${queryParams.toString()}`
+        );
+
         const data = await apiRequest<{
           success: boolean;
           data: WeightAccuracyMetrics;
         }>(`/dashboard/${userId}/weight-accuracy?${queryParams.toString()}`);
+
+        console.log(`📊 Received weight accuracy data:`, data);
 
         if (data.success) {
           setWeightAccuracy(data.data);
@@ -350,6 +364,11 @@ export const useDashboard = (userId: number) => {
   const fetchWorkoutTypeMetrics = useCallback(
     async (filters?: DashboardFilters) => {
       try {
+        console.log(`🔄 fetchWorkoutTypeMetrics called with filters:`, filters);
+
+        // Clear current state to prevent stale data display
+        setWorkoutTypeMetrics(null);
+
         const queryParams = new URLSearchParams();
         if (filters?.startDate)
           queryParams.append("startDate", filters.startDate);
@@ -357,12 +376,21 @@ export const useDashboard = (userId: number) => {
         if (filters?.timeRange)
           queryParams.append("timeRange", filters.timeRange);
 
+        // Add cache busting parameter to ensure fresh data
+        queryParams.append("_t", Date.now().toString());
+
+        console.log(
+          `🌐 Making API call to: /dashboard/${userId}/workout-type-metrics?${queryParams.toString()}`
+        );
+
         const data = await apiRequest<{
           success: boolean;
           data: WorkoutTypeMetrics;
         }>(
           `/dashboard/${userId}/workout-type-metrics?${queryParams.toString()}`
         );
+
+        console.log(`📊 Received workout type data:`, data);
 
         if (data.success) {
           setWorkoutTypeMetrics(data.data);
