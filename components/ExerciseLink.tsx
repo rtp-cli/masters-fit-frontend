@@ -1,301 +1,586 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
-  TouchableOpacity,
   Image,
-  Modal,
-  Linking,
+  TouchableOpacity,
   Alert,
+  Linking,
   Dimensions,
+  Text as RNText,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
-import {
-  isYouTubeUrl,
-  isImageUrl,
-  getYouTubeVideoId,
-  getYouTubeThumbnail,
-  getYouTubeEmbedUrl,
-} from "@utils/exerciseUtils";
+import Text from "./Text";
 
 interface ExerciseLinkProps {
-  link: string;
-  exerciseName: string;
+  link: string | null | undefined;
+  exerciseName?: string;
+  style?: any;
+  showFullVideo?: boolean;
+  variant?: "default" | "hero";
 }
 
-export default function ExerciseLink({
+interface LinkInfo {
+  type: "youtube" | "image" | "unknown";
+  embedUrl?: string;
+  thumbnailUrl?: string;
+  isValid: boolean;
+}
+
+const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   link,
-  exerciseName,
-}: ExerciseLinkProps) {
+  exerciseName = "Exercise",
+  style,
+  showFullVideo = false,
+  variant = "default",
+}) => {
   const [showModal, setShowModal] = useState(false);
+  const [webViewError, setWebViewError] = useState(false);
+  const [showVideo, setShowVideo] = useState(showFullVideo);
   const [imageError, setImageError] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-  if (!link) return null;
+  // Reset image error and fallback when exercise name changes
+  useEffect(() => {
+    setImageError(false);
+    setUseFallback(false);
+  }, [exerciseName]);
 
-  const handleLinkPress = () => {
-    if (isYouTubeUrl(link)) {
-      setShowModal(true);
-    } else if (isImageUrl(link)) {
-      setShowModal(true);
-    } else {
-      // For other links, open in browser
-      Linking.openURL(link).catch(() => {
-        Alert.alert("Error", "Unable to open link");
-      });
+  // Generate exercise-specific image URL
+  const getExerciseImageUrl = (
+    exerciseName: string,
+    width: number = 800,
+    height: number = 600
+  ): string => {
+    // Clean up exercise name for search
+    const searchTerm = exerciseName
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "") // Remove special characters
+      .replace(/\s+/g, "%20") // URL encode spaces
+      .trim();
+
+    // Try using Lorem Picsum with a seed based on exercise name for consistency
+    const seed = exerciseName.toLowerCase().replace(/\s+/g, "");
+    const url = `https://picsum.photos/seed/${seed}/${width}/${height}`;
+    console.log(
+      "🖼️ Generated exercise image URL:",
+      url,
+      "for exercise:",
+      exerciseName
+    );
+
+    return url;
+  };
+
+  // Alternative fitness image service
+  const getFitnessImageUrl = (
+    exerciseName: string,
+    width: number = 800,
+    height: number = 600
+  ): string => {
+    // Use a predefined set of fitness images based on exercise type
+    const exerciseKeywords = [
+      "fitness",
+      "gym",
+      "workout",
+      "exercise",
+      "training",
+      "sport",
+    ];
+    const exerciseLower = exerciseName.toLowerCase();
+
+    let keyword = "fitness"; // default
+
+    if (exerciseLower.includes("push") || exerciseLower.includes("press")) {
+      keyword = "pushup";
+    } else if (exerciseLower.includes("squat")) {
+      keyword = "squat";
+    } else if (
+      exerciseLower.includes("pull") ||
+      exerciseLower.includes("row")
+    ) {
+      keyword = "pullup";
+    } else if (exerciseLower.includes("run") || exerciseLower.includes("jog")) {
+      keyword = "running";
+    } else if (exerciseLower.includes("yoga")) {
+      keyword = "yoga";
+    } else if (exerciseLower.includes("stretch")) {
+      keyword = "stretching";
+    } else if (exerciseLower.includes("cardio")) {
+      keyword = "cardio";
+    }
+
+    // Use source.unsplash.com with specific fitness keywords
+    const url = `https://source.unsplash.com/${width}x${height}/?${keyword}`;
+    console.log(
+      "🖼️ Generated fitness image URL:",
+      url,
+      "for exercise:",
+      exerciseName,
+      "keyword:",
+      keyword
+    );
+
+    return url;
+  };
+
+  const processExerciseLink = (url: string | null | undefined): LinkInfo => {
+    if (!url) {
+      return { type: "unknown", isValid: false };
+    }
+
+    try {
+      const urlObj = new URL(url);
+
+      // Check for YouTube URLs
+      const youtubePatterns = [
+        /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/,
+        /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=.+/,
+        /^(https?:\/\/)?(www\.)?youtu\.be\/.+/,
+      ];
+
+      const isYoutube = youtubePatterns.some((pattern) => pattern.test(url));
+
+      if (isYoutube) {
+        const videoId = extractYouTubeVideoId(url);
+        if (videoId) {
+          return {
+            type: "youtube",
+            embedUrl: `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0&modestbranding=1`,
+            thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            isValid: true,
+          };
+        }
+      }
+
+      // Check for image URLs
+      const imageExtensions = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".webp",
+        ".svg",
+      ];
+      const isImage =
+        imageExtensions.some((ext) =>
+          urlObj.pathname.toLowerCase().endsWith(ext)
+        ) ||
+        urlObj.searchParams.has("format") ||
+        urlObj.hostname.includes("images") ||
+        urlObj.hostname.includes("img") ||
+        urlObj.hostname.includes("cdn");
+
+      if (isImage) {
+        return {
+          type: "image",
+          embedUrl: url,
+          isValid: true,
+        };
+      }
+
+      return { type: "unknown", isValid: false };
+    } catch (error) {
+      return { type: "unknown", isValid: false };
     }
   };
 
-  const renderThumbnail = () => {
-    if (isYouTubeUrl(link)) {
-      const videoId = getYouTubeVideoId(link);
-      if (videoId) {
-        return (
-          <View style={{ alignItems: "center", marginVertical: 12 }}>
-            <TouchableOpacity
-              onPress={handleLinkPress}
-              style={{
-                position: "relative",
-                borderRadius: 8,
-                overflow: "hidden",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Image
-                source={{ uri: getYouTubeThumbnail(videoId) }}
-                style={{
-                  width: screenWidth - 80,
-                  height: (screenWidth - 80) * 0.56, // 16:9 aspect ratio
-                  backgroundColor: "#f0f0f0",
-                }}
-                resizeMode="cover"
-              />
-              <View
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: "rgba(0,0,0,0.3)",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <View
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: "rgba(255,255,255,0.9)",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Ionicons name="play" size={24} color="#FF0000" />
-                </View>
-              </View>
-            </TouchableOpacity>
-            <Text
-              style={{
-                fontSize: 12,
-                color: "#8A93A2",
-                marginTop: 8,
-                textAlign: "center",
-              }}
-            >
-              Tap to watch exercise demonstration
-            </Text>
-          </View>
-        );
+  const extractYouTubeVideoId = (url: string): string | null => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
       }
-    } else if (isImageUrl(link)) {
+    }
+
+    return null;
+  };
+
+  const handleOpenInBrowser = async () => {
+    if (!link) return;
+
+    try {
+      const supported = await Linking.canOpenURL(link);
+      if (supported) {
+        await Linking.openURL(link);
+      } else {
+        Alert.alert("Error", "Unable to open this link");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open link");
+    }
+  };
+
+  if (!link) {
+    console.log(
+      "📱 No link provided for exercise:",
+      exerciseName,
+      "- showing Unsplash image"
+    );
+    // Show Unsplash image when no link is available
+    if (variant === "hero") {
+      const imageUrl = useFallback
+        ? getFitnessImageUrl(exerciseName, 800, 600)
+        : getExerciseImageUrl(exerciseName, 800, 600);
+
       return (
-        <View style={{ alignItems: "center", marginVertical: 12 }}>
-          <TouchableOpacity
-            onPress={handleLinkPress}
-            style={{
-              borderRadius: 8,
-              overflow: "hidden",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-            }}
-          >
+        <View className="relative h-80">
+          {!imageError ? (
             <Image
-              source={{ uri: link }}
-              style={{
-                width: screenWidth - 80,
-                height: 200,
-                backgroundColor: "#f0f0f0",
-              }}
+              source={{ uri: imageUrl }}
+              className="w-full h-full"
               resizeMode="cover"
-              onError={() => setImageError(true)}
+              onError={(error) => {
+                console.log(
+                  "❌ Image failed to load:",
+                  error,
+                  "trying fallback:",
+                  !useFallback
+                );
+                if (!useFallback) {
+                  setUseFallback(true);
+                } else {
+                  setImageError(true);
+                }
+              }}
             />
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#8A93A2",
-              marginTop: 8,
-              textAlign: "center",
-            }}
-          >
-            Tap to view full size
-          </Text>
+          ) : (
+            <View className="bg-neutral-light-2 h-full items-center justify-center">
+              <Ionicons name="videocam-outline" size={48} color="#9CA3AF" />
+              <Text variant="body" color="#6B7280" className="mt-3 text-center">
+                No video demonstration available
+              </Text>
+            </View>
+          )}
+          <View className="absolute inset-0 bg-black/20" />
         </View>
       );
     }
 
-    // For other links, show a generic link button
-    return (
-      <TouchableOpacity
-        onPress={handleLinkPress}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: "#f8f9fa",
-          padding: 12,
-          borderRadius: 8,
-          marginVertical: 8,
-        }}
-      >
-        <Ionicons name="link-outline" size={16} color="#007AFF" />
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#007AFF",
-            marginLeft: 8,
-            flex: 1,
-          }}
-        >
-          View exercise reference
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color="#8A93A2" />
-      </TouchableOpacity>
-    );
-  };
+    const imageUrl = useFallback
+      ? getFitnessImageUrl(exerciseName, 600, 400)
+      : getExerciseImageUrl(exerciseName, 600, 400);
 
-  const renderModal = () => {
-    if (isYouTubeUrl(link)) {
-      const videoId = getYouTubeVideoId(link);
-      if (videoId) {
-        return (
-          <Modal
-            visible={showModal}
-            animationType="slide"
-            presentationStyle="pageSheet"
-            onRequestClose={() => setShowModal(false)}
-          >
-            <View style={{ flex: 1, backgroundColor: "#000" }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: 16,
-                  backgroundColor: "#fff",
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: "600", flex: 1 }}>
-                  {exerciseName}
-                </Text>
-                <TouchableOpacity onPress={() => setShowModal(false)}>
-                  <Ionicons name="close" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-              <WebView
-                source={{ uri: getYouTubeEmbedUrl(videoId) }}
-                style={{ flex: 1 }}
-                allowsFullscreenVideo
-                mediaPlaybackRequiresUserAction={false}
-              />
-            </View>
-          </Modal>
-        );
-      }
-    } else if (isImageUrl(link)) {
-      return (
-        <Modal
-          visible={showModal}
-          animationType="fade"
-          transparent
-          onRequestClose={() => setShowModal(false)}
-        >
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.9)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <TouchableOpacity
-              style={{
-                position: "absolute",
-                top: 50,
-                right: 20,
-                zIndex: 1,
-              }}
-              onPress={() => setShowModal(false)}
-            >
-              <Ionicons name="close" size={30} color="#fff" />
-            </TouchableOpacity>
+    return (
+      <View className={`my-2 ${style ? "" : ""}`}>
+        <View className="relative rounded-lg overflow-hidden">
+          {!imageError ? (
             <Image
-              source={{ uri: link }}
-              style={{
-                width: screenWidth - 40,
-                height: screenHeight - 200,
+              source={{ uri: imageUrl }}
+              className="w-full h-48"
+              resizeMode="cover"
+              onError={(error) => {
+                console.log(
+                  "❌ Image failed to load:",
+                  error,
+                  "trying fallback:",
+                  !useFallback
+                );
+                if (!useFallback) {
+                  setUseFallback(true);
+                } else {
+                  setImageError(true);
+                }
               }}
-              resizeMode="contain"
             />
-          </View>
-        </Modal>
-      );
-    }
-    return null;
-  };
-
-  if (imageError && isImageUrl(link)) {
-    return (
-      <TouchableOpacity
-        onPress={handleLinkPress}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: "#f8f9fa",
-          padding: 12,
-          borderRadius: 8,
-          marginVertical: 8,
-        }}
-      >
-        <Ionicons name="image-outline" size={16} color="#007AFF" />
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#007AFF",
-            marginLeft: 8,
-            flex: 1,
-          }}
-        >
-          View exercise image
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color="#8A93A2" />
-      </TouchableOpacity>
+          ) : (
+            <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
+              <Ionicons name="videocam-outline" size={32} color="#9CA3AF" />
+              <Text
+                variant="bodySmall"
+                color="#6B7280"
+                className="mt-2 text-center"
+              >
+                No video demonstration available
+              </Text>
+            </View>
+          )}
+          <View className="absolute inset-0 bg-black/10" />
+        </View>
+      </View>
     );
   }
 
-  return (
-    <View>
-      {renderThumbnail()}
-      {renderModal()}
-    </View>
+  const linkInfo = processExerciseLink(link);
+
+  console.log(
+    "🔗 Link info for exercise:",
+    exerciseName,
+    "link:",
+    link,
+    "linkInfo:",
+    linkInfo
   );
-}
+
+  // Only show YouTube videos, everything else gets Unsplash images
+  if (!linkInfo.isValid || linkInfo.type !== "youtube") {
+    console.log(
+      "📱 Invalid link or not YouTube for exercise:",
+      exerciseName,
+      "- showing Unsplash image"
+    );
+    if (variant === "hero") {
+      const imageUrl = useFallback
+        ? getFitnessImageUrl(exerciseName, 800, 600)
+        : getExerciseImageUrl(exerciseName, 800, 600);
+
+      return (
+        <View className="relative h-80">
+          {!imageError ? (
+            <Image
+              source={{ uri: imageUrl }}
+              className="w-full h-full"
+              resizeMode="cover"
+              onError={(error) => {
+                console.log(
+                  "❌ Image failed to load:",
+                  error,
+                  "trying fallback:",
+                  !useFallback
+                );
+                if (!useFallback) {
+                  setUseFallback(true);
+                } else {
+                  setImageError(true);
+                }
+              }}
+            />
+          ) : (
+            <View className="bg-neutral-light-2 h-full items-center justify-center">
+              <Ionicons name="videocam-outline" size={48} color="#9CA3AF" />
+              <Text variant="body" color="#6B7280" className="mt-3 text-center">
+                No video demonstration available
+              </Text>
+            </View>
+          )}
+          <View className="absolute inset-0 bg-black/20" />
+        </View>
+      );
+    }
+
+    const imageUrl = useFallback
+      ? getFitnessImageUrl(exerciseName, 600, 400)
+      : getExerciseImageUrl(exerciseName, 600, 400);
+
+    return (
+      <View className={`my-2 ${style ? "" : ""}`}>
+        <View className="relative rounded-lg overflow-hidden">
+          {!imageError ? (
+            <Image
+              source={{ uri: imageUrl }}
+              className="w-full h-48"
+              resizeMode="cover"
+              onError={(error) => {
+                console.log(
+                  "❌ Image failed to load:",
+                  error,
+                  "trying fallback:",
+                  !useFallback
+                );
+                if (!useFallback) {
+                  setUseFallback(true);
+                } else {
+                  setImageError(true);
+                }
+              }}
+            />
+          ) : (
+            <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
+              <Ionicons name="videocam-outline" size={32} color="#9CA3AF" />
+              <Text
+                variant="bodySmall"
+                color="#6B7280"
+                className="mt-2 text-center"
+              >
+                No video demonstration available
+              </Text>
+            </View>
+          )}
+          <View className="absolute inset-0 bg-black/10" />
+        </View>
+      </View>
+    );
+  }
+
+  // Only YouTube videos reach this point
+  if (linkInfo.type === "youtube") {
+    const screenWidth = Dimensions.get("window").width;
+    const containerWidth = screenWidth - (variant === "hero" ? 0 : 32); // No padding for hero
+    const videoHeight = variant === "hero" ? 320 : (containerWidth * 9) / 16; // Fixed height for hero
+
+    if (showVideo) {
+      if (variant === "hero") {
+        return (
+          <View className="relative h-80">
+            <View className="h-full bg-black">
+              {!webViewError ? (
+                <WebView
+                  source={{ uri: linkInfo.embedUrl! }}
+                  className="flex-1"
+                  allowsInlineMediaPlayback
+                  mediaPlaybackRequiresUserAction={false}
+                  javaScriptEnabled
+                  domStorageEnabled
+                  onError={() => setWebViewError(true)}
+                />
+              ) : (
+                <View className="flex-1 bg-red-50 items-center justify-center">
+                  <Ionicons name="warning" size={48} color="#EF4444" />
+                  <Text
+                    variant="body"
+                    color="#EF4444"
+                    className="mt-3 text-center"
+                  >
+                    Failed to load video
+                  </Text>
+                  <TouchableOpacity
+                    className="mt-4 bg-primary px-6 py-3 rounded-lg"
+                    onPress={handleOpenInBrowser}
+                  >
+                    <Text variant="body" color="#181917" weight="semibold">
+                      Open in Browser
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              className="absolute top-4 right-4 bg-black/60 rounded-full w-10 h-10 items-center justify-center"
+              onPress={() => setShowVideo(false)}
+            >
+              <Ionicons name="chevron-down" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        );
+      }
+
+      return (
+        <View className={`my-2 ${style ? "" : ""}`}>
+          <View className="flex-row items-center justify-between py-2 px-1">
+            <View className="flex-row items-center flex-1">
+              <Ionicons name="logo-youtube" size={16} color="#FF0000" />
+              <Text
+                variant="bodySmall"
+                color="#374151"
+                className="ml-1.5 flex-1"
+              >
+                {exerciseName} - Demonstration
+              </Text>
+            </View>
+            <TouchableOpacity
+              className="p-1"
+              onPress={() => setShowVideo(false)}
+            >
+              <Ionicons name="chevron-up" size={16} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
+          <View
+            className="rounded-lg overflow-hidden bg-black"
+            style={{ height: videoHeight }}
+          >
+            {!webViewError ? (
+              <WebView
+                source={{ uri: linkInfo.embedUrl! }}
+                className="flex-1"
+                allowsInlineMediaPlayback
+                mediaPlaybackRequiresUserAction={false}
+                javaScriptEnabled
+                domStorageEnabled
+                onError={() => setWebViewError(true)}
+              />
+            ) : (
+              <View className="flex-1 bg-red-50 items-center justify-center">
+                <Ionicons name="warning" size={32} color="#EF4444" />
+                <Text
+                  variant="bodySmall"
+                  color="#EF4444"
+                  className="mt-1 text-center"
+                >
+                  Failed to load video
+                </Text>
+                <TouchableOpacity
+                  className="mt-2 py-1 px-2"
+                  onPress={handleOpenInBrowser}
+                >
+                  <Text variant="bodySmall" color="#BBDE51">
+                    Open in Browser
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      );
+    }
+
+    // Show thumbnail
+    if (variant === "hero") {
+      return (
+        <TouchableOpacity
+          className="relative h-80"
+          onPress={() => setShowVideo(true)}
+        >
+          <Image
+            source={{ uri: linkInfo.thumbnailUrl }}
+            className="w-full h-full border border-grey-light-1"
+            resizeMode="cover"
+          />
+
+          <View className="absolute bottom-4 right-4 bg-red-600 rounded-lg flex-row items-center px-3 py-2">
+            <Ionicons name="logo-youtube" size={16} color="#FFFFFF" />
+            <Text
+              variant="bodySmall"
+              color="#FFFFFF"
+              className="ml-2 font-semibold"
+            >
+              YouTube
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View className={`my-2 ${style ? "" : ""}`}>
+        <TouchableOpacity
+          className="relative rounded-lg overflow-hidden"
+          onPress={() => setShowVideo(true)}
+        >
+          <Image
+            source={{ uri: linkInfo.thumbnailUrl }}
+            className="w-full h-48 bg-neutral-light-2"
+            resizeMode="cover"
+          />
+          <View className="absolute inset-0 items-center justify-center bg-black/30">
+            <View className="bg-white/90 rounded-full w-16 h-16 items-center justify-center">
+              <Ionicons name="play" size={24} color="#FFFFFF" />
+            </View>
+          </View>
+
+          <View className="absolute bottom-2 right-2 bg-red-600 rounded-lg flex-row items-center px-2 py-1">
+            <Ionicons name="logo-youtube" size={12} color="#FFFFFF" />
+            <Text
+              variant="caption"
+              color="#FFFFFF"
+              className="ml-1 text-xs font-semibold"
+            >
+              YouTube
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return null;
+};
+
+export default ExerciseLink;

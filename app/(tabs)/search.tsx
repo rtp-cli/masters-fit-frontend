@@ -12,7 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import Text from "@components/Text";
-// import ExerciseLink from "@components/ExerciseLink";
+import ExerciseLink from "@components/ExerciseLink";
+import ExerciseLinkModal from "@components/ExerciseLinkModal";
 import {
   searchByDateAPI,
   searchExerciseAPI,
@@ -24,6 +25,7 @@ import {
   ExerciseDetails,
   ExerciseUserStats,
 } from "@lib/search";
+import { updateExerciseLink } from "@lib/exercises";
 import {
   formatEquipment,
   formatMuscleGroups,
@@ -51,6 +53,14 @@ export default function SearchScreen() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
     null
   );
+
+  // Exercise Link Modal state
+  const [linkModalVisible, setLinkModalVisible] = useState(false);
+  const [selectedExerciseForLink, setSelectedExerciseForLink] = useState<{
+    id: number;
+    name: string;
+    link?: string;
+  } | null>(null);
 
   // Determine search type based on query
   useEffect(() => {
@@ -138,6 +148,58 @@ export default function SearchScreen() {
     setGeneralResults([]);
     setSelectedExercise(null);
     setSearchType("general");
+  };
+
+  // Handle exercise link modal
+  const handleOpenLinkModal = (exercise: {
+    id: number;
+    name: string;
+    link?: string;
+  }) => {
+    setSelectedExerciseForLink(exercise);
+    setLinkModalVisible(true);
+  };
+
+  const handleCloseLinkModal = () => {
+    setLinkModalVisible(false);
+    setSelectedExerciseForLink(null);
+  };
+
+  const handleSaveExerciseLink = async (
+    exerciseId: number,
+    link: string | null
+  ) => {
+    try {
+      const result = await updateExerciseLink(exerciseId, link);
+
+      if (result.success) {
+        // Refresh the exercise result if it's currently displayed
+        if (exerciseResult && exerciseResult.exercise.id === exerciseId) {
+          const updatedExercise = {
+            ...exerciseResult.exercise,
+            link: link || undefined,
+          };
+          setExerciseResult({
+            ...exerciseResult,
+            exercise: updatedExercise,
+          });
+        }
+
+        // Update general results if they contain this exercise
+        setGeneralResults((prevResults) =>
+          prevResults.map((ex) =>
+            ex.id === exerciseId ? { ...ex, link: link || undefined } : ex
+          )
+        );
+
+        Alert.alert("Success", "Exercise link updated successfully");
+      } else {
+        Alert.alert("Error", result.error || "Failed to update exercise link");
+      }
+    } catch (error) {
+      console.error("Error updating exercise link:", error);
+      Alert.alert("Error", "Failed to update exercise link");
+    }
   };
 
   // Format date for display
@@ -240,7 +302,7 @@ export default function SearchScreen() {
             />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by Date or Exercise"
+              placeholder="Search by Date"
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmitEditing={performSearch}
@@ -270,34 +332,64 @@ export default function SearchScreen() {
         {/* Exercise Detail View */}
         {exerciseResult && (
           <View style={styles.exerciseDetailContainer}>
+            {/* Cover Image/Video at the top */}
+            <ExerciseLink
+              link={exerciseResult.exercise.link}
+              exerciseName={exerciseResult.exercise.name}
+              variant="hero"
+            />
+
             <View style={styles.exerciseDetailCard}>
-              {/* Exercise Title */}
-              <Text variant="h3" style={styles.exerciseDetailName}>
-                {formatName(exerciseResult.exercise.name)}
-              </Text>
+              {/* Exercise Title with Category Tag and Edit Link */}
+              <View className="flex-row items-start justify-between mb-2">
+                <View className="flex-1">
+                  <View className="flex-row items-center mb-2">
+                    <Text variant="h3" className="flex-1 mr-2">
+                      {formatName(exerciseResult.exercise.name)}
+                    </Text>
+                    {/* Category Tag based on primary muscle group */}
+                    {exerciseResult.exercise.muscleGroups &&
+                      exerciseResult.exercise.muscleGroups.length > 0 && (
+                        <View className="bg-primary px-3 py-1 rounded-full">
+                          <Text
+                            variant="caption"
+                            color="#181917"
+                            weight="semibold"
+                          >
+                            {formatMuscleGroups([
+                              exerciseResult.exercise.muscleGroups[0],
+                            ])}
+                          </Text>
+                        </View>
+                      )}
+                  </View>
+                </View>
+                <TouchableOpacity
+                  className="p-2 rounded-lg bg-primary/10 ml-2"
+                  onPress={() =>
+                    handleOpenLinkModal({
+                      id: exerciseResult.exercise.id,
+                      name: exerciseResult.exercise.name,
+                      link: exerciseResult.exercise.link,
+                    })
+                  }
+                >
+                  <Ionicons name="link" size={16} color="#BBDE51" />
+                </TouchableOpacity>
+              </View>
 
               {/* Description */}
-              <Text
-                variant="body"
-                color="#6b7280"
-                style={styles.exerciseDetailDescription}
-              >
+              <Text variant="bodySmall" color="#6b7280" className="mb-4">
                 {formatDescription(exerciseResult.exercise.description)}
-              </Text>
-
-              {/* Exercise Info */}
-              <Text
-                variant="bodySmall"
-                color="#6b7280"
-                style={styles.exerciseDetails}
-              >
-                {formatMuscleGroups(exerciseResult.exercise.muscleGroups)} •{" "}
-                {formatDifficulty(exerciseResult.exercise.difficulty)}
               </Text>
 
               {/* Muscle Groups */}
               <View style={styles.muscleGroupsSection}>
-                <Text variant="title" style={styles.sectionTitle}>
+                <Text
+                  variant="bodySmall"
+                  weight="semibold"
+                  style={styles.sectionTitle}
+                >
                   Muscle Groups
                 </Text>
                 <View style={styles.muscleGroupsContainer}>
@@ -308,7 +400,7 @@ export default function SearchScreen() {
                       (muscle: string, index: number) => (
                         <View key={index} style={styles.muscleGroupTag}>
                           <Text
-                            variant="bodySmall"
+                            variant="caption"
                             style={styles.muscleGroupText}
                           >
                             {formatMuscleGroups([muscle])}
@@ -318,7 +410,7 @@ export default function SearchScreen() {
                     )
                   ) : (
                     <Text
-                      variant="body"
+                      variant="bodySmall"
                       color="#9ca3af"
                       style={styles.noDataText}
                     >
@@ -330,71 +422,77 @@ export default function SearchScreen() {
 
               {/* Equipment */}
               <View style={styles.detailSection}>
-                <Text variant="title" style={styles.sectionTitle}>
+                <Text
+                  variant="bodySmall"
+                  weight="semibold"
+                  style={styles.sectionTitle}
+                >
                   Equipment
                 </Text>
-                <Text variant="body" color="#4b5563">
+                <Text variant="bodySmall" color="#4b5563">
                   {formatEquipment(exerciseResult.exercise.equipment)}
                 </Text>
               </View>
 
               {/* Instructions */}
               <View style={styles.detailSection}>
-                <Text variant="title" style={styles.sectionTitle}>
+                <Text
+                  variant="bodySmall"
+                  weight="semibold"
+                  style={styles.sectionTitle}
+                >
                   Instructions
                 </Text>
-                <Text variant="body" color="#4b5563">
+                <Text variant="bodySmall" color="#4b5563">
                   {formatInstructions(exerciseResult.exercise.instructions)}
                 </Text>
-
-                {/* Exercise Link (YouTube video or image) */}
-                {/* {exerciseResult.exercise.link && (
-                  <ExerciseLink
-                    link={exerciseResult.exercise.link}
-                    exerciseName={exerciseResult.exercise.name}
-                  />
-                )} */}
               </View>
 
               {/* User Performance Stats */}
               {exerciseResult.userStats && (
                 <View style={styles.performanceSection}>
-                  <Text variant="h4" style={styles.performanceSectionTitle}>
+                  <Text variant="title" style={styles.performanceSectionTitle}>
                     Your Performance
                   </Text>
 
                   <View style={styles.performanceGrid}>
-                    <View style={styles.performanceItem}>
+                    <View
+                      style={[styles.performanceItem, styles.performanceCard1]}
+                    >
                       <Text variant="h2" style={styles.performanceValue}>
                         {`${exerciseResult.userStats.totalAssignments || 0}`}
                       </Text>
                       <Text
-                        variant="bodySmall"
-                        color="#6b7280"
+                        variant="caption"
+                        color="#1F2937"
                         style={styles.performanceLabel}
                       >
                         Times assigned
                       </Text>
                     </View>
-                    <View style={styles.performanceItem}>
+                    <View
+                      style={[styles.performanceItem, styles.performanceCard2]}
+                    >
                       <Text variant="h2" style={styles.performanceValue}>
                         {`${exerciseResult.userStats.totalCompletions || 0}`}
                       </Text>
                       <Text
-                        variant="bodySmall"
-                        color="#6b7280"
+                        variant="caption"
+                        color="#1F2937"
                         style={styles.performanceLabel}
                       >
                         Completed
                       </Text>
                     </View>
-                    <View style={styles.performanceItem}>
+                    <View
+                      style={[styles.performanceItem, styles.performanceCard3]}
+                    >
                       <Text variant="h2" style={styles.performanceValue}>
                         {`${exerciseResult.userStats.completionRate || 0}%`}
                       </Text>
                       <Text
-                        variant="bodySmall"
-                        color="#6b7280"
+                        variant="caption"
+                        color="#1F2937"
                         style={styles.performanceLabel}
                       >
                         Success Rate
@@ -403,53 +501,63 @@ export default function SearchScreen() {
                   </View>
 
                   <View style={styles.performanceGrid}>
-                    <View style={styles.performanceItem}>
+                    <View
+                      style={[styles.performanceItem, styles.performanceCard4]}
+                    >
                       <Text variant="h2" style={styles.performanceValue}>
                         {`${exerciseResult.userStats.averageSets || 0}`}
                       </Text>
                       <Text
-                        variant="bodySmall"
-                        color="#6b7280"
+                        variant="caption"
+                        color="#1F2937"
                         style={styles.performanceLabel}
                       >
                         Avg Sets
                       </Text>
                     </View>
-                    <View style={styles.performanceItem}>
+                    <View
+                      style={[styles.performanceItem, styles.performanceCard5]}
+                    >
                       <Text variant="h2" style={styles.performanceValue}>
                         {`${exerciseResult.userStats.averageReps || 0}`}
                       </Text>
                       <Text
-                        variant="bodySmall"
-                        color="#6b7280"
+                        variant="caption"
+                        color="#1F2937"
                         style={styles.performanceLabel}
                       >
                         Avg Reps
                       </Text>
                     </View>
-                    <View style={styles.performanceItem}>
+                    <View
+                      style={[styles.performanceItem, styles.performanceCard6]}
+                    >
                       <Text variant="h2" style={styles.performanceValue}>
                         {exerciseResult.userStats.averageWeight
-                          ? `${exerciseResult.userStats.averageWeight} lbs`
+                          ? `${exerciseResult.userStats.averageWeight}`
                           : "N/A"}
                       </Text>
                       <Text
-                        variant="bodySmall"
-                        color="#6b7280"
+                        variant="caption"
+                        color="#1F2937"
                         style={styles.performanceLabel}
                       >
-                        Avg Weight (lbs)
+                        Avg Weight
                       </Text>
                     </View>
                   </View>
 
                   {/* Personal Records */}
                   <View style={styles.personalRecordsSection}>
-                    <Text variant="title" style={styles.personalRecordsTitle}>
+                    <Text
+                      variant="bodySmall"
+                      weight="semibold"
+                      style={styles.personalRecordsTitle}
+                    >
                       Personal Records
                     </Text>
                     <View style={styles.recordsGrid}>
-                      <View style={styles.recordItem}>
+                      <View style={[styles.recordItem, styles.recordCard1]}>
                         <Text variant="h3" style={styles.recordValue}>
                           {`${
                             exerciseResult.userStats.personalRecord.maxSets || 0
@@ -459,7 +567,7 @@ export default function SearchScreen() {
                           Max Sets
                         </Text>
                       </View>
-                      <View style={styles.recordItem}>
+                      <View style={[styles.recordItem, styles.recordCard2]}>
                         <Text variant="h3" style={styles.recordValue}>
                           {`${
                             exerciseResult.userStats.personalRecord.maxReps || 0
@@ -469,14 +577,15 @@ export default function SearchScreen() {
                           Max Reps
                         </Text>
                       </View>
-                      <View style={styles.recordItem}>
+                      <View style={[styles.recordItem, styles.recordCard3]}>
                         <Text variant="h3" style={styles.recordValue}>
                           {`${
-                            exerciseResult.userStats.personalRecord.maxSets || 0
+                            exerciseResult.userStats.personalRecord.maxWeight ||
+                            0
                           }`}
                         </Text>
                         <Text variant="caption" style={styles.recordLabel}>
-                          Max Sets
+                          Max Weight
                         </Text>
                       </View>
                     </View>
@@ -486,7 +595,7 @@ export default function SearchScreen() {
                   {exerciseResult.userStats.lastPerformed && (
                     <View style={styles.lastPerformedSection}>
                       <Text
-                        variant="body"
+                        variant="bodySmall"
                         color="#6b7280"
                         style={styles.lastPerformedLabel}
                       >
@@ -826,6 +935,14 @@ export default function SearchScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Exercise Link Modal */}
+      <ExerciseLinkModal
+        visible={linkModalVisible}
+        exercise={selectedExerciseForLink}
+        onClose={handleCloseLinkModal}
+        onSave={handleSaveExerciseLink}
+      />
     </SafeAreaView>
   );
 }
@@ -833,22 +950,27 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8F9FA",
   },
   scrollView: {
     flex: 1,
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8F9FA",
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   searchIcon: {
     marginRight: 12,
@@ -868,29 +990,41 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   exerciseDetailContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   exerciseDetailCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
+    marginTop: -20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
-  exerciseDetailName: {
+  exerciseDetailHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
+  },
+  exerciseDetailName: {
+    flex: 1,
+  },
+  editLinkButton: {
+    padding: 4,
   },
   exerciseDetailDescription: {
     marginBottom: 24,
   },
   muscleGroupsSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    marginBottom: 12,
+    marginBottom: 8,
+    color: "#1F2937",
   },
   muscleGroupsContainer: {
     flexDirection: "row",
@@ -898,17 +1032,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   muscleGroupTag: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "#BBDE51",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
   muscleGroupText: {
-    color: "#065F46",
-    fontWeight: "500",
+    color: "#181917",
+    fontWeight: "600",
   },
   detailSection: {
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  exerciseLinkContainer: {
+    marginVertical: 16,
   },
   noDataText: {
     fontStyle: "italic",
@@ -920,7 +1057,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#E5E7EB",
   },
   performanceSectionTitle: {
-    marginBottom: 20,
+    marginBottom: 16,
+    color: "#1F2937",
   },
   performanceGrid: {
     flexDirection: "row",
@@ -931,19 +1069,47 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     marginHorizontal: 4,
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  performanceCard1: {
+    backgroundColor: "#E0F2FE",
+  },
+  performanceCard2: {
+    backgroundColor: "#DCFCE7",
+  },
+  performanceCard3: {
+    backgroundColor: "#FEF3C7",
+  },
+  performanceCard4: {
+    backgroundColor: "#FCE7F3",
+  },
+  performanceCard5: {
+    backgroundColor: "#EDE9FE",
+  },
+  performanceCard6: {
+    backgroundColor: "#FEE2E2",
   },
   performanceValue: {
     color: "#1F2937",
+    fontWeight: "700",
   },
   performanceLabel: {
     marginTop: 4,
     textAlign: "center",
+    fontWeight: "500",
   },
   personalRecordsSection: {
     marginTop: 20,
   },
   personalRecordsTitle: {
-    marginBottom: 16,
+    marginBottom: 12,
+    color: "#1F2937",
   },
   recordsGrid: {
     flexDirection: "row",
@@ -952,18 +1118,33 @@ const styles = StyleSheet.create({
   recordItem: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#FEF3C7",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginHorizontal: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recordCard1: {
+    backgroundColor: "#BBF7D0",
+  },
+  recordCard2: {
+    backgroundColor: "#DBEAFE",
+  },
+  recordCard3: {
+    backgroundColor: "#FED7AA",
   },
   recordValue: {
-    color: "#D97706",
+    color: "#1F2937",
+    fontWeight: "700",
   },
   recordLabel: {
-    color: "#92400E",
+    color: "#1F2937",
     marginTop: 4,
     textAlign: "center",
+    fontWeight: "500",
   },
   lastPerformedSection: {
     marginTop: 20,

@@ -184,3 +184,33 @@ export async function addExerciseToWorkout(
     return null;
   }
 }
+
+export const updateExerciseLink = async (
+  exerciseId: number,
+  link: string | null
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = (await apiRequest(`/exercises/${exerciseId}/link`, {
+      method: "PUT",
+      body: JSON.stringify({ link }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })) as { success: boolean; error?: string };
+
+    if (response.success) {
+      return { success: true };
+    } else {
+      return {
+        success: false,
+        error: response.error || "Failed to update link",
+      };
+    }
+  } catch (error: any) {
+    console.error("Failed to update exercise link:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to update exercise link",
+    };
+  }
+};

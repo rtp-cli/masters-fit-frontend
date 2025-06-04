@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
 import Card from "./Card";
+import ExerciseLink from "./ExerciseLink";
 import { formatDuration, getIntensityText } from "@/utils";
 
 interface Exercise {
@@ -13,6 +14,7 @@ interface Exercise {
   equipment: string[];
   difficulty: string;
   imageUrl?: string;
+  link?: string;
 }
 
 interface WorkoutExercise {
@@ -178,6 +180,16 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
                   </View>
                 )}
               </View>
+
+              {/* Exercise Link */}
+              {exerciseItem.exercise.link && (
+                <View className="px-3 py-2">
+                  <ExerciseLink
+                    link={exerciseItem.exercise.link}
+                    exerciseName={exerciseItem.exercise.name}
+                  />
+                </View>
+              )}
             </Card>
           ))}
         </View>

@@ -8,7 +8,6 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +17,7 @@ import Slider from "@react-native-community/slider";
 import { useWorkoutSession } from "@hooks/useWorkoutSession";
 import { getCompletedExercises } from "@lib/workouts";
 import { calculateWorkoutDuration, formatEquipment } from "../../utils";
-// import ExerciseLink from "@components/ExerciseLink";
+import ExerciseLink from "@components/ExerciseLink";
 
 export default function WorkoutScreen() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -367,32 +366,12 @@ export default function WorkoutScreen() {
         showsVerticalScrollIndicator={false}
         ref={scrollViewRef}
       >
-        {/* Exercise Hero Image */}
-        <View
-          style={{
-            position: "relative",
-            height: 320,
-            backgroundColor: "#f5f5f5",
-          }}
-        >
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-            }}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
-          />
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.3)",
-            }}
-          />
-        </View>
+        {/* Exercise Hero Image/Video */}
+        <ExerciseLink
+          link={currentExercise?.exercise.link}
+          exerciseName={currentExercise?.exercise.name}
+          variant="hero"
+        />
 
         <View style={{ paddingHorizontal: 24 }}>
           {/* Exercise Title */}
@@ -749,13 +728,6 @@ export default function WorkoutScreen() {
             </Text>
 
             {/* Exercise Link (YouTube video or image) */}
-            {/* {currentExercise?.exercise.link && (
-              <ExerciseLink
-                link={currentExercise.exercise.link}
-                exerciseName={currentExercise.exercise.name}
-              />
-            )} */}
-
             {currentExercise?.exercise.equipment &&
               currentExercise.exercise.equipment !== "none" && (
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
