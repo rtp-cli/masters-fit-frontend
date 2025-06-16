@@ -158,17 +158,16 @@ export function getWorkoutsForWeek(
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
 
-  // Filter workouts within the week
+  // Filter workouts within the week using string comparison to avoid timezone issues
+  const startOfWeekString = formatDateAsString(startOfWeek);
+  const endOfWeekString = formatDateAsString(endOfWeek);
+
   return workouts.filter((workout) => {
-    // Use safe date parsing for workout.date
-    let workoutDate: Date;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(workout.date)) {
-      const [year, month, day] = workout.date.split("-").map(Number);
-      workoutDate = new Date(year, month - 1, day); // month is 0-indexed
-    } else {
-      workoutDate = new Date(workout.date);
-    }
-    return workoutDate >= startOfWeek && workoutDate <= endOfWeek;
+    const workoutDateString = formatDateAsString(workout.date);
+    return (
+      workoutDateString >= startOfWeekString &&
+      workoutDateString <= endOfWeekString
+    );
   });
 }
 
@@ -247,34 +246,19 @@ export async function fetchActiveWorkout(): Promise<any | null> {
  * Get the next upcoming workout
  */
 export function getNextWorkout(workouts: Workout[]): Workout | null {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+  const today = getTodayString();
 
-  // Filter future workouts that are not completed
+  // Filter future workouts that are not completed using string comparison
   const futureWorkouts = workouts.filter((workout) => {
-    // Use safe date parsing for workout.date
-    let workoutDate: Date;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(workout.date)) {
-      const [year, month, day] = workout.date.split("-").map(Number);
-      workoutDate = new Date(year, month - 1, day); // month is 0-indexed
-    } else {
-      workoutDate = new Date(workout.date);
-    }
-    return workoutDate >= now && !workout.completed;
+    const workoutDateString = formatDateAsString(workout.date);
+    return workoutDateString >= today && !workout.completed;
   });
 
-  // Sort by date (closest first)
+  // Sort by date string (closest first)
   futureWorkouts.sort((a, b) => {
-    // Use safe date parsing for comparison
-    const getDateSafely = (dateStr: string): Date => {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        const [year, month, day] = dateStr.split("-").map(Number);
-        return new Date(year, month - 1, day); // month is 0-indexed
-      }
-      return new Date(dateStr);
-    };
-
-    return getDateSafely(a.date).getTime() - getDateSafely(b.date).getTime();
+    const dateA = formatDateAsString(a.date);
+    const dateB = formatDateAsString(b.date);
+    return dateA.localeCompare(dateB);
   });
 
   return futureWorkouts.length > 0 ? futureWorkouts[0] : null;

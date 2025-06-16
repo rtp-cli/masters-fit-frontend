@@ -29,7 +29,7 @@ import WorkoutBlock from "@components/WorkoutBlock";
 import {
   calculateWorkoutDuration,
   formatExerciseDuration,
-  formatDateAsLocalString,
+  formatDateAsString,
 } from "../../utils";
 import { colors } from "../../lib/theme";
 
@@ -37,10 +37,10 @@ export default function CalendarScreen() {
   const router = useRouter();
 
   const [selectedDate, setSelectedDate] = useState(
-    formatDateAsLocalString(new Date())
+    formatDateAsString(new Date())
   );
   const [currentMonth, setCurrentMonth] = useState(
-    formatDateAsLocalString(new Date())
+    formatDateAsString(new Date())
   );
   const [loading, setLoading] = useState(true);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutWithDetails | null>(
@@ -77,12 +77,12 @@ export default function CalendarScreen() {
           response.workout?.planDays &&
           response.workout.planDays.length > 0
         ) {
-          const firstWorkoutDate = formatDateAsLocalString(
+          const firstWorkoutDate = formatDateAsString(
             response.workout.planDays[0].date
           );
           setCurrentMonth(firstWorkoutDate);
         } else {
-          setCurrentMonth(formatDateAsLocalString(new Date()));
+          setCurrentMonth(formatDateAsString(new Date()));
         }
       }
     } catch (err) {
@@ -182,7 +182,7 @@ export default function CalendarScreen() {
 
     for (let i = 0; i < workoutPlan.planDays.length; i++) {
       const planDay = workoutPlan.planDays[i];
-      const planDate = formatDateAsLocalString(planDay.date);
+      const planDate = formatDateAsString(planDay.date);
       if (planDate === date) {
         return { day: planDay, index: i };
       }
@@ -192,11 +192,11 @@ export default function CalendarScreen() {
 
   const getMarkedDates = () => {
     const markedDates: any = {};
-    const today = formatDateAsLocalString(new Date());
+    const today = formatDateAsString(new Date());
 
     if (workoutPlan?.planDays) {
       workoutPlan.planDays.forEach((planDay) => {
-        const dateStr = formatDateAsLocalString(planDay.date);
+        const dateStr = formatDateAsString(planDay.date);
         const hasBlocks = planDay.blocks && planDay.blocks.length > 0;
 
         markedDates[dateStr] = {
@@ -240,7 +240,7 @@ export default function CalendarScreen() {
   };
 
   const isToday = () => {
-    const today = formatDateAsLocalString(new Date());
+    const today = formatDateAsString(new Date());
     return selectedDate === today;
   };
 
@@ -370,8 +370,8 @@ export default function CalendarScreen() {
             markedDates={getMarkedDates()}
             minDate={
               workoutPlan?.startDate
-                ? formatDateAsLocalString(workoutPlan.startDate)
-                : formatDateAsLocalString(new Date())
+                ? formatDateAsString(workoutPlan.startDate)
+                : formatDateAsString(new Date())
             }
             maxDate={
               workoutPlan?.startDate
@@ -381,13 +381,13 @@ export default function CalendarScreen() {
                     const maxDate = new Date(
                       startDate.getTime() + 6 * 24 * 60 * 60 * 1000
                     );
-                    return formatDateAsLocalString(maxDate);
+                    return formatDateAsString(maxDate);
                   })()
                 : (() => {
                     const futureDate = new Date(
                       Date.now() + 30 * 24 * 60 * 60 * 1000
                     );
-                    return formatDateAsLocalString(futureDate);
+                    return formatDateAsString(futureDate);
                   })()
             }
             disableAllTouchEventsForDisabledDays={true}
@@ -463,29 +463,11 @@ export default function CalendarScreen() {
                       </Text>
                       <View className="flex-row items-center mt-xs">
                         <Text className="text-xs text-text-muted">
-                          {currentSelectedPlanDay.blocks?.length || 0} blocks
-                        </Text>
-                        <Text className="text-text-muted mx-xs">•</Text>
-                        <Text className="text-xs text-text-muted">
                           {getTotalExerciseCount(
                             currentSelectedPlanDay.blocks || []
                           )}{" "}
                           exercises
                         </Text>
-                        {currentSelectedPlanDay.blocks &&
-                          currentSelectedPlanDay.blocks.length > 0 && (
-                            <>
-                              <Text className="text-text-muted mx-xs">•</Text>
-                              <Text className="text-xs text-text-muted">
-                                {Math.round(
-                                  calculateTotalWorkoutDuration(
-                                    currentSelectedPlanDay.blocks
-                                  ) / 60
-                                )}{" "}
-                                min
-                              </Text>
-                            </>
-                          )}
                       </View>
                     </View>
                     <View className="flex-row items-center space-x-sm">

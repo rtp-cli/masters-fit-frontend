@@ -2,6 +2,7 @@
 
 /**
  * Robust date parsing function that handles various input formats
+ * Prioritizes timezone-independent parsing for workout dates (YYYY-MM-DD)
  */
 export function parseDateSafely(
   dateInput: string | Date | null | undefined
@@ -17,10 +18,10 @@ export function parseDateSafely(
 
   // If it's a string, try to parse it
   if (typeof dateInput === "string") {
-    // Handle YYYY-MM-DD format
+    // Handle YYYY-MM-DD format FIRST (most common for workout dates)
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
       const [year, month, day] = dateInput.split("-").map(Number);
-      return new Date(year, month - 1, day); // month is 0-indexed
+      return new Date(year, month - 1, day); // month is 0-indexed, creates local date
     }
 
     // Handle ISO date strings (YYYY-MM-DDTHH:mm:ss.sssZ)
@@ -63,7 +64,7 @@ export function formatDate(
 }
 
 /**
- * Convert any date input to UTC Date object
+ * Convert any date input to UTC Date object (for timestamps only)
  */
 export function toUTCDate(dateInput: string | Date | null | undefined): Date {
   const date = parseDateSafely(dateInput);
@@ -81,18 +82,38 @@ export function formatDateForDisplay(
     day: "numeric",
   }
 ): string {
+  // Handle YYYY-MM-DD strings specially for workout dates
+  if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    const [year, month, day] = dateInput.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat("en-US", options).format(date);
+  }
+
   const date = parseDateSafely(dateInput);
   return new Intl.DateTimeFormat("en-US", options).format(date);
 }
 
 /**
- * Format date as YYYY-MM-DD string in UTC
+ * Format date as YYYY-MM-DD string (timezone-independent for workout dates)
  */
 export function formatDateAsString(
   dateInput: Date | string | null | undefined
 ): string {
+  if (!dateInput) {
+    return getTodayString();
+  }
+
+  // If it's already a YYYY-MM-DD string, return as-is
+  if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
+
+  // Convert Date to local YYYY-MM-DD string
   const date = parseDateSafely(dateInput);
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -101,42 +122,27 @@ export function formatDateAsString(
 export function formatDateAsLocalString(
   dateInput: Date | string | null | undefined
 ): string {
-  const date = parseDateSafely(dateInput);
-  return (
-    date.getFullYear() +
-    "-" +
-    String(date.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(date.getDate()).padStart(2, "0")
-  );
+  return formatDateAsString(dateInput);
 }
 
 /**
- * Check if two dates are the same day (in local timezone)
+ * Check if two dates are the same day (for workout date comparison)
  */
 export function isSameDay(date1: Date | string, date2: Date | string): boolean {
-  const d1 = parseDateSafely(date1);
-  const d2 = parseDateSafely(date2);
-
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
+  const d1String = formatDateAsString(date1);
+  const d2String = formatDateAsString(date2);
+  return d1String === d2String;
 }
 
 /**
- * Get today's date as YYYY-MM-DD in local timezone (avoiding timezone conversion issues)
+ * Get today's date as YYYY-MM-DD in local timezone (main function for workout dates)
  */
 export function getTodayString(): string {
   const today = new Date();
-  return (
-    today.getFullYear() +
-    "-" +
-    String(today.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(today.getDate()).padStart(2, "0")
-  );
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -219,24 +225,18 @@ export function hexToRgba(hex: string, alpha: number = 1): string {
 }
 
 /**
- * Format a date for display in calendar
+ * Format a date for display in calendar (timezone-independent)
  */
 export function formatCalendarDate(date: Date): string {
-  return date.toISOString().split("T")[0]; // Returns "YYYY-MM-DD" format
+  return formatDateAsString(date); // Returns "YYYY-MM-DD" format without timezone conversion
 }
 
 /**
  * Get current date in "YYYY-MM-DD" format (using local date to avoid timezone issues)
+ * Alias for getTodayString to ensure consistency
  */
 export function getCurrentDate(): string {
-  const today = new Date();
-  return (
-    today.getFullYear() +
-    "-" +
-    String(today.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(today.getDate()).padStart(2, "0")
-  );
+  return getTodayString();
 }
 
 /**

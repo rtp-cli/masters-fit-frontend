@@ -14,7 +14,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { fetchActiveWorkout, createExerciseLog } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
-import { calculateWorkoutDuration, formatEquipment } from "@/utils";
+import {
+  calculateWorkoutDuration,
+  formatEquipment,
+  getCurrentDate,
+  formatDateAsString,
+} from "@/utils";
 import ExerciseLink from "@/components/ExerciseLink";
 import { colors } from "@/lib/theme";
 import {
@@ -117,12 +122,24 @@ export default function WorkoutScreen() {
         return;
       }
 
-      // Find today's workout
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      // Find today's workout using string comparison to avoid timezone issues
+      const today = getCurrentDate(); // Use the same function as other parts of the app
+      console.log("🗓️ Looking for workout for today:", today);
+      console.log(
+        "📅 Available plan days:",
+        response.workout.planDays.map((day: any) => ({
+          date: day.date,
+          normalizedDate: formatDateAsString(day.date),
+        }))
+      );
+
       const todaysWorkout = response.workout.planDays.find((day: any) => {
-        const dayDate = new Date(day.date).toISOString().split("T")[0];
-        return dayDate === today;
+        // Use the formatDateAsString function to normalize dates consistently
+        const normalizedDayDate = formatDateAsString(day.date);
+        return normalizedDayDate === today;
       });
+
+      console.log("🎯 Found today's workout:", todaysWorkout ? "YES" : "NO");
 
       if (!todaysWorkout) {
         setWorkout(null);
@@ -359,9 +376,18 @@ export default function WorkoutScreen() {
                 style={{ width: `${progressPercent.toFixed(0)}%` } as any}
               />
             </View>
-            <Text className="text-2xl font-bold text-text-primary mb-2">
-              {workout.name}
-            </Text>
+            <View className="flex-row items-center justify-between mb-2">
+              <Text className="text-2xl font-bold text-text-primary">
+                {workout.name}
+              </Text>
+              {isWorkoutStarted && (
+                <View className="bg-background rounded-xl px-3 py-1">
+                  <Text className="text-lg font-bold text-text-primary">
+                    {formatTime(workoutTimer)}
+                  </Text>
+                </View>
+              )}
+            </View>
             {workout.instructions ? (
               <Text className="text-base text-text-secondary leading-6">
                 {workout.instructions}
@@ -445,18 +471,15 @@ export default function WorkoutScreen() {
               {/* Progress Tracking - Sleek Twitter-style */}
               {isWorkoutStarted && currentProgress ? (
                 <View className="space-y-4">
-                  {/* Sets - Compact bubbles only */}
-                  {currentExercise.sets ? (
+                  {/* Sets - Only show if more than 1 set */}
+                  {currentExercise.sets && currentExercise.sets > 1 ? (
                     <View className=" rounded-2xl p-4">
                       <View className="flex-row items-center justify-between mb-3">
                         <Text className="text-sm font-semibold text-text-primary">
                           Sets
                         </Text>
                         <Text className="text-xs text-text-muted">
-                          Target:{" "}
-                          {currentExercise.sets === 1
-                            ? "1 Set"
-                            : `${currentExercise.sets} Sets`}
+                          Target: {currentExercise.sets} Sets
                         </Text>
                       </View>
                       <View className="flex-row justify-center gap-2">
@@ -647,10 +670,10 @@ export default function WorkoutScreen() {
                     </View>
                   </View>
 
-                  {/* Duration - Auto-logged, compact display */}
+                  {/* Duration - Auto-logged, centered display */}
                   {currentExercise.duration ? (
                     <View className="rounded-2xl p-4">
-                      <View className="flex-row items-center justify-between mb-2">
+                      <View className="flex-row items-center justify-between mb-3">
                         <Text className="text-sm font-semibold text-text-primary">
                           Duration
                         </Text>
@@ -658,68 +681,101 @@ export default function WorkoutScreen() {
                           Target: {currentExercise.duration}s
                         </Text>
                       </View>
-                      <View className="flex-row items-center justify-between">
-                        <Text
-                          className={`text-base font-bold ${
-                            exerciseTimer >= currentExercise.duration
-                              ? "text-primary"
-                              : "text-text-primary"
-                          }`}
-                        >
-                          {formatTime(exerciseTimer)}
-                        </Text>
-                        {exerciseTimer >= currentExercise.duration && (
-                          <View className="flex-row items-center">
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={16}
-                              color={colors.brand.primary}
-                            />
-                            <Text className="text-xs font-semibold text-primary ml-1">
-                              Done!
-                            </Text>
-                          </View>
-                        )}
+                      <View className="flex-row items-center justify-center">
+                        <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
+                          <Text
+                            className={`text-lg font-bold ${
+                              exerciseTimer >= currentExercise.duration
+                                ? "text-primary"
+                                : "text-text-primary"
+                            }`}
+                          >
+                            {formatTime(exerciseTimer)}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   ) : null}
 
-                  {/* Rest Time - Quick presets only */}
-                  {currentExercise.restTime ? (
-                    <View className="rounded-2xl p-4">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Rest Time
+                  {/* Rest Time - Similar to weight input */}
+                  <View className="rounded-2xl p-4">
+                    <View className="flex-row items-center justify-between mb-3">
+                      <Text className="text-sm font-semibold text-text-primary">
+                        Rest Time (seconds)
+                      </Text>
+                      {currentExercise.restTime ? (
+                        <Text className="text-xs font-semibold text-text-muted ">
+                          Target: {currentExercise.restTime}s
                         </Text>
-                        <Text className="text-xs text-text-muted">
-                          Target: {currentProgress.restTime}s
-                        </Text>
-                      </View>
-                      <View className="flex-row justify-center gap-2">
-                        {[30, 60, 90, 120].map((time) => (
-                          <TouchableOpacity
-                            key={time}
-                            className={`rounded-xl px-3 py-1 ${
-                              currentProgress.restTime === time
-                                ? "bg-primary"
-                                : "bg-neutral-light-2"
-                            }`}
-                            onPress={() => updateProgress("restTime", time)}
-                          >
-                            <Text
-                              className={`text-sm font-semibold ${
-                                currentProgress.restTime === time
-                                  ? "text-secondary"
-                                  : "text-text-primary"
-                              }`}
-                            >
-                              {time}s
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
+                      ) : null}
                     </View>
-                  ) : null}
+                    <View className="flex-row items-center justify-center gap-3">
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "restTime",
+                            Math.max(0, currentProgress.restTime - 15)
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-text-primary">
+                          -15
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "restTime",
+                            Math.max(0, currentProgress.restTime - 5)
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-text-primary">
+                          -5
+                        </Text>
+                      </TouchableOpacity>
+
+                      <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
+                        <TextInput
+                          className="text-lg font-bold text-text-primary text-center"
+                          value={String(currentProgress.restTime)}
+                          onChangeText={(text) =>
+                            updateProgress("restTime", Number(text) || 0)
+                          }
+                          keyboardType="numeric"
+                        />
+                      </View>
+
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-primary items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "restTime",
+                            currentProgress.restTime + 5
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-secondary">
+                          +5
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-primary items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "restTime",
+                            currentProgress.restTime + 15
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-secondary">
+                          +15
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
                   {/* Notes - Compact with quick chips */}
                   <View className="rounded-2xl p-4">
@@ -736,6 +792,25 @@ export default function WorkoutScreen() {
                       numberOfLines={2}
                     />
                   </View>
+
+                  {/* Complete Exercise Button */}
+                  <TouchableOpacity
+                    className="bg-primary rounded-2xl py-4 mt-6"
+                    onPress={() => {
+                      // For single-set exercises, automatically mark the set as completed
+                      if (currentExercise.sets === 1) {
+                        updateProgress("setsCompleted", 1);
+                      }
+                      setShowCompleteModal(true);
+                    }}
+                    disabled={isCompletingExercise}
+                  >
+                    <Text className="text-center text-secondary font-semibold">
+                      {isCompletingExercise
+                        ? "Completing..."
+                        : "Complete Exercise"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               ) : null}
             </View>

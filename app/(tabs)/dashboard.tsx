@@ -26,6 +26,7 @@ import {
   formatDuration,
   calculateWorkoutDuration,
   getCurrentDate,
+  formatDateAsString,
 } from "../../utils";
 import { fetchActiveWorkout } from "@lib/workouts";
 import {
@@ -198,32 +199,55 @@ export default function DashboardScreen() {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    // Use date-based filtering relative to the data range, not current date
-    const latestDate = new Date(sortedData[sortedData.length - 1].date);
-    let cutoffDate = new Date(latestDate);
+    // For strength progress, we want to be more generous with the data
+    // If we have less than 30 days of data, show all of it regardless of filter
+    const dataSpanDays =
+      sortedData.length > 1
+        ? Math.ceil(
+            (new Date(sortedData[sortedData.length - 1].date).getTime() -
+              new Date(sortedData[0].date).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        : 1;
+
+    // If data span is small, show all data
+    if (dataSpanDays <= 30) {
+      return sortedData;
+    }
+
+    // Use current date for filtering instead of latest data date
+    // This ensures we show recent data properly
+    const today = new Date();
+    let cutoffDate = new Date(today);
 
     switch (filter) {
       case "1W":
-        cutoffDate.setDate(latestDate.getDate() - 7);
+        cutoffDate.setDate(today.getDate() - 7);
         break;
       case "1M":
-        cutoffDate.setMonth(latestDate.getMonth() - 1);
+        cutoffDate.setDate(today.getDate() - 30);
         break;
       case "3M":
-        cutoffDate.setMonth(latestDate.getMonth() - 3);
+        cutoffDate.setDate(today.getDate() - 90);
         break;
       default:
-        cutoffDate.setMonth(latestDate.getMonth() - 1);
+        cutoffDate.setDate(today.getDate() - 30);
     }
 
     // Filter data to only include dates after the cutoff
-    const filteredData = sortedData.filter(
-      (item) => new Date(item.date) >= cutoffDate
-    );
+    const filteredData = sortedData.filter((item) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= cutoffDate;
+    });
 
     // If no data matches the filter, return the most recent data points as fallback
     if (filteredData.length === 0) {
-      return sortedData.slice(-Math.min(sortedData.length, 5));
+      return sortedData.slice(-Math.min(sortedData.length, 10));
+    }
+
+    // If we have very few filtered results, expand to show more context
+    if (filteredData.length < 3 && sortedData.length > 3) {
+      return sortedData.slice(-Math.min(sortedData.length, 7));
     }
 
     return filteredData;
@@ -406,22 +430,22 @@ export default function DashboardScreen() {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    // Use date-based filtering relative to the data range, not current date
-    const latestDate = new Date(sortedData[sortedData.length - 1].date);
-    let cutoffDate = new Date(latestDate);
+    // Use current date as reference point, not the latest data date
+    const today = new Date();
+    let cutoffDate = new Date(today);
 
     switch (filter) {
       case "1W":
-        cutoffDate.setDate(latestDate.getDate() - 7);
+        cutoffDate.setDate(today.getDate() - 7);
         break;
       case "1M":
-        cutoffDate.setMonth(latestDate.getMonth() - 1);
+        cutoffDate.setDate(today.getDate() - 30); // Use days instead of months for consistency
         break;
       case "3M":
-        cutoffDate.setMonth(latestDate.getMonth() - 3);
+        cutoffDate.setDate(today.getDate() - 90); // Use days instead of months for consistency
         break;
       default:
-        cutoffDate.setMonth(latestDate.getMonth() - 1);
+        cutoffDate.setDate(today.getDate() - 30);
     }
 
     // Filter data to only include dates after the cutoff
@@ -432,6 +456,11 @@ export default function DashboardScreen() {
     // If no data matches the filter, return the most recent data points as fallback
     if (filteredData.length === 0) {
       return sortedData.slice(-Math.min(sortedData.length, 5));
+    }
+
+    // If we have very few filtered results, expand to show more context
+    if (filteredData.length < 3 && sortedData.length > 3) {
+      return sortedData.slice(-Math.min(sortedData.length, 7));
     }
 
     return filteredData;
@@ -504,7 +533,7 @@ export default function DashboardScreen() {
         const today = getCurrentDate();
         const todaysPlanDay = workoutPlan.workout.planDays.find(
           (day: PlanDayWithExercises) => {
-            const planDate = new Date(day.date).toISOString().split("T")[0];
+            const planDate = formatDateAsString(day.date);
             return planDate === today;
           }
         );
@@ -847,7 +876,7 @@ export default function DashboardScreen() {
 
                         const workout7Days = [];
                         const today = new Date();
-                        const todayStr = today.toISOString().split("T")[0];
+                        const todayStr = formatDateAsString(today);
 
                         for (let i = 0; i < 7; i++) {
                           const date = new Date(weekStartDate);

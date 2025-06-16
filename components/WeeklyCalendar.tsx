@@ -7,6 +7,7 @@ import {
   getDayOfMonth,
   getShortMonth,
   getCurrentDate,
+  formatDateAsString,
 } from "../utils";
 
 interface Workout {
@@ -73,19 +74,18 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     year: "numeric",
   });
 
-  // Map workouts to dates for quick lookup
-  const workoutsByDate = workouts.reduce((acc, workout) => {
-    if (!acc[workout.date]) {
-      acc[workout.date] = [];
-    }
-    acc[workout.date].push(workout);
-    return acc;
-  }, {} as Record<string, Workout[]>);
-
-  // Format date for comparison
-  const formatDateForComparison = (date: Date): string => {
-    return date.toISOString().split("T")[0];
-  };
+  // Map workouts to dates for quick lookup - use consistent date formatting
+  const workoutsByDate = workouts.reduce(
+    (acc, workout) => {
+      const workoutDateString = formatDateAsString(workout.date);
+      if (!acc[workoutDateString]) {
+        acc[workoutDateString] = [];
+      }
+      acc[workoutDateString].push(workout);
+      return acc;
+    },
+    {} as Record<string, Workout[]>
+  );
 
   // Get today's date for highlighting the current day
   const today = getCurrentDate();
@@ -104,7 +104,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         className="px-2 py-3"
       >
         {weekDays.map((day) => {
-          const dateString = formatDateForComparison(day);
+          const dateString = formatDateAsString(day);
           const isSelected = dateString === selectedDate;
           const isToday = dateString === today;
           const hasWorkout = !!workoutsByDate[dateString]?.length;
@@ -130,8 +130,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   isSelected
                     ? "bg-primary"
                     : isToday
-                    ? "border border-primary"
-                    : ""
+                      ? "border border-primary"
+                      : ""
                 }`}
               >
                 <Text
@@ -141,8 +141,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     isSelected
                       ? colors.background
                       : isToday
-                      ? colors.brand.primary
-                      : colors.brand.primary
+                        ? colors.brand.primary
+                        : colors.brand.primary
                   }
                   center
                 >
