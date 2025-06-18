@@ -2,12 +2,30 @@
   <!-- White background -->
   <rect width="1242" height="2436" fill="#FFFFFF"/>
   
-  <!-- Logo background with app's primary color -->
-  <rect x="371" y="968" width="500" height="500" rx="100" fill="#BBDE51"/>
+  <!-- MastersFit title at the top -->
+  <text x="621" y="900" font-size="36" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="bold">MastersFit</text>
   
-  <!-- Main MF text - adjusted positioning -->
-  <text x="621" y="1280" font-size="180" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-weight="bold">MF</text>
+  <!-- App icon background with rounded corners -->
+  <rect x="346" y="1018" width="550" height="550" rx="110" fill="#BBDE51"/>
   
-  <!-- App name with proper spacing -->
-  <text x="621" y="1600" font-size="48" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="600">MastersFit</text>
+  <!-- Gradient overlay for depth -->
+  <defs>
+    <radialGradient id="iconGrad" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0.05" />
+    </radialGradient>
+  </defs>
+  <rect x="346" y="1018" width="550" height="550" rx="110" fill="url(#iconGrad)"/>
+  
+  <!-- Actual app icon design -->
+  <g transform="translate(621, 1293) scale(0.6)">
+    <!-- Center the icon based on its viewBox -->
+    <g transform="translate(-290.5, -262.5)">
+      <path d="M331.5 9L4 440.5L158.5 353L331.5 131.5L412.5 241.5H570L504 157.5L475 177H458L331.5 9Z" stroke="white" stroke-width="10"/>
+      <path d="M310 290.5H544L504 353H349.5V405H449L349.5 516.5L247 368.5L310 290.5Z" stroke="white" stroke-width="10"/>
+    </g>
+  </g>
+  
+  <!-- Tagline at the bottom -->
+  <text x="621" y="1780" font-size="18" text-anchor="middle" fill="#6B7280" font-family="Arial, sans-serif" font-weight="400">Fitness mastered, AI-powered</text>
 </svg>
