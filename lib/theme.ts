@@ -58,14 +58,14 @@ export const spacing = {
 // Typography system
 export const typography = {
   fontSize: {
-    xs: 12,
-    sm: 14,
-    base: 16,
-    lg: 18,
-    xl: 20,
-    "2xl": 24,
-    "3xl": 28,
-    "4xl": 32,
+    xs: 11, // very small text
+    sm: 13, // captions/secondary text (Twitter-style)
+    base: 15, // body text (Twitter-style)
+    lg: 17, // medium headings
+    xl: 20, // large headings (Twitter-style)
+    "2xl": 24, // extra large headings
+    "3xl": 28, // hero text
+    "4xl": 32, // display text
   },
   fontWeight: {
     normal: "400",
@@ -75,7 +75,7 @@ export const typography = {
   },
   lineHeight: {
     tight: 1.2,
-    normal: 1.5,
+    normal: 1.4, // Good for readability
     relaxed: 1.6,
   },
 } as const;

@@ -136,7 +136,7 @@ export default function GetStarted() {
 
         {/* Text Content */}
         <View className="items-center my-10">
-          <Text className="text-3xl font-bold text-text-primary text-center mb-4">
+          <Text className="text-xl font-bold text-text-primary text-center mb-4">
             Welcome to MastersFit!
           </Text>
           <Text className="text-base text-neutral-medium-4 text-center leading-6 px-5">

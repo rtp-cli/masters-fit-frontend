@@ -1,16 +1,21 @@
-import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  StyleSheet, 
-  ActivityIndicator, 
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
   TouchableOpacityProps,
   ViewStyle,
-  TextStyle 
-} from 'react-native';
+  TextStyle,
+} from "react-native";
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "destructive";
+type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends TouchableOpacityProps {
   variant?: ButtonVariant;
@@ -25,8 +30,8 @@ interface ButtonProps extends TouchableOpacityProps {
 }
 
 const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   loading = false,
   fullWidth = false,
   style,
@@ -62,9 +67,9 @@ const Button: React.FC<ButtonProps> = ({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'primary' ? '#ffffff' : '#4f46e5'} 
+        <ActivityIndicator
+          size="small"
+          color={variant === "primary" ? "#ffffff" : "#4f46e5"}
         />
       ) : (
         <>
@@ -79,73 +84,73 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 8,
   },
   text: {
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
   disabled: {
     opacity: 0.6,
   },
-  
+
   // Variant styles
   primaryButton: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: "#4f46e5",
   },
   secondaryButton: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: "#e5e7eb",
   },
   outlineButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#4f46e5',
+    borderColor: "#4f46e5",
   },
   ghostButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   destructiveButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: "#ef4444",
   },
-  
+
   // Variant text styles
   primaryText: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
   secondaryText: {
-    color: '#1f2937',
+    color: "#1f2937",
   },
   outlineText: {
-    color: '#4f46e5',
+    color: "#4f46e5",
   },
   ghostText: {
-    color: '#4f46e5',
+    color: "#4f46e5",
   },
   destructiveText: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
-  
+
   // Variant disabled styles
   primaryDisabled: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: "#4f46e5",
   },
   secondaryDisabled: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: "#e5e7eb",
   },
   outlineDisabled: {
-    borderColor: '#9ca3af',
+    borderColor: "#9ca3af",
   },
   ghostDisabled: {},
   destructiveDisabled: {
-    backgroundColor: '#ef4444',
+    backgroundColor: "#ef4444",
   },
-  
+
   // Size styles
   smButton: {
     paddingHorizontal: 12,
@@ -159,16 +164,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
   },
-  
+
   // Size text styles
   smText: {
-    fontSize: 14,
+    fontSize: 13,
   },
   mdText: {
-    fontSize: 16,
+    fontSize: 15,
   },
   lgText: {
-    fontSize: 18,
+    fontSize: 17,
   },
 });
 

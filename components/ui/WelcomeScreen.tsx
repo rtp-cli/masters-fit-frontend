@@ -15,7 +15,7 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
           {/* Phone mockup illustration placeholder */}
           <View className="w-32 h-56 bg-white rounded-2xl border border-neutral-medium-1 justify-center items-center shadow-lg">
             <View className="w-24 h-12 bg-primary rounded-lg mb-4 justify-center items-center">
-              <Text className="text-4xl font-bold text-secondary">40</Text>
+              <Text className="text-xl font-bold text-secondary">40</Text>
             </View>
             <View className="flex-row space-x-1">
               <View className="w-2 h-2 bg-neutral-medium-2 rounded-full" />
@@ -32,7 +32,7 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
 
         {/* Welcome Text */}
         <View className="items-center mb-8">
-          <Text className="text-3xl font-bold text-text-primary text-center mb-4">
+          <Text className="text-xl font-bold text-text-primary text-center mb-4">
             Welcome to masterfit!
           </Text>
           <Text className="text-base text-text-secondary text-center leading-6 px-4">
