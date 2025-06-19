@@ -4,7 +4,7 @@ import { Slider } from "@miblanchard/react-native-slider";
 import { colors } from "@lib/theme";
 
 interface CustomSliderProps {
-  label: string;
+  label?: string;
   value: number;
   minimumValue: number;
   maximumValue: number;
@@ -55,9 +55,11 @@ export default function CustomSlider({
 
   return (
     <View className={`mb-6 ${className}`}>
-      <Text className="text-lg font-medium text-text-primary mb-4">
-        {label}
-      </Text>
+      {label && (
+        <Text className="text-lg font-medium text-text-primary mb-4">
+          {label}
+        </Text>
+      )}
 
       <View className="items-center mb-2">
         <Text className="text-md font-semibold text-text-muted">

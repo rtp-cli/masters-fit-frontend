@@ -402,9 +402,9 @@ export default function OnboardingForm({
         };
       case OnboardingStep.FITNESS_LEVEL:
         return {
-          title: "Fitness Experience & Schedule",
+          title: "Let's Get Moving!",
           description:
-            "Tell us about your fitness background and when you're available to workout.",
+            "Tell us about your fitness level and when you're available to workout. Whether you're just starting out or leveling up, we'll build powerful workouts that fit your goals and schedule.",
         };
       case OnboardingStep.WORKOUT_ENVIRONMENT:
         return {
@@ -428,8 +428,8 @@ export default function OnboardingForm({
     <View className="flex-1 px-6 pb-6">
       {/* Age slider */}
       <View className="mb-8">
+        <Text className="text-lg font-semibold text-neutral-dark-1">Age</Text>
         <CustomSlider
-          label="Age"
           value={formData.age}
           minimumValue={18}
           maximumValue={80}
@@ -444,7 +444,7 @@ export default function OnboardingForm({
 
       {/* Gender selection */}
       <View className="mb-8">
-        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+        <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Gender
         </Text>
         <View className="flex-row justify-between">
@@ -514,8 +514,10 @@ export default function OnboardingForm({
 
       {/* Height slider */}
       <View className="mb-8">
+        <Text className="text-lg font-semibold text-neutral-dark-1">
+          Height
+        </Text>
         <CustomSlider
-          label="Height"
           value={convertCmToInches(formData.height)}
           minimumValue={48} // 4'0" in inches
           maximumValue={96} // 8'0" in inches
@@ -533,8 +535,10 @@ export default function OnboardingForm({
 
       {/* Weight slider */}
       <View className="mb-6">
+        <Text className="text-lg font-semibold text-neutral-dark-1">
+          Weight
+        </Text>
         <CustomSlider
-          label="Weight"
           value={formData.weight}
           minimumValue={100}
           maximumValue={300}
@@ -1278,14 +1282,13 @@ export default function OnboardingForm({
   // Render Fitness Level step - matching image exactly
   const renderFitnessLevelStep = () => (
     <View className="flex-1 px-6 pb-6">
-      <Text className="text-xs text-neutral-medium-4 mb-6">
-        Select your current fitness level to help us tailor your program.
-      </Text>
-
       {/* Fitness Level Selection */}
       <View className="mb-8">
-        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+        <Text className="text-lg font-semibold text-neutral-dark-1 mb-2">
           Current Fitness Level
+        </Text>
+        <Text className="text-sm text-neutral-medium-4 mb-6">
+          Select your current fitness level to help us tailor your program.
         </Text>
 
         {/* Beginner - Green background as in image */}
@@ -1409,10 +1412,10 @@ export default function OnboardingForm({
 
       {/* Available Days */}
       <View className="mb-8">
-        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+        <Text className="text-lg font-semibold text-neutral-dark-1 mb-2">
           Available Days
         </Text>
-        <Text className="text-xs text-neutral-medium-4 mb-4">
+        <Text className="text-sm text-neutral-medium-4 mb-4">
           Select the days you're available to workout.
         </Text>
         <View className="flex-row flex-wrap">
@@ -1447,8 +1450,10 @@ export default function OnboardingForm({
 
       {/* Time Per Session slider */}
       <View className="mb-8">
+        <Text className="text-lg font-semibold text-neutral-dark-1">
+          Workout Duration
+        </Text>
         <CustomSlider
-          label="Workout Duration"
           value={Number(formData.workoutDuration)}
           minimumValue={10}
           maximumValue={60}
@@ -1462,7 +1467,7 @@ export default function OnboardingForm({
 
       {/* Intensity Level */}
       <View className="mb-8">
-        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+        <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Preferred Intensity Level
         </Text>
         <View className="flex-row justify-between">
@@ -2311,7 +2316,7 @@ export default function OnboardingForm({
           </Text>
         </View>
 
-        <View className="px-0 pt-6">{renderStepContent()}</View>
+        <View className="px-0">{renderStepContent()}</View>
       </ScrollView>
 
       {renderNavButtons()}
