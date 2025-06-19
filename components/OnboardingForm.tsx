@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
+import ProgressIndicator from "./ProgressIndicator";
 
 // Enums from server
 enum Gender {
@@ -2341,6 +2342,13 @@ export default function OnboardingForm({
       >
         {/* Header with step indicator */}
         <View className="px-6 pt-12 pb-6 bg-neutral-light-1">
+          {/* Progress Indicator */}
+          <ProgressIndicator
+            currentStep={currentStep}
+            totalSteps={6}
+            className="mb-6"
+          />
+
           <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
             {stepConfig.title}
           </Text>
