@@ -9,6 +9,8 @@ import {
   Modal,
   StyleSheet,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomSlider from "./ui/Slider";
@@ -392,9 +394,11 @@ export default function OnboardingForm({
         };
       case OnboardingStep.PHYSICAL_LIMITATIONS:
         return {
-          title: "Physical Limitations",
+          title: "Own Your Journey",
           description:
-            "Help us understand any physical limitations or health concerns you may have.",
+            "Let us know about any physical limitations or health concerns so we can build a workout plan that empowers you, safely and effectively.",
+          disclaimer:
+            "Before starting any new fitness program, check with your doctor, especially if you have existing health conditions.",
         };
       case OnboardingStep.FITNESS_LEVEL:
         return {
@@ -1226,6 +1230,48 @@ export default function OnboardingForm({
             </TouchableOpacity>
           );
         })}
+
+      {/* Medical Notes */}
+      <View className="mt-6">
+        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
+          Medical Notes (Optional)
+        </Text>
+        <Text className="text-xs text-neutral-medium-4 mb-4">
+          Any additional medical information or concerns we should know about.
+        </Text>
+        <TextInput
+          style={{
+            backgroundColor: "#FFFFFF", // background color (white)
+            borderWidth: 1,
+            borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
+            borderRadius: 12, // rounded-xl
+            minHeight: 100,
+            fontSize: 14,
+            color: "#525252", // neutral-dark-1
+            paddingHorizontal: 16,
+            paddingVertical: 24,
+            textAlignVertical: "top",
+          }}
+          placeholder="Enter any medical conditions, injuries, or concerns..."
+          placeholderTextColor="#8A93A2"
+          value={formData.medicalNotes}
+          onChangeText={(text) => handleChange("medicalNotes", text)}
+          multiline={true}
+          returnKeyType="done"
+          blurOnSubmit={true}
+          onSubmitEditing={() => {
+            Keyboard.dismiss();
+          }}
+          onFocus={() => {
+            // Scroll to the bottom to ensure the input is visible
+            setTimeout(() => {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }, 300);
+          }}
+          enablesReturnKeyAutomatically={true}
+          scrollEnabled={true}
+        />
+      </View>
     </View>
   );
 
@@ -1440,42 +1486,6 @@ export default function OnboardingForm({
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-
-      {/* Medical Notes */}
-      <View className="mb-6">
-        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
-          Medical Notes (Optional)
-        </Text>
-        <Text className="text-xs text-neutral-medium-4 mb-4">
-          Any additional medical information or concerns we should know about.
-        </Text>
-        <TextInput
-          style={{
-            backgroundColor: "#FFFFFF", // background color (white)
-            borderWidth: 1,
-            borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
-            borderRadius: 12, // rounded-xl
-            minHeight: 100,
-            fontSize: 14,
-            color: "#525252", // neutral-dark-1
-            paddingHorizontal: 16,
-            paddingVertical: 24,
-            textAlignVertical: "top",
-          }}
-          placeholder="Enter any medical conditions, injuries, or concerns..."
-          placeholderTextColor="#8A93A2"
-          value={formData.medicalNotes}
-          onChangeText={(text) => handleChange("medicalNotes", text)}
-          multiline={true}
-          returnKeyType="done"
-          blurOnSubmit={true}
-          onSubmitEditing={() => {
-            Keyboard.dismiss();
-          }}
-          enablesReturnKeyAutomatically={true}
-          scrollEnabled={true}
-        />
       </View>
     </View>
   );
@@ -2268,11 +2278,15 @@ export default function OnboardingForm({
   const stepConfig = getStepConfig();
 
   return (
-    <View className="flex-1 ">
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <ScrollView
         ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header with step indicator */}
         <View className="px-6 pt-12 pb-6 ">
@@ -2287,10 +2301,13 @@ export default function OnboardingForm({
             {stepConfig.title}
           </Text>
           <Text
-            className="text-sm text-neutral-medium-4"
+            className="text-sm text-neutral-medium-4 mb-2"
             style={{ lineHeight: 20 }}
           >
             {stepConfig.description}
+          </Text>
+          <Text className="text-sm italic text-neutral-medium-4">
+            {stepConfig.disclaimer}
           </Text>
         </View>
 
@@ -2298,6 +2315,6 @@ export default function OnboardingForm({
       </ScrollView>
 
       {renderNavButtons()}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

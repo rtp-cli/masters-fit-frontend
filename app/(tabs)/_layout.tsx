@@ -11,20 +11,20 @@ function TabBarIcon({
   name: keyof typeof Ionicons.glyphMap;
   color: string;
 }) {
-  return <Ionicons size={26} name={name} color={color} />;
+  return <Ionicons size={28} name={name} color={color} />;
 }
 
 function WorkoutTabIcon() {
   return (
     <View
       style={{
-        width: 50,
-        height: 50,
+        width: 60,
+        height: 60,
         borderRadius: 28,
         backgroundColor: "#000000",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 30,
+        marginBottom: 20,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
@@ -32,7 +32,7 @@ function WorkoutTabIcon() {
         elevation: 6,
       }}
     >
-      <Ionicons size={24} name="play" color="#ffffff" />
+      <Ionicons size={28} name="play" color="#ffffff" />
     </View>
   );
 }
@@ -49,21 +49,21 @@ export default function TabLayout() {
           headerShown: false,
           tabBarActiveTintColor: "#1f2937",
           tabBarInactiveTintColor: "#9ca3af",
+          tabBarShowLabel: false,
           tabBarStyle: {
             borderTopWidth: 1,
             borderTopColor: "#e5e7eb",
-            height: 85,
-            paddingBottom: 20,
-            paddingTop: 10,
+            height: 60,
+            paddingBottom: 15,
+            paddingTop: 8,
             backgroundColor: "#ffffff",
-            minHeight: 85,
+            minHeight: 60,
           },
         }}
       >
         <Tabs.Screen
           name="dashboard"
           options={{
-            title: "Progress",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="bar-chart" color={color} />
             ),
@@ -72,7 +72,6 @@ export default function TabLayout() {
         <Tabs.Screen
           name="calendar"
           options={{
-            title: "Plan",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="calendar" color={color} />
             ),
@@ -81,14 +80,12 @@ export default function TabLayout() {
         <Tabs.Screen
           name="workout"
           options={{
-            title: "Workout",
             tabBarIcon: () => <WorkoutTabIcon />,
           }}
         />
         <Tabs.Screen
           name="search"
           options={{
-            title: "Search",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="search" color={color} />
             ),
@@ -97,7 +94,6 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: "Profile",
             tabBarIcon: ({ color }: { color: string }) => (
               <TabBarIcon name="person" color={color} />
             ),
