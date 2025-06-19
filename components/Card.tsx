@@ -1,23 +1,20 @@
-import React from 'react';
-import { View, StyleSheet, ViewProps, ViewStyle } from 'react-native';
+import React from "react";
+import { View, StyleSheet, ViewProps, ViewStyle } from "react-native";
 
 interface CardProps extends ViewProps {
-  variant?: 'default' | 'outlined' | 'flat';
+  variant?: "default" | "outlined" | "flat";
   style?: ViewStyle;
   children: React.ReactNode;
 }
 
 const Card: React.FC<CardProps> = ({
-  variant = 'default',
+  variant = "default",
   style,
   children,
   ...rest
 }) => {
   return (
-    <View
-      style={[styles.card, styles[`${variant}Card`], style]}
-      {...rest}
-    >
+    <View style={[styles.card, styles[`${variant}Card`], style]} {...rest}>
       {children}
     </View>
   );
@@ -50,39 +47,39 @@ export const CardFooter: React.FC<{
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   defaultCard: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
+    backgroundColor: "white",
+    shadowColor: "shadow",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
   },
   outlinedCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "white",
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "neutral-medium-1",
   },
   flatCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "white",
   },
   cardContent: {
     padding: 16,
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: "neutral-light-4",
   },
   cardFooter: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: "neutral-light-4",
   },
 });
 

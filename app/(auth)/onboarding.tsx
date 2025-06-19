@@ -190,7 +190,7 @@ export default function OnboardingScreen() {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#BBDE51" />
+          <ActivityIndicator size="large" color="primary" />
           <Text className="mt-md text-sm text-neutral-medium-4">
             Loading...
           </Text>

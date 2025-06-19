@@ -72,7 +72,7 @@ export default function GeneratingPlanScreen({
 
         {/* Loading Spinner - Centered */}
         <View style={styles.spinnerContainer}>
-          <ActivityIndicator size="large" color="#BBDE51" />
+          <ActivityIndicator size="large" color="primary" />
         </View>
 
         {/* Current Status - Below spinner as smaller text */}
@@ -90,7 +90,7 @@ export default function GeneratingPlanScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "white",
   },
   header: {
     flexDirection: "row",
@@ -112,13 +112,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#171717",
+    color: "gray-900",
     textAlign: "center",
     marginBottom: 16,
   },
   subtitle: {
     fontSize: 16,
-    color: "#737373",
+    color: "gray-500",
     textAlign: "center",
     marginBottom: 48,
     lineHeight: 24,
@@ -133,13 +133,13 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#525252",
+    color: "text-secondary",
     textAlign: "center",
     marginBottom: 4,
   },
   statusDescription: {
     fontSize: 12,
-    color: "#737373",
+    color: "gray-500",
     textAlign: "center",
     lineHeight: 16,
   },

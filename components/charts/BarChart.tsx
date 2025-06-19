@@ -21,7 +21,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   height = 200,
   showValues = true,
   maxValue,
-  color = "#4f46e5",
+  color = "indigo",
 }) => {
   if (!data || data.length === 0) {
     return (
@@ -43,9 +43,9 @@ export const BarChart: React.FC<BarChartProps> = ({
   };
 
   const chartConfig = {
-    backgroundColor: "#ffffff",
-    backgroundGradientFrom: "#ffffff",
-    backgroundGradientTo: "#ffffff",
+    backgroundColor: "white",
+    backgroundGradientFrom: "white",
+    backgroundGradientTo: "white",
     decimalPlaces: 0, // optional, defaults to 2dp
     color: (opacity = 1) =>
       color
@@ -60,7 +60,7 @@ export const BarChart: React.FC<BarChartProps> = ({
     },
     propsForBackgroundLines: {
       strokeDasharray: "", // solid background lines with no dashes
-      stroke: "#e3e3e3",
+      stroke: "stroke-gray",
       strokeWidth: 1,
     },
   };
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     textAlign: "center",
-    color: "#9ca3af",
+    color: "neutral-medium-5",
     fontSize: 16,
     paddingVertical: 50,
   },

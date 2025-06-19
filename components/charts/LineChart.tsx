@@ -19,7 +19,7 @@ interface LineChartProps {
 export const LineChart: React.FC<LineChartProps> = ({
   data,
   height = 200,
-  color = "#4f46e5",
+  color = "indigo",
   showValues = true,
   showLabels = true,
 }) => {
@@ -58,9 +58,9 @@ export const LineChart: React.FC<LineChartProps> = ({
   };
 
   const chartConfig = {
-    backgroundColor: "#ffffff",
-    backgroundGradientFrom: "#ffffff",
-    backgroundGradientTo: "#ffffff",
+    backgroundColor: "white",
+    backgroundGradientFrom: "white",
+    backgroundGradientTo: "white",
     decimalPlaces: 0, // optional, defaults to 2dp
     color: (opacity = 1) =>
       color
@@ -80,7 +80,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     },
     propsForBackgroundLines: {
       strokeDasharray: "", // solid background lines with no dashes
-      stroke: "#e3e3e3",
+      stroke: "stroke-gray",
       strokeWidth: 1,
     },
     formatYLabel: (value: string) => {
@@ -123,7 +123,7 @@ export const LineChart: React.FC<LineChartProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: "white",
     borderRadius: 8,
   },
   chart: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     textAlign: "center",
-    color: "#9ca3af",
+    color: "neutral-medium-5",
     fontSize: 16,
     paddingVertical: 50,
   },

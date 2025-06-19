@@ -139,7 +139,7 @@ interface WorkoutRegenerationModalProps {
 const styles = StyleSheet.create({
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "neutral-light-4",
     borderRadius: 12,
     padding: 4,
     marginBottom: 24,
@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toggleButtonActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
+    backgroundColor: "white",
+    shadowColor: "shadow",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -163,10 +163,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   toggleTextActive: {
-    color: "#181917",
+    color: "secondary",
   },
   toggleTextInactive: {
-    color: "#8A93A2",
+    color: "text-muted",
   },
 });
 
@@ -407,7 +407,7 @@ export default function WorkoutRegenerationModal({
         presentationStyle="pageSheet"
       >
         <View className="flex-1 justify-center items-center bg-background">
-          <ActivityIndicator size="large" color="#BBDE51" />
+          <ActivityIndicator size="large" color="primary" />
           <Text className="mt-4 text-base text-primary font-medium">
             Loading your preferences...
           </Text>
@@ -444,7 +444,7 @@ export default function WorkoutRegenerationModal({
               disabled={updatingProfile}
             >
               {updatingProfile ? (
-                <ActivityIndicator size="small" color="#BBDE51" />
+                <ActivityIndicator size="small" color="primary" />
               ) : (
                 <Text className="text-base text-primary font-medium">Save</Text>
               )}
@@ -482,7 +482,7 @@ export default function WorkoutRegenerationModal({
             onPress={onClose}
             className="w-8 h-8 items-center justify-center"
           >
-            <Ionicons name="close" size={20} color="#8A93A2" />
+            <Ionicons name="close" size={20} color="text-muted" />
           </TouchableOpacity>
           <Text className="text-base font-semibold text-text-primary">
             Regenerate Workout Plan
@@ -545,19 +545,19 @@ export default function WorkoutRegenerationModal({
             </Text>
             <TextInput
               style={{
-                backgroundColor: "#FFFFFF", // background color (white)
+                backgroundColor: "white", // background color (white)
                 borderWidth: 1,
-                borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
+                borderColor: "neutral-medium-1", // neutral-medium-1 (thin grey)
                 borderRadius: 8,
                 minHeight: 120,
                 fontSize: 14,
-                color: "#181917",
+                color: "secondary",
                 paddingHorizontal: 16,
                 paddingVertical: 24,
                 textAlignVertical: "top",
               }}
               placeholder="Add notes about your workout here..."
-              placeholderTextColor="#A8A8A8"
+              placeholderTextColor="neutral-medium-3"
               value={customFeedback}
               onChangeText={setCustomFeedback}
               multiline
@@ -601,10 +601,10 @@ export default function WorkoutRegenerationModal({
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#181917" />
+              <ActivityIndicator size="small" color="secondary" />
             ) : (
               <>
-                <Ionicons name="refresh" size={18} color="#181917" />
+                <Ionicons name="refresh" size={18} color="secondary" />
                 <Text className="text-secondary font-semibold text-sm ml-2">
                   Regenerate Workout Flow
                 </Text>

@@ -212,7 +212,7 @@ export default function VerifyScreen() {
               maxLength={6}
               editable={!isLoading}
               autoFocus
-              placeholderTextColor="#A8A8A8"
+              placeholderTextColor="neutral-medium-3"
             />
           </View>
 
@@ -239,7 +239,7 @@ export default function VerifyScreen() {
           disabled={isLoading || !code.trim()}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color="white" />
           ) : (
             <Text className="text-background font-bold text-lg">
               Verify Code

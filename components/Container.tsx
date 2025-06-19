@@ -81,7 +81,7 @@ const Container: React.FC<ContainerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: 'neutral-light-3',
   },
   padded: {
     paddingHorizontal: 20,

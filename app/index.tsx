@@ -156,7 +156,7 @@ export default function GetStarted() {
           <Ionicons
             name="arrow-forward"
             size={20}
-            color="#ffffff"
+            color="white"
             className="ml-1"
           />
         </TouchableOpacity>

@@ -361,7 +361,7 @@ export default function ProfileEditScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-neutral-light-2">
         <TouchableOpacity onPress={handleCancel}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color="neutral-dark-5" />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-text-primary">
           Edit Profile

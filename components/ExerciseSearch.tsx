@@ -75,18 +75,18 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
     <View style={styles.container}>
       <View style={styles.searchBarContainer}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#6b7280" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color="text-light" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search exercises, muscle groups..."
             value={searchQuery}
             onChangeText={handleSearchChange}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="neutral-medium-5"
             clearButtonMode="while-editing"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={handleClearSearch}>
-              <Ionicons name="close-circle" size={20} color="#6b7280" />
+              <Ionicons name="close-circle" size={20} color="text-light" />
             </TouchableOpacity>
           )}
         </View>
@@ -108,7 +108,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
           >
             <Text
               variant="bodySmall"
-              color={activeFilter === filter ? '#ffffff' : '#6b7280'}
+              color={activeFilter === filter ? 'white' : 'text-light'}
               weight={activeFilter === filter ? 'semibold' : 'normal'}
             >
               {filter}
@@ -122,9 +122,9 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: 'neutral-medium-1',
   },
   searchBarContainer: {
     padding: 15,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'neutral-light-4',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1f2937',
+    color: 'neutral-dark-4',
     paddingVertical: 0,
   },
   filtersContainer: {
@@ -153,12 +153,12 @@ const styles = StyleSheet.create({
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'neutral-light-4',
     borderRadius: 20,
     marginRight: 10,
   },
   activeFilterButton: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: 'indigo',
   },
 });
 

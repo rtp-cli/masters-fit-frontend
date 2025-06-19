@@ -50,12 +50,12 @@ const goalNames: Record<string, string> = {
 
 // Dynamic color palette for donut chart (top 5 + Other)
 const DONUT_COLORS = [
-  "#F87171", // Pastel Red
-  "#FB923C", // Pastel Orange
-  "#FBBF24", // Pastel Yellow
-  "#68D391", // Pastel Green
-  "#60A5FA", // Pastel Blue
-  "#A78BFA", // Pastel Violet for "Other"
+  "error", // Pastel Red
+  "orange", // Pastel Orange
+  "warning", // Pastel Yellow
+  "success", // Pastel Green
+  "info", // Pastel Blue
+  "purple", // Pastel Violet for "Other"
 ];
 
 export default function DashboardScreen() {
@@ -271,7 +271,7 @@ export default function DashboardScreen() {
       chartData.push({
         label: "As Planned",
         value: Math.round((exactMatches / totalSets) * 100 * 100) / 100,
-        color: "#10b981",
+        color: "success",
         count: exactMatches,
       });
     }
@@ -279,7 +279,7 @@ export default function DashboardScreen() {
       chartData.push({
         label: "Progressed",
         value: Math.round((higherWeight / totalSets) * 100 * 100) / 100,
-        color: "#f59e0b",
+        color: "warning",
         count: higherWeight,
       });
     }
@@ -287,7 +287,7 @@ export default function DashboardScreen() {
       chartData.push({
         label: "Adapted",
         value: Math.round((lowerWeight / totalSets) * 100 * 100) / 100,
-        color: "#ef4444",
+        color: "error",
         count: lowerWeight,
       });
     }
@@ -378,7 +378,7 @@ export default function DashboardScreen() {
           totalSets > 0
             ? Math.round((type.totalSets / totalSets) * 100 * 10) / 10
             : 0,
-        color: "#6b7280", // Default color - you may want to add a color mapping
+        color: "text-light", // Default color - you may want to add a color mapping
       }))
       .sort((a, b) => b.totalSets - a.totalSets);
 
@@ -480,7 +480,7 @@ export default function DashboardScreen() {
   if (loading || loadingToday) {
     return (
       <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="#BBDE51" />
+        <ActivityIndicator size="large" color="primary" />
         <Text className="mt-md text-sm text-primary font-medium">
           One moment...
         </Text>
@@ -610,7 +610,7 @@ export default function DashboardScreen() {
             </View>
             {weeklySummary && weeklySummary.streak > 0 && (
               <View className="flex-row items-center bg-primary/10 px-3 py-2 rounded-full">
-                <Ionicons name="flame" size={16} color="#BBDE51" />
+                <Ionicons name="flame" size={16} color="primary" />
                 <Text className="text-sm font-bold text-secondary ml-2">
                   {weeklySummary.streak} day streak
                 </Text>
@@ -621,7 +621,7 @@ export default function DashboardScreen() {
 
         {loading && !totalVolumeMetrics ? (
           <View className="flex-1 justify-center items-center py-12">
-            <ActivityIndicator size="large" color="#BBDE51" />
+            <ActivityIndicator size="large" color="primary" />
             <Text className="mt-3 text-sm text-text-muted">
               Loading your progress...
             </Text>
@@ -646,7 +646,7 @@ export default function DashboardScreen() {
                     </Text>
                   )}
                   {loadingToday && (
-                    <ActivityIndicator size="small" color="#BBDE51" />
+                    <ActivityIndicator size="small" color="primary" />
                   )}
                 </View>
 
@@ -658,7 +658,7 @@ export default function DashboardScreen() {
                         <Ionicons
                           name={todaysWorkout ? "heart-outline" : "bed-outline"}
                           size={24}
-                          color="#181917"
+                          color="secondary"
                         />
                       </View>
                       <View className="flex-1">
@@ -680,7 +680,7 @@ export default function DashboardScreen() {
                     {!todaysWorkout ? (
                       // Rest day
                       <View className="bg-neutral-light-2/50 border border-neutral-light-2 rounded-xl p-4 flex-row items-center">
-                        <Ionicons name="bed" size={24} color="#8A93A2" />
+                        <Ionicons name="bed" size={24} color="text-muted" />
                         <View className="ml-3 flex-1">
                           <Text className="text-sm font-semibold text-text-muted">
                             Rest Day
@@ -695,7 +695,7 @@ export default function DashboardScreen() {
                         <Ionicons
                           name="checkmark-circle"
                           size={24}
-                          color="#10B981"
+                          color="success"
                         />
                         <View className="ml-3 flex-1">
                           <Text className="text-sm font-semibold text-accent">
@@ -723,7 +723,7 @@ export default function DashboardScreen() {
                 ) : (
                   <View className="items-center py-8">
                     <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
-                      <Ionicons name="bed-outline" size={24} color="#8A93A2" />
+                      <Ionicons name="bed-outline" size={24} color="text-muted" />
                     </View>
                     <Text className="text-base font-semibold text-text-primary mb-2">
                       No Active Workout
@@ -849,12 +849,12 @@ export default function DashboardScreen() {
                                         ), // Proportional to completion
                                   backgroundColor:
                                     day.status === "complete"
-                                      ? "#10B981" // Complete - Green
+                                      ? "success" // Complete - Green
                                       : day.status === "partial"
-                                      ? "#FCD34D" // Partial - Yellow
+                                      ? "warning" // Partial - Yellow
                                       : day.status === "rest"
-                                      ? "#000000" // Rest - Black
-                                      : "#9CA3AF", // Upcoming/Incomplete - Grey
+                                      ? "black" // Rest - Black
+                                      : "neutral-medium-5", // Upcoming/Incomplete - Grey
                                 }}
                               />
                             </View>
@@ -946,19 +946,19 @@ export default function DashboardScreen() {
                                 {
                                   label: "As Planned",
                                   value: 35,
-                                  color: "#10b981",
+                                  color: "success",
                                   count: 35,
                                 },
                                 {
                                   label: "Progressed",
                                   value: 40,
-                                  color: "#f59e0b",
+                                  color: "warning",
                                   count: 40,
                                 },
                                 {
                                   label: "Adapted",
                                   value: 25,
-                                  color: "#ef4444",
+                                  color: "error",
                                   count: 25,
                                 },
                               ]
@@ -1147,7 +1147,7 @@ export default function DashboardScreen() {
                         };
                       })}
                       height={200}
-                      color="#10B981"
+                      color="success"
                       showValues={true}
                       showLabels={true}
                     />
@@ -1493,7 +1493,7 @@ export default function DashboardScreen() {
 
                 <View className="bg-white rounded-2xl p-5 shadow-sm">
                   <View className="items-center py-8">
-                    <ActivityIndicator size="large" color="#BBDE51" />
+                    <ActivityIndicator size="large" color="primary" />
                     <Text className="mt-3 text-sm text-text-muted">
                       Loading workout data...
                     </Text>
@@ -1522,7 +1522,7 @@ export default function DashboardScreen() {
                       <Ionicons
                         name="analytics-outline"
                         size={32}
-                        color="#BBDE51"
+                        color="primary"
                       />
                     </View>
                     <Text className="text-lg font-semibold text-text-primary mb-2 text-center">

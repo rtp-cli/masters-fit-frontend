@@ -3,8 +3,8 @@ import { ViewStyle, TextStyle } from "react-native";
 // Brand Colors (from the provided design)
 export const colors = {
   brand: {
-    primary: "#BBDE51",
-    secondary: "#181917",
+    primary: "primary",
+    secondary: "secondary",
     light: {
       1: "#F5FAE8",
       2: "#EDF5D1",
@@ -21,27 +21,27 @@ export const colors = {
     },
   },
   neutral: {
-    white: "#FFFFFF",
+    white: "white",
     light: {
-      1: "#FBFBFB",
-      2: "#F4F4F4",
+      1: "neutral-light-1",
+      2: "neutral-light-2",
     },
     medium: {
-      1: "#E8E8E8",
-      2: "#C6C6C6",
-      3: "#A8A8A8",
-      4: "#8A93A2",
+      1: "neutral-medium-1",
+      2: "neutral-medium-2",
+      3: "neutral-medium-3",
+      4: "text-muted",
     },
     dark: {
-      1: "#525252",
+      1: "text-secondary",
     },
   },
   text: {
-    primary: "#181917",
-    secondary: "#525252",
-    muted: "#8A93A2",
+    primary: "secondary",
+    secondary: "text-secondary",
+    muted: "text-muted",
   },
-  background: "#FFFFFF",
+  background: "white",
 } as const;
 
 // Spacing system

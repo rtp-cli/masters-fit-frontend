@@ -152,9 +152,9 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   const getLinkTypeColor = () => {
     switch (linkType) {
       case "youtube":
-        return "#FF0000";
+        return "youtube";
       default:
-        return "#6B7280";
+        return "text-light";
     }
   };
 
@@ -174,7 +174,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             onPress={onClose}
             className="w-10 h-10 items-center justify-center"
           >
-            <Ionicons name="close" size={24} color="#374151" />
+            <Ionicons name="close" size={24} color="neutral-dark-3" />
           </TouchableOpacity>
           <Text variant="h3" center>
             Exercise Link
@@ -188,7 +188,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             {exercise.name}
           </Text>
 
-          <Text variant="body" color="#6B7280" className="mb-6 leading-5">
+          <Text variant="body" color="text-light" className="mb-6 leading-5">
             Add a YouTube video to help demonstrate this exercise.
           </Text>
 
@@ -203,7 +203,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
                 value={link}
                 onChangeText={handleLinkChange}
                 placeholder="https://youtube.com/watch?v=... or https://example.com/image.jpg"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="neutral-medium-5"
                 multiline
                 editable={!isLoading}
               />
@@ -225,10 +225,10 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               <Ionicons
                 name="checkmark-circle"
                 size={16}
-                color="#BBDE51"
+                color="primary"
                 className="mr-1.5"
               />
-              <Text variant="bodySmall" color="#BBDE51">
+              <Text variant="bodySmall" color="primary">
                 {linkType === "youtube"
                   ? "YouTube video detected"
                   : "Link detected"}
@@ -241,10 +241,10 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               <Ionicons
                 name="warning"
                 size={16}
-                color="#F59E0B"
+                color="warning"
                 className="mr-1.5"
               />
-              <Text variant="bodySmall" color="#F59E0B">
+              <Text variant="bodySmall" color="warning">
                 Please enter a valid YouTube video URL
               </Text>
             </View>
@@ -255,10 +255,10 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             <Text variant="subtitle" className="mb-2">
               Supported URL formats:
             </Text>
-            <Text variant="bodySmall" color="#6B7280" className="mb-1">
+            <Text variant="bodySmall" color="text-light" className="mb-1">
               • YouTube: https://youtube.com/watch?v=abc123
             </Text>
-            <Text variant="bodySmall" color="#6B7280" className="mb-1">
+            <Text variant="bodySmall" color="text-light" className="mb-1">
               • YouTube Short: https://youtu.be/abc123
             </Text>
           </View>
@@ -272,8 +272,8 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               onPress={handleRemoveLink}
               disabled={isLoading}
             >
-              <Ionicons name="trash" size={16} color="#EF4444" />
-              <Text variant="bodySmall" color="#EF4444" className="ml-1.5">
+              <Ionicons name="trash" size={16} color="error" />
+              <Text variant="bodySmall" color="error" className="ml-1.5">
                 Remove Link
               </Text>
             </TouchableOpacity>
@@ -285,7 +285,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               onPress={onClose}
               disabled={isLoading}
             >
-              <Text variant="body" color="#6B7280">
+              <Text variant="body" color="text-light">
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -300,9 +300,9 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               disabled={!!(isLoading || (link && linkType === "unknown"))}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text variant="body" color="#FFFFFF" weight="semibold">
+                <Text variant="body" color="white" weight="semibold">
                   Save
                 </Text>
               )}

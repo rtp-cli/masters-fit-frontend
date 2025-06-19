@@ -36,9 +36,9 @@ export default function CustomSlider({
           step={step}
           value={value}
           onValueChange={onValueChange}
-          minimumTrackTintColor="#BBDE51"
-          maximumTrackTintColor="#E8E8E8"
-          thumbTintColor="#BBDE51"
+          minimumTrackTintColor="primary"
+          maximumTrackTintColor="neutral-medium-1"
+          thumbTintColor="primary"
         />
       </View>
       <View className="flex-row justify-between items-center">

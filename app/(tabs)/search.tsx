@@ -306,13 +306,13 @@ export default function SearchScreen() {
     const lowerDifficulty = (difficulty || "").toLowerCase();
     switch (lowerDifficulty) {
       case "beginner":
-        return "#22c55e"; // green
+        return "green-500"; // green
       case "intermediate":
-        return "#f59e0b"; // yellow
+        return "warning"; // yellow
       case "advanced":
-        return "#ef4444"; // red
+        return "error"; // red
       default:
-        return "#6b7280"; // gray
+        return "text-light"; // gray
     }
   };
 
@@ -422,7 +422,7 @@ export default function SearchScreen() {
                 <Ionicons
                   name="search"
                   size={18}
-                  color="#9CA3AF"
+                  color="neutral-medium-5"
                   className="mr-3"
                 />
                 <TextInput
@@ -431,14 +431,14 @@ export default function SearchScreen() {
                   value={exerciseQuery}
                   onChangeText={setExerciseQuery}
                   onSubmitEditing={performExerciseSearch}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor="neutral-medium-5"
                 />
                 {exerciseQuery.length > 0 && (
                   <TouchableOpacity
                     onPress={() => setExerciseQuery("")}
                     className="p-1"
                   >
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                    <Ionicons name="close-circle" size={18} color="neutral-medium-5" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -452,7 +452,7 @@ export default function SearchScreen() {
               <Ionicons
                 name="calendar"
                 size={20}
-                color={selectedDate ? "#BBDE51" : "#9CA3AF"}
+                color={selectedDate ? "primary" : "neutral-medium-5"}
               />
             </TouchableOpacity>
           </View>
@@ -472,7 +472,7 @@ export default function SearchScreen() {
                   style={{
                     flex: 1,
                     justifyContent: "flex-end",
-                    backgroundColor: "rgba(0,0,0,0.5)",
+                    backgroundColor: "overlay",
                   }}
                 >
                   <View
@@ -495,7 +495,7 @@ export default function SearchScreen() {
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(false)}
                       >
-                        <Text style={{ color: "#9CA3AF", fontSize: 16 }}>
+                        <Text style={{ color: "neutral-medium-5", fontSize: 16 }}>
                           Cancel
                         </Text>
                       </TouchableOpacity>
@@ -503,7 +503,7 @@ export default function SearchScreen() {
                         style={{
                           fontSize: 18,
                           fontWeight: "600",
-                          color: "#374151",
+                          color: "neutral-dark-3",
                         }}
                       >
                         Select Date
@@ -533,7 +533,7 @@ export default function SearchScreen() {
                       >
                         <Text
                           style={{
-                            color: "#BBDE51",
+                            color: "primary",
                             fontSize: 16,
                             fontWeight: "500",
                           }}
@@ -569,7 +569,7 @@ export default function SearchScreen() {
                           height: 200,
                           width: "100%",
                         }}
-                        textColor="#374151"
+                        textColor="neutral-dark-3"
                         locale="en"
                       />
                     </View>
@@ -630,7 +630,7 @@ export default function SearchScreen() {
                 }}
                 className="p-1"
               >
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+                <Ionicons name="close-circle" size={16} color="neutral-medium-5" />
               </TouchableOpacity>
             </View>
           </View>
@@ -639,7 +639,7 @@ export default function SearchScreen() {
         {/* Loading Indicator */}
         {isLoading && (
           <View className="py-12 items-center">
-            <ActivityIndicator size="large" color="#BBDE51" />
+            <ActivityIndicator size="large" color="primary" />
             <Text className="mt-3 text-sm text-text-muted">Searching...</Text>
           </View>
         )}
@@ -677,7 +677,7 @@ export default function SearchScreen() {
                   <Ionicons
                     name="link"
                     size={14}
-                    color="#BBDE51"
+                    color="primary"
                     className="mr-1"
                   />
                   <Text className="text-xs font-medium text-primary">
@@ -998,7 +998,7 @@ export default function SearchScreen() {
                               <Ionicons
                                 name="chevron-forward"
                                 size={16}
-                                color="#9CA3AF"
+                                color="neutral-medium-5"
                                 className="ml-2"
                               />
                             </View>
@@ -1132,7 +1132,7 @@ export default function SearchScreen() {
                     </Text>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                <Ionicons name="chevron-forward" size={20} color="neutral-medium-5" />
               </TouchableOpacity>
             ))}
           </View>
@@ -1145,7 +1145,7 @@ export default function SearchScreen() {
           generalResults.length === 0 &&
           (exerciseQuery.trim() || dateQuery.trim()) && (
             <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-sm">
-              <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+              <Ionicons name="search-outline" size={40} color="gray-350" />
               <Text className="text-lg font-semibold text-text-muted mt-4">
                 No results found
               </Text>
@@ -1164,7 +1164,7 @@ export default function SearchScreen() {
 
             <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
               <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
+                <Ionicons name="calendar-outline" size={20} color="warning" />
               </View>
               <Text className="flex-1 text-sm text-text-muted">
                 Search by date to see the workout for that day
@@ -1173,7 +1173,7 @@ export default function SearchScreen() {
 
             <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
               <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                <Ionicons name="barbell-outline" size={20} color="#F59E0B" />
+                <Ionicons name="barbell-outline" size={20} color="warning" />
               </View>
               <Text className="flex-1 text-sm text-text-muted">
                 Search by exercise name to see exercises and performance stats

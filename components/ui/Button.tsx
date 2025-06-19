@@ -101,7 +101,7 @@ export default function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" ? "#181917" : "#BBDE51"}
+          color={variant === "primary" ? "secondary" : "primary"}
         />
       ) : (
         <Text className={textClasses}>{title}</Text>

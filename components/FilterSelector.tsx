@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
+    color: "neutral-dark-3",
     marginBottom: 8,
   },
   optionsContainer: {
@@ -81,20 +81,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "neutral-light-4",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "neutral-medium-1",
   },
   selectedOption: {
-    backgroundColor: "#4f46e5",
-    borderColor: "#4f46e5",
+    backgroundColor: "indigo",
+    borderColor: "indigo",
   },
   optionText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#6b7280",
+    color: "text-light",
   },
   selectedOptionText: {
-    color: "#ffffff",
+    color: "white",
   },
 });
