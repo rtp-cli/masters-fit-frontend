@@ -102,18 +102,22 @@ export default function SettingsScreen() {
     if (!goals || goals.length === 0) return [];
     return goals.map((goal) => {
       const baseColor =
-        goal === "weight_loss"
+        goal === "general_fitness"
+          ? "green"
+          : goal === "fat_loss"
           ? "red"
+          : goal === "endurance"
+          ? "orange"
           : goal === "muscle_gain"
           ? "purple"
           : goal === "strength"
-          ? "orange"
-          : goal === "endurance"
           ? "blue"
-          : goal === "flexibility"
+          : goal === "mobility_flexibility"
           ? "pink"
-          : goal === "general_fitness"
-          ? "green"
+          : goal === "balance"
+          ? "yellow"
+          : goal === "recovery"
+          ? "teal"
           : "gray";
 
       return {

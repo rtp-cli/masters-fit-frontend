@@ -22,13 +22,12 @@ enum Gender {
 }
 
 enum FitnessGoals {
-  WEIGHT_LOSS = "weight_loss",
+  GENERAL_FITNESS = "general_fitness",
+  FAT_LOSS = "fat_loss",
+  ENDURANCE = "endurance",
   MUSCLE_GAIN = "muscle_gain",
   STRENGTH = "strength",
-  ENDURANCE = "endurance",
-  FLEXIBILITY = "flexibility",
-  GENERAL_FITNESS = "general_fitness",
-  MOBILITY = "mobility",
+  MOBILITY_FLEXIBILITY = "mobility_flexibility",
   BALANCE = "balance",
   RECOVERY = "recovery",
 }
@@ -549,61 +548,61 @@ export default function OnboardingForm({
   // Render Fitness Goals step - matching image colors exactly
   const renderFitnessGoalsStep = () => (
     <View className="flex-1 px-6 pb-6">
-      {/* Recovery - Blue background as in image */}
+      {/* General Fitness - Green background */}
       <TouchableOpacity
         className={`p-4 rounded-xl mb-3 flex-row items-center ${
-          formData.goals.includes(FitnessGoals.RECOVERY)
-            ? "bg-primary"
-            : "bg-white"
-        }`}
-        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.RECOVERY)}
-      >
-        <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="medical-outline" size={16} color="#3B82F6" />
-        </View>
-        <View className="flex-1">
-          <Text
-            className={`font-medium text-sm ${
-              formData.goals.includes(FitnessGoals.RECOVERY)
-                ? "text-secondary"
-                : "text-neutral-dark-1"
-            }`}
-          >
-            Recovery
-          </Text>
-          <Text
-            className={`text-xs ${
-              formData.goals.includes(FitnessGoals.RECOVERY)
-                ? "text-secondary"
-                : "text-neutral-medium-4"
-            }`}
-          >
-            Recover from injury or surgery
-          </Text>
-        </View>
-        {formData.goals.includes(FitnessGoals.RECOVERY) && (
-          <Ionicons name="checkmark-circle" size={16} color="#181917" />
-        )}
-      </TouchableOpacity>
-
-      {/* Fat Loss - Green background as in image */}
-      <TouchableOpacity
-        className={`p-4 rounded-xl mb-3 flex-row items-center ${
-          formData.goals.includes(FitnessGoals.WEIGHT_LOSS)
+          formData.goals.includes(FitnessGoals.GENERAL_FITNESS)
             ? "bg-primary"
             : "bg-white"
         }`}
         onPress={() =>
-          handleMultiSelectToggle("goals", FitnessGoals.WEIGHT_LOSS)
+          handleMultiSelectToggle("goals", FitnessGoals.GENERAL_FITNESS)
         }
       >
         <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="fitness-outline" size={16} color="#10B981" />
+          <Ionicons name="checkmark-circle-outline" size={16} color="#10B981" />
         </View>
         <View className="flex-1">
           <Text
             className={`font-medium text-sm ${
-              formData.goals.includes(FitnessGoals.WEIGHT_LOSS)
+              formData.goals.includes(FitnessGoals.GENERAL_FITNESS)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            General Fitness
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.GENERAL_FITNESS)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Overall health and fitness improvement
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.GENERAL_FITNESS) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Fat Loss - Red background */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.FAT_LOSS)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.FAT_LOSS)}
+      >
+        <View className="w-8 h-8 bg-red-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="fitness-outline" size={16} color="#EF4444" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.FAT_LOSS)
                 ? "text-secondary"
                 : "text-neutral-dark-1"
             }`}
@@ -612,7 +611,7 @@ export default function OnboardingForm({
           </Text>
           <Text
             className={`text-xs ${
-              formData.goals.includes(FitnessGoals.WEIGHT_LOSS)
+              formData.goals.includes(FitnessGoals.FAT_LOSS)
                 ? "text-secondary"
                 : "text-neutral-medium-4"
             }`}
@@ -620,49 +619,12 @@ export default function OnboardingForm({
             Reduce body fat and improve composition
           </Text>
         </View>
-        {formData.goals.includes(FitnessGoals.WEIGHT_LOSS) && (
+        {formData.goals.includes(FitnessGoals.FAT_LOSS) && (
           <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
-      {/* Strength - Purple background as in image */}
-      <TouchableOpacity
-        className={`p-4 rounded-xl mb-3 flex-row items-center ${
-          formData.goals.includes(FitnessGoals.STRENGTH)
-            ? "bg-primary"
-            : "bg-white"
-        }`}
-        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.STRENGTH)}
-      >
-        <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
-        </View>
-        <View className="flex-1">
-          <Text
-            className={`font-medium text-sm ${
-              formData.goals.includes(FitnessGoals.STRENGTH)
-                ? "text-secondary"
-                : "text-neutral-dark-1"
-            }`}
-          >
-            Strength
-          </Text>
-          <Text
-            className={`text-xs ${
-              formData.goals.includes(FitnessGoals.STRENGTH)
-                ? "text-secondary"
-                : "text-neutral-medium-4"
-            }`}
-          >
-            Build muscle and increase strength
-          </Text>
-        </View>
-        {formData.goals.includes(FitnessGoals.STRENGTH) && (
-          <Ionicons name="checkmark-circle" size={16} color="#181917" />
-        )}
-      </TouchableOpacity>
-
-      {/* Endurance - Orange background as in image */}
+      {/* Endurance - Orange background */}
       <TouchableOpacity
         className={`p-4 rounded-xl mb-3 flex-row items-center ${
           formData.goals.includes(FitnessGoals.ENDURANCE)
@@ -699,14 +661,92 @@ export default function OnboardingForm({
         )}
       </TouchableOpacity>
 
-      {/* Mobility - Pink background as in image */}
+      {/* Muscle Gain - Purple background */}
       <TouchableOpacity
         className={`p-4 rounded-xl mb-3 flex-row items-center ${
-          formData.goals.includes(FitnessGoals.MOBILITY)
+          formData.goals.includes(FitnessGoals.MUSCLE_GAIN)
             ? "bg-primary"
             : "bg-white"
         }`}
-        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.MOBILITY)}
+        onPress={() =>
+          handleMultiSelectToggle("goals", FitnessGoals.MUSCLE_GAIN)
+        }
+      >
+        <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="fitness-outline" size={16} color="#8B5CF6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.MUSCLE_GAIN)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Muscle Gain
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.MUSCLE_GAIN)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Build lean muscle mass and strength
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.MUSCLE_GAIN) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Strength - Blue background */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.STRENGTH)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.STRENGTH)}
+      >
+        <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="barbell-outline" size={16} color="#3B82F6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.STRENGTH)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Strength
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.STRENGTH)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Build muscle and increase strength
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.STRENGTH) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
+
+      {/* Mobility & Flexibility - Pink background */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.MOBILITY_FLEXIBILITY)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() =>
+          handleMultiSelectToggle("goals", FitnessGoals.MOBILITY_FLEXIBILITY)
+        }
       >
         <View className="w-8 h-8 bg-pink-100 rounded-xl items-center justify-center mr-4">
           <Ionicons name="body-outline" size={16} color="#EC4899" />
@@ -714,16 +754,16 @@ export default function OnboardingForm({
         <View className="flex-1">
           <Text
             className={`font-medium text-sm ${
-              formData.goals.includes(FitnessGoals.MOBILITY)
+              formData.goals.includes(FitnessGoals.MOBILITY_FLEXIBILITY)
                 ? "text-secondary"
                 : "text-neutral-dark-1"
             }`}
           >
-            Mobility
+            Mobility & Flexibility
           </Text>
           <Text
             className={`text-xs ${
-              formData.goals.includes(FitnessGoals.MOBILITY)
+              formData.goals.includes(FitnessGoals.MOBILITY_FLEXIBILITY)
                 ? "text-secondary"
                 : "text-neutral-medium-4"
             }`}
@@ -731,110 +771,84 @@ export default function OnboardingForm({
             Improve flexibility and joint health
           </Text>
         </View>
-        {formData.goals.includes(FitnessGoals.MOBILITY) && (
+        {formData.goals.includes(FitnessGoals.MOBILITY_FLEXIBILITY) && (
           <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
-      {/* Add other goals with appropriate colors */}
-      {Object.entries(FitnessGoals)
-        .filter(
-          ([key, value]) =>
-            ![
-              FitnessGoals.RECOVERY,
-              FitnessGoals.WEIGHT_LOSS,
-              FitnessGoals.STRENGTH,
-              FitnessGoals.ENDURANCE,
-              FitnessGoals.MOBILITY,
-            ].includes(value)
-        )
-        .map(([key, value]) => {
-          // Define specific colors and icons for each goal
-          const getGoalConfig = (goalKey: string) => {
-            switch (goalKey) {
-              case "MUSCLE_GAIN":
-                return {
-                  icon: "fitness-outline",
-                  color: "#8B5CF6",
-                  bgColor: "bg-purple-100",
-                  description: "Build lean muscle mass and strength",
-                };
-              case "FLEXIBILITY":
-                return {
-                  icon: "body-outline",
-                  color: "#EC4899",
-                  bgColor: "bg-pink-100",
-                  description: "Improve range of motion and flexibility",
-                };
-              case "GENERAL_FITNESS":
-                return {
-                  icon: "checkmark-circle-outline",
-                  color: "#10B981",
-                  bgColor: "bg-green-100",
-                  description: "Overall health and fitness improvement",
-                };
-              case "BALANCE":
-                return {
-                  icon: "git-branch-outline",
-                  color: "#F59E0B",
-                  bgColor: "bg-yellow-100",
-                  description: "Improve stability and coordination",
-                };
-              default:
-                return {
-                  icon: "star-outline",
-                  color: "#8A93A2",
-                  bgColor: "bg-neutral-light-2",
-                  description: "General fitness goal",
-                };
-            }
-          };
+      {/* Balance - Yellow background */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.BALANCE)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.BALANCE)}
+      >
+        <View className="w-8 h-8 bg-yellow-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="git-branch-outline" size={16} color="#F59E0B" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.BALANCE)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Balance
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.BALANCE)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Improve stability and coordination
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.BALANCE) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
 
-          const config = getGoalConfig(key);
-
-          return (
-            <TouchableOpacity
-              key={key}
-              className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                formData.goals.includes(value) ? "bg-primary" : "bg-white"
-              }`}
-              onPress={() => handleMultiSelectToggle("goals", value)}
-            >
-              <View
-                className={`w-8 h-8 ${config.bgColor} rounded-xl items-center justify-center mr-4`}
-              >
-                <Ionicons
-                  name={config.icon as any}
-                  size={16}
-                  color={config.color}
-                />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className={`font-medium text-sm ${
-                    formData.goals.includes(value)
-                      ? "text-secondary"
-                      : "text-neutral-dark-1"
-                  }`}
-                >
-                  {formatEnumValue(key)}
-                </Text>
-                <Text
-                  className={`text-xs ${
-                    formData.goals.includes(value)
-                      ? "text-secondary"
-                      : "text-neutral-medium-4"
-                  }`}
-                >
-                  {config.description}
-                </Text>
-              </View>
-              {formData.goals.includes(value) && (
-                <Ionicons name="checkmark-circle" size={16} color="#181917" />
-              )}
-            </TouchableOpacity>
-          );
-        })}
+      {/* Recovery - Teal background */}
+      <TouchableOpacity
+        className={`p-4 rounded-xl mb-3 flex-row items-center ${
+          formData.goals.includes(FitnessGoals.RECOVERY)
+            ? "bg-primary"
+            : "bg-white"
+        }`}
+        onPress={() => handleMultiSelectToggle("goals", FitnessGoals.RECOVERY)}
+      >
+        <View className="w-8 h-8 bg-teal-100 rounded-xl items-center justify-center mr-4">
+          <Ionicons name="medical-outline" size={16} color="#14B8A6" />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={`font-medium text-sm ${
+              formData.goals.includes(FitnessGoals.RECOVERY)
+                ? "text-secondary"
+                : "text-neutral-dark-1"
+            }`}
+          >
+            Recovery
+          </Text>
+          <Text
+            className={`text-xs ${
+              formData.goals.includes(FitnessGoals.RECOVERY)
+                ? "text-secondary"
+                : "text-neutral-medium-4"
+            }`}
+          >
+            Recover from injury or surgery
+          </Text>
+        </View>
+        {formData.goals.includes(FitnessGoals.RECOVERY) && (
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
+        )}
+      </TouchableOpacity>
     </View>
   );
 

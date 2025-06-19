@@ -38,13 +38,12 @@ import { colors } from "../../lib/theme";
 
 // Goal name mappings
 const goalNames: Record<string, string> = {
-  weight_loss: "Weight Loss",
+  general_fitness: "General Fitness",
+  fat_loss: "Fat Loss",
+  endurance: "Endurance",
   muscle_gain: "Muscle Gain",
   strength: "Strength",
-  endurance: "Endurance",
-  flexibility: "Flexibility",
-  general_fitness: "General Fitness",
-  mobility: "Mobility",
+  mobility_flexibility: "Mobility & Flexibility",
   balance: "Balance",
   recovery: "Recovery",
 };

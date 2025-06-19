@@ -137,7 +137,7 @@ export function getWorkoutRecommendation(profile: Profile): {
   }
 
   // Adjust based on goals
-  if (profile.goals?.includes("weight_loss")) {
+  if (profile.goals?.includes("fat_loss")) {
     recommendation.workoutType = "HIIT";
     recommendation.intensity = "High";
   } else if (profile.goals?.includes("muscle_gain")) {
