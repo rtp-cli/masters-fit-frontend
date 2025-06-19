@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Alert, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Alert,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@components/OnboardingForm";
+import { colors } from "@lib/theme";
 
 // Import enums directly from OnboardingForm since they're defined there
 enum Gender {
@@ -337,7 +344,8 @@ export default function ProfileEditScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
-        <Text className="text-text-muted">Loading your profile...</Text>
+        <ActivityIndicator size="large" color={colors.brand.primary} />
+        <Text className="text-text-muted mt-4">Loading your profile...</Text>
       </SafeAreaView>
     );
   }
