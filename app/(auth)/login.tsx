@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
+import Header from "@components/Header";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -113,13 +114,7 @@ export default function LoginScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-center pt-5">
-        <Image
-          source={require("../../assets/logo.png")}
-          className="h-10 w-30"
-          resizeMode="contain"
-        />
-      </View>
+      <Header />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Title and description */}

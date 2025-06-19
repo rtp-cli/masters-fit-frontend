@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "@contexts/AuthContext";
@@ -393,40 +394,22 @@ export default function SearchScreen() {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  // Format muscle groups properly for display
-  const formatMuscleGroupProperly = (group: string) => {
-    return group.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-  };
-
-  // Generate vibrant colors for performance stats
-  const getVibrantColors = () => [
-    "bg-red-100",
-    "bg-orange-100",
-    "bg-yellow-100",
-    "bg-green-100",
-    "bg-blue-100",
-    "bg-indigo-100",
-    "bg-purple-100",
-    "bg-pink-100",
-    "bg-teal-100",
-  ];
-
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-4 text-text-muted">Loading exercises...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-neutral-light-1">
+    <View className="flex-1 bg-white">
       <ScrollView className="flex-1">
         {/* Search Inputs */}
-        <View className="p-4">
+        <View className="p-4 pt-6">
           <View className="flex-row space-x-3">
             {/* Exercise Search */}
             <View className="flex-1">
@@ -938,7 +921,7 @@ export default function SearchScreen() {
                       (exercise: any, index: number) => (
                         <TouchableOpacity
                           key={index}
-                          className="bg-neutral-light-1 rounded-xl p-4 mb-3"
+                          className=" rounded-xl p-4 mb-3"
                           onPress={() => {
                             try {
                               if (exercise?.exercise?.id) {
@@ -1090,7 +1073,7 @@ export default function SearchScreen() {
         {/* General Exercise Search Results */}
         {generalResults.length > 0 && (
           <View className="px-4">
-            <Text className="text-lg font-semibold text-text-primary mb-4">
+            <Text className="text-lg font-semibold text-text-primary mb-4 p-4">
               Exercise Results ({safeString(generalResults.length)})
             </Text>
             {generalResults.map((exercise: any, index: number) => (
@@ -1252,6 +1235,6 @@ export default function SearchScreen() {
         onClose={handleCloseLinkModal}
         onSave={handleSaveExerciseLink}
       />
-    </SafeAreaView>
+    </View>
   );
 }

@@ -10,6 +10,7 @@ import OnboardingForm, { FormData } from "../../components/OnboardingForm";
 import GeneratingPlanScreen from "../../components/ui/GeneratingPlanScreen";
 import * as SecureStore from "expo-secure-store";
 import { colors } from "../../lib/theme";
+import Header from "@components/Header";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -220,13 +221,7 @@ export default function OnboardingScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-center pt-5">
-        <Image
-          source={require("../../assets/logo.png")}
-          className="h-10 w-30"
-          resizeMode="contain"
-        />
-      </View>
+      <Header />
 
       <OnboardingForm
         initialData={{ email: user?.email || pendingEmail || "" }}

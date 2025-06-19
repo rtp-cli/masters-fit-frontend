@@ -17,6 +17,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import { colors } from "../../lib/theme";
+import Header from "@components/Header";
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -177,13 +178,7 @@ export default function VerifyScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-center pt-5">
-        <Image
-          source={require("../../assets/logo.png")}
-          className="h-10 w-30"
-          resizeMode="contain"
-        />
-      </View>
+      <Header />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Title and description */}

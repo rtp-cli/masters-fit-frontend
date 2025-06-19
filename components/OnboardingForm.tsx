@@ -2215,7 +2215,7 @@ export default function OnboardingForm({
     const isLastStep = currentStep === OnboardingStep.WORKOUT_STYLE;
 
     return (
-      <View className="px-6 pb-8 pt-4 bg-neutral-light-1">
+      <View className="px-6 pb-8 pt-4">
         <View className="flex-row">
           {currentStep > 0 && (
             <TouchableOpacity
@@ -2254,14 +2254,14 @@ export default function OnboardingForm({
   const stepConfig = getStepConfig();
 
   return (
-    <View className="flex-1 bg-neutral-light-1">
+    <View className="flex-1 ">
       <ScrollView
         ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
       >
         {/* Header with step indicator */}
-        <View className="px-6 pt-12 pb-6 bg-neutral-light-1">
+        <View className="px-6 pt-12 pb-6 ">
           {/* Progress Indicator */}
           <ProgressIndicator
             currentStep={currentStep}

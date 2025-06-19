@@ -243,7 +243,10 @@ export default function SettingsScreen() {
 
   if (loading && !profile) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
+      <SafeAreaView
+        edges={["top"]}
+        className="flex-1 bg-white justify-center items-center"
+      >
         <ActivityIndicator size="large" color={colors.brand.primary} />
         <Text className="text-text-muted mt-2">Loading your profile...</Text>
       </SafeAreaView>
@@ -251,7 +254,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-light-1">
+    <View className="flex-1 pt-6 bg-white">
       <ScrollView
         className="flex-1"
         refreshControl={
@@ -259,7 +262,7 @@ export default function SettingsScreen() {
         }
       >
         {/* Profile Section */}
-        <View className="p-6 items-center">
+        <View className="items-center px-6 mb-6">
           <View className="w-20 h-20 rounded-full bg-indigo-500 items-center justify-center mb-4">
             <Text className="text-3xl font-bold text-white">
               {getUserInitials()}
@@ -274,11 +277,11 @@ export default function SettingsScreen() {
         </View>
 
         {/* Quick Actions */}
-        <View className="px-6 py-4">
-          <Text className="text-base font-semibold text-text-primary mb-4">
+        <View className="px-6 mb-6">
+          <Text className="text-base font-semibold text-text-primary p-4 mb-4">
             Quick Actions
           </Text>
-          <View className="flex-row justify-between">
+          <View className="flex-row justify-around">
             <TouchableOpacity
               className="items-center"
               onPress={() => router.push("/profile-edit")}
@@ -311,7 +314,7 @@ export default function SettingsScreen() {
 
         {/* Personal Information */}
         {profile && (
-          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-2">
               Personal Information
             </Text>
@@ -400,7 +403,7 @@ export default function SettingsScreen() {
 
         {/* Fitness Goals */}
         {profile?.goals && profile.goals.length > 0 && (
-          <View className="mx-6 mb-4 bg-white rounded-xl overflow-hidden">
+          <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Fitness Goals
             </Text>
@@ -427,7 +430,7 @@ export default function SettingsScreen() {
 
         {/* Preferred Workout Types */}
         {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
-          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="px-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Preferred Workout Types
             </Text>
@@ -456,7 +459,7 @@ export default function SettingsScreen() {
 
         {/* Equipment Available */}
         {profile?.equipment && profile.equipment.length > 0 && (
-          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="px-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Available Equipment
             </Text>
@@ -479,7 +482,7 @@ export default function SettingsScreen() {
 
         {/* Weekly Schedule */}
         {profile?.availableDays && profile.availableDays.length > 0 && (
-          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="px-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Weekly Schedule
             </Text>
@@ -507,7 +510,7 @@ export default function SettingsScreen() {
         {/* Limitations & Medical Notes */}
         {((profile?.limitations && profile.limitations.length > 0) ||
           profile?.medicalNotes) && (
-          <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="px-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Health Information
             </Text>
@@ -546,7 +549,7 @@ export default function SettingsScreen() {
         )}
 
         {/* App Settings */}
-        <View className="mx-6 mb-4 bg-neutral-light-1 rounded-xl overflow-hidden">
+        <View className="px-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
           <Text className="text-base font-semibold text-text-primary p-4 pb-2">
             App Settings
           </Text>
@@ -599,7 +602,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Logout Button */}
-        <View className="mx-6 mb-8">
+        <View className="px-6 mb-8">
           <TouchableOpacity
             className="bg-white rounded-xl p-4 flex-row items-center justify-center"
             onPress={handleLogout}
@@ -619,6 +622,6 @@ export default function SettingsScreen() {
           <Text className="text-xs text-text-muted">Masters Fit v1.0.0</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

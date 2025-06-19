@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
+import Header from "@components/Header";
 
 export default function GetStarted() {
   const router = useRouter();
@@ -116,13 +117,7 @@ export default function GetStarted() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-center pt-5">
-        <Image
-          source={require("../assets/logo.png")}
-          className="h-10 w-30"
-          resizeMode="contain"
-        />
-      </View>
+      <Header />
 
       <View className="flex-1 px-6 justify-between pb-12">
         {/* Hero Section with Home Image */}

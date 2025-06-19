@@ -546,13 +546,13 @@ export default function DashboardScreen() {
   // Show message if user is not authenticated
   if (!isAuthenticated || !user?.id) {
     return (
-      <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+      <View className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center py-12">
           <Text className="text-base text-text-muted">
             Please log in to view your dashboard
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -586,7 +586,7 @@ export default function DashboardScreen() {
   }));
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+    <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         refreshControl={
@@ -594,9 +594,9 @@ export default function DashboardScreen() {
         }
       >
         {/* Header with Streak */}
-        <View className="px-5 py-5 pt-3">
+        <View className="px-4 pt-6 mb-6">
           <View className="flex-row items-center justify-between mb-2">
-            <View>
+            <View className="px-5">
               <Text className="text-lg font-bold text-text-primary">
                 Hello, {user?.name || "User"}
               </Text>
@@ -630,11 +630,11 @@ export default function DashboardScreen() {
         ) : (
           <>
             {/* Today's Workout Card */}
-            <View className="px-5 mb-6">
+            <View className="px-4 mb-6">
               <View className="bg-white rounded-2xl p-5 shadow-sm">
                 {/* Header with title and duration */}
                 <View className="flex-row items-center justify-between mb-6">
-                  <Text className="text-base font-bold text-text-primary">
+                  <Text className="text-base font-semibold text-text-primary mb-1">
                     Active Workout
                   </Text>
                   {todaysWorkout && totalDuration > 0 ? (
@@ -742,14 +742,16 @@ export default function DashboardScreen() {
 
             {/* Weekly Progress */}
             {weeklySummary && (
-              <View className="px-5 mb-6">
-                <Text className="text-base font-semibold text-text-primary mb-1">
-                  Weekly Progress
-                </Text>
-                <Text className="text-xs text-text-muted mb-4">
-                  Your workout completion for this week
-                </Text>
-                <View className="bg-white rounded-2xl p-5 shadow-sm">
+              <View className="px-4 mb-6">
+                <View className="px-4">
+                  <Text className="text-base font-semibold text-text-primary mb-1">
+                    Weekly Progress
+                  </Text>
+                  <Text className="text-xs text-text-muted mb-4">
+                    Your workout completion for this week
+                  </Text>
+                </View>
+                <View className="bg-white rounded-2xl px-4 pt-5 shadow-sm">
                   {/* Chart Section */}
                   <View className="mb-4">
                     <View
@@ -899,17 +901,19 @@ export default function DashboardScreen() {
             {filteredWeightAccuracy &&
               filteredWeightAccuracy.hasExerciseData &&
               filteredWeightAccuracy.totalSets > 0 && (
-                <View className="px-5 mb-6">
-                  <Text className="text-base font-semibold text-text-primary mb-1">
-                    Weight Performance
-                  </Text>
-                  <Text className="text-xs text-text-muted mb-3">
-                    How you're progressing with your planned weights (
-                    {weightPerformanceFilter === "3M"
-                      ? "Last 3 months"
-                      : weightPerformanceFilter}
-                    )
-                  </Text>
+                <View className="px-4 mb-5">
+                  <View className="px-4">
+                    <Text className="text-base font-semibold text-text-primary mb-1">
+                      Weight Performance
+                    </Text>
+                    <Text className="text-xs text-text-muted mb-3">
+                      How you're progressing with your planned weights (
+                      {weightPerformanceFilter === "3M"
+                        ? "Last 3 months"
+                        : weightPerformanceFilter}
+                      )
+                    </Text>
+                  </View>
 
                   {/* Time Filter Buttons - Centered below subtitle */}
                   <View className="items-center mb-4">
@@ -1014,17 +1018,19 @@ export default function DashboardScreen() {
             {filteredWeightAccuracy &&
               (!filteredWeightAccuracy.hasExerciseData ||
                 filteredWeightAccuracy.totalSets === 0) && (
-                <View className="px-5 mb-6">
-                  <Text className="text-base font-semibold text-text-primary mb-1">
-                    Weight Performance
-                  </Text>
-                  <Text className="text-xs text-text-muted mb-3">
-                    How you're progressing with your planned weights (
-                    {weightPerformanceFilter === "3M"
-                      ? "Last 3 months"
-                      : weightPerformanceFilter}
-                    )
-                  </Text>
+                <View className="px-4 mb-6">
+                  <View className="px-4">
+                    <Text className="text-base font-semibold text-text-primary mb-1">
+                      Weight Performance
+                    </Text>
+                    <Text className="text-xs text-text-muted mb-3">
+                      How you're progressing with your planned weights (
+                      {weightPerformanceFilter === "3M"
+                        ? "Last 3 months"
+                        : weightPerformanceFilter}
+                      )
+                    </Text>
+                  </View>
 
                   {/* Time Filter Buttons */}
                   <View className="items-center mb-4">
@@ -1073,15 +1079,18 @@ export default function DashboardScreen() {
 
             {/* Strength Progress Chart */}
             {weightProgressionData && weightProgressionData.length > 0 && (
-              <View className="px-5 mb-6">
-                <Text className="text-base font-semibold text-text-primary mb-1">
-                  Strength Progress
-                </Text>
+              <View className="px-4 mb-6">
+                <View className="px-4">
+                  <Text className="text-base font-semibold text-text-primary mb-1">
+                    Strength Progress
+                  </Text>
 
-                <Text className="text-xs text-text-muted mb-3">
-                  Your weight progression over time (
-                  {strengthFilter === "3M" ? "Last 3 months" : strengthFilter})
-                </Text>
+                  <Text className="text-xs text-text-muted mb-3">
+                    Your weight progression over time (
+                    {strengthFilter === "3M" ? "Last 3 months" : strengthFilter}
+                    )
+                  </Text>
+                </View>
 
                 {/* Time Filter Buttons - Centered below subtitle */}
                 <View className="items-center mb-4">
@@ -1241,18 +1250,20 @@ export default function DashboardScreen() {
               filteredWorkoutTypeMetrics.hasData &&
               filteredWorkoutTypeMetrics.totalSets > 0 &&
               filteredWorkoutTypeMetrics.distribution.length > 0 && (
-                <View className="px-5 mb-6">
-                  <Text className="text-base font-semibold text-text-primary mb-1">
-                    General Fitness Progress
-                  </Text>
+                <View className="px-4 mb-6">
+                  <View className="px-4">
+                    <Text className="text-base font-semibold text-text-primary mb-1">
+                      General Fitness Progress
+                    </Text>
 
-                  <Text className="text-xs text-text-muted mb-3">
-                    Types of exercises you've been completing (
-                    {workoutTypeFilter === "3M"
-                      ? "Last 3 months"
-                      : workoutTypeFilter}
-                    )
-                  </Text>
+                    <Text className="text-xs text-text-muted mb-3">
+                      Types of exercises you've been completing (
+                      {workoutTypeFilter === "3M"
+                        ? "Last 3 months"
+                        : workoutTypeFilter}
+                      )
+                    </Text>
+                  </View>
 
                   {/* Time Filter Buttons - Centered below subtitle */}
                   <View className="items-center mb-4">
@@ -1288,7 +1299,7 @@ export default function DashboardScreen() {
                         data={(() => {
                           // Get top 5 and group the rest under "Other"
                           const allTypes =
-                            filteredWorkoutTypeMetrics.distribution;
+                            filteredWorkoutTypeMetrics!.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1336,7 +1347,7 @@ export default function DashboardScreen() {
                         {(() => {
                           // Get top 5 and group the rest under "Other" for legend too
                           const allTypes =
-                            filteredWorkoutTypeMetrics.distribution;
+                            filteredWorkoutTypeMetrics!.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1468,7 +1479,7 @@ export default function DashboardScreen() {
                 !goalProgress.some(
                   (goal) => goal.totalSets > 0 || goal.completedWorkouts > 0
                 )) && (
-                <View className="px-5 mb-6">
+                <View className="px-4 mb-6">
                   <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
                     <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
                       <Ionicons
@@ -1498,6 +1509,6 @@ export default function DashboardScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

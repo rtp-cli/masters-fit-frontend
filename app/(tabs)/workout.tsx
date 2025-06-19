@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -36,13 +36,13 @@ export default function WorkoutScreen() {
   } catch (error) {
     console.error("Error in useWorkoutSession:", error);
     return (
-      <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+      <View className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center px-lg">
           <Text className="text-lg font-bold text-text-primary">
             Error loading workout session
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -246,7 +246,7 @@ export default function WorkoutScreen() {
 
   if (!activeWorkout) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
         <View
           style={{
             flex: 1,
@@ -299,14 +299,14 @@ export default function WorkoutScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (isWorkoutCompleted) {
     const currentDate = new Date().toLocaleDateString("en-CA");
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
         <View
           style={{
             flex: 1,
@@ -339,12 +339,12 @@ export default function WorkoutScreen() {
             Great job! You've completed all exercises in today's workout.
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+    <View style={{ flex: 1, backgroundColor: "#ffffff", paddingTop: 24 }}>
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
@@ -1177,6 +1177,6 @@ export default function WorkoutScreen() {
           </View>
         </View>
       </Modal> */}
-    </SafeAreaView>
+    </View>
   );
 }

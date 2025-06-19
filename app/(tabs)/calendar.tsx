@@ -215,12 +215,12 @@ export default function CalendarScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-4 text-text-muted">Loading your calendar...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -256,15 +256,17 @@ export default function CalendarScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+    <View className="flex-1 pt-4 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {workoutPlan?.name && (
-          <View className="flex justify-center items-center">
-            <Text className="text-lg font-bold text-text-primary mb-md">
-              {workoutPlan?.name}
-            </Text>
-          </View>
-        )}
+        <View className="pt-6">
+          {workoutPlan?.name && (
+            <View className="flex justify-center items-center px-4">
+              <Text className="text-xl font-bold text-text-primary mb-4">
+                {workoutPlan?.name}
+              </Text>
+            </View>
+          )}
+        </View>
         {/* Calendar */}
         <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
           <RNCalendar
@@ -471,6 +473,6 @@ export default function CalendarScreen() {
         loading={regenerating}
         regenerationType="week"
       />
-    </SafeAreaView>
+    </View>
   );
 }

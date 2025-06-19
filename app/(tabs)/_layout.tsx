@@ -1,6 +1,8 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, TouchableOpacity, Image } from "react-native";
+import { View, Platform, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Header from "@components/Header";
 
 function TabBarIcon({
   name,
@@ -12,7 +14,7 @@ function TabBarIcon({
   return <Ionicons size={26} name={name} color={color} />;
 }
 
-function WorkoutTabIcon({ focused }: { focused: boolean }) {
+function WorkoutTabIcon() {
   return (
     <View
       style={{
@@ -35,25 +37,16 @@ function WorkoutTabIcon({ focused }: { focused: boolean }) {
   );
 }
 
-function HeaderLogo() {
-  return (
-    <Image
-      source={require("../../assets/logo.png")}
-      style={{
-        width: 130,
-        height: 32,
-        resizeMode: "contain",
-      }}
-    />
-  );
-}
-
 export default function TabLayout() {
+  const statusBarHeight =
+    Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
+
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <Header />
       <Tabs
         screenOptions={{
-          headerShown: true,
+          headerShown: false,
           tabBarActiveTintColor: "#1f2937",
           tabBarInactiveTintColor: "#9ca3af",
           tabBarStyle: {
@@ -65,21 +58,6 @@ export default function TabLayout() {
             backgroundColor: "#ffffff",
             minHeight: 85,
           },
-          headerStyle: {
-            backgroundColor: "#ffffff",
-            height: 95,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-            elevation: 2,
-          },
-          headerTitleStyle: {
-            fontWeight: "bold",
-            fontSize: 18,
-          },
-          headerTitle: () => <HeaderLogo />,
-          headerTitleAlign: "center",
         }}
       >
         <Tabs.Screen
@@ -104,9 +82,7 @@ export default function TabLayout() {
           name="workout"
           options={{
             title: "Workout",
-            tabBarIcon: ({ focused }: { focused: boolean }) => (
-              <WorkoutTabIcon focused={focused} />
-            ),
+            tabBarIcon: () => <WorkoutTabIcon />,
           }}
         />
         <Tabs.Screen
@@ -128,6 +104,6 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </View>
+    </SafeAreaView>
   );
 }
