@@ -65,8 +65,9 @@ export default function GeneratingPlanScreen({
             {messages[currentMessageIndex]}
           </Text>
 
+          {/* TODO: Make this real */}
           {/* Progress Bar */}
-          <View className="w-full max-w-xs">
+          {/* <View className="w-full max-w-xs">
             <View className="bg-neutral-light-2 rounded-full h-2 mb-2">
               <View
                 className="bg-primary h-2 rounded-full transition-all duration-300"
@@ -76,7 +77,7 @@ export default function GeneratingPlanScreen({
             <Text className="text-xs text-text-muted text-center">
               {progress}% Complete
             </Text>
-          </View>
+          </View> */}
         </View>
 
         {/* Bottom Message */}

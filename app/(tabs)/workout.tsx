@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Slider from "@react-native-community/slider";
+import CustomSlider from "@components/ui/Slider";
 import { useWorkoutSession } from "@hooks/useWorkoutSession";
 import { getCompletedExercises } from "@lib/workouts";
 import { calculateWorkoutDuration, formatEquipment } from "../../utils";
@@ -27,7 +27,6 @@ export default function WorkoutScreen() {
   const [workoutNotes, setWorkoutNotes] = useState("");
   const [exerciseNotes, setExerciseNotes] = useState("");
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
-  const [difficultyLevel, setDifficultyLevel] = useState(0.5);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
 
   // Wrap the hook in a try-catch to handle potential errors
@@ -221,12 +220,6 @@ export default function WorkoutScreen() {
       default:
         return "bg-neutral-light-2";
     }
-  };
-
-  const getDifficultyText = () => {
-    if (difficultyLevel < 0.33) return "Easier";
-    if (difficultyLevel > 0.66) return "Harder";
-    return "Moderate";
   };
 
   const getRemainingTime = () => {
@@ -661,48 +654,20 @@ export default function WorkoutScreen() {
 
                     {/* Weight Slider */}
                     <View style={{ width: "100%", paddingHorizontal: 10 }}>
-                      <Slider
-                        style={{ width: "100%", height: 40 }}
+                      <CustomSlider
+                        label="Weight Used"
+                        value={Number(currentData.weightUsed || 0)}
                         minimumValue={0}
                         maximumValue={200}
                         step={5}
-                        value={Number(currentData.weightUsed || 0)}
-                        onValueChange={(value) =>
+                        onValueChange={(value: number) =>
                           updateExerciseData(
                             "weightUsed",
                             Math.round(Number(value))
                           )
                         }
-                        minimumTrackTintColor="#BBDE51"
-                        maximumTrackTintColor="#E8E8E8"
-                        thumbTintColor="#BBDE51"
+                        unit=" lbs"
                       />
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginTop: 8,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#8A93A2",
-                            fontWeight: "500",
-                          }}
-                        >
-                          0 lbs
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#8A93A2",
-                            fontWeight: "500",
-                          }}
-                        >
-                          200+ lbs
-                        </Text>
-                      </View>
                     </View>
                   </View>
                 )}

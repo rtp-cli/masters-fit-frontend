@@ -11,7 +11,7 @@ import {
   Keyboard,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import Slider from "@react-native-community/slider";
+import CustomSlider from "./ui/Slider";
 import ProgressIndicator from "./ProgressIndicator";
 import { colors } from "../lib/theme";
 
@@ -19,7 +19,6 @@ import { colors } from "../lib/theme";
 enum Gender {
   MALE = "male",
   FEMALE = "female",
-  OTHER = "other",
 }
 
 enum FitnessGoals {
@@ -154,6 +153,16 @@ const formatEnumValue = (value: string): string => {
     .replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
+// Helper function to convert centimeters to inches
+const convertCmToInches = (cm: number): number => {
+  return Math.round(cm / 2.54);
+};
+
+// Helper function to convert inches to centimeters
+const convertInchesToCm = (inches: number): number => {
+  return Math.round(inches * 2.54);
+};
+
 // Helper function to convert centimeters to feet and inches
 const convertCmToFeetInches = (
   cm: number
@@ -167,6 +176,13 @@ const convertCmToFeetInches = (
 // Helper function to format height display
 const formatHeight = (cm: number): string => {
   const { feet, inches } = convertCmToFeetInches(cm);
+  return `${feet}'${inches}"`;
+};
+
+// Helper function to format height from inches
+const formatHeightFromInches = (totalInches: number): string => {
+  const feet = Math.floor(totalInches / 12);
+  const inches = totalInches % 12;
   return `${feet}'${inches}"`;
 };
 
@@ -221,9 +237,9 @@ export default function OnboardingForm({
   // Initialize form data with default values matching the design
   const [formData, setFormData] = useState<FormData>({
     email: "",
-    age: 30, // Changed from 55 to 30 (more centered on 18-80 range)
-    height: 170, // Keep as is (centered on 120-220 cm range)
-    weight: 150, // Changed from 165 to 150 (more centered on 100-300 lbs range)
+    age: 40,
+    height: 170,
+    weight: 150,
     gender: Gender.MALE,
     goals: [],
     limitations: [],
@@ -367,7 +383,7 @@ export default function OnboardingForm({
         return {
           title: "Personal Information",
           description:
-            "Tell us about yourself so we can create a personalized fitness plan.",
+            "Tell us a bit about yourself so we can create a personalized fitness plan just for you. At MastersFit, your privacy matters - we'll keep your information secure and never share or sell it to third-parties.",
         };
       case OnboardingStep.FITNESS_GOALS:
         return {
@@ -409,33 +425,15 @@ export default function OnboardingForm({
     <View className="flex-1 px-6 pb-6">
       {/* Age slider */}
       <View className="mb-8">
-        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
-          Age
-        </Text>
-        <View className="p-4">
-          <Slider
-            style={{ width: "100%", height: 20 }}
-            minimumValue={18}
-            maximumValue={80}
-            step={1}
-            value={formData.age}
-            onValueChange={(value) => handleChange("age", value)}
-            minimumTrackTintColor="#000000"
-            maximumTrackTintColor="#E8E8E8"
-            thumbTintColor="#000000"
-          />
-          <View className="flex-row justify-between items-center mt-2">
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              18
-            </Text>
-            <Text className="text-base font-semibold text-neutral-dark-1">
-              {formData.age}
-            </Text>
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              80+
-            </Text>
-          </View>
-        </View>
+        <CustomSlider
+          label="Age"
+          value={formData.age}
+          minimumValue={18}
+          maximumValue={80}
+          step={1}
+          onValueChange={(value) => handleChange("age", value)}
+          unit=" yrs"
+        />
         {errors.age && (
           <Text className="text-red-500 text-xs mt-2">{errors.age}</Text>
         )}
@@ -508,68 +506,23 @@ export default function OnboardingForm({
               Female
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            className={`flex-1 p-4 rounded-xl items-center mx-1 ${
-              formData.gender === Gender.OTHER ? "bg-primary" : "bg-white"
-            }`}
-            onPress={() => handleChange("gender", Gender.OTHER)}
-          >
-            <View
-              className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
-                formData.gender === Gender.OTHER
-                  ? "bg-white"
-                  : "bg-neutral-light-2"
-              }`}
-            >
-              <Ionicons
-                name="person"
-                size={14}
-                color={formData.gender === Gender.OTHER ? "#BBDE51" : "#8A93A2"}
-              />
-            </View>
-            <Text
-              className={`font-medium text-xs ${
-                formData.gender === Gender.OTHER
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
-              }`}
-            >
-              Other
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
       {/* Height slider */}
       <View className="mb-8">
-        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
-          Height
-        </Text>
-        <View className="p-4">
-          <Slider
-            style={{ width: "100%", height: 20 }}
-            minimumValue={120}
-            maximumValue={220}
-            step={2.54}
-            value={formData.height}
-            onValueChange={(value) => handleChange("height", Math.round(value))}
-            minimumTrackTintColor="#000000"
-            maximumTrackTintColor="#E8E8E8"
-            thumbTintColor="#000000"
-          />
-          <View className="flex-row justify-between items-center mt-2">
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              {formatHeight(120)}
-            </Text>
-            <Text className="text-base font-semibold text-neutral-dark-1">
-              {formatHeight(formData.height)}
-            </Text>
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              {formatHeight(220)}
-            </Text>
-          </View>
-        </View>
+        <CustomSlider
+          label="Height"
+          value={convertCmToInches(formData.height)}
+          minimumValue={48} // 4'0" in inches
+          maximumValue={96} // 8'0" in inches
+          step={1}
+          onValueChange={(value) =>
+            handleChange("height", convertInchesToCm(value))
+          }
+          formatValue={(value) => formatHeightFromInches(value)}
+          formatMinMax={(value) => formatHeightFromInches(value)}
+        />
         {errors.height && (
           <Text className="text-red-500 text-xs mt-2">{errors.height}</Text>
         )}
@@ -577,33 +530,15 @@ export default function OnboardingForm({
 
       {/* Weight slider */}
       <View className="mb-6">
-        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
-          Weight (lbs)
-        </Text>
-        <View className="p-4">
-          <Slider
-            style={{ width: "100%", height: 20 }}
-            minimumValue={100}
-            maximumValue={300}
-            step={1}
-            value={formData.weight}
-            onValueChange={(value) => handleChange("weight", value)}
-            minimumTrackTintColor="#000000"
-            maximumTrackTintColor="#E8E8E8"
-            thumbTintColor="#000000"
-          />
-          <View className="flex-row justify-between items-center mt-2">
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              100
-            </Text>
-            <Text className="text-base font-semibold text-neutral-dark-1">
-              {formData.weight}
-            </Text>
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              300+
-            </Text>
-          </View>
-        </View>
+        <CustomSlider
+          label="Weight"
+          value={formData.weight}
+          minimumValue={100}
+          maximumValue={300}
+          step={1}
+          onValueChange={(value) => handleChange("weight", value)}
+          unit=" lbs"
+        />
         {errors.weight && (
           <Text className="text-red-500 text-xs mt-2">{errors.weight}</Text>
         )}
@@ -1452,33 +1387,17 @@ export default function OnboardingForm({
 
       {/* Time Per Session slider */}
       <View className="mb-8">
-        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
-          Time Per Session
-        </Text>
-        <View className="p-4">
-          <Slider
-            style={{ width: "100%", height: 20 }}
-            minimumValue={15}
-            maximumValue={60}
-            step={5}
-            value={formData.workoutDuration}
-            onValueChange={(value) => handleChange("workoutDuration", value)}
-            minimumTrackTintColor="#000000"
-            maximumTrackTintColor="#E8E8E8"
-            thumbTintColor="#000000"
-          />
-          <View className="flex-row justify-between items-center mt-2">
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              15 min
-            </Text>
-            <Text className="text-sm font-semibold text-neutral-dark-1">
-              {formData.workoutDuration} min
-            </Text>
-            <Text className="text-xs text-neutral-medium-4 font-medium">
-              60+ min
-            </Text>
-          </View>
-        </View>
+        <CustomSlider
+          label="Workout Duration"
+          value={Number(formData.workoutDuration)}
+          minimumValue={10}
+          maximumValue={60}
+          step={5}
+          onValueChange={(value) =>
+            handleChange("workoutDuration", Math.round(value))
+          }
+          unit=" min"
+        />
       </View>
 
       {/* Intensity Level */}

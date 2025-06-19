@@ -1042,18 +1042,42 @@ export default function SearchScreen() {
                             {formatDifficultyProperly(
                               exercise?.exercise?.difficulty
                             )}
-                            {exercise?.exercise?.equipment &&
-                              Array.isArray(exercise.exercise.equipment) &&
-                              exercise.exercise.equipment.length > 0 && (
-                                <Text>
-                                  {" "}
-                                  •{" "}
-                                  {formatEquipmentProperly(
-                                    exercise.exercise.equipment
-                                  )}
-                                </Text>
-                              )}
                           </Text>
+
+                          {/* Equipment Pills */}
+                          {exercise?.exercise?.equipment &&
+                            Array.isArray(exercise.exercise.equipment) &&
+                            exercise.exercise.equipment.length > 0 && (
+                              <View className="mt-2">
+                                <View className="flex-row flex-wrap">
+                                  {exercise.exercise.equipment.map(
+                                    (item: string, equipmentIndex: number) => (
+                                      <View
+                                        key={equipmentIndex}
+                                        style={{
+                                          backgroundColor: "#f3f4f6",
+                                          borderRadius: 12,
+                                          paddingHorizontal: 8,
+                                          paddingVertical: 4,
+                                          marginRight: 6,
+                                          marginBottom: 4,
+                                        }}
+                                      >
+                                        <Text
+                                          style={{
+                                            fontSize: 10,
+                                            fontWeight: "500",
+                                            color: "#374151",
+                                          }}
+                                        >
+                                          {formatEquipmentProperly(item)}
+                                        </Text>
+                                      </View>
+                                    )
+                                  )}
+                                </View>
+                              </View>
+                            )}
                         </TouchableOpacity>
                       )
                     )}
@@ -1126,10 +1150,44 @@ export default function SearchScreen() {
                     )}
                   </View>
 
-                  <Text className="text-sm text-text-muted mb-1">
-                    {formatDifficultyProperly(exercise?.difficulty)} •{" "}
-                    {formatEquipmentProperly(exercise?.equipment)}
+                  <Text className="text-sm text-text-muted mb-2">
+                    {formatDifficultyProperly(exercise?.difficulty)}
                   </Text>
+
+                  {/* Equipment Pills */}
+                  {exercise?.equipment &&
+                    Array.isArray(exercise.equipment) &&
+                    exercise.equipment.length > 0 && (
+                      <View className="mb-2">
+                        <View className="flex-row flex-wrap">
+                          {exercise.equipment.map(
+                            (item: string, equipmentIndex: number) => (
+                              <View
+                                key={equipmentIndex}
+                                style={{
+                                  backgroundColor: "#f3f4f6",
+                                  borderRadius: 12,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                  marginRight: 6,
+                                  marginBottom: 4,
+                                }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: "500",
+                                    color: "#374151",
+                                  }}
+                                >
+                                  {formatEquipmentProperly(item)}
+                                </Text>
+                              </View>
+                            )
+                          )}
+                        </View>
+                      </View>
+                    )}
                   {exercise?.description && (
                     <Text className="text-sm text-text-muted mb-2">
                       {safeString(exercise.description)}

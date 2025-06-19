@@ -18,7 +18,6 @@ import { colors } from "@lib/theme";
 enum Gender {
   MALE = "male",
   FEMALE = "female",
-  OTHER = "other",
 }
 
 enum FitnessGoals {
@@ -196,11 +195,8 @@ export default function ProfileEditScreen() {
         case "female":
           gender = Gender.FEMALE;
           break;
-        case "other":
-          gender = Gender.OTHER;
-          break;
         default:
-          gender = Gender.MALE;
+          gender = Gender.FEMALE;
       }
     }
 

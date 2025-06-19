@@ -20,7 +20,6 @@ import { colors } from "../lib/theme";
 enum Gender {
   MALE = "male",
   FEMALE = "female",
-  OTHER = "other",
 }
 
 enum FitnessGoals {
