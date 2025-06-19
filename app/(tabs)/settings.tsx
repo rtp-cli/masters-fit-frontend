@@ -22,6 +22,7 @@ import {
   formatEquipment,
   getIntensityText,
 } from "@utils/index";
+import { colors } from "../../lib/theme";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
@@ -243,7 +244,7 @@ export default function SettingsScreen() {
   if (loading && !profile) {
     return (
       <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#BBDE51" />
+        <ActivityIndicator size="large" color={colors.brand.primary} />
         <Text className="text-text-muted mt-2">Loading your profile...</Text>
       </SafeAreaView>
     );

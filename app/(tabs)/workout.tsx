@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +19,7 @@ import { useWorkoutSession } from "@hooks/useWorkoutSession";
 import { getCompletedExercises } from "@lib/workouts";
 import { calculateWorkoutDuration, formatEquipment } from "../../utils";
 import ExerciseLink from "@components/ExerciseLink";
+import { colors } from "../../lib/theme";
 
 export default function WorkoutScreen() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -240,23 +242,12 @@ export default function WorkoutScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color="#BBDE51" />
-          <Text
-            style={{
-              marginTop: 16,
-              fontSize: 14,
-              color: "#BBDE51",
-              fontWeight: "500",
-            }}
-          >
-            Loading workout...
-          </Text>
-        </View>
-      </SafeAreaView>
+      <View className="flex-1 justify-center items-center bg-background">
+        <ActivityIndicator size="large" color={colors.brand.primary} />
+        <Text className="mt-md text-sm text-primary font-medium">
+          One moment...
+        </Text>
+      </View>
     );
   }
 
@@ -730,17 +721,60 @@ export default function WorkoutScreen() {
                 "Keep your knees aligned with your toes. Lower until thighs are parallel to the floor. Engage your core throughout the movement."}
             </Text>
 
-            {/* Exercise Link (YouTube video or image) */}
+            {/* Equipment Pills */}
             {currentExercise?.exercise.equipment &&
               currentExercise.exercise.equipment !== "none" && (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Ionicons name="fitness-outline" size={14} color="#8A93A2" />
-                  <Text
-                    style={{ fontSize: 12, color: "#8A93A2", marginLeft: 6 }}
+                <View style={{ marginTop: 12 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
                   >
-                    Equipment needed:{" "}
-                    {formatEquipment(currentExercise.exercise.equipment)}
-                  </Text>
+                    <Ionicons
+                      name="fitness-outline"
+                      size={14}
+                      color="#8A93A2"
+                    />
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#8A93A2",
+                        marginLeft: 6,
+                        fontWeight: "500",
+                      }}
+                    >
+                      Equipment needed
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                    {currentExercise.exercise.equipment
+                      .split(",")
+                      .map((equipment, index) => (
+                        <View
+                          key={index}
+                          style={{
+                            backgroundColor: "#f3f4f6",
+                            borderRadius: 16,
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            marginRight: 8,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "500",
+                              color: "#374151",
+                            }}
+                          >
+                            {formatEquipment(equipment.trim())}
+                          </Text>
+                        </View>
+                      ))}
+                  </View>
                 </View>
               )}
           </View>

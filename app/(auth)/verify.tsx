@@ -16,6 +16,7 @@ import { verify, generateAuthCode } from "../../lib/auth";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
+import { colors } from "../../lib/theme";
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -239,10 +240,10 @@ export default function VerifyScreen() {
           disabled={isLoading || !code.trim()}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-background font-bold text-lg">
-              Verify Code
+            <Text className="text-white font-semibold text-base">
+              Verify & Continue
             </Text>
           )}
         </TouchableOpacity>

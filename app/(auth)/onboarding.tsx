@@ -9,6 +9,7 @@ import { generateWorkoutPlan, fetchActiveWorkout } from "@lib/workouts";
 import OnboardingForm, { FormData } from "../../components/OnboardingForm";
 import GeneratingPlanScreen from "../../components/ui/GeneratingPlanScreen";
 import * as SecureStore from "expo-secure-store";
+import { colors } from "../../lib/theme";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -190,7 +191,7 @@ export default function OnboardingScreen() {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#BBDE51" />
+          <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-md text-sm text-neutral-medium-4">
             Loading...
           </Text>

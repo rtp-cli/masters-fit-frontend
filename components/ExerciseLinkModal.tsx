@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
+import { colors } from "../lib/theme";
 
 interface Exercise {
   id: number;
@@ -300,10 +301,10 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               disabled={!!(isLoading || (link && linkType === "unknown"))}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={colors.neutral.white} />
               ) : (
-                <Text variant="body" color="#FFFFFF" weight="semibold">
-                  Save
+                <Text className="text-white font-semibold text-sm">
+                  Link Exercise
                 </Text>
               )}
             </TouchableOpacity>

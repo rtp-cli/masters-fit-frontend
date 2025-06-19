@@ -14,6 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { colors } from "../../lib/theme";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -188,9 +189,9 @@ export default function LoginScreen() {
           disabled={isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-background font-bold text-lg">
+            <Text className="text-white font-semibold text-base">
               {showNameField ? "Sign Up" : "Continue"}
             </Text>
           )}

@@ -13,6 +13,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import ProgressIndicator from "./ProgressIndicator";
+import { colors } from "../lib/theme";
 
 // Enums from server
 enum Gender {
@@ -2317,7 +2318,7 @@ export default function OnboardingForm({
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.neutral.white} />
             ) : (
               <Text className="text-white font-bold text-lg">
                 {isLastStep

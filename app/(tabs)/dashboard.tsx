@@ -34,6 +34,7 @@ import {
   PlanDayWithExercise,
 } from "../types";
 import { Ionicons } from "@expo/vector-icons";
+import { colors } from "../../lib/theme";
 
 // Goal name mappings
 const goalNames: Record<string, string> = {
@@ -480,7 +481,7 @@ export default function DashboardScreen() {
   if (loading || loadingToday) {
     return (
       <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="#BBDE51" />
+        <ActivityIndicator size="large" color={colors.brand.primary} />
         <Text className="mt-md text-sm text-primary font-medium">
           One moment...
         </Text>
@@ -621,7 +622,7 @@ export default function DashboardScreen() {
 
         {loading && !totalVolumeMetrics ? (
           <View className="flex-1 justify-center items-center py-12">
-            <ActivityIndicator size="large" color="#BBDE51" />
+            <ActivityIndicator size="large" color={colors.brand.primary} />
             <Text className="mt-3 text-sm text-text-muted">
               Loading your progress...
             </Text>
@@ -646,7 +647,10 @@ export default function DashboardScreen() {
                     </Text>
                   )}
                   {loadingToday && (
-                    <ActivityIndicator size="small" color="#BBDE51" />
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand.primary}
+                    />
                   )}
                 </View>
 
@@ -1450,58 +1454,6 @@ export default function DashboardScreen() {
                 </View>
               )}
 
-            {/* Loading state for workout type metrics */}
-            {filteredWorkoutTypeMetrics === null && (
-              <View className="px-5 mb-6">
-                <Text className="text-base font-semibold text-text-primary mb-1">
-                  General Fitness Progress
-                </Text>
-                <Text className="text-xs text-text-muted mb-3">
-                  Types of exercises you've been completing (
-                  {workoutTypeFilter === "3M"
-                    ? "Last 3 months"
-                    : workoutTypeFilter}
-                  )
-                </Text>
-
-                {/* Time Filter Buttons */}
-                <View className="items-center mb-4">
-                  <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-                    {(["1W", "1M", "3M"] as const).map((filter) => (
-                      <TouchableOpacity
-                        key={filter}
-                        className={`px-3 py-1 rounded-md ${
-                          workoutTypeFilter === filter
-                            ? "bg-primary"
-                            : "bg-transparent"
-                        }`}
-                        onPress={() => setWorkoutTypeFilter(filter)}
-                      >
-                        <Text
-                          className={`text-xs font-medium ${
-                            workoutTypeFilter === filter
-                              ? "text-text-primary"
-                              : "text-text-muted"
-                          }`}
-                        >
-                          {filter}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                <View className="bg-white rounded-2xl p-5 shadow-sm">
-                  <View className="items-center py-8">
-                    <ActivityIndicator size="large" color="#BBDE51" />
-                    <Text className="mt-3 text-sm text-text-muted">
-                      Loading workout data...
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
             {/* Empty State Message - Only show when no charts are visible */}
             {(!filteredWeightAccuracy ||
               !filteredWeightAccuracy.hasExerciseData ||
@@ -1522,7 +1474,7 @@ export default function DashboardScreen() {
                       <Ionicons
                         name="analytics-outline"
                         size={32}
-                        color="#BBDE51"
+                        color={colors.brand.primary}
                       />
                     </View>
                     <Text className="text-lg font-semibold text-text-primary mb-2 text-center">

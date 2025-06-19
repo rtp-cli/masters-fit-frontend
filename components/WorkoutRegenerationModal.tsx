@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./OnboardingForm";
+import GeneratingPlanScreen from "./ui/GeneratingPlanScreen";
+import { colors } from "../lib/theme";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -407,11 +409,24 @@ export default function WorkoutRegenerationModal({
         presentationStyle="pageSheet"
       >
         <View className="flex-1 justify-center items-center bg-background">
-          <ActivityIndicator size="large" color="#BBDE51" />
+          <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-4 text-base text-primary font-medium">
             Loading your preferences...
           </Text>
         </View>
+      </Modal>
+    );
+  }
+
+  // Show generating plan screen when regenerating workout
+  if (loading) {
+    return (
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <GeneratingPlanScreen />
       </Modal>
     );
   }
@@ -444,7 +459,7 @@ export default function WorkoutRegenerationModal({
               disabled={updatingProfile}
             >
               {updatingProfile ? (
-                <ActivityIndicator size="small" color="#BBDE51" />
+                <ActivityIndicator size="small" color={colors.brand.primary} />
               ) : (
                 <Text className="text-base text-primary font-medium">Save</Text>
               )}
@@ -601,10 +616,14 @@ export default function WorkoutRegenerationModal({
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#181917" />
+              <ActivityIndicator size="small" color={colors.brand.primary} />
             ) : (
               <>
-                <Ionicons name="refresh" size={18} color="#181917" />
+                <Ionicons
+                  name="refresh"
+                  size={18}
+                  color={colors.brand.primary}
+                />
                 <Text className="text-secondary font-semibold text-sm ml-2">
                   Regenerate Workout Flow
                 </Text>

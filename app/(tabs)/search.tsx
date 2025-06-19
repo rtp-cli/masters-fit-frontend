@@ -34,6 +34,7 @@ import {
   formatDifficulty,
   formatDate as utilFormatDate,
 } from "../../utils";
+import { colors } from "../../lib/theme";
 
 type SearchType = "date" | "exercise" | "general";
 
@@ -410,6 +411,17 @@ export default function SearchScreen() {
     "bg-teal-100",
   ];
 
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={colors.brand.primary} />
+          <Text className="mt-4 text-text-muted">Loading exercises...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-neutral-light-1">
       <ScrollView className="flex-1">
@@ -633,14 +645,6 @@ export default function SearchScreen() {
                 <Ionicons name="close-circle" size={16} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-          </View>
-        )}
-
-        {/* Loading Indicator */}
-        {isLoading && (
-          <View className="py-12 items-center">
-            <ActivityIndicator size="large" color="#BBDE51" />
-            <Text className="mt-3 text-sm text-text-muted">Searching...</Text>
           </View>
         )}
 

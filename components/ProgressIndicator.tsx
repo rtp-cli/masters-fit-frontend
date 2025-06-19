@@ -1,5 +1,6 @@
 import React from "react";
 import { View } from "react-native";
+import { colors } from "../lib/theme";
 
 interface ProgressIndicatorProps {
   currentStep: number;
@@ -24,14 +25,14 @@ export default function ProgressIndicator({
             className={`
               flex-1 h-2 rounded-sm
                ${index > 0 ? "ml-0.5" : ""}
-              ${
-                isCompleted
-                  ? "bg-[#BBDE51]"
-                  : isCurrent
-                  ? "bg-[#A5C94A]"
-                  : "bg-[#E5E7EB]"
-              }
             `}
+            style={{
+              backgroundColor: isCompleted
+                ? colors.brand.primary
+                : isCurrent
+                ? colors.brand.dark[1]
+                : colors.neutral.medium[1],
+            }}
           />
         );
       })}

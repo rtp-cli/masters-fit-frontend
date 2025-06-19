@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
@@ -20,6 +22,7 @@ import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
 import { calculateWorkoutDuration, formatExerciseDuration } from "../../utils";
+import { colors } from "../../lib/theme";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -212,12 +215,12 @@ export default function CalendarScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="#BBDE51" />
-        <Text className="mt-md text-sm text-primary font-medium">
-          One moment...
-        </Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={colors.brand.primary} />
+          <Text className="mt-4 text-text-muted">Loading your calendar...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
