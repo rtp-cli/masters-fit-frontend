@@ -50,7 +50,7 @@ export default function OptionButton({
 
   const getIconColor = () => {
     if (iconColor) return iconColor;
-    return isSelected ? "secondary" : "text-muted";
+    return isSelected ? "#181917" : "#8A93A2";
   };
 
   return (
@@ -79,7 +79,7 @@ export default function OptionButton({
           <Ionicons
             name="checkmark-circle"
             size={variant === "compact" ? 20 : 24}
-            color="secondary"
+            color="#181917"
           />
         </View>
       )}

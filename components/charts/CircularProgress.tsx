@@ -16,7 +16,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
   strokeWidth,
   percentage,
   color,
-  backgroundColor = "neutral-medium-1",
+  backgroundColor = "#e5e7eb",
   children,
 }) => {
   const radius = (size - strokeWidth) / 2;
@@ -62,7 +62,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
                 width: size - strokeWidth * 2,
                 height: size - strokeWidth * 2,
                 borderRadius: (size - strokeWidth * 2) / 2,
-                backgroundColor: "neutral-light-3",
+                backgroundColor: "#f9fafb",
               },
             ]}
           />
@@ -79,7 +79,7 @@ export const SimpleCircularProgress: React.FC<CircularProgressProps> = ({
   strokeWidth,
   percentage,
   color,
-  backgroundColor = "neutral-medium-1",
+  backgroundColor = "#e5e7eb",
   children,
 }) => {
   return (

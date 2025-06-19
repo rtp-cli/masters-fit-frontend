@@ -57,7 +57,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <View style={styles.header}>
             <View style={styles.headerContent}>
               <Text variant="title">{exercise.name}</Text>
-              <Text variant="bodySmall" color="text-light">
+              <Text variant="bodySmall" color="#6b7280">
                 {formatMuscleGroups(exercise.muscleGroups)} •{" "}
                 {formatDifficulty(exercise.difficulty)}
               </Text>
@@ -78,7 +78,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <View style={styles.expandedContent}>
               <Text
                 variant="bodySmall"
-                color="neutral-dark-2"
+                color="#4b5563"
                 style={styles.description}
               >
                 {exercise.description}
@@ -89,7 +89,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   <Text variant="subtitle" style={styles.sectionTitle}>
                     Instructions
                   </Text>
-                  <Text variant="bodySmall" color="neutral-dark-2">
+                  <Text variant="bodySmall" color="#4b5563">
                     {exercise.instructions}
                   </Text>
                 </View>
@@ -112,7 +112,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 style={styles.addButton}
                 onPress={handleAddToWorkout}
               >
-                <Text variant="bodySmall" color="white" weight="semibold">
+                <Text variant="bodySmall" color="#ffffff" weight="semibold">
                   Add to Workout
                 </Text>
               </TouchableOpacity>
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedContainer: {
-    shadowColor: "indigo",
+    shadowColor: "#4f46e5",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     overflow: "hidden",
-    backgroundColor: "neutral-light-4",
+    backgroundColor: "#f3f4f6",
   },
   image: {
     width: "100%",
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "neutral-medium-1",
+    borderTopColor: "#e5e7eb",
   },
   description: {
     marginBottom: 12,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   tag: {
-    backgroundColor: "neutral-light-4",
+    backgroundColor: "#f3f4f6",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addButton: {
-    backgroundColor: "indigo",
+    backgroundColor: "#4f46e5",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,

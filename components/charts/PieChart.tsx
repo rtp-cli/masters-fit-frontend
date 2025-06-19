@@ -88,7 +88,7 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke="white"
+          stroke="#ffffff"
           strokeWidth="1"
         />
       );
@@ -107,7 +107,7 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke="white"
+          stroke="#ffffff"
           strokeWidth="1"
         />
       );
@@ -204,20 +204,20 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 11,
-    color: "text-light",
+    color: "#6b7280",
     fontWeight: "500",
     textAlign: "center",
     marginBottom: 2,
   },
   legendPercentage: {
     fontSize: 12,
-    color: "neutral-dark-3",
+    color: "#374151",
     fontWeight: "600",
     textAlign: "center",
   },
   noDataText: {
     textAlign: "center",
-    color: "neutral-medium-5",
+    color: "#9ca3af",
     fontSize: 12,
     paddingVertical: 20,
   },

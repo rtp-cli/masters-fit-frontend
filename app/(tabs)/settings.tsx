@@ -243,7 +243,7 @@ export default function SettingsScreen() {
   if (loading && !profile) {
     return (
       <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
-        <ActivityIndicator size="large" color="primary" />
+        <ActivityIndicator size="large" color="#BBDE51" />
         <Text className="text-text-muted mt-2">Loading your profile...</Text>
       </SafeAreaView>
     );
@@ -283,21 +283,25 @@ export default function SettingsScreen() {
               onPress={() => router.push("/profile-edit")}
             >
               <View className="w-12 h-12 rounded-full bg-yellow-100 items-center justify-center mb-2">
-                <Ionicons name="person-outline" size={20} color="warning" />
+                <Ionicons name="person-outline" size={20} color="#F59E0B" />
               </View>
               <Text className="text-xs text-text-muted">Edit Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
               <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mb-2">
-                <Ionicons name="help-circle-outline" size={20} color="info" />
+                <Ionicons
+                  name="help-circle-outline"
+                  size={20}
+                  color="#3B82F6"
+                />
               </View>
               <Text className="text-xs text-text-muted">Help</Text>
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
               <View className="w-12 h-12 rounded-full bg-orange-100 items-center justify-center mb-2">
-                <Ionicons name="share-outline" size={20} color="orange" />
+                <Ionicons name="share-outline" size={20} color="#F97316" />
               </View>
               <Text className="text-xs text-text-muted">Share</Text>
             </TouchableOpacity>
@@ -551,7 +555,7 @@ export default function SettingsScreen() {
               <Ionicons
                 name="notifications-outline"
                 size={20}
-                color="text-light"
+                color="#6B7280"
               />
               <Text className="text-sm text-text-primary ml-3">
                 Push Notifications
@@ -560,21 +564,21 @@ export default function SettingsScreen() {
             <Switch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
-              trackColor={{ false: "neutral-medium-1", true: "primary" }}
-              thumbColor="neutral-light-4"
+              trackColor={{ false: "#E5E7EB", true: "#BBDE51" }}
+              thumbColor={notificationsEnabled ? "#FFFFFF" : "#F3F4F6"}
             />
           </View>
 
           <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">
-              <Ionicons name="moon-outline" size={20} color="text-light" />
+              <Ionicons name="moon-outline" size={20} color="#6B7280" />
               <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
             </View>
             <Switch
               value={darkModeEnabled}
               onValueChange={setDarkModeEnabled}
-              trackColor={{ false: "neutral-medium-1", true: "primary" }}
-              thumbColor="neutral-light-4"
+              trackColor={{ false: "#E5E7EB", true: "#BBDE51" }}
+              thumbColor={darkModeEnabled ? "#FFFFFF" : "#F3F4F6"}
             />
           </View>
 
@@ -583,17 +587,13 @@ export default function SettingsScreen() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={20}
-                color="text-light"
+                color="#6B7280"
               />
               <Text className="text-sm text-text-primary ml-3">
                 Privacy Settings
               </Text>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color="neutral-medium-5"
-            />
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 
@@ -606,7 +606,7 @@ export default function SettingsScreen() {
             <Ionicons
               name="log-out-outline"
               size={20}
-              color="error"
+              color="#EF4444"
               style={{ marginRight: 8 }}
             />
             <Text className="text-red-500 font-semibold">Log Out</Text>

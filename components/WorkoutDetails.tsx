@@ -66,7 +66,7 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color="neutral-dark-5" />
+          <Ionicons name="close" size={24} color="#111827" />
         </TouchableOpacity>
         <Text variant="h3" center>
           {workout.name}
@@ -76,26 +76,26 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
 
       <ScrollView style={styles.content}>
         {workout.description && (
-          <Text variant="body" color="neutral-dark-2" style={styles.description}>
+          <Text variant="body" color="#4b5563" style={styles.description}>
             {workout.description}
           </Text>
         )}
 
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text variant="bodySmall" color="text-light">
+            <Text variant="bodySmall" color="#6b7280">
               Duration
             </Text>
-            <Text variant="h4" color="indigo">
+            <Text variant="h4" color="#4f46e5">
               {formatDuration(workout.duration)}
             </Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text variant="bodySmall" color="text-light">
+            <Text variant="bodySmall" color="#6b7280">
               Intensity
             </Text>
-            <Text variant="h4" color="indigo">
+            <Text variant="h4" color="#4f46e5">
               {typeof workout.intensity === "number"
                 ? getIntensityText(workout.intensity)
                 : workout.intensity.charAt(0).toUpperCase() +
@@ -104,10 +104,10 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
           </View>
 
           <View style={styles.statCard}>
-            <Text variant="bodySmall" color="text-light">
+            <Text variant="bodySmall" color="#6b7280">
               Exercises
             </Text>
-            <Text variant="h4" color="indigo">
+            <Text variant="h4" color="#4f46e5">
               {exercises.length}
             </Text>
           </View>
@@ -115,14 +115,14 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
 
         <View style={styles.additionalStats}>
           <View style={styles.additionalStat}>
-            <Ionicons name="layers-outline" size={20} color="text-light" />
+            <Ionicons name="layers-outline" size={20} color="#6b7280" />
             <Text variant="body" style={styles.additionalStatText}>
               {totalSets} total sets
             </Text>
           </View>
 
           <View style={styles.additionalStat}>
-            <Ionicons name="repeat-outline" size={20} color="text-light" />
+            <Ionicons name="repeat-outline" size={20} color="#6b7280" />
             <Text variant="body" style={styles.additionalStatText}>
               {totalReps} total reps
             </Text>
@@ -130,7 +130,7 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
 
           {workout.caloriesBurned && (
             <View style={styles.additionalStat}>
-              <Ionicons name="flame-outline" size={20} color="text-light" />
+              <Ionicons name="flame-outline" size={20} color="#6b7280" />
               <Text variant="body" style={styles.additionalStatText}>
                 {workout.caloriesBurned} calories
               </Text>
@@ -147,13 +147,13 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
             <Card key={exerciseItem.id} style={styles.exerciseCard}>
               <View style={styles.exerciseHeader}>
                 <View style={styles.exerciseNumberContainer}>
-                  <Text variant="bodySmall" color="white">
+                  <Text variant="bodySmall" color="#ffffff">
                     {index + 1}
                   </Text>
                 </View>
                 <View style={styles.exerciseInfo}>
                   <Text variant="subtitle">{exerciseItem.exercise.name}</Text>
-                  <Text variant="caption" color="text-light">
+                  <Text variant="caption" color="#6b7280">
                     {exerciseItem.exercise.muscleGroups.join(", ")}
                   </Text>
                 </View>
@@ -197,10 +197,10 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
 
       <View style={styles.actionBar}>
         <TouchableOpacity style={styles.startButton} onPress={onStartWorkout}>
-          <Ionicons name="play" size={20} color="white" />
+          <Ionicons name="play" size={20} color="#ffffff" />
           <Text
             variant="body"
-            color="white"
+            color="#ffffff"
             weight="semibold"
             style={styles.startButtonText}
           >
@@ -215,7 +215,7 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#ffffff",
   },
   header: {
     flexDirection: "row",
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "neutral-light-4",
+    borderBottomColor: "#f3f4f6",
   },
   closeButton: {
     padding: 4,
@@ -245,14 +245,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   statCard: {
-    backgroundColor: "neutral-light-3",
+    backgroundColor: "#f9fafb",
     borderRadius: 12,
     padding: 16,
     width: "31%",
     alignItems: "center",
   },
   additionalStats: {
-    backgroundColor: "neutral-light-3",
+    backgroundColor: "#f9fafb",
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   additionalStatText: {
     marginLeft: 8,
-    color: "neutral-dark-2",
+    color: "#4b5563",
   },
   exercisesContainer: {
     marginBottom: 20,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "indigo",
+    backgroundColor: "#4f46e5",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   exerciseDetails: {
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: "neutral-light-4",
+    borderTopColor: "#f3f4f6",
     padding: 12,
   },
   exerciseDetail: {
@@ -303,11 +303,11 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     borderTopWidth: 1,
-    borderTopColor: "neutral-light-4",
+    borderTopColor: "#f3f4f6",
     padding: 16,
   },
   startButton: {
-    backgroundColor: "indigo",
+    backgroundColor: "#4f46e5",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

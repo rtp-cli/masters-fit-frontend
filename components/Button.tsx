@@ -69,7 +69,7 @@ const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" ? "white" : "indigo"}
+          color={variant === "primary" ? "#ffffff" : "#4f46e5"}
         />
       ) : (
         <>
@@ -102,53 +102,53 @@ const styles = StyleSheet.create({
 
   // Variant styles
   primaryButton: {
-    backgroundColor: "indigo",
+    backgroundColor: "#4f46e5",
   },
   secondaryButton: {
-    backgroundColor: "neutral-medium-1",
+    backgroundColor: "#e5e7eb",
   },
   outlineButton: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "indigo",
+    borderColor: "#4f46e5",
   },
   ghostButton: {
     backgroundColor: "transparent",
   },
   destructiveButton: {
-    backgroundColor: "error",
+    backgroundColor: "#ef4444",
   },
 
   // Variant text styles
   primaryText: {
-    color: "white",
+    color: "#ffffff",
   },
   secondaryText: {
-    color: "neutral-dark-4",
+    color: "#1f2937",
   },
   outlineText: {
-    color: "indigo",
+    color: "#4f46e5",
   },
   ghostText: {
-    color: "indigo",
+    color: "#4f46e5",
   },
   destructiveText: {
-    color: "white",
+    color: "#ffffff",
   },
 
   // Variant disabled styles
   primaryDisabled: {
-    backgroundColor: "indigo",
+    backgroundColor: "#4f46e5",
   },
   secondaryDisabled: {
-    backgroundColor: "neutral-medium-1",
+    backgroundColor: "#e5e7eb",
   },
   outlineDisabled: {
-    borderColor: "neutral-medium-5",
+    borderColor: "#9ca3af",
   },
   ghostDisabled: {},
   destructiveDisabled: {
-    backgroundColor: "error",
+    backgroundColor: "#ef4444",
   },
 
   // Size styles

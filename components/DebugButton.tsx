@@ -81,20 +81,15 @@ const DebugButton: React.FC = () => {
         onPress={gatherDebugInfo}
         style={{
           position: "absolute",
-          top: 60,
+          top: 50,
           right: 20,
-          backgroundColor: "#ff0000",
+          backgroundColor: "#FF6B6B",
           borderRadius: 20,
           width: 40,
           height: 40,
           justifyContent: "center",
           alignItems: "center",
-          zIndex: 9999,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
+          zIndex: 1000,
         }}
       >
         <Ionicons name="bug" size={20} color="white" />
@@ -105,7 +100,7 @@ const DebugButton: React.FC = () => {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={{ flex: 1, backgroundColor: "gray-100" }}>
+        <View style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
           <View
             style={{
               flexDirection: "row",
@@ -113,13 +108,13 @@ const DebugButton: React.FC = () => {
               alignItems: "center",
               padding: 20,
               borderBottomWidth: 1,
-              borderBottomColor: "border-gray",
+              borderBottomColor: "#ddd",
               backgroundColor: "white",
             }}
           >
             <Text style={{ fontSize: 18, fontWeight: "bold" }}>Debug Info</Text>
             <TouchableOpacity onPress={() => setIsVisible(false)}>
-              <Ionicons name="close" size={24} color="text-gray" />
+              <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
 
@@ -154,13 +149,13 @@ const DebugButton: React.FC = () => {
               padding: 20,
               backgroundColor: "white",
               borderTopWidth: 1,
-              borderTopColor: "border-gray",
+              borderTopColor: "#ddd",
             }}
           >
             <TouchableOpacity
               onPress={clearAllData}
               style={{
-                backgroundColor: "#ff0000",
+                backgroundColor: "#FF6B6B",
                 padding: 15,
                 borderRadius: 8,
                 alignItems: "center",
@@ -188,7 +183,7 @@ const DebugSection: React.FC<{ title: string; data: any }> = ({
       marginBottom: 10,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: "border-gray",
+      borderColor: "#ddd",
     }}
   >
     <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 8 }}>
@@ -197,8 +192,8 @@ const DebugSection: React.FC<{ title: string; data: any }> = ({
     <Text
       style={{
         fontSize: 12,
-        color: "text-light-gray",
-        backgroundColor: "bg-light",
+        color: "#666",
+        backgroundColor: "#f9f9f9",
         padding: 10,
         borderRadius: 4,
       }}

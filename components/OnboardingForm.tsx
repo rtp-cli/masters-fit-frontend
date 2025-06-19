@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import ProgressIndicator from "./ProgressIndicator";
 
 // Enums from server
 enum Gender {
@@ -419,9 +418,9 @@ export default function OnboardingForm({
             step={1}
             value={formData.age}
             onValueChange={(value) => handleChange("age", value)}
-            minimumTrackTintColor="black"
-            maximumTrackTintColor="neutral-medium-1"
-            thumbTintColor="black"
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
           />
           <View className="flex-row justify-between items-center mt-2">
             <Text className="text-xs text-neutral-medium-4 font-medium">
@@ -462,9 +461,7 @@ export default function OnboardingForm({
               <Ionicons
                 name="male"
                 size={14}
-                color={
-                  formData.gender === Gender.MALE ? "primary" : "text-muted"
-                }
+                color={formData.gender === Gender.MALE ? "#BBDE51" : "#8A93A2"}
               />
             </View>
             <Text
@@ -495,7 +492,7 @@ export default function OnboardingForm({
                 name="female"
                 size={14}
                 color={
-                  formData.gender === Gender.FEMALE ? "primary" : "text-muted"
+                  formData.gender === Gender.FEMALE ? "#BBDE51" : "#8A93A2"
                 }
               />
             </View>
@@ -526,9 +523,7 @@ export default function OnboardingForm({
               <Ionicons
                 name="person"
                 size={14}
-                color={
-                  formData.gender === Gender.OTHER ? "primary" : "text-muted"
-                }
+                color={formData.gender === Gender.OTHER ? "#BBDE51" : "#8A93A2"}
               />
             </View>
             <Text
@@ -557,9 +552,9 @@ export default function OnboardingForm({
             step={2.54}
             value={formData.height}
             onValueChange={(value) => handleChange("height", Math.round(value))}
-            minimumTrackTintColor="black"
-            maximumTrackTintColor="neutral-medium-1"
-            thumbTintColor="black"
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
           />
           <View className="flex-row justify-between items-center mt-2">
             <Text className="text-xs text-neutral-medium-4 font-medium">
@@ -591,9 +586,9 @@ export default function OnboardingForm({
             step={1}
             value={formData.weight}
             onValueChange={(value) => handleChange("weight", value)}
-            minimumTrackTintColor="black"
-            maximumTrackTintColor="neutral-medium-1"
-            thumbTintColor="black"
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
           />
           <View className="flex-row justify-between items-center mt-2">
             <Text className="text-xs text-neutral-medium-4 font-medium">
@@ -627,7 +622,7 @@ export default function OnboardingForm({
         onPress={() => handleMultiSelectToggle("goals", FitnessGoals.RECOVERY)}
       >
         <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="medical-outline" size={16} color="info" />
+          <Ionicons name="medical-outline" size={16} color="#3B82F6" />
         </View>
         <View className="flex-1">
           <Text
@@ -650,7 +645,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.goals.includes(FitnessGoals.RECOVERY) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -666,7 +661,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="fitness-outline" size={16} color="success" />
+          <Ionicons name="fitness-outline" size={16} color="#10B981" />
         </View>
         <View className="flex-1">
           <Text
@@ -689,7 +684,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.goals.includes(FitnessGoals.WEIGHT_LOSS) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -703,7 +698,7 @@ export default function OnboardingForm({
         onPress={() => handleMultiSelectToggle("goals", FitnessGoals.STRENGTH)}
       >
         <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="barbell-outline" size={16} color="purple" />
+          <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
         </View>
         <View className="flex-1">
           <Text
@@ -726,7 +721,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.goals.includes(FitnessGoals.STRENGTH) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -740,7 +735,7 @@ export default function OnboardingForm({
         onPress={() => handleMultiSelectToggle("goals", FitnessGoals.ENDURANCE)}
       >
         <View className="w-8 h-8 bg-orange-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="heart-outline" size={16} color="orange" />
+          <Ionicons name="heart-outline" size={16} color="#F97316" />
         </View>
         <View className="flex-1">
           <Text
@@ -763,7 +758,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.goals.includes(FitnessGoals.ENDURANCE) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -777,7 +772,7 @@ export default function OnboardingForm({
         onPress={() => handleMultiSelectToggle("goals", FitnessGoals.MOBILITY)}
       >
         <View className="w-8 h-8 bg-pink-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="body-outline" size={16} color="pink" />
+          <Ionicons name="body-outline" size={16} color="#EC4899" />
         </View>
         <View className="flex-1">
           <Text
@@ -800,7 +795,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.goals.includes(FitnessGoals.MOBILITY) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -823,35 +818,35 @@ export default function OnboardingForm({
               case "MUSCLE_GAIN":
                 return {
                   icon: "fitness-outline",
-                  color: "purple",
+                  color: "#8B5CF6",
                   bgColor: "bg-purple-100",
                   description: "Build lean muscle mass and strength",
                 };
               case "FLEXIBILITY":
                 return {
                   icon: "body-outline",
-                  color: "pink",
+                  color: "#EC4899",
                   bgColor: "bg-pink-100",
                   description: "Improve range of motion and flexibility",
                 };
               case "GENERAL_FITNESS":
                 return {
                   icon: "checkmark-circle-outline",
-                  color: "success",
+                  color: "#10B981",
                   bgColor: "bg-green-100",
                   description: "Overall health and fitness improvement",
                 };
               case "BALANCE":
                 return {
                   icon: "git-branch-outline",
-                  color: "warning",
+                  color: "#F59E0B",
                   bgColor: "bg-yellow-100",
                   description: "Improve stability and coordination",
                 };
               default:
                 return {
                   icon: "star-outline",
-                  color: "text-muted",
+                  color: "#8A93A2",
                   bgColor: "bg-neutral-light-2",
                   description: "General fitness goal",
                 };
@@ -898,7 +893,7 @@ export default function OnboardingForm({
                 </Text>
               </View>
               {formData.goals.includes(value) && (
-                <Ionicons name="checkmark-circle" size={16} color="secondary" />
+                <Ionicons name="checkmark-circle" size={16} color="#181917" />
               )}
             </TouchableOpacity>
           );
@@ -926,7 +921,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-red-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="medical-outline" size={16} color="error" />
+          <Ionicons name="medical-outline" size={16} color="#EF4444" />
         </View>
         <View className="flex-1">
           <Text
@@ -954,7 +949,7 @@ export default function OnboardingForm({
         </View>
         {formData.limitations?.includes(
           PhysicalLimitations.POST_SURGERY_RECOVERY
-        ) && <Ionicons name="checkmark-circle" size={16} color="secondary" />}
+        ) && <Ionicons name="checkmark-circle" size={16} color="#181917" />}
       </TouchableOpacity>
 
       {/* Knee Issues - Orange background as in image */}
@@ -969,7 +964,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-orange-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="body-outline" size={16} color="orange" />
+          <Ionicons name="body-outline" size={16} color="#F97316" />
         </View>
         <View className="flex-1">
           <Text
@@ -992,7 +987,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.limitations?.includes(PhysicalLimitations.KNEE_PAIN) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -1011,7 +1006,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="body-outline" size={16} color="info" />
+          <Ionicons name="body-outline" size={16} color="#3B82F6" />
         </View>
         <View className="flex-1">
           <Text
@@ -1034,7 +1029,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.limitations?.includes(PhysicalLimitations.SHOULDER_PAIN) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -1053,7 +1048,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="body-outline" size={16} color="purple" />
+          <Ionicons name="body-outline" size={16} color="#8B5CF6" />
         </View>
         <View className="flex-1">
           <Text
@@ -1081,7 +1076,7 @@ export default function OnboardingForm({
         </View>
         {formData.limitations?.includes(
           PhysicalLimitations.LOWER_BACK_PAIN
-        ) && <Ionicons name="checkmark-circle" size={16} color="secondary" />}
+        ) && <Ionicons name="checkmark-circle" size={16} color="#181917" />}
       </TouchableOpacity>
 
       {/* Other Health Condition - Green background as in image */}
@@ -1099,7 +1094,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="medical-outline" size={16} color="success" />
+          <Ionicons name="medical-outline" size={16} color="#10B981" />
         </View>
         <View className="flex-1">
           <Text
@@ -1127,7 +1122,7 @@ export default function OnboardingForm({
         </View>
         {formData.limitations?.includes(
           PhysicalLimitations.CHRONIC_FATIGUE
-        ) && <Ionicons name="checkmark-circle" size={16} color="secondary" />}
+        ) && <Ionicons name="checkmark-circle" size={16} color="#181917" />}
       </TouchableOpacity>
 
       {/* Add other limitations */}
@@ -1149,84 +1144,84 @@ export default function OnboardingForm({
               case "NECK_PAIN":
                 return {
                   icon: "arrow-up-outline",
-                  color: "orange",
+                  color: "#F97316",
                   bgColor: "bg-orange-100",
                   description: "Pain or stiffness in neck area",
                 };
               case "HIP_PAIN":
                 return {
                   icon: "body-outline",
-                  color: "purple",
+                  color: "#8B5CF6",
                   bgColor: "bg-purple-100",
                   description: "Pain or limited mobility in hips",
                 };
               case "ANKLE_INSTABILITY":
                 return {
                   icon: "walk-outline",
-                  color: "cyan",
+                  color: "#06B6D4",
                   bgColor: "bg-cyan-100",
                   description: "Weak or unstable ankles",
                 };
               case "WRIST_PAIN":
                 return {
                   icon: "hand-left-outline",
-                  color: "pink",
+                  color: "#EC4899",
                   bgColor: "bg-pink-100",
                   description: "Pain or weakness in wrists",
                 };
               case "ELBOW_PAIN":
                 return {
                   icon: "remove-outline",
-                  color: "warning",
+                  color: "#F59E0B",
                   bgColor: "bg-yellow-100",
                   description: "Tennis elbow or other elbow issues",
                 };
               case "ARTHRITIS":
                 return {
                   icon: "medical-outline",
-                  color: "error",
+                  color: "#EF4444",
                   bgColor: "bg-red-100",
                   description: "Joint inflammation and stiffness",
                 };
               case "OSTEOPOROSIS":
                 return {
                   icon: "body-outline",
-                  color: "indigo",
+                  color: "#6366F1",
                   bgColor: "bg-indigo-100",
                   description: "Weak or brittle bones",
                 };
               case "SCIATICA":
                 return {
                   icon: "flash-outline",
-                  color: "orange",
+                  color: "#F97316",
                   bgColor: "bg-orange-100",
                   description: "Nerve pain down leg from lower back",
                 };
               case "LIMITED_RANGE_OF_MOTION":
                 return {
                   icon: "resize-outline",
-                  color: "purple",
+                  color: "#8B5CF6",
                   bgColor: "bg-purple-100",
                   description: "Restricted movement in joints",
                 };
               case "BALANCE_ISSUES":
                 return {
                   icon: "git-branch-outline",
-                  color: "success",
+                  color: "#10B981",
                   bgColor: "bg-green-100",
                   description: "Difficulty with balance and stability",
                 };
               case "BREATHING_ISSUES":
                 return {
                   icon: "heart-outline",
-                  color: "info",
+                  color: "#3B82F6",
                   bgColor: "bg-blue-100",
                   description: "Asthma or other breathing conditions",
                 };
               default:
                 return {
                   icon: "warning-outline",
-                  color: "text-muted",
+                  color: "#8A93A2",
                   bgColor: "bg-neutral-light-2",
                   description: "Physical limitation",
                 };
@@ -1275,7 +1270,7 @@ export default function OnboardingForm({
                 </Text>
               </View>
               {formData.limitations?.includes(value) && (
-                <Ionicons name="checkmark-circle" size={16} color="secondary" />
+                <Ionicons name="checkmark-circle" size={16} color="#181917" />
               )}
             </TouchableOpacity>
           );
@@ -1306,7 +1301,7 @@ export default function OnboardingForm({
           onPress={() => handleChange("fitnessLevel", FitnessLevels.BEGINNER)}
         >
           <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
-            <Ionicons name="walk-outline" size={16} color="success" />
+            <Ionicons name="walk-outline" size={16} color="#10B981" />
           </View>
           <View className="flex-1">
             <Text
@@ -1329,7 +1324,7 @@ export default function OnboardingForm({
             </Text>
           </View>
           {formData.fitnessLevel === FitnessLevels.BEGINNER && (
-            <Ionicons name="checkmark-circle" size={16} color="secondary" />
+            <Ionicons name="checkmark-circle" size={16} color="#181917" />
           )}
         </TouchableOpacity>
 
@@ -1345,7 +1340,7 @@ export default function OnboardingForm({
           }
         >
           <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
-            <Ionicons name="bicycle-outline" size={16} color="info" />
+            <Ionicons name="bicycle-outline" size={16} color="#3B82F6" />
           </View>
           <View className="flex-1">
             <Text
@@ -1368,7 +1363,7 @@ export default function OnboardingForm({
             </Text>
           </View>
           {formData.fitnessLevel === FitnessLevels.INTERMEDIATE && (
-            <Ionicons name="checkmark-circle" size={16} color="secondary" />
+            <Ionicons name="checkmark-circle" size={16} color="#181917" />
           )}
         </TouchableOpacity>
 
@@ -1382,7 +1377,7 @@ export default function OnboardingForm({
           onPress={() => handleChange("fitnessLevel", FitnessLevels.ADVANCED)}
         >
           <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
-            <Ionicons name="barbell-outline" size={16} color="purple" />
+            <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
           </View>
           <View className="flex-1">
             <Text
@@ -1405,7 +1400,7 @@ export default function OnboardingForm({
             </Text>
           </View>
           {formData.fitnessLevel === FitnessLevels.ADVANCED && (
-            <Ionicons name="checkmark-circle" size={16} color="secondary" />
+            <Ionicons name="checkmark-circle" size={16} color="#181917" />
           )}
         </TouchableOpacity>
         {errors.fitnessLevel && (
@@ -1466,9 +1461,9 @@ export default function OnboardingForm({
             step={5}
             value={formData.workoutDuration}
             onValueChange={(value) => handleChange("workoutDuration", value)}
-            minimumTrackTintColor="black"
-            maximumTrackTintColor="neutral-medium-1"
-            thumbTintColor="black"
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E8E8E8"
+            thumbTintColor="#000000"
           />
           <View className="flex-row justify-between items-center mt-2">
             <Text className="text-xs text-neutral-medium-4 font-medium">
@@ -1522,19 +1517,19 @@ export default function OnboardingForm({
         </Text>
         <TextInput
           style={{
-            backgroundColor: "white", // background color (white)
+            backgroundColor: "#FFFFFF", // background color (white)
             borderWidth: 1,
-            borderColor: "neutral-medium-1", // neutral-medium-1 (thin grey)
+            borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
             borderRadius: 12, // rounded-xl
             minHeight: 100,
             fontSize: 14,
-            color: "text-secondary", // neutral-dark-1
+            color: "#525252", // neutral-dark-1
             paddingHorizontal: 16,
             paddingVertical: 24,
             textAlignVertical: "top",
           }}
           placeholder="Enter any medical conditions, injuries, or concerns..."
-          placeholderTextColor="text-muted"
+          placeholderTextColor="#8A93A2"
           value={formData.medicalNotes}
           onChangeText={(text) => handleChange("medicalNotes", text)}
           multiline={true}
@@ -1574,7 +1569,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mb-3">
-              <Ionicons name="home-outline" size={16} color="info" />
+              <Ionicons name="home-outline" size={16} color="#3B82F6" />
             </View>
             <Text
               className={`font-medium text-sm ${
@@ -1605,7 +1600,7 @@ export default function OnboardingForm({
             onPress={() => handleChange("environment", WorkoutEnvironments.GYM)}
           >
             <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mb-3">
-              <Ionicons name="fitness-outline" size={16} color="purple" />
+              <Ionicons name="fitness-outline" size={16} color="#8B5CF6" />
             </View>
             <Text
               className={`font-medium text-sm ${
@@ -1641,7 +1636,7 @@ export default function OnboardingForm({
               <Ionicons
                 name="swap-horizontal-outline"
                 size={16}
-                color="success"
+                color="#10B981"
               />
             </View>
             <Text
@@ -1694,7 +1689,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-red-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="barbell-outline" size={16} color="error" />
+              <Ionicons name="barbell-outline" size={16} color="#EF4444" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1722,7 +1717,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-yellow-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="fitness-outline" size={16} color="warning" />
+              <Ionicons name="fitness-outline" size={16} color="#F59E0B" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1750,7 +1745,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-green-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="remove-outline" size={16} color="success" />
+              <Ionicons name="remove-outline" size={16} color="#10B981" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1777,7 +1772,11 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-purple-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="hardware-chip-outline" size={16} color="purple" />
+              <Ionicons
+                name="hardware-chip-outline"
+                size={16}
+                color="#8B5CF6"
+              />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1805,7 +1804,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-orange-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="body-outline" size={16} color="orange" />
+              <Ionicons name="body-outline" size={16} color="#F97316" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1833,7 +1832,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-indigo-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="basketball-outline" size={16} color="indigo" />
+              <Ionicons name="basketball-outline" size={16} color="#6366F1" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1861,7 +1860,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-pink-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="remove-outline" size={16} color="pink" />
+              <Ionicons name="remove-outline" size={16} color="#EC4899" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1886,7 +1885,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="walk-outline" size={16} color="info" />
+              <Ionicons name="walk-outline" size={16} color="#3B82F6" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1911,7 +1910,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-cyan-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="bicycle-outline" size={16} color="cyan" />
+              <Ionicons name="bicycle-outline" size={16} color="#06B6D4" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1936,7 +1935,7 @@ export default function OnboardingForm({
             }
           >
             <View className="w-8 h-8 bg-teal-100 rounded-lg items-center justify-center mb-2">
-              <MaterialCommunityIcons name="yoga" size={16} color="teal" />
+              <MaterialCommunityIcons name="yoga" size={16} color="#14B8A6" />
             </View>
             <Text
               className={`font-medium text-sm text-center ${
@@ -1972,7 +1971,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-red-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="flash-outline" size={16} color="error" />
+          <Ionicons name="flash-outline" size={16} color="#EF4444" />
         </View>
         <View className="flex-1">
           <Text
@@ -1995,7 +1994,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.preferredStyles.includes(PreferredStyles.HIIT) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -2011,7 +2010,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="medical-outline" size={16} color="info" />
+          <Ionicons name="medical-outline" size={16} color="#3B82F6" />
         </View>
         <View className="flex-1">
           <Text
@@ -2034,7 +2033,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.preferredStyles.includes(PreferredStyles.REHAB) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -2050,7 +2049,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="barbell-outline" size={16} color="purple" />
+          <Ionicons name="barbell-outline" size={16} color="#8B5CF6" />
         </View>
         <View className="flex-1">
           <Text
@@ -2073,7 +2072,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.preferredStyles.includes(PreferredStyles.STRENGTH) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -2089,7 +2088,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="heart-outline" size={16} color="success" />
+          <Ionicons name="heart-outline" size={16} color="#10B981" />
         </View>
         <View className="flex-1">
           <Text
@@ -2112,7 +2111,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.preferredStyles.includes(PreferredStyles.CARDIO) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -2128,7 +2127,7 @@ export default function OnboardingForm({
         }
       >
         <View className="w-8 h-8 bg-orange-100 rounded-xl items-center justify-center mr-4">
-          <Ionicons name="fitness-outline" size={16} color="orange" />
+          <Ionicons name="fitness-outline" size={16} color="#F97316" />
         </View>
         <View className="flex-1">
           <Text
@@ -2151,7 +2150,7 @@ export default function OnboardingForm({
           </Text>
         </View>
         {formData.preferredStyles.includes(PreferredStyles.CROSSFIT) && (
-          <Ionicons name="checkmark-circle" size={16} color="secondary" />
+          <Ionicons name="checkmark-circle" size={16} color="#181917" />
         )}
       </TouchableOpacity>
 
@@ -2174,42 +2173,42 @@ export default function OnboardingForm({
               case "FUNCTIONAL":
                 return {
                   icon: "sync-outline",
-                  color: "success",
+                  color: "#10B981",
                   bgColor: "bg-green-100",
                   description: "Real-world movement patterns",
                 };
               case "PILATES":
                 return {
                   icon: "ellipse-outline",
-                  color: "pink",
+                  color: "#EC4899",
                   bgColor: "bg-pink-100",
                   description: "Core strength and flexibility",
                 };
               case "YOGA":
                 return {
                   icon: "leaf-outline",
-                  color: "teal",
+                  color: "#14B8A6",
                   bgColor: "bg-teal-100",
                   description: "Mind-body connection and flexibility",
                 };
               case "BALANCE":
                 return {
                   icon: "git-branch-outline",
-                  color: "warning",
+                  color: "#F59E0B",
                   bgColor: "bg-yellow-100",
                   description: "Stability and coordination training",
                 };
               case "MOBILITY":
                 return {
                   icon: "resize-outline",
-                  color: "purple",
+                  color: "#8B5CF6",
                   bgColor: "bg-purple-100",
                   description: "Joint mobility and movement quality",
                 };
               default:
                 return {
                   icon: "body-outline",
-                  color: "text-muted",
+                  color: "#8A93A2",
                   bgColor: "bg-neutral-light-2",
                   description: "General workout style",
                 };
@@ -2258,7 +2257,7 @@ export default function OnboardingForm({
                 </Text>
               </View>
               {formData.preferredStyles.includes(value) && (
-                <Ionicons name="checkmark-circle" size={16} color="secondary" />
+                <Ionicons name="checkmark-circle" size={16} color="#181917" />
               )}
             </TouchableOpacity>
           );
@@ -2317,7 +2316,7 @@ export default function OnboardingForm({
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="white" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text className="text-white font-bold text-lg">
                 {isLastStep
@@ -2342,13 +2341,6 @@ export default function OnboardingForm({
       >
         {/* Header with step indicator */}
         <View className="px-6 pt-12 pb-6 bg-neutral-light-1">
-          {/* Progress Indicator */}
-          <ProgressIndicator
-            currentStep={currentStep}
-            totalSteps={6}
-            className="mb-6"
-          />
-
           <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
             {stepConfig.title}
           </Text>

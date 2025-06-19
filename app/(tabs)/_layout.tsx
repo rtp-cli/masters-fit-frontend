@@ -19,18 +19,18 @@ function WorkoutTabIcon({ focused }: { focused: boolean }) {
         width: 50,
         height: 50,
         borderRadius: 28,
-        backgroundColor: "black",
+        backgroundColor: "#000000",
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 30,
-        shadowColor: "shadow",
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 6,
       }}
     >
-      <Ionicons size={24} name="play" color="white" />
+      <Ionicons size={24} name="play" color="#ffffff" />
     </View>
   );
 }
@@ -54,21 +54,21 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: true,
-          tabBarActiveTintColor: "neutral-dark-4",
-          tabBarInactiveTintColor: "neutral-medium-5",
+          tabBarActiveTintColor: "#1f2937",
+          tabBarInactiveTintColor: "#9ca3af",
           tabBarStyle: {
             borderTopWidth: 1,
-            borderTopColor: "neutral-medium-1",
+            borderTopColor: "#e5e7eb",
             height: 85,
             paddingBottom: 20,
             paddingTop: 10,
-            backgroundColor: "white",
+            backgroundColor: "#ffffff",
             minHeight: 85,
           },
           headerStyle: {
-            backgroundColor: "white",
+            backgroundColor: "#ffffff",
             height: 95,
-            shadowColor: "shadow",
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 1 },
             shadowOpacity: 0.05,
             shadowRadius: 2,

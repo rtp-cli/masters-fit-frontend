@@ -67,14 +67,14 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             <Text variant="title">{workout.name}</Text>
             {workout.completed && (
               <View style={styles.completedBadge}>
-                <Text variant="caption" color="success">Completed</Text>
+                <Text variant="caption" color="#10b981">Completed</Text>
               </View>
             )}
           </View>
           
           <View style={styles.details}>
             <View style={styles.detailItem}>
-              <Ionicons name="time-outline" size={16} color="text-light" />
+              <Ionicons name="time-outline" size={16} color="#6b7280" />
               <Text variant="bodySmall" style={styles.detailText}>
                 {formatDuration(workout.duration)}
               </Text>
@@ -82,7 +82,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             
             {workout.type && (
               <View style={styles.detailItem}>
-                <Ionicons name="barbell-outline" size={16} color="text-light" />
+                <Ionicons name="barbell-outline" size={16} color="#6b7280" />
                 <Text variant="bodySmall" style={styles.detailText}>
                   {workout.type.charAt(0).toUpperCase() + workout.type.slice(1)}
                 </Text>
@@ -90,7 +90,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             )}
             
             <View style={styles.detailItem}>
-              <Ionicons name="flame-outline" size={16} color="text-light" />
+              <Ionicons name="flame-outline" size={16} color="#6b7280" />
               <Text variant="bodySmall" style={styles.detailText}>
                 {typeof workout.intensity === 'number' 
                   ? getIntensityText(workout.intensity) 
@@ -100,7 +100,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             
             {workout.caloriesBurned && (
               <View style={styles.detailItem}>
-                <Ionicons name="flash-outline" size={16} color="text-light" />
+                <Ionicons name="flash-outline" size={16} color="#6b7280" />
                 <Text variant="bodySmall" style={styles.detailText}>
                   {workout.caloriesBurned} kcal
                 </Text>
@@ -111,7 +111,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
           {workout.description && (
             <Text 
               variant="bodySmall" 
-              color="neutral-dark-2" 
+              color="#4b5563" 
               style={styles.description}
             >
               {workout.description}
@@ -124,7 +124,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
                 style={styles.primaryButton} 
                 onPress={handleStartWorkout}
               >
-                <Text variant="bodySmall" color="white" weight="semibold">
+                <Text variant="bodySmall" color="#ffffff" weight="semibold">
                   Start Workout
                 </Text>
               </TouchableOpacity>
@@ -133,7 +133,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
                 style={styles.secondaryButton} 
                 onPress={handleEditWorkout}
               >
-                <Text variant="bodySmall" color="indigo" weight="semibold">
+                <Text variant="bodySmall" color="#4f46e5" weight="semibold">
                   Edit
                 </Text>
               </TouchableOpacity>
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedContainer: {
-    shadowColor: 'indigo',
+    shadowColor: '#4f46e5',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   completedBadge: {
-    backgroundColor: 'green-50',
+    backgroundColor: '#ecfdf5',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     marginLeft: 4,
-    color: 'text-light',
+    color: '#6b7280',
   },
   description: {
     marginBottom: 12,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   primaryButton: {
-    backgroundColor: 'indigo',
+    backgroundColor: '#4f46e5',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     borderWidth: 1,
-    borderColor: 'indigo',
+    borderColor: '#4f46e5',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,

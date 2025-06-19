@@ -151,7 +151,7 @@ export default function LoginScreen() {
               autoComplete="email"
               keyboardType="email-address"
               editable={!showNameField && !isLoading}
-              placeholderTextColor="neutral-medium-3"
+              placeholderTextColor="#A8A8A8"
             />
             {emailError ? (
               <Text className="text-red-500 text-sm mt-sm">{emailError}</Text>
@@ -171,7 +171,7 @@ export default function LoginScreen() {
                 onChangeText={setName}
                 autoCapitalize="words"
                 editable={!isLoading}
-                placeholderTextColor="neutral-medium-3"
+                placeholderTextColor="#A8A8A8"
               />
             </View>
           )}
@@ -188,7 +188,7 @@ export default function LoginScreen() {
           disabled={isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="white" />
+            <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <Text className="text-background font-bold text-lg">
               {showNameField ? "Sign Up" : "Continue"}

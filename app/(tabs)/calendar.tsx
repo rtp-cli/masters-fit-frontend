@@ -179,10 +179,10 @@ export default function CalendarScreen() {
         const dateStr = new Date(day.date).toLocaleDateString("en-CA");
         markedDates[dateStr] = {
           marked: true,
-          dotColor: "primary",
+          dotColor: "#BBDE51",
           selected: dateStr === normalizedSelectedDate,
           selectedColor:
-            dateStr === normalizedSelectedDate ? "secondary" : undefined,
+            dateStr === normalizedSelectedDate ? "#181917" : undefined,
         };
       }
     });
@@ -191,7 +191,7 @@ export default function CalendarScreen() {
     if (!markedDates[today]) {
       markedDates[today] = {
         selected: today === normalizedSelectedDate,
-        selectedColor: today === normalizedSelectedDate ? "secondary" : undefined,
+        selectedColor: today === normalizedSelectedDate ? "#181917" : undefined,
       };
     }
 
@@ -213,7 +213,7 @@ export default function CalendarScreen() {
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="primary" />
+        <ActivityIndicator size="large" color="#BBDE51" />
         <Text className="mt-md text-sm text-primary font-medium">
           One moment...
         </Text>
@@ -276,17 +276,17 @@ export default function CalendarScreen() {
             }
             disableAllTouchEventsForDisabledDays={true}
             theme={{
-              calendarBackground: "white",
-              textSectionTitleColor: "text-muted",
-              selectedDayBackgroundColor: "secondary",
-              selectedDayTextColor: "white",
-              todayTextColor: "primary",
-              dayTextColor: "secondary",
-              textDisabledColor: "neutral-medium-2",
-              dotColor: "primary",
-              arrowColor: "secondary",
-              monthTextColor: "secondary",
-              indicatorColor: "primary",
+              calendarBackground: "#FFFFFF",
+              textSectionTitleColor: "#8A93A2",
+              selectedDayBackgroundColor: "#181917",
+              selectedDayTextColor: "#FFFFFF",
+              todayTextColor: "#BBDE51",
+              dayTextColor: "#181917",
+              textDisabledColor: "#C6C6C6",
+              dotColor: "#BBDE51",
+              arrowColor: "#181917",
+              monthTextColor: "#181917",
+              indicatorColor: "#BBDE51",
               textDayFontFamily: "System",
               textMonthFontFamily: "System",
               textDayHeaderFontFamily: "System",
@@ -307,7 +307,7 @@ export default function CalendarScreen() {
             onPress={() => handleOpenRegeneration()}
             disabled={regenerating}
           >
-            <Ionicons name="refresh" size={18} color="secondary" />
+            <Ionicons name="refresh" size={18} color="#181917" />
             <Text className="text-secondary font-semibold text-sm ml-sm">
               Regenerate Workout Flow
             </Text>
