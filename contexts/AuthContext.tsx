@@ -208,33 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Provide the context to children components
-  return (
-    <AuthContext.Provider value={value}>
-      {isLoading ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: colors.background,
-          }}
-        >
-          <ActivityIndicator size="large" color={colors.brand.primary} />
-          <Text
-            style={{
-              marginTop: 10,
-              color: colors.text.muted,
-              fontSize: 16,
-            }}
-          >
-            Loading...
-          </Text>
-        </View>
-      ) : (
-        children
-      )}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // Styles
