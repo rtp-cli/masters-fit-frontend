@@ -48,14 +48,14 @@ const goalNames: Record<string, string> = {
   recovery: "Recovery",
 };
 
-// Dynamic color palette for donut chart (top 5 + Other)
+// Dynamic color palette for donut chart (green gradient from light to dark)
 const DONUT_COLORS = [
-  "#F87171", // Pastel Red
-  "#FB923C", // Pastel Orange
-  "#FBBF24", // Pastel Yellow
-  "#68D391", // Pastel Green
-  "#60A5FA", // Pastel Blue
-  "#A78BFA", // Pastel Violet for "Other"
+  colors.brand.dark[0],
+  colors.brand.dark[1],
+  colors.brand.dark[2],
+  colors.brand.dark[3],
+  colors.brand.dark[4],
+  colors.brand.dark[5],
 ];
 
 export default function DashboardScreen() {
@@ -271,7 +271,7 @@ export default function DashboardScreen() {
       chartData.push({
         label: "As Planned",
         value: Math.round((exactMatches / totalSets) * 100 * 100) / 100,
-        color: "#10b981",
+        color: colors.brand.medium[1], // Light green #E8F8B8
         count: exactMatches,
       });
     }
@@ -279,7 +279,7 @@ export default function DashboardScreen() {
       chartData.push({
         label: "Progressed",
         value: Math.round((higherWeight / totalSets) * 100 * 100) / 100,
-        color: "#f59e0b",
+        color: colors.brand.primary, // Main green #9BB875
         count: higherWeight,
       });
     }
@@ -287,7 +287,7 @@ export default function DashboardScreen() {
       chartData.push({
         label: "Adapted",
         value: Math.round((lowerWeight / totalSets) * 100 * 100) / 100,
-        color: "#ef4444",
+        color: colors.brand.dark[1], // Dark green #8CAF25
         count: lowerWeight,
       });
     }
@@ -378,7 +378,7 @@ export default function DashboardScreen() {
           totalSets > 0
             ? Math.round((type.totalSets / totalSets) * 100 * 10) / 10
             : 0,
-        color: "#6b7280", // Default color - you may want to add a color mapping
+        color: colors.text.muted, // Default color using theme
       }))
       .sort((a, b) => b.totalSets - a.totalSets);
 
@@ -480,7 +480,10 @@ export default function DashboardScreen() {
     return (
       <View className="flex-1 justify-center items-center bg-background">
         <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="mt-md text-sm text-primary font-medium">
+        <Text
+          className="mt-md text-sm font-medium"
+          style={{ color: colors.brand.primary }}
+        >
           One moment...
         </Text>
       </View>
@@ -609,7 +612,7 @@ export default function DashboardScreen() {
             </View>
             {weeklySummary && weeklySummary.streak > 0 && (
               <View className="flex-row items-center bg-primary/10 px-3 py-2 rounded-full">
-                <Ionicons name="flame" size={16} color="#BBDE51" />
+                <Ionicons name="flame" size={16} color={colors.brand.primary} />
                 <Text className="text-sm font-bold text-secondary ml-2">
                   {weeklySummary.streak} day streak
                 </Text>
@@ -656,11 +659,14 @@ export default function DashboardScreen() {
                   <View>
                     {/* Icon and workout details */}
                     <View className="flex-row items-center mb-6">
-                      <View className="w-16 h-16 bg-primary rounded-full items-center justify-center mr-4">
+                      <View
+                        className="w-16 h-16 rounded-full items-center justify-center mr-4"
+                        style={{ backgroundColor: colors.brand.primary }}
+                      >
                         <Ionicons
                           name={todaysWorkout ? "heart-outline" : "bed-outline"}
                           size={24}
-                          color="#181917"
+                          color={colors.text.primary}
                         />
                       </View>
                       <View className="flex-1">
@@ -682,7 +688,11 @@ export default function DashboardScreen() {
                     {!todaysWorkout ? (
                       // Rest day
                       <View className="bg-neutral-light-2/50 border border-neutral-light-2 rounded-xl p-4 flex-row items-center">
-                        <Ionicons name="bed" size={24} color="#8A93A2" />
+                        <Ionicons
+                          name="bed"
+                          size={24}
+                          color={colors.text.muted}
+                        />
                         <View className="ml-3 flex-1">
                           <Text className="text-sm font-semibold text-text-muted">
                             Rest Day
@@ -697,7 +707,7 @@ export default function DashboardScreen() {
                         <Ionicons
                           name="checkmark-circle"
                           size={24}
-                          color="#10B981"
+                          color={colors.brand.dark[1]}
                         />
                         <View className="ml-3 flex-1">
                           <Text className="text-sm font-semibold text-accent">
@@ -725,7 +735,11 @@ export default function DashboardScreen() {
                 ) : (
                   <View className="items-center py-8">
                     <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
-                      <Ionicons name="bed-outline" size={24} color="#8A93A2" />
+                      <Ionicons
+                        name="bed-outline"
+                        size={24}
+                        color={colors.text.muted}
+                      />
                     </View>
                     <Text className="text-base font-semibold text-text-primary mb-2">
                       No Active Workout
@@ -853,12 +867,12 @@ export default function DashboardScreen() {
                                         ), // Proportional to completion
                                   backgroundColor:
                                     day.status === "complete"
-                                      ? "#10B981" // Complete - Green
+                                      ? colors.brand.primary // Complete - Green
                                       : day.status === "partial"
-                                      ? "#FCD34D" // Partial - Yellow
+                                      ? colors.brand.light[1] // Partial - Primary[1]
                                       : day.status === "rest"
-                                      ? "#000000" // Rest - Black
-                                      : "#9CA3AF", // Upcoming/Incomplete - Grey
+                                      ? colors.brand.secondary // Rest - Black
+                                      : colors.neutral.medium[3], // Upcoming/Incomplete - Grey
                                 }}
                               />
                             </View>
@@ -952,19 +966,19 @@ export default function DashboardScreen() {
                                 {
                                   label: "As Planned",
                                   value: 35,
-                                  color: "#10b981",
+                                  color: colors.brand.medium[1], // Light green #E8F8B8
                                   count: 35,
                                 },
                                 {
                                   label: "Progressed",
                                   value: 40,
-                                  color: "#f59e0b",
+                                  color: colors.brand.primary, // Main green #9BB875
                                   count: 40,
                                 },
                                 {
                                   label: "Adapted",
                                   value: 25,
-                                  color: "#ef4444",
+                                  color: colors.brand.dark[1], // Dark green #8CAF25
                                   count: 25,
                                 },
                               ]
@@ -976,7 +990,10 @@ export default function DashboardScreen() {
                     {/* Stats Breakdown */}
                     <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                       <View className="items-center">
-                        <Text className="text-lg font-bold text-accent">
+                        <Text
+                          className="text-lg font-bold"
+                          style={{ color: colors.brand.medium[1] }}
+                        >
                           {filteredWeightAccuracy.exactMatches || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
@@ -984,7 +1001,10 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                       <View className="items-center">
-                        <Text className="text-lg font-bold text-orange-500">
+                        <Text
+                          className="text-lg font-bold"
+                          style={{ color: colors.brand.primary }}
+                        >
                           {filteredWeightAccuracy.higherWeight || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
@@ -992,7 +1012,10 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                       <View className="items-center">
-                        <Text className="text-lg font-bold text-red-500">
+                        <Text
+                          className="text-lg font-bold"
+                          style={{ color: colors.brand.dark[1] }}
+                        >
                           {filteredWeightAccuracy.lowerWeight || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
@@ -1158,7 +1181,7 @@ export default function DashboardScreen() {
                         };
                       })}
                       height={200}
-                      color="#10B981"
+                      color={colors.brand.dark[1]}
                       showValues={true}
                       showLabels={true}
                     />

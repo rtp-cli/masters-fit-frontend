@@ -2,11 +2,11 @@
   <!-- White background -->
   <rect width="1242" height="2436" fill="#FFFFFF"/>
   
-  <!-- MastersFit title at the top - larger and higher -->
-  <text x="621" y="900" font-size="104" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="bold">MastersFit</text>
+  <!-- MastersFit title at the top - using theme primary text color -->
+  <text x="621" y="900" font-size="104" text-anchor="middle" fill="#181917" font-family="Arial, sans-serif" font-weight="bold">Masters Fit</text>
   
-  <!-- App icon background with rounded corners - main green color -->
-  <rect x="321" y="1000" width="600" height="600" rx="120" fill="#BBDE51"/>
+  <!-- App icon background with rounded corners - using theme primary color -->
+  <rect x="321" y="1000" width="600" height="600" rx="120" fill="#9BB875"/>
   
   <!-- Gradient overlay for depth -->
   <defs>
@@ -26,6 +26,6 @@
     </g>
   </g>
   
-  <!-- Tagline below the icon -->
-  <text x="621" y="1750" font-size="60" text-anchor="middle" fill="#6B7280" font-family="Arial, sans-serif" font-weight="400">Fitness mastered, AI-powered</text>
+  <!-- Tagline below the icon - using theme muted text color -->
+  <text x="621" y="1750" font-size="60" text-anchor="middle" fill="#181917" font-family="Arial, sans-serif" font-weight="400">Fitness mastered, AI-powered</text>
 </svg>

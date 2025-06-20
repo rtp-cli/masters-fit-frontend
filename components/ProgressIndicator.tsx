@@ -1,6 +1,6 @@
 import React from "react";
-import { View } from "react-native";
 import { colors } from "../lib/theme";
+import { View } from "react-native";
 
 interface ProgressIndicatorProps {
   currentStep: number;

@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, Dimensions, Image } from "react-native";
+import { colors } from "../lib/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, usePathname } from "expo-router";
@@ -95,14 +96,14 @@ export default function GetStarted() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View className="flex-1 justify-center items-center bg-background">
         <Text className="text-base text-neutral-medium-4">Loading...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
       {/* Header */}
@@ -140,7 +141,7 @@ export default function GetStarted() {
           <Ionicons
             name="arrow-forward"
             size={20}
-            color="#ffffff"
+            color={colors.background}
             className="ml-1"
           />
         </TouchableOpacity>

@@ -191,7 +191,7 @@ export default function OnboardingScreen() {
   // Show loading while checking authentication
   if (authLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-md text-sm text-neutral-medium-4">
@@ -210,7 +210,7 @@ export default function OnboardingScreen() {
   // Show generating screen during workout generation
   if (generatingWorkout) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-background">
         <StatusBar style="dark" />
         <GeneratingPlanScreen />
       </SafeAreaView>
@@ -218,7 +218,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
       {/* Header */}

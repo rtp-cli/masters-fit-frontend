@@ -6,24 +6,25 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          1: "#BBDE51",
-          2: "#181917",
+          primary: "#9BB875",
+          secondary: "#181917",
           light: {
-            1: "#F5FAE8",
-            2: "#EDF5D1",
+            1: "#F2F6E7",
+            2: "#F0F9D3",
           },
           medium: {
-            1: "#D6E894",
-            2: "#C7E076",
+            1: "#E8F8B8",
+            2: "#D4E5A1",
           },
           dark: {
-            1: "#A3C842",
-            2: "#8BB233",
-            3: "#739C24",
-            4: "#5B8615",
+            1: "#8CAF25",
+            2: "#7D9D1F",
+            3: "#668019",
+            4: "#506415",
           },
         },
         neutral: {
+          white: "#FFFFFF",
           light: {
             1: "#FBFBFB",
             2: "#F4F4F4",
@@ -38,7 +39,7 @@ module.exports = {
             1: "#525252",
           },
         },
-        primary: "#BBDE51",
+        primary: "#9BB875",
         secondary: "#181917",
         background: "#FFFFFF",
         text: {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { colors } from "../lib/theme";
 import { View, StyleSheet, ViewProps, ViewStyle } from 'react-native';
 
 interface CardProps extends ViewProps {
@@ -53,20 +54,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   defaultCard: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
+    backgroundColor: colors.background,
+    shadowColor: colors.neutral.dark[1],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
   },
   outlinedCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.neutral.light[2],
   },
   flatCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.background,
   },
   cardContent: {
     padding: 16,
@@ -77,12 +78,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: colors.neutral.light[1],
   },
   cardFooter: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: colors.neutral.light[1],
   },
 });
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../../lib/theme";
 import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 
 interface ButtonProps {
@@ -101,7 +102,11 @@ export default function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" ? "#181917" : "#BBDE51"}
+          color={
+            variant === "primary"
+              ? "colors.brand.primary"
+              : colors.brand.primary
+          }
         />
       ) : (
         <Text className={textClasses}>{title}</Text>

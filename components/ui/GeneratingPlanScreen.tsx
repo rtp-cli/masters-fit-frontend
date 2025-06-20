@@ -46,7 +46,7 @@ export default function GeneratingPlanScreen({
   }, [duration, onComplete]);
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 justify-center items-center px-8">
         {/* Main Content */}
         <View className="items-center mb-12">

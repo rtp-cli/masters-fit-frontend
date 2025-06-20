@@ -1,12 +1,19 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, StyleProp, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from "react";
+import { colors } from "../lib/theme";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ContainerProps {
   scrollable?: boolean;
   padded?: boolean;
   safeArea?: boolean;
-  edges?: ('top' | 'right' | 'bottom' | 'left')[];
+  edges?: ("top" | "right" | "bottom" | "left")[];
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   children: React.ReactNode;
@@ -20,16 +27,12 @@ const Container: React.FC<ContainerProps> = ({
   scrollable = false,
   padded = true,
   safeArea = true,
-  edges = ['top'],
+  edges = ["top"],
   style,
   contentContainerStyle,
   children,
 }) => {
-  const containerStyle = [
-    styles.container,
-    padded && styles.padded,
-    style,
-  ];
+  const containerStyle = [styles.container, padded && styles.padded, style];
 
   // If safeArea is enabled, use SafeAreaView as the base component
   if (safeArea) {
@@ -81,7 +84,7 @@ const Container: React.FC<ContainerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.background,
   },
   padded: {
     paddingHorizontal: 20,

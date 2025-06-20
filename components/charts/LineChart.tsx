@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../../lib/theme";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { LineChart as RNLineChart } from "react-native-chart-kit";
 
@@ -19,7 +20,7 @@ interface LineChartProps {
 export const LineChart: React.FC<LineChartProps> = ({
   data,
   height = 200,
-  color = "#4f46e5",
+  color = colors.brand.primary,
   showValues = true,
   showLabels = true,
 }) => {
@@ -58,9 +59,9 @@ export const LineChart: React.FC<LineChartProps> = ({
   };
 
   const chartConfig = {
-    backgroundColor: "#ffffff",
-    backgroundGradientFrom: "#ffffff",
-    backgroundGradientTo: "#ffffff",
+    backgroundColor: colors.background,
+    backgroundGradientFrom: colors.background,
+    backgroundGradientTo: colors.background,
     decimalPlaces: 0, // optional, defaults to 2dp
     color: (opacity = 1) =>
       color
@@ -80,7 +81,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     },
     propsForBackgroundLines: {
       strokeDasharray: "", // solid background lines with no dashes
-      stroke: "#e3e3e3",
+      stroke: colors.brand.primary,
       strokeWidth: 1,
     },
     formatYLabel: (value: string) => {
@@ -123,7 +124,7 @@ export const LineChart: React.FC<LineChartProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.background,
     borderRadius: 8,
   },
   chart: {
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     textAlign: "center",
-    color: "#9ca3af",
+    color: colors.text.muted,
     fontSize: 16,
     paddingVertical: 50,
   },

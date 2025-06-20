@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../../lib/theme";
 import { TouchableOpacity, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -50,7 +51,7 @@ export default function OptionButton({
 
   const getIconColor = () => {
     if (iconColor) return iconColor;
-    return isSelected ? "#181917" : "#8A93A2";
+    return isSelected ? colors.brand.primary : colors.brand.primary;
   };
 
   return (
@@ -79,7 +80,7 @@ export default function OptionButton({
           <Ionicons
             name="checkmark-circle"
             size={variant === "compact" ? 20 : 24}
-            color="#181917"
+            color={colors.brand.primary}
           />
         </View>
       )}

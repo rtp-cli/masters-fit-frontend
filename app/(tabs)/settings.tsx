@@ -249,7 +249,7 @@ export default function SettingsScreen() {
     return (
       <SafeAreaView
         edges={["top"]}
-        className="flex-1 bg-white justify-center items-center"
+        className="flex-1 bg-background justify-center items-center"
       >
         <ActivityIndicator size="large" color={colors.brand.primary} />
         <Text className="text-text-muted mt-2">Loading your profile...</Text>
@@ -258,7 +258,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View className="flex-1 pt-6 bg-white">
+    <View className="flex-1 pt-6 bg-background">
       <ScrollView
         className="flex-1"
         refreshControl={
@@ -267,7 +267,17 @@ export default function SettingsScreen() {
       >
         {/* Profile Section */}
         <View className="items-center px-6 mb-6">
-          <View className="w-20 h-20 rounded-full bg-indigo-500 items-center justify-center mb-4">
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: colors.brand.primary,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
             <Text className="text-3xl font-bold text-white">
               {getUserInitials()}
             </Text>
@@ -290,26 +300,64 @@ export default function SettingsScreen() {
               className="items-center"
               onPress={() => router.push("/profile-edit")}
             >
-              <View className="w-12 h-12 rounded-full bg-yellow-100 items-center justify-center mb-2">
-                <Ionicons name="person-outline" size={20} color="#F59E0B" />
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.brand.light[1],
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={colors.brand.secondary}
+                />
               </View>
               <Text className="text-xs text-text-muted">Edit Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
-              <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mb-2">
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.brand.light[1],
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 8,
+                }}
+              >
                 <Ionicons
                   name="help-circle-outline"
                   size={20}
-                  color="#3B82F6"
+                  color={colors.brand.secondary}
                 />
               </View>
               <Text className="text-xs text-text-muted">Help</Text>
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
-              <View className="w-12 h-12 rounded-full bg-orange-100 items-center justify-center mb-2">
-                <Ionicons name="share-outline" size={20} color="#F97316" />
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.brand.light[1],
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={20}
+                  color={colors.brand.secondary}
+                />
               </View>
               <Text className="text-xs text-text-muted">Share</Text>
             </TouchableOpacity>
@@ -413,17 +461,26 @@ export default function SettingsScreen() {
             </Text>
             <View className="px-4 pb-4">
               <View className="flex-row flex-wrap">
-                {formatGoalsWithColors(profile.goals).map((goal, index) => (
+                {profile.goals.map((goal, index) => (
                   <View
                     key={index}
-                    className={`${goal.color} rounded-full px-3 py-1 mr-2 mb-2`}
+                    style={{
+                      backgroundColor: colors.brand.light[1],
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 4,
+                      marginRight: 8,
+                      marginBottom: 8,
+                    }}
                   >
                     <Text
-                      className={`text-xs font-medium ${
-                        goal.color.split(" ")[1]
-                      }`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        color: colors.text.primary,
+                      }}
                     >
-                      {goal.label}
+                      {formatEnumValue(goal)}
                     </Text>
                   </View>
                 ))}
@@ -434,28 +491,35 @@ export default function SettingsScreen() {
 
         {/* Preferred Workout Types */}
         {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
-          <View className="mx-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Preferred Workout Types
             </Text>
             <View className="px-4 pb-4">
               <View className="flex-row flex-wrap">
-                {formatWorkoutStylesWithColors(profile.preferredStyles).map(
-                  (style, index) => (
-                    <View
-                      key={index}
-                      className={`${style.color} rounded-full px-3 py-1 mr-2 mb-2`}
+                {profile.preferredStyles.map((style, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      backgroundColor: colors.brand.light[1],
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 4,
+                      marginRight: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        color: colors.text.primary,
+                      }}
                     >
-                      <Text
-                        className={`text-xs font-medium ${
-                          style.color.split(" ")[1]
-                        }`}
-                      >
-                        {style.label}
-                      </Text>
-                    </View>
-                  )
-                )}
+                      {style === "HIIT" ? "HIIT" : formatEnumValue(style)}
+                    </Text>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
@@ -463,7 +527,7 @@ export default function SettingsScreen() {
 
         {/* Equipment Available */}
         {profile?.equipment && profile.equipment.length > 0 && (
-          <View className="mx-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Available Equipment
             </Text>
@@ -472,9 +536,22 @@ export default function SettingsScreen() {
                 {profile.equipment.map((item, index) => (
                   <View
                     key={index}
-                    className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2"
+                    style={{
+                      backgroundColor: colors.brand.light[1],
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 4,
+                      marginRight: 8,
+                      marginBottom: 8,
+                    }}
                   >
-                    <Text className="text-xs font-medium text-gray-700">
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "500",
+                        color: colors.text.primary,
+                      }}
+                    >
                       {formatEnumValue(item)}
                     </Text>
                   </View>
@@ -486,7 +563,7 @@ export default function SettingsScreen() {
 
         {/* Weekly Schedule */}
         {profile?.availableDays && profile.availableDays.length > 0 && (
-          <View className="mx-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Weekly Schedule
             </Text>
@@ -514,7 +591,7 @@ export default function SettingsScreen() {
         {/* Limitations & Medical Notes */}
         {((profile?.limitations && profile.limitations.length > 0) ||
           profile?.medicalNotes) && (
-          <View className="mx-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Health Information
             </Text>
@@ -528,9 +605,22 @@ export default function SettingsScreen() {
                   {profile.limitations.map((limitation, index) => (
                     <View
                       key={index}
-                      className="bg-red-100 rounded-full px-3 py-1 mr-2 mb-2"
+                      style={{
+                        backgroundColor: colors.brand.light[1],
+                        borderRadius: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 4,
+                        marginRight: 8,
+                        marginBottom: 8,
+                      }}
                     >
-                      <Text className="text-xs font-medium text-red-700">
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "500",
+                          color: colors.text.secondary,
+                        }}
+                      >
                         {formatEnumValue(limitation)}
                       </Text>
                     </View>
@@ -553,7 +643,7 @@ export default function SettingsScreen() {
         )}
 
         {/* App Settings */}
-        <View className="mx-6 mb-6 bg-neutral-light-1 rounded-xl overflow-hidden">
+        <View className="mx-6 mb-6   rounded-xl overflow-hidden">
           <Text className="text-base font-semibold text-text-primary p-4 pb-2">
             App Settings
           </Text>
@@ -563,7 +653,7 @@ export default function SettingsScreen() {
               <Ionicons
                 name="notifications-outline"
                 size={20}
-                color="#6B7280"
+                color={colors.text.muted}
               />
               <Text className="text-sm text-text-primary ml-3">
                 Push Notifications
@@ -572,21 +662,37 @@ export default function SettingsScreen() {
             <Switch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
-              trackColor={{ false: "#E5E7EB", true: "#BBDE51" }}
-              thumbColor={notificationsEnabled ? "#FFFFFF" : "#F3F4F6"}
+              trackColor={{
+                false: colors.neutral.medium[1],
+                true: colors.brand.primary,
+              }}
+              thumbColor={
+                notificationsEnabled
+                  ? colors.neutral.white
+                  : colors.neutral.light[1]
+              }
             />
           </View>
 
           <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">
-              <Ionicons name="moon-outline" size={20} color="#6B7280" />
+              <Ionicons
+                name="moon-outline"
+                size={20}
+                color={colors.text.muted}
+              />
               <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
             </View>
             <Switch
               value={darkModeEnabled}
               onValueChange={setDarkModeEnabled}
-              trackColor={{ false: "#E5E7EB", true: "#BBDE51" }}
-              thumbColor={darkModeEnabled ? "#FFFFFF" : "#F3F4F6"}
+              trackColor={{
+                false: colors.neutral.medium[1],
+                true: colors.brand.primary,
+              }}
+              thumbColor={
+                darkModeEnabled ? colors.neutral.white : colors.neutral.light[1]
+              }
             />
           </View>
 
@@ -595,13 +701,17 @@ export default function SettingsScreen() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={20}
-                color="#6B7280"
+                color={colors.text.muted}
               />
               <Text className="text-sm text-text-primary ml-3">
                 Privacy Settings
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.neutral.medium[3]}
+            />
           </TouchableOpacity>
         </View>
 
@@ -614,7 +724,7 @@ export default function SettingsScreen() {
             <Ionicons
               name="log-out-outline"
               size={20}
-              color="#EF4444"
+              color={colors.brand.secondary}
               style={{ marginRight: 8 }}
             />
             <Text className="text-red-500 font-semibold">Log Out</Text>

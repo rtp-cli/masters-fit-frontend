@@ -236,7 +236,10 @@ export default function WorkoutScreen() {
     return (
       <View className="flex-1 justify-center items-center bg-background">
         <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="mt-md text-sm text-primary font-medium">
+        <Text
+          className="mt-md text-sm font-medium"
+          style={{ color: colors.text.primary }}
+        >
           One moment...
         </Text>
       </View>
@@ -245,7 +248,7 @@ export default function WorkoutScreen() {
 
   if (!activeWorkout) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View
           style={{
             flex: 1,
@@ -254,12 +257,12 @@ export default function WorkoutScreen() {
             paddingHorizontal: 24,
           }}
         >
-          <Ionicons name="fitness" size={64} color="#8A93A2" />
+          <Ionicons name="fitness" size={64} color={colors.text.muted} />
           <Text
             style={{
               fontSize: 18,
               fontWeight: "bold",
-              color: "#000000",
+              color: colors.text.primary,
               marginTop: 16,
               marginBottom: 8,
             }}
@@ -269,7 +272,7 @@ export default function WorkoutScreen() {
           <Text
             style={{
               fontSize: 14,
-              color: "#8A93A2",
+              color: colors.text.muted,
               textAlign: "center",
               lineHeight: 20,
               marginBottom: 16,
@@ -280,7 +283,7 @@ export default function WorkoutScreen() {
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: "#BBDE51",
+              backgroundColor: colors.brand.primary,
               borderRadius: 12,
               paddingVertical: 12,
               paddingHorizontal: 24,
@@ -289,7 +292,7 @@ export default function WorkoutScreen() {
           >
             <Text
               style={{
-                color: "#181917",
+                color: colors.brand.secondary,
                 fontWeight: "600",
                 fontSize: 14,
               }}
@@ -305,7 +308,7 @@ export default function WorkoutScreen() {
   if (isWorkoutCompleted) {
     const currentDate = new Date().toLocaleDateString("en-CA");
     return (
-      <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View
           style={{
             flex: 1,
@@ -314,12 +317,16 @@ export default function WorkoutScreen() {
             paddingHorizontal: 24,
           }}
         >
-          <Ionicons name="checkmark-circle" size={64} color="#BBDE51" />
+          <Ionicons
+            name="checkmark-circle"
+            size={64}
+            color={colors.brand.primary}
+          />
           <Text
             style={{
               fontSize: 20,
               fontWeight: "bold",
-              color: "#BBDE51",
+              color: colors.brand.primary,
               marginTop: 16,
               marginBottom: 8,
             }}
@@ -329,7 +336,7 @@ export default function WorkoutScreen() {
           <Text
             style={{
               fontSize: 14,
-              color: "#8A93A2",
+              color: colors.text.muted,
               textAlign: "center",
               lineHeight: 20,
               marginBottom: 8,
@@ -343,7 +350,9 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff", paddingTop: 24 }}>
+    <View
+      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 24 }}
+    >
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
@@ -363,13 +372,13 @@ export default function WorkoutScreen() {
               style={{
                 fontSize: 20,
                 fontWeight: "bold",
-                color: "#000000",
+                color: colors.text.primary,
                 marginBottom: 4,
               }}
             >
               {currentExercise?.exercise.name || "Bodyweight Squats"}
             </Text>
-            <Text style={{ fontSize: 14, color: "#8A93A2" }}>
+            <Text style={{ fontSize: 14, color: colors.text.muted }}>
               Focus on knee alignment and control
             </Text>
           </View>
@@ -377,17 +386,17 @@ export default function WorkoutScreen() {
           {/* Progress Card */}
           <View
             style={{
-              backgroundColor: "white",
+              backgroundColor: colors.background,
               borderRadius: 12,
               padding: 16,
               marginBottom: 16,
-              shadowColor: "#000",
+              shadowColor: colors.neutral.dark[1],
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.1,
               shadowRadius: 3,
               elevation: 3,
               borderWidth: 1,
-              borderColor: "#f0f0f0",
+              borderColor: colors.neutral.light[2],
             }}
           >
             <View
@@ -413,7 +422,7 @@ export default function WorkoutScreen() {
                     style={{
                       fontSize: 14,
                       fontWeight: "bold",
-                      color: "#BBDE51",
+                      color: colors.brand.primary,
                     }}
                   >
                     {Math.round(progressPercentage)}%
@@ -424,12 +433,12 @@ export default function WorkoutScreen() {
                     style={{
                       fontSize: 14,
                       fontWeight: "600",
-                      color: "#000000",
+                      color: colors.text.primary,
                     }}
                   >
                     {completedCount}/{totalExercises} Exercises
                   </Text>
-                  <Text style={{ fontSize: 12, color: "#8A93A2" }}>
+                  <Text style={{ fontSize: 12, color: colors.text.muted }}>
                     {getRemainingTime()} min remaining
                   </Text>
                 </View>
@@ -440,24 +449,24 @@ export default function WorkoutScreen() {
           {/* Exercise Details Card */}
           <View
             style={{
-              backgroundColor: "white",
+              backgroundColor: colors.background,
               borderRadius: 12,
               padding: 16,
               marginBottom: 16,
-              shadowColor: "#000",
+              shadowColor: colors.neutral.dark[1],
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.1,
               shadowRadius: 3,
               elevation: 3,
               borderWidth: 1,
-              borderColor: "#f0f0f0",
+              borderColor: colors.neutral.light[2],
             }}
           >
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#000000",
+                color: colors.text.primary,
                 marginBottom: 12,
               }}
             >
@@ -468,17 +477,17 @@ export default function WorkoutScreen() {
             {currentData && isWorkoutActive && (
               <View
                 style={{
-                  backgroundColor: "rgba(187, 222, 81, 0.1)",
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 12,
+                  backgroundColor: colors.neutral.light[1],
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 16,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 14,
                     fontWeight: "600",
-                    color: "#000000",
+                    color: colors.text.primary,
                     marginBottom: 12,
                     textAlign: "center",
                   }}
@@ -499,7 +508,7 @@ export default function WorkoutScreen() {
                       style={{
                         fontSize: 12,
                         fontWeight: "600",
-                        color: "#000000",
+                        color: colors.text.primary,
                         marginBottom: 8,
                         textAlign: "center",
                       }}
@@ -530,11 +539,11 @@ export default function WorkoutScreen() {
                                 justifyContent: "center",
                                 borderWidth: 2,
                                 borderColor: isCompleted
-                                  ? "#BBDE51"
-                                  : "#e0e0e0",
+                                  ? colors.brand.primary
+                                  : colors.neutral.medium[1],
                                 backgroundColor: isCompleted
-                                  ? "#BBDE51"
-                                  : "white",
+                                  ? colors.brand.primary
+                                  : colors.background,
                               }}
                               onPress={() =>
                                 updateExerciseData("setsCompleted", i + 1)
@@ -544,7 +553,9 @@ export default function WorkoutScreen() {
                                 style={{
                                   fontSize: 11,
                                   fontWeight: "600",
-                                  color: isCompleted ? "#181917" : "#8A93A2",
+                                  color: isCompleted
+                                    ? colors.brand.secondary
+                                    : colors.text.muted,
                                 }}
                               >
                                 {i + 1}
@@ -562,7 +573,7 @@ export default function WorkoutScreen() {
                       style={{
                         fontSize: 12,
                         fontWeight: "600",
-                        color: "#000000",
+                        color: colors.text.primary,
                         marginBottom: 8,
                         textAlign: "center",
                       }}
@@ -601,8 +612,8 @@ export default function WorkoutScreen() {
                                   height: 10,
                                   borderRadius: 5,
                                   backgroundColor: isCompleted
-                                    ? "#BBDE51"
-                                    : "#e0e0e0",
+                                    ? colors.brand.primary
+                                    : colors.background,
                                 }}
                               />
                             </TouchableOpacity>
@@ -613,7 +624,7 @@ export default function WorkoutScreen() {
                         <Text
                           style={{
                             fontSize: 10,
-                            color: "#8A93A2",
+                            color: colors.text.muted,
                             marginTop: 4,
                           }}
                         >
@@ -652,7 +663,7 @@ export default function WorkoutScreen() {
             <Text
               style={{
                 fontSize: 13,
-                color: "#8A93A2",
+                color: colors.text.muted,
                 lineHeight: 18,
                 marginBottom: 12,
               }}
@@ -675,12 +686,12 @@ export default function WorkoutScreen() {
                     <Ionicons
                       name="fitness-outline"
                       size={14}
-                      color="#8A93A2"
+                      color={colors.text.muted}
                     />
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#8A93A2",
+                        color: colors.text.muted,
                         marginLeft: 6,
                         fontWeight: "500",
                       }}
@@ -695,7 +706,7 @@ export default function WorkoutScreen() {
                         <View
                           key={index}
                           style={{
-                            backgroundColor: "#f3f4f6",
+                            backgroundColor: colors.neutral.light[1],
                             borderRadius: 16,
                             paddingHorizontal: 12,
                             paddingVertical: 6,
@@ -707,7 +718,7 @@ export default function WorkoutScreen() {
                             style={{
                               fontSize: 12,
                               fontWeight: "500",
-                              color: "#374151",
+                              color: colors.text.primary,
                             }}
                           >
                             {formatEquipment(equipment.trim())}
@@ -725,7 +736,7 @@ export default function WorkoutScreen() {
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#000000",
+                color: colors.text.primary,
                 marginBottom: 12,
               }}
             >
@@ -752,7 +763,7 @@ export default function WorkoutScreen() {
                       borderColor:
                         status === "Current"
                           ? "rgba(187, 222, 81, 0.3)"
-                          : "#f0f0f0",
+                          : colors.neutral.light[2],
                     }}
                   >
                     {/* Exercise Icon */}
@@ -761,13 +772,17 @@ export default function WorkoutScreen() {
                         width: 36,
                         height: 36,
                         borderRadius: 18,
-                        backgroundColor: "#f5f5f5",
+                        backgroundColor: colors.neutral.light[1],
                         alignItems: "center",
                         justifyContent: "center",
                         marginRight: 12,
                       }}
                     >
-                      <Ionicons name="fitness" size={18} color="#8A93A2" />
+                      <Ionicons
+                        name="fitness"
+                        size={18}
+                        color={colors.text.muted}
+                      />
                     </View>
 
                     {/* Exercise Info */}
@@ -776,7 +791,7 @@ export default function WorkoutScreen() {
                         style={{
                           fontSize: 14,
                           fontWeight: "600",
-                          color: "#000000",
+                          color: colors.text.primary,
                           marginBottom: 2,
                         }}
                       >
@@ -785,7 +800,7 @@ export default function WorkoutScreen() {
                       <Text
                         style={{
                           fontSize: 12,
-                          color: "#8A93A2",
+                          color: colors.text.muted,
                         }}
                       >
                         {exercise.sets || 3} sets × {exercise.reps || 12} reps
@@ -801,12 +816,12 @@ export default function WorkoutScreen() {
                         borderRadius: 10,
                         backgroundColor:
                           status === "Completed"
-                            ? "#dcfce7"
+                            ? colors.neutral.light[1]
                             : status === "Current"
                             ? "rgba(187, 222, 81, 0.2)"
                             : status === "Next"
-                            ? "#dbeafe"
-                            : "#f5f5f5",
+                            ? colors.neutral.light[1]
+                            : colors.neutral.light[1],
                       }}
                     >
                       <Text
@@ -815,12 +830,12 @@ export default function WorkoutScreen() {
                           fontWeight: "500",
                           color:
                             status === "Completed"
-                              ? "#16a34a"
+                              ? colors.brand.primary
                               : status === "Current"
-                              ? "#BBDE51"
+                              ? colors.brand.primary
                               : status === "Next"
-                              ? "#3b82f6"
-                              : "#8A93A2",
+                              ? colors.brand.primary
+                              : colors.text.muted,
                         }}
                       >
                         {status}
@@ -837,7 +852,7 @@ export default function WorkoutScreen() {
             {!isWorkoutActive ? (
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#BBDE51",
+                  backgroundColor: colors.brand.primary,
                   borderRadius: 20,
                   paddingVertical: 14,
                   marginBottom: 16,
@@ -846,7 +861,7 @@ export default function WorkoutScreen() {
               >
                 <Text
                   style={{
-                    color: "#181917",
+                    color: colors.brand.secondary,
                     fontWeight: "bold",
                     textAlign: "center",
                     fontSize: 16,
@@ -863,7 +878,7 @@ export default function WorkoutScreen() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#8A93A2",
+                      color: colors.text.muted,
                       marginBottom: 8,
                       textAlign: "center",
                     }}
@@ -877,10 +892,10 @@ export default function WorkoutScreen() {
                       width: 56,
                       height: 56,
                       borderRadius: 28,
-                      backgroundColor: "#BBDE51",
+                      backgroundColor: colors.brand.primary,
                       alignItems: "center",
                       justifyContent: "center",
-                      shadowColor: "#000",
+                      shadowColor: colors.neutral.dark[1],
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.1,
                       shadowRadius: 4,
@@ -892,7 +907,7 @@ export default function WorkoutScreen() {
                     <Ionicons
                       name={isPaused ? "play" : "pause"}
                       size={20}
-                      color="#181917"
+                      color={colors.brand.secondary}
                     />
                   </TouchableOpacity>
 
@@ -900,7 +915,7 @@ export default function WorkoutScreen() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#8A93A2",
+                      color: colors.text.muted,
                       marginTop: 8,
                       textAlign: "center",
                     }}
@@ -915,7 +930,7 @@ export default function WorkoutScreen() {
                 >
                   <TouchableOpacity
                     style={{
-                      backgroundColor: "#16a34a",
+                      backgroundColor: colors.brand.primary,
                       borderRadius: 20,
                       paddingVertical: 14,
                       flex: 1,
@@ -925,7 +940,7 @@ export default function WorkoutScreen() {
                   >
                     <Text
                       style={{
-                        color: "white",
+                        color: colors.background,
                         fontWeight: "bold",
                         fontSize: 14,
                       }}
@@ -936,7 +951,7 @@ export default function WorkoutScreen() {
 
                   {/* <TouchableOpacity
                     style={{
-                      backgroundColor: "#ef4444",
+                      backgroundColor: "colors.brand.primary",
                       borderRadius: 20,
                       paddingVertical: 14,
                       flex: 1,
@@ -946,7 +961,7 @@ export default function WorkoutScreen() {
                   >
                     <Text
                       style={{
-                        color: "white",
+                        color: colors.background,
                         fontWeight: "bold",
                         fontSize: 14,
                       }}
@@ -985,7 +1000,7 @@ export default function WorkoutScreen() {
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#000000",
+                color: colors.text.primary,
                 marginBottom: 4,
               }}
             >
@@ -994,7 +1009,7 @@ export default function WorkoutScreen() {
             <Text
               style={{
                 fontSize: 14,
-                color: "#8A93A2",
+                color: colors.text.muted,
                 marginBottom: 16,
                 lineHeight: 20,
               }}
@@ -1006,7 +1021,9 @@ export default function WorkoutScreen() {
             >
               <TouchableOpacity
                 style={{
-                  backgroundColor: isCompletingExercise ? "#e5e5e5" : "#f5f5f5",
+                  backgroundColor: isCompletingExercise
+                    ? colors.neutral.light[2]
+                    : colors.neutral.light[1],
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 16,
@@ -1019,14 +1036,20 @@ export default function WorkoutScreen() {
                 disabled={isCompletingExercise}
               >
                 <Text
-                  style={{ color: "#8A93A2", fontWeight: "600", fontSize: 14 }}
+                  style={{
+                    color: colors.text.muted,
+                    fontWeight: "600",
+                    fontSize: 14,
+                  }}
                 >
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
-                  backgroundColor: isCompletingExercise ? "#9BC332" : "#BBDE51",
+                  backgroundColor: isCompletingExercise
+                    ? colors.brand.primary
+                    : colors.brand.primary,
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 16,
@@ -1043,12 +1066,16 @@ export default function WorkoutScreen() {
                 {isCompletingExercise && (
                   <ActivityIndicator
                     size="small"
-                    color="#181917"
+                    color="white"
                     style={{ marginRight: 8 }}
                   />
                 )}
                 <Text
-                  style={{ color: "#181917", fontWeight: "600", fontSize: 14 }}
+                  style={{
+                    color: "white",
+                    fontWeight: "600",
+                    fontSize: 14,
+                  }}
                 >
                   {isCompletingExercise ? "Completing..." : "Complete"}
                 </Text>
@@ -1082,30 +1109,30 @@ export default function WorkoutScreen() {
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#000000",
+                color: {colors.text.primary},
                 marginBottom: 4,
               }}
             >
               End Workout
             </Text>
-            <Text style={{ fontSize: 14, color: "#8A93A2", marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, color: "colors.text.muted", marginBottom: 16 }}>
               Add any notes about your workout:
             </Text>
             <TextInput
               style={{
-                backgroundColor: "#f5f5f5",
+                backgroundColor: colors.neutral.light[1],
                 borderRadius: 12,
                 padding: 12,
                 fontSize: 14,
                 minHeight: 80,
                 marginBottom: 16,
                 borderWidth: 1,
-                borderColor: "#e0e0e0",
+                borderColor: {colors.neutral.medium[1]},
               }}
               value={workoutNotes}
               onChangeText={setWorkoutNotes}
               placeholder="How did the workout feel? Any observations..."
-              placeholderTextColor="#A8A8A8"
+              placeholderTextColor={colors.text.muted}
               multiline
               textAlignVertical="top"
             />
@@ -1114,7 +1141,7 @@ export default function WorkoutScreen() {
             >
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#f5f5f5",
+                  backgroundColor: colors.neutral.light[1],
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 16,
@@ -1125,14 +1152,14 @@ export default function WorkoutScreen() {
                 onPress={() => setShowEndWorkoutModal(false)}
               >
                 <Text
-                  style={{ color: "#8A93A2", fontWeight: "600", fontSize: 14 }}
+                  style={{ color: "colors.text.muted", fontWeight: "600", fontSize: 14 }}
                 >
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#ef4444",
+                  backgroundColor: "colors.brand.primary",
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 16,

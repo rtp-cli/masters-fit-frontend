@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../../lib/theme";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { BarChart as RNBarChart } from "react-native-chart-kit";
 
@@ -21,7 +22,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   height = 200,
   showValues = true,
   maxValue,
-  color = "#4f46e5",
+  color = colors.brand.primary,
 }) => {
   if (!data || data.length === 0) {
     return (
@@ -43,9 +44,9 @@ export const BarChart: React.FC<BarChartProps> = ({
   };
 
   const chartConfig = {
-    backgroundColor: "#ffffff",
-    backgroundGradientFrom: "#ffffff",
-    backgroundGradientTo: "#ffffff",
+    backgroundColor: colors.background,
+    backgroundGradientFrom: colors.background,
+    backgroundGradientTo: colors.background,
     decimalPlaces: 0, // optional, defaults to 2dp
     color: (opacity = 1) =>
       color
@@ -60,7 +61,7 @@ export const BarChart: React.FC<BarChartProps> = ({
     },
     propsForBackgroundLines: {
       strokeDasharray: "", // solid background lines with no dashes
-      stroke: "#e3e3e3",
+      stroke: colors.brand.primary,
       strokeWidth: 1,
     },
   };
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     textAlign: "center",
-    color: "#9ca3af",
+    color: colors.text.muted,
     fontSize: 16,
     paddingVertical: 50,
   },

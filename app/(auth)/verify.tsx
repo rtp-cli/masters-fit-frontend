@@ -174,7 +174,7 @@ export default function VerifyScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
       {/* Header */}
@@ -208,7 +208,7 @@ export default function VerifyScreen() {
               maxLength={6}
               editable={!isLoading}
               autoFocus
-              placeholderTextColor="#A8A8A8"
+              placeholderTextColor={colors.text.muted}
             />
           </View>
 
@@ -226,7 +226,7 @@ export default function VerifyScreen() {
       </ScrollView>
 
       {/* Bottom button */}
-      <View className="px-lg pb-2xl pt-md bg-white">
+      <View className="px-lg pb-2xl pt-md bg-background">
         <TouchableOpacity
           className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
             isLoading ? "opacity-70" : ""

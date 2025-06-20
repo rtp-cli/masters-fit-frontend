@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { colors } from "../lib/theme";
 import {
   View,
   Modal,
@@ -9,7 +10,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
-import { colors } from "../lib/theme";
 
 interface Exercise {
   id: number;
@@ -31,13 +31,16 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   onSave,
 }) => {
   const [link, setLink] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [linkType, setLinkType] = useState<"youtube" | "unknown">("unknown");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (exercise) {
-      setLink(exercise.link || "");
-      setLinkType(determineLinkType(exercise.link || ""));
+    if (exercise?.link) {
+      setLink(exercise.link);
+      setLinkType(determineLinkType(exercise.link));
+    } else {
+      setLink("");
+      setLinkType("unknown");
     }
   }, [exercise]);
 
@@ -45,7 +48,9 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
     if (!url) return "unknown";
 
     try {
-      // Check for YouTube URLs only
+      const urlObj = new URL(url);
+
+      // Check for YouTube URLs
       const youtubePatterns = [
         /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/,
         /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=.+/,
@@ -53,10 +58,13 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
       ];
 
       const isYoutube = youtubePatterns.some((pattern) => pattern.test(url));
-      if (isYoutube) return "youtube";
+
+      if (isYoutube) {
+        return "youtube";
+      }
 
       return "unknown";
-    } catch {
+    } catch (error) {
       return "unknown";
     }
   };
@@ -78,7 +86,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
       }
 
       return { isValid: true };
-    } catch {
+    } catch (error) {
       return {
         isValid: false,
         error: "Please enter a valid URL",
@@ -92,28 +100,24 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!exercise) return;
-
     const validation = validateLink(link);
     if (!validation.isValid) {
-      Alert.alert("Invalid URL", validation.error);
+      Alert.alert("Invalid Link", validation.error || "Please check your link");
       return;
     }
 
     setIsLoading(true);
     try {
-      await onSave(exercise.id, link.trim() || null);
+      await onSave(exercise!.id, link.trim() || null);
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to update exercise link. Please try again.");
+      Alert.alert("Error", "Failed to save exercise link. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRemoveLink = async () => {
-    if (!exercise) return;
-
     Alert.alert(
       "Remove Link",
       "Are you sure you want to remove this exercise link?",
@@ -125,7 +129,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
           onPress: async () => {
             setIsLoading(true);
             try {
-              await onSave(exercise.id, null);
+              await onSave(exercise!.id, null);
               onClose();
             } catch (error) {
               Alert.alert(
@@ -153,9 +157,9 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   const getLinkTypeColor = () => {
     switch (linkType) {
       case "youtube":
-        return "#FF0000";
+        return colors.brand.primary;
       default:
-        return "#6B7280";
+        return colors.text.muted;
     }
   };
 
@@ -175,7 +179,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             onPress={onClose}
             className="w-10 h-10 items-center justify-center"
           >
-            <Ionicons name="close" size={24} color="#374151" />
+            <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text variant="h3" center>
             Exercise Link
@@ -189,7 +193,11 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             {exercise.name}
           </Text>
 
-          <Text variant="body" color="#6B7280" className="mb-6 leading-5">
+          <Text
+            variant="body"
+            color={colors.text.muted}
+            className="mb-6 leading-5"
+          >
             Add a YouTube video to help demonstrate this exercise.
           </Text>
 
@@ -204,7 +212,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
                 value={link}
                 onChangeText={handleLinkChange}
                 placeholder="https://youtube.com/watch?v=... or https://example.com/image.jpg"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.muted}
                 multiline
                 editable={!isLoading}
               />
@@ -226,10 +234,9 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               <Ionicons
                 name="checkmark-circle"
                 size={16}
-                color="#BBDE51"
-                className="mr-1.5"
+                color={colors.brand.primary}
               />
-              <Text variant="bodySmall" color="#BBDE51">
+              <Text variant="bodySmall" color={colors.brand.primary}>
                 {linkType === "youtube"
                   ? "YouTube video detected"
                   : "Link detected"}
@@ -239,13 +246,8 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
 
           {link && linkType === "unknown" && (
             <View className="flex-row items-center mb-md">
-              <Ionicons
-                name="warning"
-                size={16}
-                color="#F59E0B"
-                className="mr-1.5"
-              />
-              <Text variant="bodySmall" color="#F59E0B">
+              <Ionicons name="warning" size={16} color={colors.brand.secondary} />
+              <Text variant="bodySmall" color={colors.brand.primary}>
                 Please enter a valid YouTube video URL
               </Text>
             </View>
@@ -256,10 +258,18 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             <Text variant="subtitle" className="mb-2">
               Supported URL formats:
             </Text>
-            <Text variant="bodySmall" color="#6B7280" className="mb-1">
+            <Text
+              variant="bodySmall"
+              color={colors.text.muted}
+              className="mb-1"
+            >
               • YouTube: https://youtube.com/watch?v=abc123
             </Text>
-            <Text variant="bodySmall" color="#6B7280" className="mb-1">
+            <Text
+              variant="bodySmall"
+              color={colors.text.muted}
+              className="mb-1"
+            >
               • YouTube Short: https://youtu.be/abc123
             </Text>
           </View>
@@ -273,8 +283,12 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               onPress={handleRemoveLink}
               disabled={isLoading}
             >
-              <Ionicons name="trash" size={16} color="#EF4444" />
-              <Text variant="bodySmall" color="#EF4444" className="ml-1.5">
+              <Ionicons name="trash" size={16} color={colors.brand.secondary} />
+              <Text
+                variant="bodySmall"
+                color={colors.brand.primary}
+                className="ml-1.5"
+              >
                 Remove Link
               </Text>
             </TouchableOpacity>
@@ -286,7 +300,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               onPress={onClose}
               disabled={isLoading}
             >
-              <Text variant="body" color="#6B7280">
+              <Text variant="body" color={colors.text.muted}>
                 Cancel
               </Text>
             </TouchableOpacity>

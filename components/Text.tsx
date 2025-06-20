@@ -5,6 +5,7 @@ import {
   TextProps as RNTextProps,
   TextStyle,
 } from "react-native";
+import { colors } from "../lib/theme";
 
 type TextVariant =
   | "h1"
@@ -64,73 +65,73 @@ const Text: React.FC<TextProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // Typography variants - Updated to Twitter-style standards
+  // Typography variants - Updated to use theme colors
   h1: {
     fontSize: 20,
     fontWeight: "bold",
     fontFamily: "Inter_700Bold",
     lineHeight: 24,
-    color: "#111827",
+    color: colors.text.primary,
   },
   h2: {
     fontSize: 20,
     fontWeight: "bold",
     fontFamily: "Inter_700Bold",
     lineHeight: 24,
-    color: "#111827",
+    color: colors.text.primary,
   },
   h3: {
     fontSize: 20,
     fontWeight: "bold",
     fontFamily: "Inter_700Bold",
     lineHeight: 24,
-    color: "#111827",
+    color: colors.text.primary,
   },
   h4: {
     fontSize: 20,
     fontWeight: "600",
     fontFamily: "Inter_600SemiBold",
     lineHeight: 24,
-    color: "#111827",
+    color: colors.text.primary,
   },
   title: {
     fontSize: 20,
     fontWeight: "600",
     fontFamily: "Inter_600SemiBold",
     lineHeight: 24,
-    color: "#111827",
+    color: colors.text.primary,
   },
   subtitle: {
     fontSize: 15,
     fontWeight: "500",
     fontFamily: "Inter_500Medium",
     lineHeight: 21,
-    color: "#4b5563",
+    color: colors.text.secondary,
   },
   body: {
     fontSize: 15,
     fontFamily: "Inter_400Regular",
     lineHeight: 21,
-    color: "#1f2937",
+    color: colors.text.primary,
   },
   bodySmall: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     lineHeight: 18,
-    color: "#1f2937",
+    color: colors.text.primary,
   },
   label: {
     fontSize: 15,
     fontWeight: "500",
     fontFamily: "Inter_500Medium",
     lineHeight: 21,
-    color: "#4b5563",
+    color: colors.text.secondary,
   },
   caption: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     lineHeight: 18,
-    color: "#6b7280",
+    color: colors.text.muted,
   },
 
   // Font weights

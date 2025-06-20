@@ -5,7 +5,7 @@ import React, {
   useContext,
   useEffect,
 } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
 import {
   checkEmailExists,
   completeOnboarding as apiCompleteOnboarding,
@@ -19,6 +19,7 @@ import {
 } from "../lib/auth";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
+import { colors } from "../lib/theme";
 
 // Define the shape of our context
 interface AuthContextType {
@@ -207,7 +208,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Provide the context to children components
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {isLoading ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: colors.background,
+          }}
+        >
+          <ActivityIndicator size="large" color={colors.brand.primary} />
+          <Text
+            style={{
+              marginTop: 10,
+              color: colors.text.muted,
+              fontSize: 16,
+            }}
+          >
+            Loading...
+          </Text>
+        </View>
+      ) : (
+        children
+      )}
+    </AuthContext.Provider>
+  );
 }
 
 // Styles
@@ -216,11 +243,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#6b7280",
+    color: colors.text.muted,
   },
 });

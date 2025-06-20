@@ -8,6 +8,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
+import { colors } from "../lib/theme";
 
 type ButtonVariant =
   | "primary"
@@ -69,7 +70,11 @@ const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" ? "#ffffff" : "#4f46e5"}
+          color={
+            variant === "primary" || variant === "destructive"
+              ? colors.neutral.white
+              : colors.brand.primary
+          }
         />
       ) : (
         <>
@@ -102,53 +107,53 @@ const styles = StyleSheet.create({
 
   // Variant styles
   primaryButton: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: colors.brand.primary,
   },
   secondaryButton: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: colors.neutral.light[2],
   },
   outlineButton: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#4f46e5",
+    borderColor: colors.brand.primary,
   },
   ghostButton: {
     backgroundColor: "transparent",
   },
   destructiveButton: {
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.brand.secondary,
   },
 
   // Variant text styles
   primaryText: {
-    color: "#ffffff",
+    color: colors.brand.secondary,
   },
   secondaryText: {
-    color: "#1f2937",
+    color: colors.text.primary,
   },
   outlineText: {
-    color: "#4f46e5",
+    color: colors.brand.primary,
   },
   ghostText: {
-    color: "#4f46e5",
+    color: colors.brand.primary,
   },
   destructiveText: {
-    color: "#ffffff",
+    color: colors.neutral.white,
   },
 
   // Variant disabled styles
   primaryDisabled: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: colors.brand.primary,
   },
   secondaryDisabled: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: colors.neutral.light[2],
   },
   outlineDisabled: {
-    borderColor: "#9ca3af",
+    borderColor: colors.neutral.medium[3],
   },
   ghostDisabled: {},
   destructiveDisabled: {
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.brand.secondary,
   },
 
   // Size styles

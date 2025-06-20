@@ -149,7 +149,7 @@ interface WorkoutRegenerationModalProps {
 const styles = StyleSheet.create({
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.neutral.light[2],
     borderRadius: 12,
     padding: 4,
     marginBottom: 24,
@@ -161,8 +161,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toggleButtonActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
+    backgroundColor: colors.background,
+    shadowColor: colors.neutral.dark[1],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -173,10 +173,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   toggleTextActive: {
-    color: "#181917",
+    color: colors.brand.secondary,
   },
   toggleTextInactive: {
-    color: "#8A93A2",
+    color: colors.text.muted,
   },
 });
 
@@ -508,7 +508,7 @@ export default function WorkoutRegenerationModal({
             onPress={onClose}
             className="w-8 h-8 items-center justify-center"
           >
-            <Ionicons name="close" size={20} color="#8A93A2" />
+            <Ionicons name="close" size={20} color={colors.text.muted} />
           </TouchableOpacity>
           <Text className="text-base font-semibold text-text-primary">
             Regenerate Workout Plan
@@ -571,19 +571,19 @@ export default function WorkoutRegenerationModal({
             </Text>
             <TextInput
               style={{
-                backgroundColor: "#FFFFFF", // background color (white)
+                backgroundColor: colors.background,
                 borderWidth: 1,
-                borderColor: "#E8E8E8", // neutral-medium-1 (thin grey)
+                borderColor: colors.neutral.medium[1],
                 borderRadius: 8,
                 minHeight: 120,
                 fontSize: 14,
-                color: "#181917",
+                color: colors.brand.secondary,
                 paddingHorizontal: 16,
                 paddingVertical: 24,
                 textAlignVertical: "top",
               }}
               placeholder="Add notes about your workout here..."
-              placeholderTextColor="#A8A8A8"
+              placeholderTextColor={colors.text.muted}
               value={customFeedback}
               onChangeText={setCustomFeedback}
               multiline
@@ -618,24 +618,33 @@ export default function WorkoutRegenerationModal({
         </View>
 
         {/* Action Button */}
-        <View className="px-5 pb-5">
+        <View className="px-5 pb-10">
           <TouchableOpacity
-            className={`bg-primary py-4 rounded-xl items-center flex-row justify-center ${
-              loading ? "opacity-70" : ""
-            }`}
+            style={{
+              backgroundColor: colors.brand.primary,
+              paddingVertical: 16,
+              borderRadius: 12,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              opacity: loading ? 0.7 : 1,
+            }}
             onPress={handleRegenerateWithFeedback}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color={colors.brand.primary} />
+              <ActivityIndicator size="small" color="white" />
             ) : (
               <>
-                <Ionicons
-                  name="refresh"
-                  size={18}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-secondary font-semibold text-sm ml-2">
+                <Ionicons name="refresh" size={18} color="white" />
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "600",
+                    fontSize: 14,
+                    marginLeft: 8,
+                  }}
+                >
                   Regenerate Workout Flow
                 </Text>
               </>

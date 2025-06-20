@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { colors } from "../lib/theme";
 import {
   View,
   Image,
@@ -193,8 +194,16 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             />
           ) : (
             <View className="bg-neutral-light-2 h-full items-center justify-center">
-              <Ionicons name="videocam-outline" size={48} color="#9CA3AF" />
-              <Text variant="body" color="#6B7280" className="mt-3 text-center">
+              <Ionicons
+                name="videocam-outline"
+                size={48}
+                color={colors.text.muted}
+              />
+              <Text
+                variant="body"
+                color={colors.text.muted}
+                className="mt-3 text-center"
+              >
                 No video demonstration available
               </Text>
             </View>
@@ -232,10 +241,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             />
           ) : (
             <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
-              <Ionicons name="videocam-outline" size={32} color="#9CA3AF" />
+              <Ionicons
+                name="videocam-outline"
+                size={32}
+                color={colors.text.muted}
+              />
               <Text
                 variant="bodySmall"
-                color="#6B7280"
+                color={colors.text.muted}
                 className="mt-2 text-center"
               >
                 No video demonstration available
@@ -280,8 +293,16 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             />
           ) : (
             <View className="bg-neutral-light-2 h-full items-center justify-center">
-              <Ionicons name="videocam-outline" size={48} color="#9CA3AF" />
-              <Text variant="body" color="#6B7280" className="mt-3 text-center">
+              <Ionicons
+                name="videocam-outline"
+                size={48}
+                color={colors.text.muted}
+              />
+              <Text
+                variant="body"
+                color={colors.text.muted}
+                className="mt-3 text-center"
+              >
                 No video demonstration available
               </Text>
             </View>
@@ -319,10 +340,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             />
           ) : (
             <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
-              <Ionicons name="videocam-outline" size={32} color="#9CA3AF" />
+              <Ionicons
+                name="videocam-outline"
+                size={32}
+                color={colors.text.muted}
+              />
               <Text
                 variant="bodySmall"
-                color="#6B7280"
+                color={colors.text.muted}
                 className="mt-2 text-center"
               >
                 No video demonstration available
@@ -358,10 +383,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
                 />
               ) : (
                 <View className="flex-1 bg-red-50 items-center justify-center">
-                  <Ionicons name="warning" size={48} color="#EF4444" />
+                  <Ionicons
+                    name="warning"
+                    size={48}
+                    color={colors.brand.primary}
+                  />
                   <Text
                     variant="body"
-                    color="#EF4444"
+                    color={colors.brand.primary}
                     className="mt-3 text-center"
                   >
                     Failed to load video
@@ -370,7 +399,11 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
                     className="mt-4 bg-primary px-6 py-3 rounded-lg"
                     onPress={handleOpenInBrowser}
                   >
-                    <Text variant="body" color="#181917" weight="semibold">
+                    <Text
+                      variant="body"
+                      color={colors.brand.primary}
+                      weight="semibold"
+                    >
                       Open in Browser
                     </Text>
                   </TouchableOpacity>
@@ -382,7 +415,11 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               className="absolute top-4 right-4 bg-black/60 rounded-full w-10 h-10 items-center justify-center"
               onPress={() => setShowVideo(false)}
             >
-              <Ionicons name="chevron-down" size={20} color="#FFFFFF" />
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={colors.background}
+              />
             </TouchableOpacity>
           </View>
         );
@@ -392,10 +429,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         <View className={`my-2 ${style ? "" : ""}`}>
           <View className="flex-row items-center justify-between py-2 px-1">
             <View className="flex-row items-center flex-1">
-              <Ionicons name="logo-youtube" size={16} color="#FF0000" />
+              <Ionicons
+                name="logo-youtube"
+                size={16}
+                color={colors.brand.primary}
+              />
               <Text
                 variant="bodySmall"
-                color="#374151"
+                color={colors.text.primary}
                 className="ml-1.5 flex-1"
               >
                 {exerciseName} - Demonstration
@@ -405,7 +446,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               className="p-1"
               onPress={() => setShowVideo(false)}
             >
-              <Ionicons name="chevron-up" size={16} color="#6B7280" />
+              <Ionicons name="chevron-up" size={16} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
 
@@ -425,10 +466,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               />
             ) : (
               <View className="flex-1 bg-red-50 items-center justify-center">
-                <Ionicons name="warning" size={32} color="#EF4444" />
+                <Ionicons
+                  name="warning"
+                  size={32}
+                  color={colors.brand.primary}
+                />
                 <Text
                   variant="bodySmall"
-                  color="#EF4444"
+                  color={colors.brand.primary}
                   className="mt-1 text-center"
                 >
                   Failed to load video
@@ -437,7 +482,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
                   className="mt-2 py-1 px-2"
                   onPress={handleOpenInBrowser}
                 >
-                  <Text variant="bodySmall" color="#BBDE51">
+                  <Text variant="bodySmall" color={colors.brand.primary}>
                     Open in Browser
                   </Text>
                 </TouchableOpacity>
@@ -455,10 +500,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
           className="h-80 border border-gray-300 rounded-lg bg-white items-center justify-center"
           onPress={() => setShowVideo(true)}
         >
-          <Ionicons name="play-circle-outline" size={48} color="#6B7280" />
+          <Ionicons
+            name="play-circle-outline"
+            size={48}
+            color={colors.text.muted}
+          />
           <Text
             variant="bodySmall"
-            color="#6B7280"
+            color={colors.text.muted}
             className="mt-2 text-center"
           >
             YouTube Video: {exerciseName}
@@ -473,10 +522,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
           className="border border-gray-300 rounded-lg bg-white p-4 items-center justify-center h-32"
           onPress={() => setShowVideo(true)}
         >
-          <Ionicons name="play-circle-outline" size={32} color="#6B7280" />
+          <Ionicons
+            name="play-circle-outline"
+            size={32}
+            color={colors.text.muted}
+          />
           <Text
             variant="bodySmall"
-            color="#6B7280"
+            color={colors.text.muted}
             className="mt-2 text-center"
           >
             YouTube Video: {exerciseName}

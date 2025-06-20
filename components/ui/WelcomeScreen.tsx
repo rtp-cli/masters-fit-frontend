@@ -8,7 +8,7 @@ interface WelcomeScreenProps {
 
 export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
   return (
-    <View className="flex-1 bg-white px-6">
+    <View className="flex-1 bg-background px-6">
       <View className="flex-1 justify-center items-center">
         {/* Circular Background with Illustration */}
         <View className="w-80 h-80 bg-brand-light-1 rounded-full justify-center items-center mb-8">

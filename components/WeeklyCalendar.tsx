@@ -1,4 +1,5 @@
 import React from 'react';
+import { colors } from "../lib/theme";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import Text from './Text';
 import { getDayOfWeek, getDayOfMonth, getShortMonth, getCurrentDate } from '@/utils';
@@ -104,7 +105,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
             >
               <Text 
                 variant="caption" 
-                color={isSelected ? '#4f46e5' : '#6b7280'}
+                color={isSelected ? colors.brand.primary : colors.text.muted}
                 center
               >
                 {getDayOfWeek(day).slice(0, 3)}
@@ -118,7 +119,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 <Text
                   variant="body"
                   weight={isToday || isSelected ? 'bold' : 'normal'}
-                  color={isSelected ? '#ffffff' : isToday ? '#4f46e5' : '#1f2937'}
+                  color={isSelected ? colors.background : isToday ? colors.brand.primary : 'colors.brand.primary'}
                   center
                 >
                   {getDayOfMonth(day)}
@@ -127,7 +128,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               
               <Text
                 variant="caption"
-                color={isSelected ? '#4f46e5' : '#6b7280'}
+                color={isSelected ? colors.brand.primary : colors.text.muted}
                 center
               >
                 {getShortMonth(day)}
@@ -149,11 +150,11 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.background,
     borderRadius: 12,
     marginBottom: 16,
     paddingVertical: 12,
-    shadowColor: '#000',
+    shadowColor: colors.neutral.dark[1],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: colors.neutral.light[1],
   },
   daysContainer: {
     paddingHorizontal: 8,
@@ -186,21 +187,21 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   selectedDateCircle: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: colors.brand.primary,
   },
   todayCircle: {
     borderWidth: 1,
-    borderColor: '#4f46e5',
+    borderColor: colors.brand.primary,
   },
   dotIndicator: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#4f46e5',
+    backgroundColor: colors.brand.primary,
     marginTop: 4,
   },
   completedDotIndicator: {
-    backgroundColor: '#10b981',
+    backgroundColor: colors.brand.primary,
   },
 });
 

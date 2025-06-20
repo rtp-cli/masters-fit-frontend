@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { Slider } from "@miblanchard/react-native-slider";
-import { colors } from "@lib/theme";
+import { colors } from "../../lib/theme";
 
 interface CustomSliderProps {
   label?: string;

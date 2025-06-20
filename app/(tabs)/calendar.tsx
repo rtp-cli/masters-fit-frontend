@@ -182,10 +182,12 @@ export default function CalendarScreen() {
         const dateStr = new Date(day.date).toLocaleDateString("en-CA");
         markedDates[dateStr] = {
           marked: true,
-          dotColor: "#BBDE51",
+          dotColor: colors.brand.primary,
           selected: dateStr === normalizedSelectedDate,
           selectedColor:
-            dateStr === normalizedSelectedDate ? "#181917" : undefined,
+            dateStr === normalizedSelectedDate
+              ? colors.brand.secondary
+              : undefined,
         };
       }
     });
@@ -194,7 +196,8 @@ export default function CalendarScreen() {
     if (!markedDates[today]) {
       markedDates[today] = {
         selected: today === normalizedSelectedDate,
-        selectedColor: today === normalizedSelectedDate ? "#181917" : undefined,
+        selectedColor:
+          today === normalizedSelectedDate ? colors.brand.secondary : undefined,
       };
     }
 
@@ -273,25 +276,36 @@ export default function CalendarScreen() {
             current={selectedDate}
             onDayPress={handleDateSelect}
             markedDates={getMarkedDates()}
-            minDate={new Date().toISOString().split("T")[0]}
+            minDate={
+              workoutPlan?.startDate
+                ? new Date(workoutPlan.startDate).toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0]
+            }
             maxDate={
-              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0]
+              workoutPlan?.startDate
+                ? new Date(
+                    new Date(workoutPlan.startDate).getTime() +
+                      7 * 24 * 60 * 60 * 1000
+                  )
+                    .toISOString()
+                    .split("T")[0]
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .split("T")[0]
             }
             disableAllTouchEventsForDisabledDays={true}
             theme={{
-              calendarBackground: "#FFFFFF",
-              textSectionTitleColor: "#8A93A2",
-              selectedDayBackgroundColor: "#181917",
-              selectedDayTextColor: "#FFFFFF",
-              todayTextColor: "#BBDE51",
-              dayTextColor: "#181917",
-              textDisabledColor: "#C6C6C6",
-              dotColor: "#BBDE51",
-              arrowColor: "#181917",
-              monthTextColor: "#181917",
-              indicatorColor: "#BBDE51",
+              calendarBackground: colors.background,
+              textSectionTitleColor: colors.text.muted,
+              selectedDayBackgroundColor: colors.brand.secondary,
+              selectedDayTextColor: colors.neutral.white,
+              todayTextColor: colors.brand.primary,
+              dayTextColor: colors.text.primary,
+              textDisabledColor: colors.neutral.medium[2],
+              dotColor: colors.brand.primary,
+              arrowColor: colors.text.primary,
+              monthTextColor: colors.text.primary,
+              indicatorColor: colors.brand.primary,
               textDayFontFamily: "System",
               textMonthFontFamily: "System",
               textDayHeaderFontFamily: "System",
@@ -312,8 +326,12 @@ export default function CalendarScreen() {
             onPress={() => handleOpenRegeneration()}
             disabled={regenerating}
           >
-            <Ionicons name="refresh" size={18} color="#181917" />
-            <Text className="text-secondary font-semibold text-sm ml-sm">
+            <Ionicons
+              name="refresh"
+              size={18}
+              color={colors.neutral.light[1]}
+            />
+            <Text className="text-neutral-light-1 font-semibold text-sm ml-sm">
               Regenerate Workout Flow
             </Text>
           </TouchableOpacity>

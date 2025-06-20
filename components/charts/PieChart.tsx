@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../../lib/theme";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Circle, Path, G } from "react-native-svg";
 
@@ -88,7 +89,7 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke="#ffffff"
+          stroke={colors.background}
           strokeWidth="1"
         />
       );
@@ -107,7 +108,7 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke="#ffffff"
+          stroke={colors.background}
           strokeWidth="1"
         />
       );
@@ -204,20 +205,20 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 11,
-    color: "#6b7280",
+    color: colors.text.muted,
     fontWeight: "500",
     textAlign: "center",
     marginBottom: 2,
   },
   legendPercentage: {
     fontSize: 12,
-    color: "#374151",
+    color: colors.text.primary,
     fontWeight: "600",
     textAlign: "center",
   },
   noDataText: {
     textAlign: "center",
-    color: "#9ca3af",
+    color: colors.text.muted,
     fontSize: 12,
     paddingVertical: 20,
   },

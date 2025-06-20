@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@components/OnboardingForm";
-import { colors } from "@lib/theme";
+import { colors } from "../lib/theme";
 
 // Import enums directly from OnboardingForm since they're defined there
 enum Gender {
@@ -352,7 +352,7 @@ export default function ProfileEditScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center">
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <ActivityIndicator size="large" color={colors.brand.primary} />
         <Text className="text-text-muted mt-4">Loading your profile...</Text>
       </SafeAreaView>
@@ -361,7 +361,7 @@ export default function ProfileEditScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center">
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <Text className="text-text-muted">Failed to load profile</Text>
         <TouchableOpacity
           className="mt-4 bg-primary px-6 py-3 rounded-xl"
@@ -374,11 +374,11 @@ export default function ProfileEditScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-neutral-light-2">
+      <View className="flex-row items-center justify-between px-4 py-3 bg-background border-b border-neutral-light-2">
         <TouchableOpacity onPress={handleCancel}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-text-primary">
           Edit Profile

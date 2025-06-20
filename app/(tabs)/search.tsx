@@ -303,13 +303,13 @@ export default function SearchScreen() {
     const lowerDifficulty = (difficulty || "").toLowerCase();
     switch (lowerDifficulty) {
       case "beginner":
-        return "#22c55e"; // green
+        return colors.brand.dark[1]; // green
       case "intermediate":
-        return "#f59e0b"; // yellow
+        return colors.brand.primary; // primary
       case "advanced":
-        return "#ef4444"; // red
+        return colors.brand.secondary; // dark
       default:
-        return "#6b7280"; // gray
+        return colors.text.muted; // gray
     }
   };
 
@@ -401,7 +401,7 @@ export default function SearchScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-background">
       <ScrollView className="flex-1">
         {/* Search Inputs */}
         <View className="p-4 pt-6">
@@ -412,7 +412,7 @@ export default function SearchScreen() {
                 <Ionicons
                   name="search"
                   size={18}
-                  color="#9CA3AF"
+                  color={colors.neutral.medium[3]}
                   className="mr-3"
                 />
                 <TextInput
@@ -421,14 +421,18 @@ export default function SearchScreen() {
                   value={exerciseQuery}
                   onChangeText={setExerciseQuery}
                   onSubmitEditing={performExerciseSearch}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.neutral.medium[3]}
                 />
                 {exerciseQuery.length > 0 && (
                   <TouchableOpacity
                     onPress={() => setExerciseQuery("")}
                     className="p-1"
                   >
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                    <Ionicons
+                      name="close-circle"
+                      size={18}
+                      color={colors.neutral.medium[3]}
+                    />
                   </TouchableOpacity>
                 )}
               </View>
@@ -442,7 +446,9 @@ export default function SearchScreen() {
               <Ionicons
                 name="calendar"
                 size={20}
-                color={selectedDate ? "#BBDE51" : "#9CA3AF"}
+                color={
+                  selectedDate ? colors.brand.primary : colors.neutral.medium[3]
+                }
               />
             </TouchableOpacity>
           </View>
@@ -485,7 +491,12 @@ export default function SearchScreen() {
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(false)}
                       >
-                        <Text style={{ color: "#9CA3AF", fontSize: 16 }}>
+                        <Text
+                          style={{
+                            color: colors.neutral.medium[3],
+                            fontSize: 16,
+                          }}
+                        >
                           Cancel
                         </Text>
                       </TouchableOpacity>
@@ -493,7 +504,7 @@ export default function SearchScreen() {
                         style={{
                           fontSize: 18,
                           fontWeight: "600",
-                          color: "#374151",
+                          color: colors.text.primary,
                         }}
                       >
                         Select Date
@@ -523,7 +534,7 @@ export default function SearchScreen() {
                       >
                         <Text
                           style={{
-                            color: "#BBDE51",
+                            color: colors.brand.primary,
                             fontSize: 16,
                             fontWeight: "500",
                           }}
@@ -559,7 +570,7 @@ export default function SearchScreen() {
                           height: 200,
                           width: "100%",
                         }}
-                        textColor="#374151"
+                        textColor={colors.text.primary}
                         locale="en"
                       />
                     </View>
@@ -620,7 +631,11 @@ export default function SearchScreen() {
                 }}
                 className="p-1"
               >
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+                <Ionicons
+                  name="close-circle"
+                  size={16}
+                  color={colors.text.muted}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -659,7 +674,7 @@ export default function SearchScreen() {
                   <Ionicons
                     name="link"
                     size={14}
-                    color="#BBDE51"
+                    color={colors.brand.primary}
                     className="mr-1"
                   />
                   <Text className="text-xs font-medium text-primary">
@@ -687,9 +702,12 @@ export default function SearchScreen() {
                     ).map((muscle: string, index: number) => (
                       <View
                         key={index}
-                        className="bg-primary rounded-full px-3 py-1 mr-2 mb-2"
+                        className="rounded-full px-3 py-1 mr-2 mb-2"
+                        style={{
+                          backgroundColor: colors.brand.primary,
+                        }}
                       >
-                        <Text className="text-xs font-semibold text-text-primary">
+                        <Text className="text-xs font-semibold text-neutral-light-1">
                           {muscle}
                         </Text>
                       </View>
@@ -730,56 +748,56 @@ export default function SearchScreen() {
                   </Text>
 
                   <View className="flex-row justify-around mb-4 flex-wrap">
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-3 shadow-sm">
-                      <Text className="text-s font-bold text-text-primary mb-1">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.totalAssignments || 0}`}
                       </Text>
-                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                      <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                         Assigned
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-3 shadow-sm">
-                      <Text className="text-s font-bold text-text-primary mb-1">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.totalCompletions || 0}`}
                       </Text>
-                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                      <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                         Done
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-yellow-100 mb-3 shadow-sm">
-                      <Text className="text-s font-bold text-text-primary mb-1">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.completionRate || 0}%`}
                       </Text>
-                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                      <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                         Success
                       </Text>
                     </View>
                   </View>
 
                   <View className="flex-row justify-around mb-4 flex-wrap">
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-3 shadow-sm">
-                      <Text className="text-s font-bold text-text-primary mb-1">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.averageSets || 0}`}
                       </Text>
-                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                      <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                         Avg Sets
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-purple-100 mb-3 shadow-sm">
-                      <Text className="text-s font-bold text-text-primary mb-1">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.averageReps || 0}`}
                       </Text>
-                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                      <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                         Avg Reps
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-pink-100 mb-3 shadow-sm">
-                      <Text className="text-s font-bold text-text-primary mb-1">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                      <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {exerciseResult.userStats.averageWeight
                           ? `${exerciseResult.userStats.averageWeight}`
                           : "N/A"}
                       </Text>
-                      <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                      <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                         Avg Weight
                       </Text>
                     </View>
@@ -791,34 +809,34 @@ export default function SearchScreen() {
                       Personal Records
                     </Text>
                     <View className="flex-row justify-around">
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-teal-100 shadow-sm">
-                        <Text className="text-s font-bold text-text-primary mb-1">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-sm">
+                        <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxSets || 0
                           }`}
                         </Text>
-                        <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                        <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                           Max Sets
                         </Text>
                       </View>
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-indigo-100 shadow-sm">
-                        <Text className="text-s font-bold text-text-primary mb-1">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-sm">
+                        <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxReps || 0
                           }`}
                         </Text>
-                        <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                        <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                           Max Reps
                         </Text>
                       </View>
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-orange-100 shadow-sm">
-                        <Text className="text-s font-bold text-text-primary mb-1">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-sm">
+                        <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxWeight ||
                             0
                           }`}
                         </Text>
-                        <Text className="text-[10px] font-medium text-text-muted text-center max-w-12 leading-[10px]">
+                        <Text className="text-[10px] font-medium text-neutral-light-1 text-center max-w-12 leading-[10px]">
                           Max Weight
                         </Text>
                       </View>
@@ -856,8 +874,8 @@ export default function SearchScreen() {
                       ? calculateWorkoutCompletionRate(
                           dateResult.planDay.exercises
                         ) === 100
-                        ? "bg-green-500"
-                        : "bg-yellow-500"
+                        ? "bg-brand-primary"
+                        : "bg-yellow-800"
                       : "bg-gray-500"
                   }`}
                 >
@@ -883,7 +901,7 @@ export default function SearchScreen() {
                 </Text>
                 <View className="h-2 bg-neutral-light-2 rounded-full mb-2 overflow-hidden">
                   <View
-                    className="h-full bg-green-500 rounded-full"
+                    className="h-full bg-brand-primary rounded-full"
                     style={{
                       width: `${
                         dateResult.planDay?.exercises
@@ -963,10 +981,10 @@ export default function SearchScreen() {
                               <View
                                 className={`px-2 py-1 rounded-lg ${
                                   exercise?.completed === true
-                                    ? "bg-green-500"
+                                    ? "bg-brand-primary"
                                     : exercise?.completed === false
-                                    ? "bg-red-500"
-                                    : "bg-yellow-500"
+                                    ? "bg-red-800"
+                                    : "bg-yellow-800"
                                 }`}
                               >
                                 <Text className="text-xs font-semibold text-white">
@@ -980,7 +998,7 @@ export default function SearchScreen() {
                               <Ionicons
                                 name="chevron-forward"
                                 size={16}
-                                color="#9CA3AF"
+                                color={colors.text.muted}
                                 className="ml-2"
                               />
                             </View>
@@ -995,7 +1013,14 @@ export default function SearchScreen() {
                               .map((muscle: string, muscleIndex: number) => (
                                 <View
                                   key={muscleIndex}
-                                  className="bg-primary rounded-full px-2 py-1 mr-1 mb-1"
+                                  style={{
+                                    backgroundColor: colors.brand.light[2],
+                                    borderRadius: 12,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 4,
+                                    marginRight: 4,
+                                    marginBottom: 4,
+                                  }}
                                 >
                                   <Text className="text-xs font-medium text-text-primary">
                                     {muscle}
@@ -1033,7 +1058,8 @@ export default function SearchScreen() {
                                       <View
                                         key={equipmentIndex}
                                         style={{
-                                          backgroundColor: "#f3f4f6",
+                                          backgroundColor:
+                                            colors.neutral.light[1],
                                           borderRadius: 12,
                                           paddingHorizontal: 8,
                                           paddingVertical: 4,
@@ -1045,7 +1071,7 @@ export default function SearchScreen() {
                                           style={{
                                             fontSize: 10,
                                             fontWeight: "500",
-                                            color: "#374151",
+                                            color: colors.text.primary,
                                           }}
                                         >
                                           {formatEquipmentProperly(item)}
@@ -1109,7 +1135,14 @@ export default function SearchScreen() {
                       .map((muscle: string, muscleIndex: number) => (
                         <View
                           key={muscleIndex}
-                          className="bg-primary rounded-full px-2 py-1 mr-1 mb-1"
+                          style={{
+                            backgroundColor: colors.brand.light[2],
+                            borderRadius: 12,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            marginRight: 4,
+                            marginBottom: 4,
+                          }}
                         >
                           <Text className="text-xs font-medium text-text-primary">
                             {muscle}
@@ -1143,7 +1176,7 @@ export default function SearchScreen() {
                               <View
                                 key={equipmentIndex}
                                 style={{
-                                  backgroundColor: "#f3f4f6",
+                                  backgroundColor: colors.neutral.light[1],
                                   borderRadius: 12,
                                   paddingHorizontal: 8,
                                   paddingVertical: 4,
@@ -1155,7 +1188,7 @@ export default function SearchScreen() {
                                   style={{
                                     fontSize: 10,
                                     fontWeight: "500",
-                                    color: "#374151",
+                                    color: colors.text.primary,
                                   }}
                                 >
                                   {formatEquipmentProperly(item)}
@@ -1172,7 +1205,11 @@ export default function SearchScreen() {
                     </Text>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.text.muted}
+                />
               </TouchableOpacity>
             ))}
           </View>
@@ -1185,7 +1222,11 @@ export default function SearchScreen() {
           generalResults.length === 0 &&
           (exerciseQuery.trim() || dateQuery.trim()) && (
             <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-sm">
-              <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+              <Ionicons
+                name="search-outline"
+                size={40}
+                color={colors.neutral.medium[1]}
+              />
               <Text className="text-lg font-semibold text-text-muted mt-4">
                 No results found
               </Text>
@@ -1208,7 +1249,11 @@ export default function SearchScreen() {
 
               <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
                 <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                  <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.brand.primary}
+                  />
                 </View>
                 <Text className="flex-1 text-sm text-text-muted">
                   Search by date to see the workout for that day
@@ -1217,7 +1262,11 @@ export default function SearchScreen() {
 
               <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
                 <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                  <Ionicons name="barbell-outline" size={20} color="#F59E0B" />
+                  <Ionicons
+                    name="barbell-outline"
+                    size={20}
+                    color={colors.brand.primary}
+                  />
                 </View>
                 <Text className="flex-1 text-sm text-text-muted">
                   Search by exercise name to see exercises and performance stats

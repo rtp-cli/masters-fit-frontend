@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { View, Platform, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@components/Header";
+import { colors } from "../../lib/theme";
 
 function TabBarIcon({
   name,
@@ -21,18 +22,18 @@ function WorkoutTabIcon() {
         width: 60,
         height: 60,
         borderRadius: 28,
-        backgroundColor: "#000000",
+        backgroundColor: colors.brand.secondary,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 20,
-        shadowColor: "#000",
+        shadowColor: colors.neutral.dark[1],
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 6,
       }}
     >
-      <Ionicons size={28} name="play" color="#ffffff" />
+      <Ionicons size={28} name="play" color={colors.neutral.white} />
     </View>
   );
 }
@@ -42,21 +43,21 @@ export default function TabLayout() {
     Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: "#1f2937",
-          tabBarInactiveTintColor: "#9ca3af",
+          tabBarActiveTintColor: colors.text.primary,
+          tabBarInactiveTintColor: colors.neutral.medium[3],
           tabBarShowLabel: false,
           tabBarStyle: {
             borderTopWidth: 1,
-            borderTopColor: "#e5e7eb",
+            borderTopColor: colors.neutral.medium[1],
             height: 60,
             paddingBottom: 15,
             paddingTop: 8,
-            backgroundColor: "#ffffff",
+            backgroundColor: colors.background,
             minHeight: 60,
           },
         }}

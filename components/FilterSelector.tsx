@@ -1,4 +1,5 @@
 import React from "react";
+import { colors } from "../lib/theme";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 interface FilterOption {
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
+    color: colors.text.primary,
     marginBottom: 8,
   },
   optionsContainer: {
@@ -81,20 +82,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: colors.neutral.light[1],
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: colors.neutral.light[2],
   },
   selectedOption: {
-    backgroundColor: "#4f46e5",
-    borderColor: "#4f46e5",
+    backgroundColor: colors.brand.primary,
+    borderColor: colors.brand.primary,
   },
   optionText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#6b7280",
+    color: colors.text.muted,
   },
   selectedOptionText: {
-    color: "#ffffff",
+    color: colors.background,
   },
 });

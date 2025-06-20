@@ -110,7 +110,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
       {/* Header */}
@@ -147,7 +147,7 @@ export default function LoginScreen() {
               autoComplete="email"
               keyboardType="email-address"
               editable={!showNameField && !isLoading}
-              placeholderTextColor="#A8A8A8"
+              placeholderTextColor={colors.text.muted}
             />
             {emailError ? (
               <Text className="text-red-500 text-sm mt-sm">{emailError}</Text>
@@ -167,7 +167,7 @@ export default function LoginScreen() {
                 onChangeText={setName}
                 autoCapitalize="words"
                 editable={!isLoading}
-                placeholderTextColor="#A8A8A8"
+                placeholderTextColor={colors.text.muted}
               />
             </View>
           )}
@@ -175,7 +175,7 @@ export default function LoginScreen() {
       </ScrollView>
 
       {/* Bottom button */}
-      <View className="px-lg pb-2xl pt-md bg-white">
+      <View className="px-lg pb-2xl pt-md bg-background">
         <TouchableOpacity
           className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
             isLoading ? "opacity-70" : ""

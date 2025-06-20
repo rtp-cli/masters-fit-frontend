@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { colors } from "../lib/theme";
 import {
   View,
   Text,
@@ -83,7 +84,7 @@ const DebugButton: React.FC = () => {
           position: "absolute",
           top: 50,
           right: 20,
-          backgroundColor: "#FF6B6B",
+          backgroundColor: colors.brand.primary,
           borderRadius: 20,
           width: 40,
           height: 40,
@@ -100,7 +101,7 @@ const DebugButton: React.FC = () => {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
+        <View style={{ flex: 1, backgroundColor: colors.neutral.light[1] }}>
           <View
             style={{
               flexDirection: "row",
@@ -155,7 +156,7 @@ const DebugButton: React.FC = () => {
             <TouchableOpacity
               onPress={clearAllData}
               style={{
-                backgroundColor: "#FF6B6B",
+                backgroundColor: colors.brand.primary,
                 padding: 15,
                 borderRadius: 8,
                 alignItems: "center",
@@ -193,7 +194,7 @@ const DebugSection: React.FC<{ title: string; data: any }> = ({
       style={{
         fontSize: 12,
         color: "#666",
-        backgroundColor: "#f9f9f9",
+        backgroundColor: colors.brand.primary,
         padding: 10,
         borderRadius: 4,
       }}
