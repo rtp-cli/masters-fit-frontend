@@ -57,22 +57,31 @@ enum FitnessLevels {
 }
 
 enum WorkoutEnvironments {
-  HOME = "home",
-  GYM = "gym",
-  HYBRID = "hybrid",
+  HOME_GYM = "home_gym",
+  COMMERCIAL_GYM = "commercial_gym",
+  BODYWEIGHT_ONLY = "bodyweight_only",
 }
 
 enum AvailableEquipment {
-  DUMBBELLS = "dumbbells",
-  RESISTANCE_BANDS = "resistance_bands",
-  MACHINES = "machines",
-  BODYWEIGHT = "bodyweight",
-  KETTLEBELLS = "kettlebells",
-  MEDICINE_BALL = "medicine_ball",
-  FOAM_ROLLER = "foam_roller",
-  TREADMILL = "treadmill",
+  BARBELLS = "barbells",
+  BENCH = "bench",
+  INCLINE_DECLINE_BENCH = "incline_decline_bench",
+  PULL_UP_BAR = "pull_up_bar",
   BIKE = "bike",
-  YOGA_MAT = "yoga_mat",
+  MEDICINE_BALLS = "medicine_balls",
+  PLYO_BOX = "plyo_box",
+  RINGS = "rings",
+  RESISTANCE_BANDS = "resistance_bands",
+  STABILITY_BALL = "stability_ball",
+  DUMBBELLS = "dumbbells",
+  KETTLEBELLS = "kettlebells",
+  SQUAT_RACK = "squat_rack",
+  DIP_BAR = "dip_bar",
+  ROWING_MACHINE = "rowing_machine",
+  SLAM_BALLS = "slam_balls",
+  CABLE_MACHINE = "cable_machine",
+  JUMP_ROPE = "jump_rope",
+  FOAM_ROLLER = "foam_roller",
 }
 
 enum PreferredStyles {
@@ -162,24 +171,27 @@ export default function ProfileEditScreen() {
     }
 
     // Handle environment - convert from string to enum if needed
-    let environment = WorkoutEnvironments.HOME;
+    let environment = WorkoutEnvironments.HOME_GYM;
     if (profile.environment) {
       if (Array.isArray(profile.environment)) {
         environment = profile.environment[0] as WorkoutEnvironments;
       } else {
-        // Map string values to enum
+        // Map string values to enum (handle both old and new values)
         switch (profile.environment.toLowerCase()) {
           case "home":
-            environment = WorkoutEnvironments.HOME;
+          case "home_gym":
+            environment = WorkoutEnvironments.HOME_GYM;
             break;
           case "gym":
-            environment = WorkoutEnvironments.GYM;
+          case "commercial_gym":
+            environment = WorkoutEnvironments.COMMERCIAL_GYM;
             break;
           case "hybrid":
-            environment = WorkoutEnvironments.HYBRID;
+          case "bodyweight_only":
+            environment = WorkoutEnvironments.BODYWEIGHT_ONLY;
             break;
           default:
-            environment = WorkoutEnvironments.HOME;
+            environment = WorkoutEnvironments.HOME_GYM;
         }
       }
     }
@@ -250,6 +262,7 @@ export default function ProfileEditScreen() {
         profile.equipment,
         AvailableEquipment
       ),
+      otherEquipment: profile.otherEquipment || "",
       preferredStyles: convertStringArrayToEnum(
         profile.preferredStyles,
         PreferredStyles
@@ -280,10 +293,11 @@ export default function ProfileEditScreen() {
           formData.limitations?.map((l: PhysicalLimitations) => l.toString()) ||
           [],
         fitnessLevel: formData.fitnessLevel.toString(),
-        environment: formData.environment.toString(),
+        environment: formData.environment!.toString(),
         equipment:
           formData.equipment?.map((e: AvailableEquipment) => e.toString()) ||
           [],
+        otherEquipment: formData.otherEquipment || "",
         workoutStyles: formData.preferredStyles.map((s: PreferredStyles) =>
           s.toString()
         ),
@@ -338,7 +352,7 @@ export default function ProfileEditScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
+      <SafeAreaView className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color={colors.brand.primary} />
         <Text className="text-text-muted mt-4">Loading your profile...</Text>
       </SafeAreaView>
@@ -347,7 +361,7 @@ export default function ProfileEditScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView className="flex-1 bg-neutral-light-1 justify-center items-center">
+      <SafeAreaView className="flex-1 justify-center items-center">
         <Text className="text-text-muted">Failed to load profile</Text>
         <TouchableOpacity
           className="mt-4 bg-primary px-6 py-3 rounded-xl"
@@ -360,7 +374,7 @@ export default function ProfileEditScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-light-1">
+    <SafeAreaView className="flex-1">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-neutral-light-2">
         <TouchableOpacity onPress={handleCancel}>

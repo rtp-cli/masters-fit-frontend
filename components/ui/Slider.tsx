@@ -41,18 +41,6 @@ export default function CustomSlider({
   const position = ((value - minimumValue) / range) * 100;
   const expectedPosition = 50; // What we expect for center
 
-  console.log(`🎚️ Slider Debug [${label}]:`, {
-    value,
-    minimumValue,
-    maximumValue,
-    step,
-    range,
-    positionPercent: Math.round(position),
-    expectedCenter: Math.round((minimumValue + maximumValue) / 2),
-    isCenter: Math.abs(position - 50) < 10,
-    displayValue,
-  });
-
   return (
     <View className={`mb-6 ${className}`}>
       {label && (

@@ -55,7 +55,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   ) => {
     // Use a single generic gym image instead of random ones
     const genericGymImage = require("../assets/gym-generic.jpg");
-    console.log("🖼️ Using generic gym image for exercise:", exerciseName);
 
     return genericGymImage;
   };
@@ -68,10 +67,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   ) => {
     // Use the same generic gym image instead of Unsplash
     const genericGymImage = require("../assets/gym-generic.jpg");
-    console.log(
-      "🖼️ Using generic gym image (fallback) for exercise:",
-      exerciseName
-    );
 
     return genericGymImage;
   };
@@ -169,11 +164,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   };
 
   if (!link) {
-    console.log(
-      "📱 No link provided for exercise:",
-      exerciseName,
-      "- showing generic gym image"
-    );
     // Show generic gym image when no link is available
     if (variant === "hero") {
       const imageUrl = useFallback
@@ -260,22 +250,8 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
 
   const linkInfo = processExerciseLink(link);
 
-  console.log(
-    "🔗 Link info for exercise:",
-    exerciseName,
-    "link:",
-    link,
-    "linkInfo:",
-    linkInfo
-  );
-
   // Only show YouTube videos, everything else gets generic gym images
   if (!linkInfo.isValid || linkInfo.type !== "youtube") {
-    console.log(
-      "📱 Invalid link or not YouTube for exercise:",
-      exerciseName,
-      "- showing generic gym image"
-    );
     if (variant === "hero") {
       const imageUrl = useFallback
         ? getFitnessImageUrl(exerciseName, 800, 600)

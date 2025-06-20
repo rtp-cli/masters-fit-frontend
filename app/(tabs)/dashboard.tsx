@@ -462,7 +462,6 @@ export default function DashboardScreen() {
   useEffect(() => {
     if (user?.id) {
       const { startDate, endDate } = calculateWideDataRange();
-      console.log(`🔍 Fetching strength data from ${startDate} to ${endDate}`);
 
       fetchWeightProgression({ startDate, endDate }).then((data) => {
         // Apply frontend filtering based on the selected filter

@@ -130,8 +130,9 @@ export default function OnboardingScreen() {
         userId: parseInt(pendingUserId),
         goals: formData.goals,
         limitations: formData.limitations || [],
-        environment: formData.environment,
+        environment: formData.environment!, // Assert it's defined since validation requires it
         equipment: formData.equipment || [],
+        otherEquipment: formData.otherEquipment || "",
         preferredStyles: formData.preferredStyles,
         availableDays: formData.availableDays,
         gender: formData.gender.toString(),

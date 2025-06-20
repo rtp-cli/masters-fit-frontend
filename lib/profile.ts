@@ -14,6 +14,7 @@ export interface Profile {
   fitnessLevel?: string;
   environment?: string;
   equipment?: string[];
+  otherEquipment?: string;
   preferredStyles?: string[];
   availableDays?: string[];
   workoutDuration?: number;
@@ -33,6 +34,7 @@ export interface UpdateProfileParams {
   fitnessLevel?: string;
   environment?: string[];
   equipment?: string[];
+  otherEquipment?: string;
   workoutStyles?: string[];
   availableDays?: string[];
   preferredTime?: string;

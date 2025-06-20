@@ -52,17 +52,6 @@ export default function GetStarted() {
       // Check if user has completed onboarding
       const needsOnboarding = user.needsOnboarding ?? true;
 
-      console.log("🔀 Main redirect logic:", {
-        isAuthenticated,
-        isLoading,
-        user: user?.email,
-        needsOnboarding,
-        isGeneratingWorkout,
-        hasRedirected: hasRedirected.current,
-        isVerifyingUser,
-        currentPath: pathname,
-      });
-
       if (!needsOnboarding) {
         // Only redirect to calendar if not already there
         if (pathname !== "/(tabs)/calendar") {

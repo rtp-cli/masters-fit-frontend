@@ -47,9 +47,9 @@ enum IntensityLevels {
 }
 
 enum WorkoutEnvironments {
-  HOME = "home",
-  GYM = "gym",
-  HYBRID = "hybrid",
+  HOME_GYM = "home_gym",
+  COMMERCIAL_GYM = "commercial_gym",
+  BODYWEIGHT_ONLY = "bodyweight_only",
 }
 
 enum PreferredDays {
@@ -82,16 +82,25 @@ enum PhysicalLimitations {
 }
 
 enum AvailableEquipment {
-  DUMBBELLS = "dumbbells",
-  RESISTANCE_BANDS = "resistance_bands",
-  MACHINES = "machines",
-  BODYWEIGHT = "bodyweight",
-  KETTLEBELLS = "kettlebells",
-  MEDICINE_BALL = "medicine_ball",
-  FOAM_ROLLER = "foam_roller",
-  TREADMILL = "treadmill",
+  BARBELLS = "barbells",
+  BENCH = "bench",
+  INCLINE_DECLINE_BENCH = "incline_decline_bench",
+  PULL_UP_BAR = "pull_up_bar",
   BIKE = "bike",
-  YOGA_MAT = "yoga_mat",
+  MEDICINE_BALLS = "medicine_balls",
+  PLYO_BOX = "plyo_box",
+  RINGS = "rings",
+  RESISTANCE_BANDS = "resistance_bands",
+  STABILITY_BALL = "stability_ball",
+  DUMBBELLS = "dumbbells",
+  KETTLEBELLS = "kettlebells",
+  SQUAT_RACK = "squat_rack",
+  DIP_BAR = "dip_bar",
+  ROWING_MACHINE = "rowing_machine",
+  SLAM_BALLS = "slam_balls",
+  CABLE_MACHINE = "cable_machine",
+  JUMP_ROPE = "jump_rope",
+  FOAM_ROLLER = "foam_roller",
 }
 
 enum PreferredStyles {
@@ -117,8 +126,9 @@ export interface FormData {
   goals: FitnessGoals[];
   limitations?: PhysicalLimitations[];
   fitnessLevel: FitnessLevels;
-  environment: WorkoutEnvironments;
+  environment?: WorkoutEnvironments; // Made optional so we can start with no default
   equipment?: AvailableEquipment[];
+  otherEquipment?: string;
   preferredStyles: PreferredStyles[];
   availableDays: PreferredDays[];
   workoutDuration: number;
@@ -245,8 +255,9 @@ export default function OnboardingForm({
     goals: [],
     limitations: [],
     fitnessLevel: FitnessLevels.BEGINNER,
-    environment: WorkoutEnvironments.HOME,
+    // environment: WorkoutEnvironments.HOME_GYM, // Removed default - user must select
     equipment: [],
+    otherEquipment: "",
     preferredStyles: [],
     availableDays: [],
     workoutDuration: 30,
@@ -267,9 +278,49 @@ export default function OnboardingForm({
     field: keyof FormData,
     value: FormData[keyof FormData]
   ) => {
+    const updates: Partial<FormData> = { [field]: value };
+
+    // Auto-assign equipment based on environment selection
+    if (field === "environment") {
+      switch (value) {
+        case WorkoutEnvironments.COMMERCIAL_GYM:
+          // Auto-assign all equipment for commercial gym
+          updates.equipment = [
+            AvailableEquipment.BARBELLS,
+            AvailableEquipment.BENCH,
+            AvailableEquipment.INCLINE_DECLINE_BENCH,
+            AvailableEquipment.PULL_UP_BAR,
+            AvailableEquipment.BIKE,
+            AvailableEquipment.MEDICINE_BALLS,
+            AvailableEquipment.PLYO_BOX,
+            AvailableEquipment.RINGS,
+            AvailableEquipment.RESISTANCE_BANDS,
+            AvailableEquipment.STABILITY_BALL,
+            AvailableEquipment.DUMBBELLS,
+            AvailableEquipment.KETTLEBELLS,
+            AvailableEquipment.SQUAT_RACK,
+            AvailableEquipment.DIP_BAR,
+            AvailableEquipment.ROWING_MACHINE,
+            AvailableEquipment.SLAM_BALLS,
+            AvailableEquipment.CABLE_MACHINE,
+            AvailableEquipment.JUMP_ROPE,
+            AvailableEquipment.FOAM_ROLLER,
+          ];
+          break;
+        case WorkoutEnvironments.BODYWEIGHT_ONLY:
+          // Auto-assign no equipment for bodyweight only
+          updates.equipment = [];
+          break;
+        case WorkoutEnvironments.HOME_GYM:
+          // Clear equipment so user can select manually
+          updates.equipment = [];
+          break;
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      ...updates,
     }));
 
     // Clear error when field is updated
@@ -341,8 +392,17 @@ export default function OnboardingForm({
         break;
 
       case OnboardingStep.WORKOUT_ENVIRONMENT:
+        // Environment is now required - user must make a selection
         if (!formData.environment) {
-          newErrors.environment = "Please select an environment";
+          newErrors.environment = "Please select a workout environment";
+        }
+        // Only validate equipment for HOME_GYM environment
+        if (
+          formData.environment === WorkoutEnvironments.HOME_GYM &&
+          (!formData.equipment || formData.equipment.length === 0)
+        ) {
+          newErrors.equipment =
+            "Please select at least one piece of equipment for your home gym";
         }
         break;
 
@@ -1498,8 +1558,8 @@ export default function OnboardingForm({
   // Render Workout Environment step - matching image exactly
   const renderWorkoutEnvironmentStep = () => (
     <View className="flex-1 px-6 pb-6">
-      <Text className="text-xs text-neutral-medium-4 mb-6">
-        Where will you be working out most often?
+      <Text className="text-sm text-neutral-medium-4 mb-6">
+        Choose the primary location in which you will train.
       </Text>
 
       {/* Environment selection */}
@@ -1510,12 +1570,12 @@ export default function OnboardingForm({
         <View className="flex-row justify-between">
           <TouchableOpacity
             className={`flex-1 p-4 mx-1 rounded-xl items-center ${
-              formData.environment === WorkoutEnvironments.HOME
+              formData.environment === WorkoutEnvironments.HOME_GYM
                 ? "bg-primary"
                 : "bg-white"
             }`}
             onPress={() =>
-              handleChange("environment", WorkoutEnvironments.HOME)
+              handleChange("environment", WorkoutEnvironments.HOME_GYM)
             }
           >
             <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mb-3">
@@ -1523,89 +1583,87 @@ export default function OnboardingForm({
             </View>
             <Text
               className={`font-medium text-sm ${
-                formData.environment === WorkoutEnvironments.HOME
+                formData.environment === WorkoutEnvironments.HOME_GYM
                   ? "text-secondary"
                   : "text-neutral-dark-1"
               }`}
             >
-              Home
+              Home Gym
             </Text>
             <Text
               className={`text-xs text-center mt-1 ${
-                formData.environment === WorkoutEnvironments.HOME
+                formData.environment === WorkoutEnvironments.HOME_GYM
                   ? "text-secondary"
                   : "text-neutral-medium-4"
               }`}
             >
-              Workout at home
+              Home setup with equipment
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             className={`flex-1 p-4 mx-1 rounded-xl items-center ${
-              formData.environment === WorkoutEnvironments.GYM
+              formData.environment === WorkoutEnvironments.COMMERCIAL_GYM
                 ? "bg-primary"
                 : "bg-white"
             }`}
-            onPress={() => handleChange("environment", WorkoutEnvironments.GYM)}
+            onPress={() =>
+              handleChange("environment", WorkoutEnvironments.COMMERCIAL_GYM)
+            }
           >
             <View className="w-8 h-8 bg-purple-100 rounded-xl items-center justify-center mb-3">
               <Ionicons name="fitness-outline" size={16} color="#8B5CF6" />
             </View>
             <Text
               className={`font-medium text-sm ${
-                formData.environment === WorkoutEnvironments.GYM
+                formData.environment === WorkoutEnvironments.COMMERCIAL_GYM
                   ? "text-secondary"
                   : "text-neutral-dark-1"
               }`}
             >
-              Gym
+              Commercial Gym
             </Text>
             <Text
               className={`text-xs text-center mt-1 ${
-                formData.environment === WorkoutEnvironments.GYM
+                formData.environment === WorkoutEnvironments.COMMERCIAL_GYM
                   ? "text-secondary"
                   : "text-neutral-medium-4"
               }`}
             >
-              Go to a gym
+              Full gym facility
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             className={`flex-1 p-4 mx-1 rounded-xl items-center ${
-              formData.environment === WorkoutEnvironments.HYBRID
+              formData.environment === WorkoutEnvironments.BODYWEIGHT_ONLY
                 ? "bg-primary"
                 : "bg-white"
             }`}
             onPress={() =>
-              handleChange("environment", WorkoutEnvironments.HYBRID)
+              handleChange("environment", WorkoutEnvironments.BODYWEIGHT_ONLY)
             }
           >
             <View className="w-8 h-8 bg-green-100 rounded-xl items-center justify-center mb-3">
-              <Ionicons
-                name="swap-horizontal-outline"
-                size={16}
-                color="#10B981"
-              />
+              <Ionicons name="body-outline" size={16} color="#10B981" />
             </View>
             <Text
               className={`font-medium text-sm ${
-                formData.environment === WorkoutEnvironments.HYBRID
+                formData.environment === WorkoutEnvironments.BODYWEIGHT_ONLY
                   ? "text-secondary"
                   : "text-neutral-dark-1"
               }`}
             >
-              Hybrid
+              Bodyweight Only
             </Text>
             <Text
               className={`text-xs text-center mt-1 ${
-                formData.environment === WorkoutEnvironments.HYBRID
+                formData.environment === WorkoutEnvironments.BODYWEIGHT_ONLY
                   ? "text-secondary"
                   : "text-neutral-medium-4"
               }`}
             >
-              Both home & gym
+              No equipment needed
             </Text>
           </TouchableOpacity>
         </View>
@@ -1616,289 +1674,606 @@ export default function OnboardingForm({
         )}
       </View>
 
-      {/* Available Equipment section */}
-      <View className="mb-6">
-        <Text className="text-sm font-semibold text-neutral-dark-1 mb-4">
-          Available Equipment
-        </Text>
-        <Text className="text-xs text-neutral-medium-4 mb-6">
-          Select all equipment you have access to.
-        </Text>
+      {/* Available Equipment section - Only show for Home Gym */}
+      {formData.environment === WorkoutEnvironments.HOME_GYM && (
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-neutral-dark-1 mb-2">
+            Customize Equipment
+          </Text>
+          <Text className="text-sm text-neutral-medium-4 mb-6">
+            Select the equipment you have available in your home gym
+          </Text>
 
-        {/* Equipment options - All equipment from enum */}
-        <View className="flex-row flex-wrap justify-between">
-          {/* Dumbbells */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.DUMBBELLS)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle("equipment", AvailableEquipment.DUMBBELLS)
-            }
-          >
-            <View className="w-8 h-8 bg-red-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="barbell-outline" size={16} color="#EF4444" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.DUMBBELLS)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+          {/* Equipment options - All 19 equipment types in 3-column grid */}
+          <View className="flex-row flex-wrap justify-between">
+            {/* Barbells */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.BARBELLS)
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.BARBELLS
+                )
+              }
             >
-              Dumbbells
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-red-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="barbell-outline" size={16} color="#EF4444" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.BARBELLS)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Barbells
+              </Text>
+            </TouchableOpacity>
 
-          {/* Kettlebells */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.KETTLEBELLS)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle(
-                "equipment",
-                AvailableEquipment.KETTLEBELLS
-              )
-            }
-          >
-            <View className="w-8 h-8 bg-yellow-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="fitness-outline" size={16} color="#F59E0B" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.KETTLEBELLS)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+            {/* Bench */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.BENCH)
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle("equipment", AvailableEquipment.BENCH)
+              }
             >
-              Kettlebells
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="bed-outline" size={16} color="#3B82F6" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.BENCH)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Bench
+              </Text>
+            </TouchableOpacity>
 
-          {/* Resistance Bands */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.RESISTANCE_BANDS)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle(
-                "equipment",
-                AvailableEquipment.RESISTANCE_BANDS
-              )
-            }
-          >
-            <View className="w-8 h-8 bg-green-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="remove-outline" size={16} color="#10B981" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
+            {/* Incline/Decline Bench */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(
+                  AvailableEquipment.INCLINE_DECLINE_BENCH
+                )
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.INCLINE_DECLINE_BENCH
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-indigo-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons
+                  name="trending-up-outline"
+                  size={16}
+                  color="#6366F1"
+                />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(
+                    AvailableEquipment.INCLINE_DECLINE_BENCH
+                  )
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Incline Bench
+              </Text>
+            </TouchableOpacity>
+
+            {/* Pull Up Bar */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.PULL_UP_BAR)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.PULL_UP_BAR
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-green-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="remove-outline" size={16} color="#10B981" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.PULL_UP_BAR)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Pull Up Bar
+              </Text>
+            </TouchableOpacity>
+
+            {/* Exercise Bike */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.BIKE)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle("equipment", AvailableEquipment.BIKE)
+              }
+            >
+              <View className="w-8 h-8 bg-purple-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="bicycle-outline" size={16} color="#8B5CF6" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.BIKE)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Exercise Bike
+              </Text>
+            </TouchableOpacity>
+
+            {/* Medicine Balls */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.MEDICINE_BALLS)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.MEDICINE_BALLS
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-orange-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="basketball-outline" size={16} color="#F97316" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(
+                    AvailableEquipment.MEDICINE_BALLS
+                  )
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Medicine Balls
+              </Text>
+            </TouchableOpacity>
+
+            {/* Plyo Box */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.PLYO_BOX)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.PLYO_BOX
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-teal-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="cube-outline" size={16} color="#14B8A6" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.PLYO_BOX)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Plyo Box
+              </Text>
+            </TouchableOpacity>
+
+            {/* Rings */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.RINGS)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle("equipment", AvailableEquipment.RINGS)
+              }
+            >
+              <View className="w-8 h-8 bg-pink-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons
+                  name="radio-button-off-outline"
+                  size={16}
+                  color="#EC4899"
+                />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.RINGS)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Rings
+              </Text>
+            </TouchableOpacity>
+
+            {/* Resistance Bands */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
                 formData.equipment?.includes(
                   AvailableEquipment.RESISTANCE_BANDS
                 )
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.RESISTANCE_BANDS
+                )
+              }
             >
-              Resistance Bands
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-yellow-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="remove-outline" size={16} color="#F59E0B" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(
+                    AvailableEquipment.RESISTANCE_BANDS
+                  )
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Resistance Bands
+              </Text>
+            </TouchableOpacity>
 
-          {/* Machines */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.MACHINES)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle("equipment", AvailableEquipment.MACHINES)
-            }
-          >
-            <View className="w-8 h-8 bg-purple-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons
-                name="hardware-chip-outline"
-                size={16}
-                color="#8B5CF6"
-              />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.MACHINES)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+            {/* Stability Ball */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.STABILITY_BALL)
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.STABILITY_BALL
+                )
+              }
             >
-              Weight Machines
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-cyan-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="ellipse-outline" size={16} color="#06B6D4" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(
+                    AvailableEquipment.STABILITY_BALL
+                  )
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Stability Ball
+              </Text>
+            </TouchableOpacity>
 
-          {/* Bodyweight */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.BODYWEIGHT)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle(
-                "equipment",
-                AvailableEquipment.BODYWEIGHT
-              )
-            }
-          >
-            <View className="w-8 h-8 bg-orange-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="body-outline" size={16} color="#F97316" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.BODYWEIGHT)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+            {/* Dumbbells */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.DUMBBELLS)
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.DUMBBELLS
+                )
+              }
             >
-              Bodyweight Only
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-red-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="fitness-outline" size={16} color="#EF4444" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.DUMBBELLS)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Dumbbells
+              </Text>
+            </TouchableOpacity>
 
-          {/* Medicine Ball */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.MEDICINE_BALL)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle(
-                "equipment",
-                AvailableEquipment.MEDICINE_BALL
-              )
-            }
-          >
-            <View className="w-8 h-8 bg-indigo-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="basketball-outline" size={16} color="#6366F1" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.MEDICINE_BALL)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+            {/* Kettlebells */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.KETTLEBELLS)
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.KETTLEBELLS
+                )
+              }
             >
-              Medicine Ball
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-amber-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="fitness-outline" size={16} color="#F59E0B" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.KETTLEBELLS)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Kettlebells
+              </Text>
+            </TouchableOpacity>
 
-          {/* Foam Roller */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.FOAM_ROLLER)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle(
-                "equipment",
-                AvailableEquipment.FOAM_ROLLER
-              )
-            }
-          >
-            <View className="w-8 h-8 bg-pink-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="remove-outline" size={16} color="#EC4899" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
+            {/* Squat Rack */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.SQUAT_RACK)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.SQUAT_RACK
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-slate-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="grid-outline" size={16} color="#64748B" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.SQUAT_RACK)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Squat Rack
+              </Text>
+            </TouchableOpacity>
+
+            {/* Dip Bar */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.DIP_BAR)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle("equipment", AvailableEquipment.DIP_BAR)
+              }
+            >
+              <View className="w-8 h-8 bg-emerald-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons
+                  name="git-compare-outline"
+                  size={16}
+                  color="#10B981"
+                />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.DIP_BAR)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Dip Bar
+              </Text>
+            </TouchableOpacity>
+
+            {/* Rowing Machine */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.ROWING_MACHINE)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.ROWING_MACHINE
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-sky-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="boat-outline" size={16} color="#0EA5E9" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(
+                    AvailableEquipment.ROWING_MACHINE
+                  )
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Rowing Machine
+              </Text>
+            </TouchableOpacity>
+
+            {/* Slam Balls */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.SLAM_BALLS)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.SLAM_BALLS
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-stone-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons
+                  name="american-football-outline"
+                  size={16}
+                  color="#78716C"
+                />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.SLAM_BALLS)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Slam Balls
+              </Text>
+            </TouchableOpacity>
+
+            {/* Cable Machine */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.CABLE_MACHINE)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.CABLE_MACHINE
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-violet-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons
+                  name="hardware-chip-outline"
+                  size={16}
+                  color="#8B5CF6"
+                />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.CABLE_MACHINE)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Cable Machine
+              </Text>
+            </TouchableOpacity>
+
+            {/* Jump Rope */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
+                formData.equipment?.includes(AvailableEquipment.JUMP_ROPE)
+                  ? "bg-primary"
+                  : "bg-white"
+              }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.JUMP_ROPE
+                )
+              }
+            >
+              <View className="w-8 h-8 bg-lime-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="ellipse-outline" size={16} color="#84CC16" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.JUMP_ROPE)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Jump Rope
+              </Text>
+            </TouchableOpacity>
+
+            {/* Foam Roller */}
+            <TouchableOpacity
+              className={`w-[30%] p-2 rounded-xl mb-3 items-center ${
                 formData.equipment?.includes(AvailableEquipment.FOAM_ROLLER)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
+                  ? "bg-primary"
+                  : "bg-white"
               }`}
+              onPress={() =>
+                handleMultiSelectToggle(
+                  "equipment",
+                  AvailableEquipment.FOAM_ROLLER
+                )
+              }
             >
-              Foam Roller
-            </Text>
-          </TouchableOpacity>
+              <View className="w-8 h-8 bg-rose-100 rounded-lg items-center justify-center mb-2">
+                <Ionicons name="remove-outline" size={16} color="#F43F5E" />
+              </View>
+              <Text
+                className={`font-medium text-xs text-center ${
+                  formData.equipment?.includes(AvailableEquipment.FOAM_ROLLER)
+                    ? "text-secondary"
+                    : "text-neutral-dark-1"
+                }`}
+              >
+                Foam Roller
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Treadmill */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.TREADMILL)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle("equipment", AvailableEquipment.TREADMILL)
-            }
-          >
-            <View className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="walk-outline" size={16} color="#3B82F6" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.TREADMILL)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
-              }`}
-            >
-              Treadmill
+          {/* Other Equipment Text Input */}
+          <View className="mt-4">
+            <Text className="text-sm font-semibold text-neutral-dark-1 mb-2">
+              Other Equipment
             </Text>
-          </TouchableOpacity>
-
-          {/* Exercise Bike */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.BIKE)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle("equipment", AvailableEquipment.BIKE)
-            }
-          >
-            <View className="w-8 h-8 bg-cyan-100 rounded-lg items-center justify-center mb-2">
-              <Ionicons name="bicycle-outline" size={16} color="#06B6D4" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.BIKE)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
-              }`}
-            >
-              Exercise Bike
+            <Text className="text-xs text-neutral-medium-4 mb-3">
+              Specify any additional equipment you have (optional)
             </Text>
-          </TouchableOpacity>
-
-          {/* Yoga Mat */}
-          <TouchableOpacity
-            className={`w-[48%] p-3 rounded-xl mb-3 items-center ${
-              formData.equipment?.includes(AvailableEquipment.YOGA_MAT)
-                ? "bg-primary"
-                : "bg-white"
-            }`}
-            onPress={() =>
-              handleMultiSelectToggle("equipment", AvailableEquipment.YOGA_MAT)
-            }
-          >
-            <View className="w-8 h-8 bg-teal-100 rounded-lg items-center justify-center mb-2">
-              <MaterialCommunityIcons name="yoga" size={16} color="#14B8A6" />
-            </View>
-            <Text
-              className={`font-medium text-sm text-center ${
-                formData.equipment?.includes(AvailableEquipment.YOGA_MAT)
-                  ? "text-secondary"
-                  : "text-neutral-dark-1"
-              }`}
-            >
-              Yoga Mat
-            </Text>
-          </TouchableOpacity>
+            <TextInput
+              className="w-full p-3 bg-white rounded-xl border border-neutral-light-3 text-neutral-dark-1"
+              placeholder="e.g., TRX straps, balance board, resistance tubes..."
+              value={formData.otherEquipment || ""}
+              onChangeText={(text) => handleChange("otherEquipment", text)}
+              multiline
+              numberOfLines={2}
+              textAlignVertical="top"
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={() => {
+                Keyboard.dismiss();
+              }}
+              onFocus={() => {
+                // Scroll to the bottom to ensure the input is visible
+                setTimeout(() => {
+                  scrollRef.current?.scrollToEnd({ animated: true });
+                }, 300);
+              }}
+              enablesReturnKeyAutomatically={true}
+              scrollEnabled={true}
+            />
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 

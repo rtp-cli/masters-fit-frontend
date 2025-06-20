@@ -110,7 +110,6 @@ export default function SearchScreen() {
 
     try {
       const result = await searchByDateAPI(user.id, dateString);
-      console.log("🔍 Date search result:", JSON.stringify(result, null, 2));
       if (result.success) {
         setDateResult(result.workout);
         setSearchType("date");
@@ -137,10 +136,6 @@ export default function SearchScreen() {
 
     try {
       const result = await searchExercisesAPI(exerciseQuery);
-      console.log(
-        "🔍 Exercise search result:",
-        JSON.stringify(result, null, 2)
-      );
       if (result.success) {
         setGeneralResults(result.exercises);
         setSearchType("general");
@@ -1201,31 +1196,35 @@ export default function SearchScreen() {
           )}
 
         {/* How to Search Instructions */}
-        {!exerciseQuery.trim() && !dateQuery.trim() && (
-          <View className="px-4">
-            <Text className="text-lg font-semibold text-text-primary mb-5 ml-2">
-              How to Search
-            </Text>
-
-            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
-              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
-              </View>
-              <Text className="flex-1 text-sm text-text-muted">
-                Search by date to see the workout for that day
+        {!exerciseQuery.trim() &&
+          !dateQuery.trim() &&
+          !dateResult &&
+          !exerciseResult &&
+          generalResults.length === 0 && (
+            <View className="px-4">
+              <Text className="text-lg font-semibold text-text-primary mb-5 ml-2">
+                How to Search
               </Text>
-            </View>
 
-            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
-              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                <Ionicons name="barbell-outline" size={20} color="#F59E0B" />
+              <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+                <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+                  <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
+                </View>
+                <Text className="flex-1 text-sm text-text-muted">
+                  Search by date to see the workout for that day
+                </Text>
               </View>
-              <Text className="flex-1 text-sm text-text-muted">
-                Search by exercise name to see exercises and performance stats
-              </Text>
+
+              <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+                <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+                  <Ionicons name="barbell-outline" size={20} color="#F59E0B" />
+                </View>
+                <Text className="flex-1 text-sm text-text-muted">
+                  Search by exercise name to see exercises and performance stats
+                </Text>
+              </View>
             </View>
-          </View>
-        )}
+          )}
       </ScrollView>
 
       {/* Exercise Link Modal */}

@@ -46,9 +46,9 @@ enum IntensityLevels {
 }
 
 enum WorkoutEnvironments {
-  HOME = "home",
-  GYM = "gym",
-  HYBRID = "hybrid",
+  HOME_GYM = "home_gym",
+  COMMERCIAL_GYM = "commercial_gym",
+  BODYWEIGHT_ONLY = "bodyweight_only",
 }
 
 enum PreferredDays {
@@ -81,16 +81,25 @@ enum PhysicalLimitations {
 }
 
 enum AvailableEquipment {
-  DUMBBELLS = "dumbbells",
-  RESISTANCE_BANDS = "resistance_bands",
-  MACHINES = "machines",
-  BODYWEIGHT = "bodyweight",
-  KETTLEBELLS = "kettlebells",
-  MEDICINE_BALL = "medicine_ball",
-  FOAM_ROLLER = "foam_roller",
-  TREADMILL = "treadmill",
+  BARBELLS = "barbells",
+  BENCH = "bench",
+  INCLINE_DECLINE_BENCH = "incline_decline_bench",
+  PULL_UP_BAR = "pull_up_bar",
   BIKE = "bike",
-  YOGA_MAT = "yoga_mat",
+  MEDICINE_BALLS = "medicine_balls",
+  PLYO_BOX = "plyo_box",
+  RINGS = "rings",
+  RESISTANCE_BANDS = "resistance_bands",
+  STABILITY_BALL = "stability_ball",
+  DUMBBELLS = "dumbbells",
+  KETTLEBELLS = "kettlebells",
+  SQUAT_RACK = "squat_rack",
+  DIP_BAR = "dip_bar",
+  ROWING_MACHINE = "rowing_machine",
+  SLAM_BALLS = "slam_balls",
+  CABLE_MACHINE = "cable_machine",
+  JUMP_ROPE = "jump_rope",
+  FOAM_ROLLER = "foam_roller",
 }
 
 enum PreferredStyles {
@@ -122,6 +131,7 @@ interface WorkoutRegenerationModalProps {
         fitnessLevel?: string;
         environment?: string;
         equipment?: string[];
+        otherEquipment?: string;
         preferredStyles?: string[];
         availableDays?: string[];
         workoutDuration?: number;
@@ -228,8 +238,9 @@ export default function WorkoutRegenerationModal({
         goals: formData.goals.map((g) => g.toString()),
         limitations: formData.limitations?.map((l) => l.toString()) || [],
         fitnessLevel: formData.fitnessLevel.toString(),
-        environment: formData.environment.toString(),
+        environment: formData.environment!.toString(),
         equipment: formData.equipment?.map((e) => e.toString()) || [],
+        otherEquipment: formData.otherEquipment || "",
         preferredStyles: formData.preferredStyles.map((s) => s.toString()),
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
@@ -275,8 +286,9 @@ export default function WorkoutRegenerationModal({
         goals: formData.goals.map((g) => g.toString()),
         limitations: formData.limitations?.map((l) => l.toString()) || [],
         fitnessLevel: formData.fitnessLevel.toString(),
-        environment: formData.environment.toString(),
+        environment: formData.environment!.toString(),
         equipment: formData.equipment?.map((e) => e.toString()) || [],
+        otherEquipment: formData.otherEquipment || "",
         preferredStyles: formData.preferredStyles.map((s) => s.toString()),
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
@@ -309,10 +321,9 @@ export default function WorkoutRegenerationModal({
       goals: partialFormData.goals || [],
       limitations: partialFormData.limitations || [],
       fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
-      environment: Array.isArray(partialFormData.environment)
-        ? partialFormData.environment[0]
-        : partialFormData.environment || WorkoutEnvironments.HOME,
+      environment: partialFormData.environment || WorkoutEnvironments.HOME_GYM,
       equipment: partialFormData.equipment || [],
+      otherEquipment: partialFormData.otherEquipment || "",
       preferredStyles: partialFormData.preferredStyles || [],
       availableDays: partialFormData.availableDays || [],
       workoutDuration: partialFormData.workoutDuration || 30,
@@ -334,10 +345,9 @@ export default function WorkoutRegenerationModal({
       goals: partialFormData.goals || [],
       limitations: partialFormData.limitations || [],
       fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
-      environment: Array.isArray(partialFormData.environment)
-        ? partialFormData.environment[0]
-        : partialFormData.environment || WorkoutEnvironments.HOME,
+      environment: partialFormData.environment || WorkoutEnvironments.HOME_GYM,
       equipment: partialFormData.equipment || [],
+      otherEquipment: partialFormData.otherEquipment || "",
       preferredStyles: partialFormData.preferredStyles || [],
       availableDays: partialFormData.availableDays || [],
       workoutDuration: partialFormData.workoutDuration || 30,
@@ -372,7 +382,7 @@ export default function WorkoutRegenerationModal({
     }
 
     // Handle environment - convert from string to enum if needed
-    let environment = WorkoutEnvironments.HOME;
+    let environment = WorkoutEnvironments.HOME_GYM;
     if (profile.environment) {
       if (Array.isArray(profile.environment)) {
         environment = profile.environment[0] as WorkoutEnvironments;
@@ -393,6 +403,7 @@ export default function WorkoutRegenerationModal({
         (profile.fitnessLevel as FitnessLevels) || FitnessLevels.BEGINNER,
       environment: environment,
       equipment: (profile.equipment as AvailableEquipment[]) || [],
+      otherEquipment: profile.otherEquipment || "",
       preferredStyles: (profile.preferredStyles as PreferredStyles[]) || [],
       availableDays: (profile.availableDays as PreferredDays[]) || [],
       workoutDuration: profile.workoutDuration || 30,

@@ -350,15 +350,6 @@ npx expo start --clear
 # - Network Inspector
 ```
 
-#### Logging
-
-```typescript
-// Use console.log for development
-console.log("Debug info:", data);
-
-// Use Flipper for advanced debugging (optional)
-```
-
 ## Building for Production
 
 ### Development Build

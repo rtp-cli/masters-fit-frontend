@@ -27,6 +27,7 @@ export interface OnboardingData {
   fitnessLevel: string;
   environment: string;
   equipment?: string[];
+  otherEquipment?: string;
   preferredStyles: string[];
   availableDays: string[];
   intensityLevel: string;

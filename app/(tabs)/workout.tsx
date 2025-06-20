@@ -85,7 +85,6 @@ export default function WorkoutScreen() {
       const lastCheckDate = await AsyncStorage.getItem("lastWorkoutDate");
 
       if (lastCheckDate && lastCheckDate !== currentDate) {
-        console.log("Date changed, refreshing workout...");
         refreshWorkout();
       }
 
@@ -628,30 +627,6 @@ export default function WorkoutScreen() {
                 {/* Weight Input */}
                 {currentData.targetWeight !== undefined && (
                   <View style={{ alignItems: "center", paddingHorizontal: 10 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: "#000000",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Weight Used (lbs)
-                    </Text>
-
-                    {/* Weight Display */}
-                    <Text
-                      style={{
-                        fontSize: 24,
-                        fontWeight: "bold",
-                        color: "#000000",
-                        marginBottom: 16,
-                        textAlign: "center",
-                      }}
-                    >
-                      {currentData.weightUsed || 0} lbs
-                    </Text>
-
                     {/* Weight Slider */}
                     <View style={{ width: "100%", paddingHorizontal: 10 }}>
                       <CustomSlider
