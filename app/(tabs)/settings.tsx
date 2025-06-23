@@ -267,17 +267,7 @@ export default function SettingsScreen() {
       >
         {/* Profile Section */}
         <View className="items-center px-6 mb-6">
-          <View
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: colors.brand.primary,
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 16,
-            }}
-          >
+          <View className="w-20 h-20 rounded-full bg-primary items-center justify-center mb-4">
             <Text className="text-3xl font-bold text-white">
               {getUserInitials()}
             </Text>
@@ -300,17 +290,7 @@ export default function SettingsScreen() {
               className="items-center"
               onPress={() => router.push("/profile-edit")}
             >
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: colors.brand.light[1],
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 8,
-                }}
-              >
+              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-2">
                 <Ionicons
                   name="person-outline"
                   size={20}
@@ -321,17 +301,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: colors.brand.light[1],
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 8,
-                }}
-              >
+              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-2">
                 <Ionicons
                   name="help-circle-outline"
                   size={20}
@@ -342,17 +312,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: colors.brand.light[1],
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 8,
-                }}
-              >
+              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-2">
                 <Ionicons
                   name="share-outline"
                   size={20}
@@ -464,22 +424,9 @@ export default function SettingsScreen() {
                 {profile.goals.map((goal, index) => (
                   <View
                     key={index}
-                    style={{
-                      backgroundColor: colors.brand.light[1],
-                      borderRadius: 12,
-                      paddingHorizontal: 12,
-                      paddingVertical: 4,
-                      marginRight: 8,
-                      marginBottom: 8,
-                    }}
+                    className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
                   >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        color: colors.text.primary,
-                      }}
-                    >
+                    <Text className="text-xs font-medium text-text-primary">
                       {formatEnumValue(goal)}
                     </Text>
                   </View>
@@ -500,22 +447,9 @@ export default function SettingsScreen() {
                 {profile.preferredStyles.map((style, index) => (
                   <View
                     key={index}
-                    style={{
-                      backgroundColor: colors.brand.light[1],
-                      borderRadius: 12,
-                      paddingHorizontal: 12,
-                      paddingVertical: 4,
-                      marginRight: 8,
-                      marginBottom: 8,
-                    }}
+                    className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
                   >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        color: colors.text.primary,
-                      }}
-                    >
+                    <Text className="text-xs font-medium text-text-primary">
                       {style === "HIIT" ? "HIIT" : formatEnumValue(style)}
                     </Text>
                   </View>
@@ -536,22 +470,9 @@ export default function SettingsScreen() {
                 {profile.equipment.map((item, index) => (
                   <View
                     key={index}
-                    style={{
-                      backgroundColor: colors.brand.light[1],
-                      borderRadius: 12,
-                      paddingHorizontal: 12,
-                      paddingVertical: 4,
-                      marginRight: 8,
-                      marginBottom: 8,
-                    }}
+                    className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
                   >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "500",
-                        color: colors.text.primary,
-                      }}
-                    >
+                    <Text className="text-xs font-medium text-text-primary">
                       {formatEnumValue(item)}
                     </Text>
                   </View>
@@ -605,22 +526,9 @@ export default function SettingsScreen() {
                   {profile.limitations.map((limitation, index) => (
                     <View
                       key={index}
-                      style={{
-                        backgroundColor: colors.brand.light[1],
-                        borderRadius: 12,
-                        paddingHorizontal: 12,
-                        paddingVertical: 4,
-                        marginRight: 8,
-                        marginBottom: 8,
-                      }}
+                      className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
                     >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: "500",
-                          color: colors.text.secondary,
-                        }}
-                      >
+                      <Text className="text-xs font-medium text-secondary">
                         {formatEnumValue(limitation)}
                       </Text>
                     </View>
@@ -725,7 +633,7 @@ export default function SettingsScreen() {
               name="log-out-outline"
               size={20}
               color={colors.brand.secondary}
-              style={{ marginRight: 8 }}
+              className="mr-2"
             />
             <Text className="text-red-500 font-semibold">Log Out</Text>
           </TouchableOpacity>

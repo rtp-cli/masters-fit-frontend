@@ -186,7 +186,7 @@ export default function VerifyScreen() {
           <Text className="text-3xl font-bold text-text-primary mb-sm">
             Enter Verification Code
           </Text>
-          <Text className="text-sm text-text-muted" style={{ lineHeight: 20 }}>
+          <Text className="text-sm text-text-muted leading-5">
             We've sent a verification code to {email}. Please enter the code
             below to continue.
           </Text>

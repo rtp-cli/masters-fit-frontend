@@ -17,22 +17,7 @@ function TabBarIcon({
 
 function WorkoutTabIcon() {
   return (
-    <View
-      style={{
-        width: 60,
-        height: 60,
-        borderRadius: 28,
-        backgroundColor: colors.brand.secondary,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 20,
-        shadowColor: colors.neutral.dark[1],
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 6,
-      }}
-    >
+    <View className="w-[60px] h-[60px] rounded-[28px] bg-secondary items-center justify-center mb-5 shadow-lg">
       <Ionicons size={28} name="play" color={colors.neutral.white} />
     </View>
   );
@@ -43,7 +28,7 @@ export default function TabLayout() {
     Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView className="flex-1 bg-background">
       <Header />
       <Tabs
         screenOptions={{

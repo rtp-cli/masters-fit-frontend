@@ -37,7 +37,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
         <StatusBar style="dark" />
         <Stack
           screenOptions={{

@@ -383,7 +383,7 @@ export default function ProfileEditScreen() {
         <Text className="text-lg font-semibold text-text-primary">
           Edit Profile
         </Text>
-        <View style={{ width: 24 }} />
+        <View className="w-6" />
       </View>
 
       {/* Onboarding Form */}

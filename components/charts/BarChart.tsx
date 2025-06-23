@@ -1,6 +1,6 @@
 import React from "react";
 import { colors } from "../../lib/theme";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, Dimensions } from "react-native";
 import { BarChart as RNBarChart } from "react-native-chart-kit";
 
 interface DataPoint {
@@ -26,8 +26,10 @@ export const BarChart: React.FC<BarChartProps> = ({
 }) => {
   if (!data || data.length === 0) {
     return (
-      <View style={[styles.container, { height }]}>
-        <Text style={styles.noDataText}>No data available</Text>
+      <View className="items-center py-2.5" style={{ height }}>
+        <Text className="text-center text-text-muted text-base py-12">
+          No data available
+        </Text>
       </View>
     );
   }
@@ -70,13 +72,16 @@ export const BarChart: React.FC<BarChartProps> = ({
   const chartWidth = Math.max(screenWidth - 40, 300); // Ensure minimum width
 
   return (
-    <View style={styles.container}>
+    <View className="items-center py-2.5">
       <RNBarChart
         data={chartData}
         width={chartWidth}
         height={height}
         chartConfig={chartConfig}
-        style={styles.chart}
+        style={{
+          marginVertical: 8,
+          borderRadius: 16,
+        }}
         showValuesOnTopOfBars={showValues}
         withHorizontalLabels={true}
         withVerticalLabels={true}
@@ -88,20 +93,3 @@ export const BarChart: React.FC<BarChartProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  noDataText: {
-    textAlign: "center",
-    color: colors.text.muted,
-    fontSize: 16,
-    paddingVertical: 50,
-  },
-});

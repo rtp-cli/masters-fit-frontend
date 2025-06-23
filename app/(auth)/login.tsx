@@ -122,7 +122,7 @@ export default function LoginScreen() {
           <Text className="text-3xl font-bold text-text-primary mb-sm">
             {showNameField ? "Create Account" : "Welcome Back"}
           </Text>
-          <Text className="text-sm text-text-muted" style={{ lineHeight: 20 }}>
+          <Text className="text-sm text-text-muted leading-5">
             {showNameField
               ? "Please enter your name to continue"
               : "Enter your email to continue"}

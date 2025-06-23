@@ -1,6 +1,6 @@
 import React from "react";
 import { colors } from "../../lib/theme";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import Svg, { Circle, Path, G } from "react-native-svg";
 
 export interface PieChartData {
@@ -29,8 +29,10 @@ export const PieChart: React.FC<PieChartProps> = ({
 }) => {
   if (!data || data.length === 0) {
     return (
-      <View style={[styles.container, { height: size }]}>
-        <Text style={styles.noDataText}>No data available</Text>
+      <View className="items-center py-3" style={{ height: size }}>
+        <Text className="text-center text-text-muted text-xs py-5">
+          No data available
+        </Text>
       </View>
     );
   }
@@ -132,11 +134,11 @@ export const PieChart: React.FC<PieChartProps> = ({
     .filter(Boolean);
 
   return (
-    <View style={styles.container}>
+    <View className="items-center py-3">
       {/* Chart and Legend Container */}
-      <View style={styles.chartWrapper}>
+      <View className="items-center w-full">
         {/* Pie/Donut Chart */}
-        <View style={styles.chartContainer}>
+        <View className="items-center justify-center mb-4">
           <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             <G>{slices}</G>
           </Svg>
@@ -144,21 +146,21 @@ export const PieChart: React.FC<PieChartProps> = ({
 
         {/* Legend */}
         {showLabels && (
-          <View style={styles.legend}>
+          <View className="flex-row justify-around w-full px-2">
             {data.map((item, index) => {
               const percentage = total > 0 ? (item.value / total) * 100 : 0;
 
               return (
-                <View key={index} style={styles.legendItem}>
+                <View key={index} className="items-center flex-1 px-1">
                   <View
-                    style={[
-                      styles.legendColor,
-                      { backgroundColor: item.color },
-                    ]}
+                    className="w-2.5 h-2.5 rounded-full mb-1"
+                    style={{ backgroundColor: item.color }}
                   />
-                  <Text style={styles.legendText}>{item.label}</Text>
+                  <Text className="text-xs text-text-muted font-medium text-center mb-0.5">
+                    {item.label}
+                  </Text>
                   {showPercentages && (
-                    <Text style={styles.legendPercentage}>
+                    <Text className="text-xs text-text-primary font-semibold text-center">
                       {percentage.toFixed(1)}%
                     </Text>
                   )}
@@ -171,55 +173,3 @@ export const PieChart: React.FC<PieChartProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  chartWrapper: {
-    alignItems: "center",
-    width: "100%",
-  },
-  chartContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  legend: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingHorizontal: 8,
-  },
-  legendItem: {
-    alignItems: "center",
-    flex: 1,
-    paddingHorizontal: 4,
-  },
-  legendColor: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginBottom: 4,
-  },
-  legendText: {
-    fontSize: 11,
-    color: colors.text.muted,
-    fontWeight: "500",
-    textAlign: "center",
-    marginBottom: 2,
-  },
-  legendPercentage: {
-    fontSize: 12,
-    color: colors.text.primary,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  noDataText: {
-    textAlign: "center",
-    color: colors.text.muted,
-    fontSize: 12,
-    paddingVertical: 20,
-  },
-});

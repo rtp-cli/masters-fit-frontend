@@ -1,6 +1,6 @@
 import React from "react";
 import { colors } from "../../lib/theme";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, Dimensions } from "react-native";
 import { LineChart as RNLineChart } from "react-native-chart-kit";
 
 export interface LineChartData {
@@ -26,8 +26,13 @@ export const LineChart: React.FC<LineChartProps> = ({
 }) => {
   if (!data || data.length === 0) {
     return (
-      <View style={[styles.container, { height }]}>
-        <Text style={styles.noDataText}>No data available</Text>
+      <View
+        className="items-center bg-background rounded-lg"
+        style={{ height }}
+      >
+        <Text className="text-center text-text-muted text-base py-12">
+          No data available
+        </Text>
       </View>
     );
   }
@@ -100,14 +105,17 @@ export const LineChart: React.FC<LineChartProps> = ({
   const chartWidth = Math.max(screenWidth - 40, 300); // Ensure minimum width
 
   return (
-    <View style={styles.container}>
+    <View className="items-center bg-background rounded-lg">
       <RNLineChart
         data={chartData}
         width={chartWidth}
         height={height}
         chartConfig={chartConfig}
         bezier
-        style={styles.chart}
+        style={{
+          marginVertical: 8,
+          borderRadius: 16,
+        }}
         withHorizontalLabels={true}
         withVerticalLabels={showLabels}
         withDots={true}
@@ -120,21 +128,3 @@ export const LineChart: React.FC<LineChartProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    backgroundColor: colors.background,
-    borderRadius: 8,
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  noDataText: {
-    textAlign: "center",
-    color: colors.text.muted,
-    fontSize: 16,
-    paddingVertical: 50,
-  },
-});

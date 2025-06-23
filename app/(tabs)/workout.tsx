@@ -411,124 +411,212 @@ export default function WorkoutScreen() {
 
                     {/* Compact Rep Controls - Single Row */}
                     <View className="flex-row flex-wrap justify-center gap-1.5">
-                      <TouchableOpacity
-                        className="bg-neutral-medium-1 rounded-full w-8 h-8 items-center justify-center"
-                        onPress={() =>
-                          updateExerciseData(
-                            "repsCompleted",
-                            Math.max(0, currentData.repsCompleted - 1)
-                          )
-                        }
-                        disabled={currentData.repsCompleted <= 0}
-                      >
-                        <Ionicons
-                          name="remove"
-                          size={12}
-                          color={
-                            currentData.repsCompleted <= 0
-                              ? colors.text.muted
-                              : colors.text.primary
-                          }
-                        />
-                      </TouchableOpacity>
+                      {currentData.targetReps < 4 ? (
+                        // For exercises with less than 4 target reps, show individual rep buttons
+                        <>
+                          <TouchableOpacity
+                            className="bg-neutral-medium-1 rounded-full w-8 h-8 items-center justify-center"
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                Math.max(0, currentData.repsCompleted - 1)
+                              )
+                            }
+                            disabled={currentData.repsCompleted <= 0}
+                          >
+                            <Ionicons
+                              name="remove"
+                              size={12}
+                              color={
+                                currentData.repsCompleted <= 0
+                                  ? colors.text.muted
+                                  : colors.text.primary
+                              }
+                            />
+                          </TouchableOpacity>
 
-                      <TouchableOpacity
-                        className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                          currentData.repsCompleted ===
-                          Math.floor(currentData.targetReps / 3)
-                            ? "border-primary bg-primary"
-                            : "border-neutral-medium-1 bg-background"
-                        }`}
-                        onPress={() =>
-                          updateExerciseData(
-                            "repsCompleted",
-                            Math.floor(currentData.targetReps / 3)
-                          )
-                        }
-                      >
-                        <Text
-                          className={`text-xs font-semibold ${
-                            currentData.repsCompleted ===
-                            Math.floor(currentData.targetReps / 3)
-                              ? "text-secondary"
-                              : "text-text-muted"
-                          }`}
-                        >
-                          {Math.floor(currentData.targetReps / 3)}
-                        </Text>
-                      </TouchableOpacity>
+                          {Array.from(
+                            { length: currentData.targetReps },
+                            (_, i) => {
+                              const repValue = i + 1;
+                              return (
+                                <TouchableOpacity
+                                  key={repValue}
+                                  className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                                    currentData.repsCompleted === repValue
+                                      ? "border-primary bg-primary"
+                                      : "border-neutral-medium-1 bg-background"
+                                  }`}
+                                  onPress={() =>
+                                    updateExerciseData(
+                                      "repsCompleted",
+                                      repValue
+                                    )
+                                  }
+                                >
+                                  <Text
+                                    className={`text-xs font-semibold ${
+                                      currentData.repsCompleted === repValue
+                                        ? "text-secondary"
+                                        : "text-text-muted"
+                                    }`}
+                                  >
+                                    {repValue}
+                                  </Text>
+                                </TouchableOpacity>
+                              );
+                            }
+                          )}
 
-                      <TouchableOpacity
-                        className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                          currentData.repsCompleted ===
-                          Math.floor((currentData.targetReps * 2) / 3)
-                            ? "border-primary bg-primary"
-                            : "border-neutral-medium-1 bg-background"
-                        }`}
-                        onPress={() =>
-                          updateExerciseData(
-                            "repsCompleted",
-                            Math.floor((currentData.targetReps * 2) / 3)
-                          )
-                        }
-                      >
-                        <Text
-                          className={`text-xs font-semibold ${
-                            currentData.repsCompleted ===
-                            Math.floor((currentData.targetReps * 2) / 3)
-                              ? "text-secondary"
-                              : "text-text-muted"
-                          }`}
-                        >
-                          {Math.floor((currentData.targetReps * 2) / 3)}
-                        </Text>
-                      </TouchableOpacity>
+                          <TouchableOpacity
+                            className="bg-primary rounded-full w-8 h-8 items-center justify-center"
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                Math.min(
+                                  currentData.targetReps,
+                                  currentData.repsCompleted + 1
+                                )
+                              )
+                            }
+                            disabled={
+                              currentData.repsCompleted >=
+                              currentData.targetReps
+                            }
+                          >
+                            <Ionicons
+                              name="add"
+                              size={12}
+                              color={colors.brand.secondary}
+                            />
+                          </TouchableOpacity>
+                        </>
+                      ) : (
+                        // For exercises with 4 or more target reps, show the original quick-set buttons
+                        <>
+                          <TouchableOpacity
+                            className="bg-neutral-medium-1 rounded-full w-8 h-8 items-center justify-center"
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                Math.max(0, currentData.repsCompleted - 1)
+                              )
+                            }
+                            disabled={currentData.repsCompleted <= 0}
+                          >
+                            <Ionicons
+                              name="remove"
+                              size={12}
+                              color={
+                                currentData.repsCompleted <= 0
+                                  ? colors.text.muted
+                                  : colors.text.primary
+                              }
+                            />
+                          </TouchableOpacity>
 
-                      <TouchableOpacity
-                        className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                          currentData.repsCompleted === currentData.targetReps
-                            ? "border-primary bg-primary"
-                            : "border-neutral-medium-1 bg-background"
-                        }`}
-                        onPress={() =>
-                          updateExerciseData(
-                            "repsCompleted",
-                            currentData.targetReps
-                          )
-                        }
-                      >
-                        <Text
-                          className={`text-xs font-semibold ${
-                            currentData.repsCompleted === currentData.targetReps
-                              ? "text-secondary"
-                              : "text-text-muted"
-                          }`}
-                        >
-                          {currentData.targetReps}
-                        </Text>
-                      </TouchableOpacity>
+                          <TouchableOpacity
+                            className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                              currentData.repsCompleted ===
+                              Math.floor(currentData.targetReps / 3)
+                                ? "border-primary bg-primary"
+                                : "border-neutral-medium-1 bg-background"
+                            }`}
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                Math.floor(currentData.targetReps / 3)
+                              )
+                            }
+                          >
+                            <Text
+                              className={`text-xs font-semibold ${
+                                currentData.repsCompleted ===
+                                Math.floor(currentData.targetReps / 3)
+                                  ? "text-secondary"
+                                  : "text-text-muted"
+                              }`}
+                            >
+                              {Math.floor(currentData.targetReps / 3)}
+                            </Text>
+                          </TouchableOpacity>
 
-                      <TouchableOpacity
-                        className="bg-primary rounded-full w-8 h-8 items-center justify-center"
-                        onPress={() =>
-                          updateExerciseData(
-                            "repsCompleted",
-                            Math.min(
-                              currentData.targetReps,
-                              currentData.repsCompleted + 1
-                            )
-                          )
-                        }
-                        disabled={
-                          currentData.repsCompleted >= currentData.targetReps
-                        }
-                      >
-                        <Ionicons
-                          name="add"
-                          size={12}
-                          color={colors.brand.secondary}
-                        />
-                      </TouchableOpacity>
+                          <TouchableOpacity
+                            className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                              currentData.repsCompleted ===
+                              Math.floor((currentData.targetReps * 2) / 3)
+                                ? "border-primary bg-primary"
+                                : "border-neutral-medium-1 bg-background"
+                            }`}
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                Math.floor((currentData.targetReps * 2) / 3)
+                              )
+                            }
+                          >
+                            <Text
+                              className={`text-xs font-semibold ${
+                                currentData.repsCompleted ===
+                                Math.floor((currentData.targetReps * 2) / 3)
+                                  ? "text-secondary"
+                                  : "text-text-muted"
+                              }`}
+                            >
+                              {Math.floor((currentData.targetReps * 2) / 3)}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                              currentData.repsCompleted ===
+                              currentData.targetReps
+                                ? "border-primary bg-primary"
+                                : "border-neutral-medium-1 bg-background"
+                            }`}
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                currentData.targetReps
+                              )
+                            }
+                          >
+                            <Text
+                              className={`text-xs font-semibold ${
+                                currentData.repsCompleted ===
+                                currentData.targetReps
+                                  ? "text-secondary"
+                                  : "text-text-muted"
+                              }`}
+                            >
+                              {currentData.targetReps}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            className="bg-primary rounded-full w-8 h-8 items-center justify-center"
+                            onPress={() =>
+                              updateExerciseData(
+                                "repsCompleted",
+                                Math.min(
+                                  currentData.targetReps,
+                                  currentData.repsCompleted + 1
+                                )
+                              )
+                            }
+                            disabled={
+                              currentData.repsCompleted >=
+                              currentData.targetReps
+                            }
+                          >
+                            <Ionicons
+                              name="add"
+                              size={12}
+                              color={colors.brand.secondary}
+                            />
+                          </TouchableOpacity>
+                        </>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -758,101 +846,6 @@ export default function WorkoutScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* End Workout Modal */}
-      {/* <Modal visible={showEndWorkoutModal} transparent animationType="slide">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 24,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderRadius: 16,
-              padding: 24,
-              width: "100%",
-              maxWidth: 400,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "bold",
-                color: {colors.text.primary},
-                marginBottom: 4,
-              }}
-            >
-              End Workout
-            </Text>
-            <Text style={{ fontSize: 14, color: "colors.text.muted", marginBottom: 16 }}>
-              Add any notes about your workout:
-            </Text>
-            <TextInput
-              style={{
-                backgroundColor: colors.neutral.light[1],
-                borderRadius: 12,
-                padding: 12,
-                fontSize: 14,
-                minHeight: 80,
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: {colors.neutral.medium[1]},
-              }}
-              value={workoutNotes}
-              onChangeText={setWorkoutNotes}
-              placeholder="How did the workout feel? Any observations..."
-              placeholderTextColor={colors.text.muted}
-              multiline
-              textAlignVertical="top"
-            />
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.neutral.light[1],
-                  borderRadius: 12,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  flex: 1,
-                  alignItems: "center",
-                  marginRight: 8,
-                }}
-                onPress={() => setShowEndWorkoutModal(false)}
-              >
-                <Text
-                  style={{ color: "colors.text.muted", fontWeight: "600", fontSize: 14 }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "colors.brand.primary",
-                  borderRadius: 12,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  flex: 1,
-                  alignItems: "center",
-                  marginLeft: 8,
-                }}
-                onPress={handleEndWorkout}
-              >
-                <Text
-                  style={{ color: "white", fontWeight: "600", fontSize: 14 }}
-                >
-                  End Workout
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal> */}
     </View>
   );
 }

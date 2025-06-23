@@ -6,7 +6,6 @@ import {
   Modal,
   ActivityIndicator,
   TouchableOpacity,
-  StyleSheet,
   Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
