@@ -81,7 +81,7 @@ export default function GeneratingPlanScreen({
         </View>
 
         {/* Bottom Message */}
-        <View className="absolute bottom-8 left-8 right-8">
+        <View className="absolute bottom-8 left-8 right-8 mb-6">
           <Text className="text-sm text-text-muted text-center leading-5">
             We're building a workout plan tailored specifically for you. This
             usually takes just a few moments.

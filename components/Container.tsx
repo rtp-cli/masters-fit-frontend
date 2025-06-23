@@ -29,12 +29,12 @@ const Container: React.FC<ContainerProps> = ({
   const baseClasses = "flex-1 bg-white";
   const paddedClasses = "px-5";
 
-  // Style for scroll content padding
-  const scrollContentPaddedStyle = { paddingBottom: 40 };
-
   const containerClassName = [baseClasses, padded && paddedClasses]
     .filter(Boolean)
     .join(" ");
+
+  // Build scroll content className
+  const scrollContentClassName = padded ? "pb-10" : "";
 
   // If safeArea is enabled, use SafeAreaView as the base component
   if (safeArea) {
@@ -47,10 +47,8 @@ const Container: React.FC<ContainerProps> = ({
         >
           <ScrollView
             className="flex-1"
-            contentContainerStyle={[
-              padded && scrollContentPaddedStyle,
-              contentContainerStyle,
-            ]}
+            contentContainerClassName={scrollContentClassName}
+            contentContainerStyle={contentContainerStyle}
             showsVerticalScrollIndicator={false}
           >
             {children}
@@ -72,10 +70,8 @@ const Container: React.FC<ContainerProps> = ({
       <View className={containerClassName} style={style}>
         <ScrollView
           className="flex-1"
-          contentContainerStyle={[
-            padded && scrollContentPaddedStyle,
-            contentContainerStyle,
-          ]}
+          contentContainerClassName={scrollContentClassName}
+          contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator={false}
         >
           {children}

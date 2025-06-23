@@ -85,7 +85,85 @@ module.exports = {
         "2xl": "24px",
         full: "9999px",
       },
+      boxShadow: {
+        // React Native compatible shadows
+        "rn-sm": "0px 1px 2px rgba(0, 0, 0, 0.1)",
+        "rn-md": "0px 2px 4px rgba(0, 0, 0, 0.15)",
+        "rn-lg": "0px 4px 10px rgba(0, 0, 0, 0.25)",
+        "rn-xl": "0px 8px 20px rgba(0, 0, 0, 0.3)",
+        "rn-2xl": "0px 12px 30px rgba(0, 0, 0, 0.35)",
+        // Card-specific shadows
+        card: "0px 2px 8px rgba(0, 0, 0, 0.12)",
+        "card-hover": "0px 4px 12px rgba(0, 0, 0, 0.18)",
+        // Button shadows
+        button: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+        "button-pressed": "0px 1px 2px rgba(0, 0, 0, 0.15)",
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    // Custom React Native shadow plugin
+    function ({ addUtilities }) {
+      const shadows = {
+        ".shadow-rn-sm": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "1",
+          "-rn-shadow-opacity": "0.1",
+          "-rn-shadow-radius": "2",
+          "-rn-elevation": "2",
+        },
+        ".shadow-rn-md": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "2",
+          "-rn-shadow-opacity": "0.15",
+          "-rn-shadow-radius": "4",
+          "-rn-elevation": "4",
+        },
+        ".shadow-rn-lg": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "4",
+          "-rn-shadow-opacity": "0.25",
+          "-rn-shadow-radius": "10",
+          "-rn-elevation": "8",
+        },
+        ".shadow-rn-xl": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "8",
+          "-rn-shadow-opacity": "0.3",
+          "-rn-shadow-radius": "20",
+          "-rn-elevation": "12",
+        },
+        ".shadow-card": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "2",
+          "-rn-shadow-opacity": "0.12",
+          "-rn-shadow-radius": "8",
+          "-rn-elevation": "4",
+        },
+        ".shadow-card-hover": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "4",
+          "-rn-shadow-opacity": "0.18",
+          "-rn-shadow-radius": "12",
+          "-rn-elevation": "6",
+        },
+        ".shadow-button": {
+          "-rn-shadow-color": "#000",
+          "-rn-shadow-offset-width": "0",
+          "-rn-shadow-offset-height": "2",
+          "-rn-shadow-opacity": "0.1",
+          "-rn-shadow-radius": "4",
+          "-rn-elevation": "3",
+        },
+      };
+
+      addUtilities(shadows);
+    },
+  ],
 };

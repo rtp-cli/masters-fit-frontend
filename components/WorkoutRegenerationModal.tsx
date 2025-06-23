@@ -488,60 +488,54 @@ export default function WorkoutRegenerationModal({
             Choose how you would like to generate your workout plan:
           </Text>
 
-          {/* Week/Day Toggle - Using Tailwind classes */}
+          {/* Week/Day Toggle - Fixed shadow issue */}
           <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
             <TouchableOpacity
-              className="flex-1 py-3 rounded-sm items-center"
-              style={{
-                backgroundColor:
-                  selectedType === "week" ? "white" : "transparent",
-                shadowColor: selectedType === "week" ? "#000" : "transparent",
-                shadowOffset:
-                  selectedType === "week"
-                    ? { width: 0, height: 1 }
-                    : { width: 0, height: 0 },
-                shadowOpacity: selectedType === "week" ? 0.1 : 0,
-                shadowRadius: selectedType === "week" ? 2 : 0,
-                elevation: selectedType === "week" ? 2 : 0,
-              }}
+              className={`flex-1 py-3 rounded-sm items-center ${
+                selectedType === "week" ? "bg-white" : "bg-transparent"
+              }`}
+              style={
+                selectedType === "week"
+                  ? {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 2,
+                    }
+                  : undefined
+              }
               onPress={() => setSelectedType("week")}
             >
               <Text
-                className="font-medium text-sm"
-                style={{
-                  color:
-                    selectedType === "week"
-                      ? colors.brand.secondary
-                      : colors.text.muted,
-                }}
+                className={`font-medium text-sm ${
+                  selectedType === "week" ? "text-secondary" : "text-text-muted"
+                }`}
               >
                 Week
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-1 py-3 rounded-sm items-center"
-              style={{
-                backgroundColor:
-                  selectedType === "day" ? "white" : "transparent",
-                shadowColor: selectedType === "day" ? "#000" : "transparent",
-                shadowOffset:
-                  selectedType === "day"
-                    ? { width: 0, height: 1 }
-                    : { width: 0, height: 0 },
-                shadowOpacity: selectedType === "day" ? 0.1 : 0,
-                shadowRadius: selectedType === "day" ? 2 : 0,
-                elevation: selectedType === "day" ? 2 : 0,
-              }}
+              className={`flex-1 py-3 rounded-sm items-center ${
+                selectedType === "day" ? "bg-white" : "bg-transparent"
+              }`}
+              style={
+                selectedType === "day"
+                  ? {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 2,
+                    }
+                  : undefined
+              }
               onPress={() => setSelectedType("day")}
             >
               <Text
-                className="font-medium text-sm"
-                style={{
-                  color:
-                    selectedType === "day"
-                      ? colors.brand.secondary
-                      : colors.text.muted,
-                }}
+                className={`font-medium text-sm ${
+                  selectedType === "day" ? "text-secondary" : "text-text-muted"
+                }`}
               >
                 Day
               </Text>
@@ -556,16 +550,9 @@ export default function WorkoutRegenerationModal({
               what you would like to change:
             </Text>
             <TextInput
+              className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
               style={{
-                backgroundColor: "white",
-                borderWidth: 1,
-                borderColor: colors.neutral.medium[1],
-                borderRadius: 6,
                 minHeight: 120,
-                fontSize: 14,
-                color: colors.brand.secondary,
-                paddingHorizontal: 16,
-                paddingVertical: 24,
                 textAlignVertical: "top",
               }}
               placeholder="Add notes about your workout here..."

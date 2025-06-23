@@ -1,6 +1,6 @@
 import React from "react";
 import { colors } from "../lib/theme";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import Text from "./Text";
 import {
   getDayOfWeek,
@@ -91,8 +91,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const today = getCurrentDate();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View className="bg-white rounded-xl mb-4 py-3 shadow-sm">
+      <View className="px-4 pb-3 border-b border-neutral-light-1">
         <Text variant="subtitle" center>
           {formattedSelectedDate}
         </Text>
@@ -101,7 +101,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.daysContainer}
+        className="px-2 py-3"
       >
         {weekDays.map((day) => {
           const dateString = formatDateForComparison(day);
@@ -114,7 +114,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           return (
             <TouchableOpacity
               key={dateString}
-              style={[styles.dayItem, isSelected && styles.selectedDayItem]}
+              className="items-center py-2"
+              style={{ width: 70 }}
               onPress={() => onDateSelect(dateString)}
             >
               <Text
@@ -126,11 +127,13 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               </Text>
 
               <View
-                style={[
-                  styles.dateCircle,
-                  isSelected && styles.selectedDateCircle,
-                  isToday && styles.todayCircle,
-                ]}
+                className={`w-10 h-10 rounded-full items-center justify-center my-2 ${
+                  isSelected
+                    ? "bg-primary"
+                    : isToday
+                    ? "border border-primary"
+                    : ""
+                }`}
               >
                 <Text
                   variant="body"
@@ -140,7 +143,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                       ? colors.background
                       : isToday
                       ? colors.brand.primary
-                      : "colors.brand.primary"
+                      : colors.brand.primary
                   }
                   center
                 >
@@ -157,12 +160,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               </Text>
 
               {hasWorkout && (
-                <View
-                  style={[
-                    styles.dotIndicator,
-                    hasCompletedWorkout && styles.completedDotIndicator,
-                  ]}
-                />
+                <View className="w-1.5 h-1.5 rounded-full mt-1 bg-primary" />
               )}
             </TouchableOpacity>
           );
@@ -171,62 +169,5 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingVertical: 12,
-    shadowColor: colors.neutral.dark[1],
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral.light[1],
-  },
-  daysContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-  },
-  dayItem: {
-    width: 70,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  selectedDayItem: {
-    // Additional styling for the selected day item
-  },
-  dateCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 8,
-  },
-  selectedDateCircle: {
-    backgroundColor: colors.brand.primary,
-  },
-  todayCircle: {
-    borderWidth: 1,
-    borderColor: colors.brand.primary,
-  },
-  dotIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.brand.primary,
-    marginTop: 4,
-  },
-  completedDotIndicator: {
-    backgroundColor: colors.brand.primary,
-  },
-});
 
 export default WeeklyCalendar;

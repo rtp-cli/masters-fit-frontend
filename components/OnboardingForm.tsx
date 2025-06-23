@@ -2905,9 +2905,8 @@ export default function OnboardingForm({
 
   return (
     <KeyboardAvoidingView
-      className="flex-1"
+      className="flex-1 bg-white"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ backgroundColor: colors.background }}
     >
       <ScrollView
         ref={scrollRef}
@@ -2927,10 +2926,7 @@ export default function OnboardingForm({
           <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
             {stepConfig.title}
           </Text>
-          <Text
-            className="text-sm text-neutral-medium-4 mb-2"
-            style={{ lineHeight: 20 }}
-          >
+          <Text className="text-sm text-neutral-medium-4 mb-2 leading-5">
             {stepConfig.description}
           </Text>
           <Text className="text-sm italic text-neutral-medium-4">

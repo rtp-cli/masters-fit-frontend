@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { colors } from "../lib/theme";
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
 
@@ -99,17 +93,17 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchBarContainer}>
-        <View style={styles.searchBar}>
+    <View className="bg-white border-b border-neutral-light-2">
+      <View className="p-4">
+        <View className="flex-row items-center rounded-lg px-3 py-2.5 bg-neutral-light-1">
           <Ionicons
             name="search"
             size={20}
             color={colors.text.muted}
-            style={styles.searchIcon}
+            style={{ marginRight: 8 }}
           />
           <TextInput
-            style={styles.searchInput}
+            className="flex-1 text-base py-0 text-text-primary"
             placeholder="Search exercises, muscle groups..."
             value={searchQuery}
             onChangeText={handleSearchChange}
@@ -131,15 +125,14 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersContainer}
+        className="px-4 pb-4"
       >
         {filters.map((filter) => (
           <TouchableOpacity
             key={filter}
-            style={[
-              styles.filterButton,
-              activeFilter === filter && styles.activeFilterButton,
-            ]}
+            className={`px-4 py-2 rounded-2xl mr-2.5 ${
+              activeFilter === filter ? "bg-primary" : "bg-neutral-light-1"
+            }`}
             onPress={() => handleFilterSelect(filter)}
           >
             <Text
@@ -157,47 +150,5 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral.light[2],
-  },
-  searchBarContainer: {
-    padding: 15,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.neutral.light[1],
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text.primary,
-    paddingVertical: 0,
-  },
-  filtersContainer: {
-    paddingHorizontal: 15,
-    paddingBottom: 15,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: colors.neutral.light[1],
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  activeFilterButton: {
-    backgroundColor: colors.brand.primary,
-  },
-});
 
 export default ExerciseSearch;

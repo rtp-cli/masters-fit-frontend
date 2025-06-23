@@ -1,6 +1,6 @@
 import React from "react";
 import { colors } from "../lib/theme";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
 import Card from "./Card";
@@ -57,14 +57,14 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={handlePress}
-      style={[styles.container, selected && styles.selectedContainer]}
+      className={`mb-3 ${selected ? "shadow-card-hover" : ""}`}
     >
       <Card variant={selected ? "outlined" : "default"}>
-        <View style={styles.content}>
-          <View style={styles.header}>
+        <View className="p-4">
+          <View className="flex-row justify-between items-center mb-2">
             <Text variant="title">{workout.name}</Text>
             {workout.completed && (
-              <View style={styles.completedBadge}>
+              <View className="px-2 py-1 rounded-xl bg-primary">
                 <Text variant="caption" color={colors.brand.primary}>
                   Completed
                 </Text>
@@ -72,38 +72,38 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             )}
           </View>
 
-          <View style={styles.details}>
-            <View style={styles.detailItem}>
+          <View className="flex-row flex-wrap mb-3">
+            <View className="flex-row items-center mr-4 mb-1">
               <Ionicons
                 name="time-outline"
                 size={16}
                 color={colors.text.muted}
               />
-              <Text variant="bodySmall" style={styles.detailText}>
+              <Text variant="bodySmall" className="ml-1 text-text-muted">
                 {formatDuration(workout.duration)}
               </Text>
             </View>
 
             {workout.type && (
-              <View style={styles.detailItem}>
+              <View className="flex-row items-center mr-4 mb-1">
                 <Ionicons
                   name="barbell-outline"
                   size={16}
                   color={colors.text.muted}
                 />
-                <Text variant="bodySmall" style={styles.detailText}>
+                <Text variant="bodySmall" className="ml-1 text-text-muted">
                   {workout.type.charAt(0).toUpperCase() + workout.type.slice(1)}
                 </Text>
               </View>
             )}
 
-            <View style={styles.detailItem}>
+            <View className="flex-row items-center mr-4 mb-1">
               <Ionicons
                 name="flame-outline"
                 size={16}
                 color={colors.text.muted}
               />
-              <Text variant="bodySmall" style={styles.detailText}>
+              <Text variant="bodySmall" className="ml-1 text-text-muted">
                 {typeof workout.intensity === "number"
                   ? getIntensityText(workout.intensity)
                   : workout.intensity.charAt(0).toUpperCase() +
@@ -112,13 +112,13 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             </View>
 
             {workout.caloriesBurned && (
-              <View style={styles.detailItem}>
+              <View className="flex-row items-center mr-4 mb-1">
                 <Ionicons
                   name="flash-outline"
                   size={16}
                   color={colors.text.muted}
                 />
-                <Text variant="bodySmall" style={styles.detailText}>
+                <Text variant="bodySmall" className="ml-1 text-text-muted">
                   {workout.caloriesBurned} kcal
                 </Text>
               </View>
@@ -129,16 +129,16 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
             <Text
               variant="bodySmall"
               color={colors.text.secondary}
-              style={styles.description}
+              className="mb-3"
             >
               {workout.description}
             </Text>
           )}
 
           {showActions && (
-            <View style={styles.actions}>
+            <View className="flex-row mt-1">
               <TouchableOpacity
-                style={styles.primaryButton}
+                className="flex-1 py-2 px-4 rounded-md items-center mr-2 bg-primary"
                 onPress={handleStartWorkout}
               >
                 <Text
@@ -151,7 +151,8 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.secondaryButton}
+                className="py-2 px-4 rounded-md items-center border border-primary"
+                style={{ flex: 0.5 }}
                 onPress={handleEditWorkout}
               >
                 <Text
@@ -169,73 +170,5 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
-  selectedContainer: {
-    shadowColor: colors.brand.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  completedBadge: {
-    backgroundColor: colors.brand.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  details: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 12,
-  },
-  detailItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-    marginBottom: 4,
-  },
-  detailText: {
-    marginLeft: 4,
-    color: colors.text.muted,
-  },
-  description: {
-    marginBottom: 12,
-  },
-  actions: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-  primaryButton: {
-    backgroundColor: colors.brand.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    flex: 1,
-    alignItems: "center",
-    marginRight: 8,
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: colors.brand.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignItems: "center",
-    flex: 0.5,
-  },
-});
 
 export default WorkoutCard;

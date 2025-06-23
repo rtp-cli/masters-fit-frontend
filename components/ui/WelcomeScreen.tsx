@@ -13,7 +13,7 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
         {/* Circular Background with Illustration */}
         <View className="w-80 h-80 bg-brand-light-1 rounded-full justify-center items-center mb-8">
           {/* Phone mockup illustration placeholder */}
-          <View className="w-32 h-56 bg-white rounded-2xl border border-neutral-medium-1 justify-center items-center shadow-lg">
+          <View className="w-32 h-56 bg-white rounded-2xl border border-neutral-medium-1 justify-center items-center shadow-rn-lg">
             <View className="w-24 h-12 bg-primary rounded-lg mb-4 justify-center items-center">
               <Text className="text-xl font-bold text-secondary">40</Text>
             </View>
