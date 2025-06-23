@@ -1424,18 +1424,8 @@ export default function OnboardingForm({
           Any additional medical information or concerns we should know about.
         </Text>
         <TextInput
-          style={{
-            backgroundColor: colors.background, // background color (white)
-            borderWidth: 1,
-            borderColor: colors.neutral.medium[1], // neutral-medium-1 (thin grey)
-            borderRadius: 12, // rounded-xl
-            minHeight: 100,
-            fontSize: 14,
-            color: colors.brand.secondary, // neutral-dark-1
-            paddingHorizontal: 16,
-            paddingVertical: 24,
-            textAlignVertical: "top",
-          }}
+          className="bg-white border border-neutral-medium-1 rounded-xl min-h-25 text-sm text-secondary px-4 py-6"
+          textAlignVertical="top"
           placeholder="Enter any medical conditions, injuries, or concerns..."
           placeholderTextColor={colors.text.muted}
           value={formData.medicalNotes}

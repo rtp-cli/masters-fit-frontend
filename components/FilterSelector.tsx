@@ -1,6 +1,6 @@
 import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { colors } from "../lib/theme";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 interface FilterOption {
   label: string;
@@ -21,23 +21,27 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
   onSelect,
 }) => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.optionsContainer}>
+    <View className="mb-4">
+      <Text className="text-sm font-semibold text-text-primary mb-2">
+        {title}
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
         {options.map((option) => (
           <TouchableOpacity
             key={option.value}
-            style={[
-              styles.option,
-              selectedValue === option.value && styles.selectedOption,
-            ]}
+            className={`px-3 py-1.5 rounded-full border ${
+              selectedValue === option.value
+                ? "bg-primary border-primary"
+                : "bg-neutral-light-1 border-neutral-light-2"
+            }`}
             onPress={() => onSelect(option.value)}
           >
             <Text
-              style={[
-                styles.optionText,
-                selectedValue === option.value && styles.selectedOptionText,
-              ]}
+              className={`text-xs font-medium ${
+                selectedValue === option.value
+                  ? "text-white"
+                  : "text-text-muted"
+              }`}
             >
               {option.label}
             </Text>
@@ -62,40 +66,3 @@ export const groupByOptions: FilterOption[] = [
   { label: "Day", value: "day" },
   { label: "Muscle Group", value: "muscle_group" },
 ];
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: 8,
-  },
-  optionsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  option: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: colors.neutral.light[1],
-    borderWidth: 1,
-    borderColor: colors.neutral.light[2],
-  },
-  selectedOption: {
-    backgroundColor: colors.brand.primary,
-    borderColor: colors.brand.primary,
-  },
-  optionText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: colors.text.muted,
-  },
-  selectedOptionText: {
-    color: colors.background,
-  },
-});

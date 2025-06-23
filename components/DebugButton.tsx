@@ -80,18 +80,7 @@ const DebugButton: React.FC = () => {
     <>
       <TouchableOpacity
         onPress={gatherDebugInfo}
-        style={{
-          position: "absolute",
-          top: 50,
-          right: 20,
-          backgroundColor: colors.brand.primary,
-          borderRadius: 20,
-          width: 40,
-          height: 40,
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000,
-        }}
+        className="absolute top-12 right-5 bg-primary rounded-full w-10 h-10 justify-center items-center z-50"
       >
         <Ionicons name="bug" size={20} color="white" />
       </TouchableOpacity>
@@ -101,25 +90,15 @@ const DebugButton: React.FC = () => {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={{ flex: 1, backgroundColor: colors.neutral.light[1] }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 20,
-              borderBottomWidth: 1,
-              borderBottomColor: "#ddd",
-              backgroundColor: "white",
-            }}
-          >
-            <Text style={{ fontSize: 18, fontWeight: "bold" }}>Debug Info</Text>
+        <View className="flex-1 bg-neutral-light-1">
+          <View className="flex-row justify-between items-center p-5 border-b border-neutral-medium-1 bg-white">
+            <Text className="text-lg font-bold">Debug Info</Text>
             <TouchableOpacity onPress={() => setIsVisible(false)}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ flex: 1, padding: 20 }}>
+          <ScrollView className="flex-1 p-5">
             <DebugSection
               title="Auth Context User"
               data={debugInfo.contextUser}
@@ -145,26 +124,12 @@ const DebugButton: React.FC = () => {
             <DebugSection title="Token Preview" data={debugInfo.tokenPreview} />
           </ScrollView>
 
-          <View
-            style={{
-              padding: 20,
-              backgroundColor: "white",
-              borderTopWidth: 1,
-              borderTopColor: "#ddd",
-            }}
-          >
+          <View className="p-5 bg-white border-t border-neutral-medium-1">
             <TouchableOpacity
               onPress={clearAllData}
-              style={{
-                backgroundColor: colors.brand.primary,
-                padding: 15,
-                borderRadius: 8,
-                alignItems: "center",
-              }}
+              className="bg-primary p-4 rounded-sm items-center"
             >
-              <Text style={{ color: "white", fontWeight: "bold" }}>
-                Clear All Data
-              </Text>
+              <Text className="text-white font-bold">Clear All Data</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -177,28 +142,9 @@ const DebugSection: React.FC<{ title: string; data: any }> = ({
   title,
   data,
 }) => (
-  <View
-    style={{
-      backgroundColor: "white",
-      padding: 15,
-      marginBottom: 10,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: "#ddd",
-    }}
-  >
-    <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 8 }}>
-      {title}
-    </Text>
-    <Text
-      style={{
-        fontSize: 12,
-        color: "#666",
-        backgroundColor: colors.brand.primary,
-        padding: 10,
-        borderRadius: 4,
-      }}
-    >
+  <View className="bg-white p-4 mb-3 rounded-sm border border-neutral-medium-1">
+    <Text className="text-base font-bold mb-2">{title}</Text>
+    <Text className="text-xs text-neutral-dark-1 bg-neutral-light-2 p-3 rounded-xs">
       {typeof data === "object" ? JSON.stringify(data, null, 2) : String(data)}
     </Text>
   </View>

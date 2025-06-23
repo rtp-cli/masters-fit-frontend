@@ -114,13 +114,9 @@ export default function GetStarted() {
         <View className="flex-1 justify-center items-center">
           <Image
             source={require("../assets/home.png")}
-            className="w-64 h-64"
+            className="w-80 h-80 mb-10"
             resizeMode="contain"
           />
-        </View>
-
-        {/* Text Content */}
-        <View className="items-center my-10">
           <Text className="text-xl font-bold text-text-primary text-center mb-4">
             Welcome to MastersFit!
           </Text>

@@ -1,12 +1,5 @@
 import React from "react";
-import { colors } from "../lib/theme";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  StyleProp,
-  ViewStyle,
-} from "react-native";
+import { View, ScrollView, StyleProp, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ContainerProps {
@@ -32,17 +25,30 @@ const Container: React.FC<ContainerProps> = ({
   contentContainerStyle,
   children,
 }) => {
-  const containerStyle = [styles.container, padded && styles.padded, style];
+  // Base classes
+  const baseClasses = "flex-1 bg-white";
+  const paddedClasses = "px-5";
+
+  // Style for scroll content padding
+  const scrollContentPaddedStyle = { paddingBottom: 40 };
+
+  const containerClassName = [baseClasses, padded && paddedClasses]
+    .filter(Boolean)
+    .join(" ");
 
   // If safeArea is enabled, use SafeAreaView as the base component
   if (safeArea) {
     if (scrollable) {
       return (
-        <SafeAreaView edges={edges} style={containerStyle}>
+        <SafeAreaView
+          edges={edges}
+          className={containerClassName}
+          style={style}
+        >
           <ScrollView
-            style={styles.scrollView}
+            className="flex-1"
             contentContainerStyle={[
-              padded && styles.scrollContentPadded,
+              padded && scrollContentPaddedStyle,
               contentContainerStyle,
             ]}
             showsVerticalScrollIndicator={false}
@@ -54,7 +60,7 @@ const Container: React.FC<ContainerProps> = ({
     }
 
     return (
-      <SafeAreaView edges={edges} style={containerStyle}>
+      <SafeAreaView edges={edges} className={containerClassName} style={style}>
         {children}
       </SafeAreaView>
     );
@@ -63,11 +69,11 @@ const Container: React.FC<ContainerProps> = ({
   // If safeArea is disabled, use regular View or ScrollView
   if (scrollable) {
     return (
-      <View style={containerStyle}>
+      <View className={containerClassName} style={style}>
         <ScrollView
-          style={styles.scrollView}
+          className="flex-1"
           contentContainerStyle={[
-            padded && styles.scrollContentPadded,
+            padded && scrollContentPaddedStyle,
             contentContainerStyle,
           ]}
           showsVerticalScrollIndicator={false}
@@ -78,23 +84,11 @@ const Container: React.FC<ContainerProps> = ({
     );
   }
 
-  return <View style={containerStyle}>{children}</View>;
+  return (
+    <View className={containerClassName} style={style}>
+      {children}
+    </View>
+  );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  padded: {
-    paddingHorizontal: 20,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContentPadded: {
-    paddingBottom: 40,
-  },
-});
 
 export default Container;

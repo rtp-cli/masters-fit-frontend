@@ -145,41 +145,6 @@ interface WorkoutRegenerationModalProps {
   regenerationType?: "day" | "week";
 }
 
-// Add StyleSheet for pure React Native styling
-const styles = StyleSheet.create({
-  toggleContainer: {
-    flexDirection: "row",
-    backgroundColor: colors.neutral.light[2],
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.background,
-    shadowColor: colors.neutral.dark[1],
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleText: {
-    fontWeight: "500",
-    fontSize: 14,
-  },
-  toggleTextActive: {
-    color: colors.brand.secondary,
-  },
-  toggleTextInactive: {
-    color: colors.text.muted,
-  },
-});
-
 export default function WorkoutRegenerationModal({
   visible,
   onClose,
@@ -448,6 +413,7 @@ export default function WorkoutRegenerationModal({
         visible={visible}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setShowOnboardingForm(false)}
       >
         <View className="flex-1 bg-background">
           {/* Custom Header with Save/Cancel Options */}
@@ -522,40 +488,60 @@ export default function WorkoutRegenerationModal({
             Choose how you would like to generate your workout plan:
           </Text>
 
-          {/* Week/Day Toggle - Pure React Native */}
-          <View style={styles.toggleContainer}>
+          {/* Week/Day Toggle - Using Tailwind classes */}
+          <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
             <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                selectedType === "week" && styles.toggleButtonActive,
-              ]}
+              className="flex-1 py-3 rounded-sm items-center"
+              style={{
+                backgroundColor:
+                  selectedType === "week" ? "white" : "transparent",
+                shadowColor: selectedType === "week" ? "#000" : "transparent",
+                shadowOffset:
+                  selectedType === "week"
+                    ? { width: 0, height: 1 }
+                    : { width: 0, height: 0 },
+                shadowOpacity: selectedType === "week" ? 0.1 : 0,
+                shadowRadius: selectedType === "week" ? 2 : 0,
+                elevation: selectedType === "week" ? 2 : 0,
+              }}
               onPress={() => setSelectedType("week")}
             >
               <Text
-                style={[
-                  styles.toggleText,
-                  selectedType === "week"
-                    ? styles.toggleTextActive
-                    : styles.toggleTextInactive,
-                ]}
+                className="font-medium text-sm"
+                style={{
+                  color:
+                    selectedType === "week"
+                      ? colors.brand.secondary
+                      : colors.text.muted,
+                }}
               >
                 Week
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                selectedType === "day" && styles.toggleButtonActive,
-              ]}
+              className="flex-1 py-3 rounded-sm items-center"
+              style={{
+                backgroundColor:
+                  selectedType === "day" ? "white" : "transparent",
+                shadowColor: selectedType === "day" ? "#000" : "transparent",
+                shadowOffset:
+                  selectedType === "day"
+                    ? { width: 0, height: 1 }
+                    : { width: 0, height: 0 },
+                shadowOpacity: selectedType === "day" ? 0.1 : 0,
+                shadowRadius: selectedType === "day" ? 2 : 0,
+                elevation: selectedType === "day" ? 2 : 0,
+              }}
               onPress={() => setSelectedType("day")}
             >
               <Text
-                style={[
-                  styles.toggleText,
-                  selectedType === "day"
-                    ? styles.toggleTextActive
-                    : styles.toggleTextInactive,
-                ]}
+                className="font-medium text-sm"
+                style={{
+                  color:
+                    selectedType === "day"
+                      ? colors.brand.secondary
+                      : colors.text.muted,
+                }}
               >
                 Day
               </Text>
@@ -571,10 +557,10 @@ export default function WorkoutRegenerationModal({
             </Text>
             <TextInput
               style={{
-                backgroundColor: colors.background,
+                backgroundColor: "white",
                 borderWidth: 1,
                 borderColor: colors.neutral.medium[1],
-                borderRadius: 8,
+                borderRadius: 6,
                 minHeight: 120,
                 fontSize: 14,
                 color: colors.brand.secondary,
@@ -620,15 +606,9 @@ export default function WorkoutRegenerationModal({
         {/* Action Button */}
         <View className="px-5 pb-10">
           <TouchableOpacity
-            style={{
-              backgroundColor: colors.brand.primary,
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              opacity: loading ? 0.7 : 1,
-            }}
+            className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+              loading ? "opacity-70" : ""
+            }`}
             onPress={handleRegenerateWithFeedback}
             disabled={loading}
           >
@@ -637,14 +617,7 @@ export default function WorkoutRegenerationModal({
             ) : (
               <>
                 <Ionicons name="refresh" size={18} color="white" />
-                <Text
-                  style={{
-                    color: "white",
-                    fontWeight: "600",
-                    fontSize: 14,
-                    marginLeft: 8,
-                  }}
-                >
+                <Text className="text-white font-semibold text-sm ml-2">
                   Regenerate Workout Flow
                 </Text>
               </>

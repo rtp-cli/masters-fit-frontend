@@ -1,10 +1,9 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
 import Card from "./Card";
 import ExerciseLink from "./ExerciseLink";
-import { formatDuration, getIntensityText } from "@/utils";
 import { colors } from "../lib/theme";
 
 interface Exercise {
@@ -56,7 +55,21 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
   onStartWorkout,
   onClose,
 }) => {
-  // Calculate total sets and total reps
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  const getIntensityText = (intensity: number): string => {
+    if (intensity <= 3) return "Low";
+    if (intensity <= 7) return "Moderate";
+    return "High";
+  };
+
   const totalSets = exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0);
   const totalReps = exercises.reduce(
     (sum, ex) => sum + (ex.sets || 0) * (ex.reps || 0),
@@ -64,30 +77,26 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+    <View className="flex-1 bg-white">
+      <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-1">
+        <TouchableOpacity onPress={onClose} className="p-1">
           <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text variant="h3" center>
           {workout.name}
         </Text>
-        <View style={styles.spacer} />
+        <View className="w-7" />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView className="flex-1 p-5">
         {workout.description && (
-          <Text
-            variant="body"
-            color={colors.text.secondary}
-            style={styles.description}
-          >
+          <Text variant="body" color={colors.text.secondary} className="mb-5">
             {workout.description}
           </Text>
         )}
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+        <View className="flex-row mb-5">
+          <View className="flex-1 bg-neutral-light-1 rounded-md p-4 mr-2">
             <Text variant="bodySmall" color={colors.text.muted}>
               Duration
             </Text>
@@ -96,7 +105,7 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
             </Text>
           </View>
 
-          <View style={styles.statCard}>
+          <View className="flex-1 bg-neutral-light-1 rounded-md p-4 mx-1">
             <Text variant="bodySmall" color={colors.text.muted}>
               Intensity
             </Text>
@@ -108,7 +117,7 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
             </Text>
           </View>
 
-          <View style={styles.statCard}>
+          <View className="flex-1 bg-neutral-light-1 rounded-md p-4 ml-2">
             <Text variant="bodySmall" color={colors.text.muted}>
               Exercises
             </Text>
@@ -118,57 +127,57 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
           </View>
         </View>
 
-        <View style={styles.additionalStats}>
-          <View style={styles.additionalStat}>
+        <View className="mb-6">
+          <View className="flex-row items-center mb-2">
             <Ionicons
               name="layers-outline"
               size={20}
               color={colors.text.muted}
             />
-            <Text variant="body" style={styles.additionalStatText}>
+            <Text variant="body" className="ml-2 text-text-secondary">
               {totalSets} total sets
             </Text>
           </View>
 
-          <View style={styles.additionalStat}>
+          <View className="flex-row items-center mb-2">
             <Ionicons
               name="repeat-outline"
               size={20}
               color={colors.text.muted}
             />
-            <Text variant="body" style={styles.additionalStatText}>
+            <Text variant="body" className="ml-2 text-text-secondary">
               {totalReps} total reps
             </Text>
           </View>
 
           {workout.caloriesBurned && (
-            <View style={styles.additionalStat}>
+            <View className="flex-row items-center">
               <Ionicons
                 name="flame-outline"
                 size={20}
                 color={colors.text.muted}
               />
-              <Text variant="body" style={styles.additionalStatText}>
+              <Text variant="body" className="ml-2 text-text-secondary">
                 {workout.caloriesBurned} calories
               </Text>
             </View>
           )}
         </View>
 
-        <View style={styles.exercisesContainer}>
-          <Text variant="title" style={styles.sectionTitle}>
+        <View>
+          <Text variant="title" className="mb-4">
             Exercise List
           </Text>
 
           {exercises.map((exerciseItem, index) => (
-            <Card key={exerciseItem.id} style={styles.exerciseCard}>
-              <View style={styles.exerciseHeader}>
-                <View style={styles.exerciseNumberContainer}>
+            <Card key={exerciseItem.id} className="mb-3">
+              <View className="flex-row items-center mb-3">
+                <View className="w-6 h-6 bg-primary rounded-full items-center justify-center mr-3">
                   <Text variant="bodySmall" color={colors.neutral.white}>
                     {index + 1}
                   </Text>
                 </View>
-                <View style={styles.exerciseInfo}>
+                <View className="flex-1">
                   <Text variant="subtitle">{exerciseItem.exercise.name}</Text>
                   <Text variant="caption" color={colors.text.muted}>
                     {exerciseItem.exercise.muscleGroups.join(", ")}
@@ -176,9 +185,9 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
                 </View>
               </View>
 
-              <View style={styles.exerciseDetails}>
+              <View className="flex-row flex-wrap">
                 {exerciseItem.sets && exerciseItem.reps && (
-                  <View style={styles.exerciseDetail}>
+                  <View className="bg-neutral-light-1 rounded-xs px-3 py-1 mr-2 mb-2">
                     <Text variant="bodySmall" weight="semibold">
                       {exerciseItem.sets} sets × {exerciseItem.reps} reps
                     </Text>
@@ -186,13 +195,13 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
                 )}
 
                 {exerciseItem.weight && (
-                  <View style={styles.exerciseDetail}>
+                  <View className="bg-neutral-light-1 rounded-xs px-3 py-1 mr-2 mb-2">
                     <Text variant="bodySmall">{exerciseItem.weight} lbs</Text>
                   </View>
                 )}
 
                 {exerciseItem.duration && (
-                  <View style={styles.exerciseDetail}>
+                  <View className="bg-neutral-light-1 rounded-xs px-3 py-1 mr-2 mb-2">
                     <Text variant="bodySmall">{exerciseItem.duration} sec</Text>
                   </View>
                 )}
@@ -212,14 +221,17 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
         </View>
       </ScrollView>
 
-      <View style={styles.actionBar}>
-        <TouchableOpacity style={styles.startButton} onPress={onStartWorkout}>
+      <View className="p-5 border-t border-neutral-light-1">
+        <TouchableOpacity
+          className="bg-primary py-4 px-6 rounded-md flex-row items-center justify-center"
+          onPress={onStartWorkout}
+        >
           <Ionicons name="play" size={20} color={colors.neutral.white} />
           <Text
             variant="body"
             color={colors.neutral.white}
             weight="semibold"
-            style={styles.startButtonText}
+            className="ml-2"
           >
             Start Workout
           </Text>
@@ -228,112 +240,5 @@ const WorkoutDetails: React.FC<WorkoutDetailsProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral.light[1],
-  },
-  closeButton: {
-    padding: 4,
-  },
-  spacer: {
-    width: 28,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  description: {
-    marginBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  statCard: {
-    backgroundColor: colors.brand.light[2],
-    borderRadius: 12,
-    padding: 16,
-    width: "31%",
-    alignItems: "center",
-  },
-  additionalStats: {
-    backgroundColor: colors.brand.light[2],
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  additionalStat: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  additionalStatText: {
-    marginLeft: 8,
-    color: colors.text.secondary,
-  },
-  exercisesContainer: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    marginBottom: 12,
-  },
-  exerciseCard: {
-    marginBottom: 12,
-  },
-  exerciseHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-  },
-  exerciseNumberContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.brand.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  exerciseInfo: {
-    flex: 1,
-  },
-  exerciseDetails: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral.light[1],
-    padding: 12,
-  },
-  exerciseDetail: {
-    marginRight: 16,
-  },
-  actionBar: {
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral.light[1],
-    padding: 16,
-  },
-  startButton: {
-    backgroundColor: colors.brand.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  startButtonText: {
-    marginLeft: 8,
-  },
-});
 
 export default WorkoutDetails;
