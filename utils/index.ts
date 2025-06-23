@@ -68,17 +68,30 @@ export function formatDateAsString(
 }
 
 /**
- * Format date as YYYY-MM-DD string in local timezone (for display)
+ * Format date as YYYY-MM-DD string in local timezone (for display, avoiding timezone conversion issues)
  */
 export function formatDateAsLocalString(
   dateInput: Date | string | null | undefined
 ): string {
   if (!dateInput) {
-    return new Date().toLocaleDateString("en-CA");
+    const today = new Date();
+    return (
+      today.getFullYear() +
+      "-" +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(today.getDate()).padStart(2, "0")
+    );
   }
 
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  return date.toLocaleDateString("en-CA");
+  return (
+    date.getFullYear() +
+    "-" +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0")
+  );
 }
 
 /**
@@ -88,14 +101,32 @@ export function isSameDay(date1: Date | string, date2: Date | string): boolean {
   const d1 = typeof date1 === "string" ? new Date(date1) : date1;
   const d2 = typeof date2 === "string" ? new Date(date2) : date2;
 
-  return d1.toLocaleDateString("en-CA") === d2.toLocaleDateString("en-CA");
+  // Use direct date components to avoid timezone conversion issues
+  const formatDateToString = (date: Date): string => {
+    return (
+      date.getFullYear() +
+      "-" +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(date.getDate()).padStart(2, "0")
+    );
+  };
+
+  return formatDateToString(d1) === formatDateToString(d2);
 }
 
 /**
- * Get today's date as YYYY-MM-DD in local timezone
+ * Get today's date as YYYY-MM-DD in local timezone (avoiding timezone conversion issues)
  */
 export function getTodayString(): string {
-  return new Date().toLocaleDateString("en-CA");
+  const today = new Date();
+  return (
+    today.getFullYear() +
+    "-" +
+    String(today.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(today.getDate()).padStart(2, "0")
+  );
 }
 
 /**
@@ -185,10 +216,17 @@ export function formatCalendarDate(date: Date): string {
 }
 
 /**
- * Get current date in "YYYY-MM-DD" format
+ * Get current date in "YYYY-MM-DD" format (using local date to avoid timezone issues)
  */
 export function getCurrentDate(): string {
-  return new Date().toISOString().split("T")[0];
+  const today = new Date();
+  return (
+    today.getFullYear() +
+    "-" +
+    String(today.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(today.getDate()).padStart(2, "0")
+  );
 }
 
 /**
@@ -226,9 +264,29 @@ export function isValidEmail(email: string): boolean {
 
 /**
  * Get day of week (Monday, Tuesday, etc.) from a date
+ * Uses timezone-safe parsing for date strings
  */
-export function getDayOfWeek(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date);
+export function getDayOfWeek(date: Date | string): string {
+  const dayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  // If it's a string in YYYY-MM-DD format, parse it safely
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split("-").map(Number);
+    const safeDate = new Date(year, month - 1, day); // month is 0-indexed
+    return dayNames[safeDate.getDay()];
+  }
+
+  // Otherwise use the date object directly
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  return dayNames[dateObj.getDay()];
 }
 
 /**

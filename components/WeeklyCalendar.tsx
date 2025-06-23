@@ -1,8 +1,13 @@
-import React from 'react';
+import React from "react";
 import { colors } from "../lib/theme";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import Text from './Text';
-import { getDayOfWeek, getDayOfMonth, getShortMonth, getCurrentDate } from '@/utils';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import Text from "./Text";
+import {
+  getDayOfWeek,
+  getDayOfMonth,
+  getShortMonth,
+  getCurrentDate,
+} from "@/utils";
 
 interface Workout {
   id: number;
@@ -25,21 +30,21 @@ interface WeeklyCalendarProps {
 // Generate dates for a week
 const generateWeekDays = (date: Date = new Date()): Date[] => {
   const days: Date[] = [];
-  
+
   // Get the current day of the week (0-6, where 0 is Sunday)
   const currentDayOfWeek = date.getDay();
-  
+
   // Calculate the date of the Sunday that starts this week
   const sunday = new Date(date);
   sunday.setDate(date.getDate() - currentDayOfWeek);
-  
+
   // Generate 7 dates starting from Sunday
   for (let i = 0; i < 7; i++) {
     const day = new Date(sunday);
     day.setDate(sunday.getDate() + i);
     days.push(day);
   }
-  
+
   return days;
 };
 
@@ -48,17 +53,26 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onDateSelect,
   workouts,
 }) => {
-  // Generate week days
-  const weekDays = generateWeekDays(new Date(selectedDate));
-  
+  // Generate week days - use safe date parsing
+  const createSafeDate = (dateString: string): Date => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day); // month is 0-indexed
+    }
+    return new Date(dateString);
+  };
+
+  const safeSelectedDate = createSafeDate(selectedDate);
+  const weekDays = generateWeekDays(safeSelectedDate);
+
   // Get formatted dates for display
-  const formattedSelectedDate = new Date(selectedDate).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+  const formattedSelectedDate = safeSelectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
-  
+
   // Map workouts to dates for quick lookup
   const workoutsByDate = workouts.reduce((acc, workout) => {
     if (!acc[workout.date]) {
@@ -67,24 +81,26 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     acc[workout.date].push(workout);
     return acc;
   }, {} as Record<string, Workout[]>);
-  
+
   // Format date for comparison
   const formatDateForComparison = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
-  
+
   // Get today's date for highlighting the current day
   const today = getCurrentDate();
-  
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text variant="subtitle" center>{formattedSelectedDate}</Text>
+        <Text variant="subtitle" center>
+          {formattedSelectedDate}
+        </Text>
       </View>
-      
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.daysContainer}
       >
         {weekDays.map((day) => {
@@ -92,40 +108,46 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           const isSelected = dateString === selectedDate;
           const isToday = dateString === today;
           const hasWorkout = !!workoutsByDate[dateString]?.length;
-          const hasCompletedWorkout = workoutsByDate[dateString]?.some(w => w.completed) || false;
-          
+          const hasCompletedWorkout =
+            workoutsByDate[dateString]?.some((w) => w.completed) || false;
+
           return (
             <TouchableOpacity
               key={dateString}
-              style={[
-                styles.dayItem,
-                isSelected && styles.selectedDayItem,
-              ]}
+              style={[styles.dayItem, isSelected && styles.selectedDayItem]}
               onPress={() => onDateSelect(dateString)}
             >
-              <Text 
-                variant="caption" 
+              <Text
+                variant="caption"
                 color={isSelected ? colors.brand.primary : colors.text.muted}
                 center
               >
                 {getDayOfWeek(day).slice(0, 3)}
               </Text>
-              
-              <View style={[
-                styles.dateCircle,
-                isSelected && styles.selectedDateCircle,
-                isToday && styles.todayCircle,
-              ]}>
+
+              <View
+                style={[
+                  styles.dateCircle,
+                  isSelected && styles.selectedDateCircle,
+                  isToday && styles.todayCircle,
+                ]}
+              >
                 <Text
                   variant="body"
-                  weight={isToday || isSelected ? 'bold' : 'normal'}
-                  color={isSelected ? colors.background : isToday ? colors.brand.primary : 'colors.brand.primary'}
+                  weight={isToday || isSelected ? "bold" : "normal"}
+                  color={
+                    isSelected
+                      ? colors.background
+                      : isToday
+                      ? colors.brand.primary
+                      : "colors.brand.primary"
+                  }
                   center
                 >
                   {getDayOfMonth(day)}
                 </Text>
               </View>
-              
+
               <Text
                 variant="caption"
                 color={isSelected ? colors.brand.primary : colors.text.muted}
@@ -133,12 +155,14 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               >
                 {getShortMonth(day)}
               </Text>
-              
+
               {hasWorkout && (
-                <View style={[
-                  styles.dotIndicator,
-                  hasCompletedWorkout && styles.completedDotIndicator,
-                ]} />
+                <View
+                  style={[
+                    styles.dotIndicator,
+                    hasCompletedWorkout && styles.completedDotIndicator,
+                  ]}
+                />
               )}
             </TouchableOpacity>
           );
@@ -172,7 +196,7 @@ const styles = StyleSheet.create({
   },
   dayItem: {
     width: 70,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
   },
   selectedDayItem: {
@@ -182,8 +206,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginVertical: 8,
   },
   selectedDateCircle: {

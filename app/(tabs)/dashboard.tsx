@@ -776,7 +776,17 @@ export default function DashboardScreen() {
 
                         // Use the actual workout start date from the API response
                         if (workoutInfo?.startDate) {
-                          weekStartDate = new Date(workoutInfo.startDate);
+                          // Use safe date parsing to avoid timezone issues
+                          if (
+                            /^\d{4}-\d{2}-\d{2}$/.test(workoutInfo.startDate)
+                          ) {
+                            const [year, month, day] = workoutInfo.startDate
+                              .split("-")
+                              .map(Number);
+                            weekStartDate = new Date(year, month - 1, day); // month is 0-indexed
+                          } else {
+                            weekStartDate = new Date(workoutInfo.startDate);
+                          }
                         } else {
                           // Fallback: use current week's Monday
                           const today = new Date();
@@ -796,11 +806,44 @@ export default function DashboardScreen() {
                           const date = new Date(weekStartDate);
                           date.setDate(weekStartDate.getDate() + i);
 
-                          // Generate day name dynamically based on actual date
-                          const dayName = date.toLocaleDateString("en-US", {
-                            weekday: "short",
-                          });
-                          const dateStr = date.toISOString().split("T")[0];
+                          // Generate day name dynamically based on actual date using safe method
+                          const dayNames = [
+                            "Sun",
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                          ];
+
+                          // Use manual date string formatting to avoid timezone issues
+                          const dateStr =
+                            date.getFullYear() +
+                            "-" +
+                            String(date.getMonth() + 1).padStart(2, "0") +
+                            "-" +
+                            String(date.getDate()).padStart(2, "0");
+
+                          // Get day name safely - match with planned workout dates
+                          let dayName = dayNames[date.getDay()];
+
+                          // Double-check with the actual planned workout dates to ensure consistency
+                          const plannedWorkoutDay = dailyWorkoutProgress.find(
+                            (day) => day.date === dateStr
+                          );
+                          if (
+                            plannedWorkoutDay &&
+                            plannedWorkoutDay.date === dateStr
+                          ) {
+                            // If we have a planned workout for this date, verify the day matches expectations
+                            const safeDayCheck = new Date(
+                              date.getFullYear(),
+                              date.getMonth(),
+                              date.getDate()
+                            );
+                            dayName = dayNames[safeDayCheck.getDay()];
+                          }
 
                           // Find corresponding data from dailyWorkoutProgress
                           const dayData = dailyWorkoutProgress.find((day) => {

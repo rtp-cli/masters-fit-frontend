@@ -26,8 +26,71 @@ import { colors } from "../../lib/theme";
 
 export default function CalendarScreen() {
   const router = useRouter();
+
+  // Helper function to format Date to YYYY-MM-DD string without timezone issues
+  const formatDateToString = (date: Date | string): string => {
+    // Handle both Date objects and ISO date strings
+    if (!date) {
+      console.warn(
+        "formatDateToString received null/undefined date, using current date"
+      );
+      const today = new Date();
+      return (
+        today.getFullYear() +
+        "-" +
+        String(today.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(today.getDate()).padStart(2, "0")
+      );
+    }
+
+    // If it's already a YYYY-MM-DD string, return it directly
+    if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+
+    // For other string formats or Date objects, parse safely
+    let dateObj: Date;
+    if (typeof date === "string") {
+      // Try to parse safely first
+      if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
+        const [year, month, day] = date.split("-").map(Number);
+        dateObj = new Date(year, month - 1, day); // month is 0-indexed
+      } else {
+        dateObj = new Date(date); // fallback for other formats
+      }
+    } else {
+      dateObj = date;
+    }
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn(
+        "formatDateToString received invalid date:",
+        date,
+        "using current date"
+      );
+      const today = new Date();
+      return (
+        today.getFullYear() +
+        "-" +
+        String(today.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(today.getDate()).padStart(2, "0")
+      );
+    }
+
+    return (
+      dateObj.getFullYear() +
+      "-" +
+      String(dateObj.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(dateObj.getDate()).padStart(2, "0")
+    );
+  };
+
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    formatDateToString(new Date())
   );
   const [loading, setLoading] = useState(true);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutWithDetails | null>(
@@ -154,11 +217,14 @@ export default function CalendarScreen() {
     date: string
   ): { day: PlanDayWithExercises; index: number } | null => {
     if (!workoutPlan) return null;
-    const normalizedDate = new Date(date).toLocaleDateString("en-CA");
+    // Use direct date string comparison to avoid timezone issues
+    const normalizedDate = date; // date is already in YYYY-MM-DD format from calendar
     const index = workoutPlan.planDays.findIndex((day) => {
-      // Safely handle the date conversion - day.date might be a string or Date
+      // Handle both string and Date objects from API
       const planDate = day.date
-        ? new Date(day.date).toLocaleDateString("en-CA")
+        ? typeof day.date === "string"
+          ? day.date
+          : formatDateToString(day.date)
         : null;
       return planDate === normalizedDate;
     });
@@ -171,15 +237,17 @@ export default function CalendarScreen() {
     if (!workoutPlan) return {};
 
     const markedDates: any = {};
-    const today = new Date().toLocaleDateString("en-CA");
-    const normalizedSelectedDate = new Date(selectedDate).toLocaleDateString(
-      "en-CA"
-    );
+    const today = new Date();
+    const todayStr = formatDateToString(today);
+    const normalizedSelectedDate = selectedDate; // Already in YYYY-MM-DD format
 
     workoutPlan.planDays.forEach((day) => {
-      // Safely handle the date conversion - day.date might be a string or Date
+      // Handle both string and Date objects from API
       if (day.date) {
-        const dateStr = new Date(day.date).toLocaleDateString("en-CA");
+        const dateStr =
+          typeof day.date === "string"
+            ? day.date
+            : formatDateToString(day.date);
         markedDates[dateStr] = {
           marked: true,
           dotColor: colors.brand.primary,
@@ -193,11 +261,13 @@ export default function CalendarScreen() {
     });
 
     // Mark today
-    if (!markedDates[today]) {
-      markedDates[today] = {
-        selected: today === normalizedSelectedDate,
+    if (!markedDates[todayStr]) {
+      markedDates[todayStr] = {
+        selected: todayStr === normalizedSelectedDate,
         selectedColor:
-          today === normalizedSelectedDate ? colors.brand.secondary : undefined,
+          todayStr === normalizedSelectedDate
+            ? colors.brand.secondary
+            : undefined,
       };
     }
 
@@ -211,9 +281,9 @@ export default function CalendarScreen() {
 
   // Check if selected date is today
   const isToday = () => {
-    const today = new Date().toLocaleDateString("en-CA");
-    const selected = new Date(selectedDate).toLocaleDateString("en-CA");
-    return today === selected;
+    const today = new Date();
+    const todayStr = formatDateToString(today);
+    return todayStr === selectedDate;
   };
 
   if (loading) {
@@ -250,6 +320,18 @@ export default function CalendarScreen() {
     : null;
 
   const formatDate = (dateString: string) => {
+    // Use safe parsing for YYYY-MM-DD format strings
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    // Fallback for other date formats
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
@@ -278,20 +360,64 @@ export default function CalendarScreen() {
             markedDates={getMarkedDates()}
             minDate={
               workoutPlan?.startDate
-                ? new Date(workoutPlan.startDate).toISOString().split("T")[0]
-                : new Date().toISOString().split("T")[0]
+                ? (() => {
+                    // Use safe date parsing for startDate
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(workoutPlan.startDate)) {
+                      return workoutPlan.startDate; // Already in YYYY-MM-DD format
+                    }
+                    const [year, month, day] = workoutPlan.startDate
+                      .split("-")
+                      .map(Number);
+                    const safeDate = new Date(year, month - 1, day);
+                    return safeDate.toISOString().split("T")[0];
+                  })()
+                : (() => {
+                    const today = new Date();
+                    return (
+                      today.getFullYear() +
+                      "-" +
+                      String(today.getMonth() + 1).padStart(2, "0") +
+                      "-" +
+                      String(today.getDate()).padStart(2, "0")
+                    );
+                  })()
             }
             maxDate={
               workoutPlan?.startDate
-                ? new Date(
-                    new Date(workoutPlan.startDate).getTime() +
-                      7 * 24 * 60 * 60 * 1000
-                  )
-                    .toISOString()
-                    .split("T")[0]
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                    .toISOString()
-                    .split("T")[0]
+                ? (() => {
+                    // Use safe date parsing and add 6 days
+                    let startDate: Date;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(workoutPlan.startDate)) {
+                      const [year, month, day] = workoutPlan.startDate
+                        .split("-")
+                        .map(Number);
+                      startDate = new Date(year, month - 1, day);
+                    } else {
+                      startDate = new Date(workoutPlan.startDate);
+                    }
+                    const maxDate = new Date(
+                      startDate.getTime() + 6 * 24 * 60 * 60 * 1000
+                    );
+                    return (
+                      maxDate.getFullYear() +
+                      "-" +
+                      String(maxDate.getMonth() + 1).padStart(2, "0") +
+                      "-" +
+                      String(maxDate.getDate()).padStart(2, "0")
+                    );
+                  })()
+                : (() => {
+                    const futureDate = new Date(
+                      Date.now() + 30 * 24 * 60 * 60 * 1000
+                    );
+                    return (
+                      futureDate.getFullYear() +
+                      "-" +
+                      String(futureDate.getMonth() + 1).padStart(2, "0") +
+                      "-" +
+                      String(futureDate.getDate()).padStart(2, "0")
+                    );
+                  })()
             }
             disableAllTouchEventsForDisabledDays={true}
             theme={{

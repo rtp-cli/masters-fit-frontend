@@ -187,7 +187,14 @@ export function getWorkoutsForWeek(
 
   // Filter workouts within the week
   return workouts.filter((workout) => {
-    const workoutDate = new Date(workout.date);
+    // Use safe date parsing for workout.date
+    let workoutDate: Date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(workout.date)) {
+      const [year, month, day] = workout.date.split("-").map(Number);
+      workoutDate = new Date(year, month - 1, day); // month is 0-indexed
+    } else {
+      workoutDate = new Date(workout.date);
+    }
     return workoutDate >= startOfWeek && workoutDate <= endOfWeek;
   });
 }
@@ -272,13 +279,29 @@ export function getNextWorkout(workouts: Workout[]): Workout | null {
 
   // Filter future workouts that are not completed
   const futureWorkouts = workouts.filter((workout) => {
-    const workoutDate = new Date(workout.date);
+    // Use safe date parsing for workout.date
+    let workoutDate: Date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(workout.date)) {
+      const [year, month, day] = workout.date.split("-").map(Number);
+      workoutDate = new Date(year, month - 1, day); // month is 0-indexed
+    } else {
+      workoutDate = new Date(workout.date);
+    }
     return workoutDate >= now && !workout.completed;
   });
 
   // Sort by date (closest first)
   futureWorkouts.sort((a, b) => {
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
+    // Use safe date parsing for comparison
+    const getDateSafely = (dateStr: string): Date => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day); // month is 0-indexed
+      }
+      return new Date(dateStr);
+    };
+
+    return getDateSafely(a.date).getTime() - getDateSafely(b.date).getTime();
   });
 
   return futureWorkouts.length > 0 ? futureWorkouts[0] : null;

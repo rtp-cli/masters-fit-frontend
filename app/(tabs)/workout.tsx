@@ -81,7 +81,14 @@ export default function WorkoutScreen() {
   // Check for date changes every minute to refresh workout at midnight
   useEffect(() => {
     const checkDateChange = async () => {
-      const currentDate = new Date().toLocaleDateString("en-CA");
+      // Use safe date formatting
+      const today = new Date();
+      const currentDate =
+        today.getFullYear() +
+        "-" +
+        String(today.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(today.getDate()).padStart(2, "0");
       const lastCheckDate = await AsyncStorage.getItem("lastWorkoutDate");
 
       if (lastCheckDate && lastCheckDate !== currentDate) {
@@ -306,7 +313,14 @@ export default function WorkoutScreen() {
   }
 
   if (isWorkoutCompleted) {
-    const currentDate = new Date().toLocaleDateString("en-CA");
+    // Use safe date formatting
+    const today = new Date();
+    const currentDate =
+      today.getFullYear() +
+      "-" +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(today.getDate()).padStart(2, "0");
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View

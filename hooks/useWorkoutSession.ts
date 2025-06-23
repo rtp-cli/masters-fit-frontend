@@ -115,9 +115,20 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
           Intl.DateTimeFormat().resolvedOptions().timeZone
         );
 
+        // Helper function for safe date parsing
+        const formatDateToString = (dateStr: string): string => {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return dateStr; // Already in YYYY-MM-DD format
+          }
+          // For other formats, parse safely
+          const [year, month, day] = dateStr.split("-").map(Number);
+          const safeDate = new Date(year, month - 1, day);
+          return safeDate.toLocaleDateString("en-CA");
+        };
+
         // Debug all plan days
         workout.planDays.forEach((day: any, index: number) => {
-          const planDate = new Date(day.date).toLocaleDateString("en-CA");
+          const planDate = formatDateToString(day.date);
           console.log(`📆 Plan day ${index}:`, {
             originalDate: day.date,
             formattedDate: planDate,
@@ -127,7 +138,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         });
 
         const todaysPlan = workout.planDays.find((day: any) => {
-          const planDate = new Date(day.date).toLocaleDateString("en-CA");
+          const planDate = formatDateToString(day.date);
           console.log(
             "🔍 Comparing plan date:",
             planDate,
