@@ -464,49 +464,17 @@ export default function SearchScreen() {
                 visible={showDatePicker}
                 onRequestClose={() => setShowDatePicker(false)}
               >
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "flex-end",
-                    backgroundColor: "rgba(0,0,0,0.5)",
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: "white",
-                      borderTopLeftRadius: 20,
-                      borderTopRightRadius: 20,
-                      padding: 20,
-                      minHeight: 320,
-                    }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 20,
-                      }}
-                    >
+                <View className="flex-1 justify-end bg-black/50">
+                  <View className="bg-white rounded-t-xl p-5 min-h-80">
+                    <View className="flex-row justify-between items-center mb-5">
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(false)}
                       >
-                        <Text
-                          style={{
-                            color: colors.neutral.medium[3],
-                            fontSize: 16,
-                          }}
-                        >
+                        <Text className="text-neutral-medium-3 text-base">
                           Cancel
                         </Text>
                       </TouchableOpacity>
-                      <Text
-                        style={{
-                          fontSize: 18,
-                          fontWeight: "600",
-                          color: colors.text.primary,
-                        }}
-                      >
+                      <Text className="text-lg font-semibold text-text-primary">
                         Select Date
                       </Text>
                       <TouchableOpacity
@@ -532,24 +500,12 @@ export default function SearchScreen() {
                           }
                         }}
                       >
-                        <Text
-                          style={{
-                            color: colors.brand.primary,
-                            fontSize: 16,
-                            fontWeight: "500",
-                          }}
-                        >
+                        <Text className="text-primary text-base font-medium">
                           Done
                         </Text>
                       </TouchableOpacity>
                     </View>
-                    <View
-                      style={{
-                        height: 200,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
+                    <View className="h-50 justify-center items-center">
                       <DateTimePicker
                         value={selectedDate || new Date()}
                         onChange={(event, date) => {
@@ -566,10 +522,7 @@ export default function SearchScreen() {
                             new Date().setFullYear(new Date().getFullYear() - 1)
                           )
                         }
-                        style={{
-                          height: 200,
-                          width: "100%",
-                        }}
+                        className="h-50 w-full"
                         textColor={colors.text.primary}
                         locale="en"
                       />
@@ -702,10 +655,7 @@ export default function SearchScreen() {
                     ).map((muscle: string, index: number) => (
                       <View
                         key={index}
-                        className="rounded-full px-3 py-1 mr-2 mb-2"
-                        style={{
-                          backgroundColor: colors.brand.primary,
-                        }}
+                        className="rounded-full px-3 py-1 mr-2 mb-2 bg-primary"
                       >
                         <Text className="text-xs font-semibold text-neutral-light-1">
                           {muscle}
@@ -901,7 +851,7 @@ export default function SearchScreen() {
                 </Text>
                 <View className="h-2 bg-neutral-light-2 rounded-full mb-2 overflow-hidden">
                   <View
-                    className="h-full bg-brand-primary rounded-full"
+                    className="h-full bg-primary rounded-full"
                     style={{
                       width: `${
                         dateResult.planDay?.exercises
@@ -1013,14 +963,7 @@ export default function SearchScreen() {
                               .map((muscle: string, muscleIndex: number) => (
                                 <View
                                   key={muscleIndex}
-                                  style={{
-                                    backgroundColor: colors.brand.light[2],
-                                    borderRadius: 12,
-                                    paddingHorizontal: 8,
-                                    paddingVertical: 4,
-                                    marginRight: 4,
-                                    marginBottom: 4,
-                                  }}
+                                  className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1"
                                 >
                                   <Text className="text-xs font-medium text-text-primary">
                                     {muscle}
@@ -1057,23 +1000,9 @@ export default function SearchScreen() {
                                     (item: string, equipmentIndex: number) => (
                                       <View
                                         key={equipmentIndex}
-                                        style={{
-                                          backgroundColor:
-                                            colors.neutral.light[1],
-                                          borderRadius: 12,
-                                          paddingHorizontal: 8,
-                                          paddingVertical: 4,
-                                          marginRight: 6,
-                                          marginBottom: 4,
-                                        }}
+                                        className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
                                       >
-                                        <Text
-                                          style={{
-                                            fontSize: 10,
-                                            fontWeight: "500",
-                                            color: colors.text.primary,
-                                          }}
-                                        >
+                                        <Text className="text-xs font-medium text-text-primary">
                                           {formatEquipmentProperly(item)}
                                         </Text>
                                       </View>
@@ -1135,14 +1064,7 @@ export default function SearchScreen() {
                       .map((muscle: string, muscleIndex: number) => (
                         <View
                           key={muscleIndex}
-                          style={{
-                            backgroundColor: colors.brand.light[2],
-                            borderRadius: 12,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            marginRight: 4,
-                            marginBottom: 4,
-                          }}
+                          className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1"
                         >
                           <Text className="text-xs font-medium text-text-primary">
                             {muscle}
@@ -1175,22 +1097,9 @@ export default function SearchScreen() {
                             (item: string, equipmentIndex: number) => (
                               <View
                                 key={equipmentIndex}
-                                style={{
-                                  backgroundColor: colors.neutral.light[1],
-                                  borderRadius: 12,
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 4,
-                                  marginRight: 6,
-                                  marginBottom: 4,
-                                }}
+                                className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
                               >
-                                <Text
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: "500",
-                                    color: colors.text.primary,
-                                  }}
-                                >
+                                <Text className="text-xs font-medium text-text-primary">
                                   {formatEquipmentProperly(item)}
                                 </Text>
                               </View>

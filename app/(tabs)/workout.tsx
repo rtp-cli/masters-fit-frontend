@@ -243,10 +243,7 @@ export default function WorkoutScreen() {
     return (
       <View className="flex-1 justify-center items-center bg-background">
         <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text
-          className="mt-md text-sm font-medium"
-          style={{ color: colors.text.primary }}
-        >
+        <Text className="mt-md text-sm font-medium text-text-primary">
           One moment...
         </Text>
       </View>
@@ -255,55 +252,21 @@ export default function WorkoutScreen() {
 
   if (!activeWorkout) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 24,
-          }}
-        >
+      <View className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center px-6">
           <Ionicons name="fitness" size={64} color={colors.text.muted} />
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "bold",
-              color: colors.text.primary,
-              marginTop: 16,
-              marginBottom: 8,
-            }}
-          >
+          <Text className="text-lg font-bold text-text-primary mt-4 mb-2">
             No Active Workout
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: colors.text.muted,
-              textAlign: "center",
-              lineHeight: 20,
-              marginBottom: 16,
-            }}
-          >
+          <Text className="text-sm text-text-muted text-center leading-5 mb-4">
             You don't have an active workout plan for today. Visit the Calendar
             tab to start a new workout.
           </Text>
           <TouchableOpacity
-            style={{
-              backgroundColor: colors.brand.primary,
-              borderRadius: 12,
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-            }}
+            className="bg-primary rounded-xl py-3 px-6"
             onPress={refreshWorkout}
           >
-            <Text
-              style={{
-                color: colors.brand.secondary,
-                fontWeight: "600",
-                fontSize: 14,
-              }}
-            >
+            <Text className="text-secondary font-semibold text-sm">
               Refresh
             </Text>
           </TouchableOpacity>
@@ -322,40 +285,17 @@ export default function WorkoutScreen() {
       "-" +
       String(today.getDate()).padStart(2, "0");
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 24,
-          }}
-        >
+      <View className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center px-6">
           <Ionicons
             name="checkmark-circle"
             size={64}
             color={colors.brand.primary}
           />
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "bold",
-              color: colors.brand.primary,
-              marginTop: 16,
-              marginBottom: 8,
-            }}
-          >
+          <Text className="text-xl font-bold text-primary mt-4 mb-2">
             Workout Complete!
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: colors.text.muted,
-              textAlign: "center",
-              lineHeight: 20,
-              marginBottom: 8,
-            }}
-          >
+          <Text className="text-sm text-text-muted text-center leading-5 mb-2">
             Great job! You've completed all exercises in today's workout.
           </Text>
         </View>
@@ -364,11 +304,9 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <View
-      style={{ flex: 1, backgroundColor: colors.background, paddingTop: 24 }}
-    >
+    <View className="flex-1 bg-background pt-6">
       <ScrollView
-        style={{ flex: 1 }}
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         ref={scrollViewRef}
       >
@@ -379,80 +317,31 @@ export default function WorkoutScreen() {
           variant="hero"
         />
 
-        <View style={{ paddingHorizontal: 24 }}>
+        <View className="px-6">
           {/* Exercise Title */}
-          <View style={{ paddingVertical: 16 }}>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "bold",
-                color: colors.text.primary,
-                marginBottom: 4,
-              }}
-            >
+          <View className="py-4">
+            <Text className="text-xl font-bold text-text-primary mb-1">
               {currentExercise?.exercise.name || "Bodyweight Squats"}
             </Text>
-            <Text style={{ fontSize: 14, color: colors.text.muted }}>
+            <Text className="text-sm text-text-muted">
               Focus on knee alignment and control
             </Text>
           </View>
 
           {/* Progress Card */}
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 16,
-              shadowColor: colors.neutral.dark[1],
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.1,
-              shadowRadius: 3,
-              elevation: 3,
-              borderWidth: 1,
-              borderColor: colors.neutral.light[2],
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: "rgba(187, 222, 81, 0.2)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 12,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      color: colors.brand.primary,
-                    }}
-                  >
+          <View className="bg-background rounded-xl p-4 mb-4 shadow-card border border-neutral-light-2">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center mr-3">
+                  <Text className="text-sm font-bold text-primary">
                     {Math.round(progressPercentage)}%
                   </Text>
                 </View>
                 <View>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: colors.text.primary,
-                    }}
-                  >
+                  <Text className="text-sm font-semibold text-text-primary">
                     {completedCount}/{totalExercises} Exercises
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.text.muted }}>
+                  <Text className="text-xs text-text-muted">
                     {getRemainingTime()} min remaining
                   </Text>
                 </View>
@@ -461,83 +350,26 @@ export default function WorkoutScreen() {
           </View>
 
           {/* Exercise Details Card */}
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 16,
-              shadowColor: colors.neutral.dark[1],
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.1,
-              shadowRadius: 3,
-              elevation: 3,
-              borderWidth: 1,
-              borderColor: colors.neutral.light[2],
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "bold",
-                color: colors.text.primary,
-                marginBottom: 12,
-              }}
-            >
+          <View className="bg-background rounded-xl p-4 mb-4 shadow-card border border-neutral-light-2">
+            <Text className="text-base font-bold text-text-primary mb-3">
               {currentExercise?.exercise.name || "Bodyweight Squats"}
             </Text>
 
             {/* Logging Section */}
             {currentData && isWorkoutActive && (
-              <View
-                style={{
-                  backgroundColor: colors.neutral.light[1],
-                  borderRadius: 8,
-                  padding: 12,
-                  marginBottom: 16,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: colors.text.primary,
-                    marginBottom: 12,
-                    textAlign: "center",
-                  }}
-                >
+              <View className="bg-neutral-light-1 rounded-lg p-3 mb-4">
+                <Text className="text-sm font-semibold text-text-primary mb-3 text-center">
                   Track Your Progress
                 </Text>
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 16,
-                  }}
-                >
+                <View className="flex-row justify-between mb-4">
                   {/* Set Tracker */}
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: colors.text.primary,
-                        marginBottom: 8,
-                        textAlign: "center",
-                      }}
-                    >
+                  <View className="flex-1 mr-2">
+                    <Text className="text-xs font-semibold text-text-primary mb-2 text-center">
                       Sets ({currentData.setsCompleted}/{currentData.targetSets}
                       )
                     </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        gap: 6,
-                      }}
-                    >
+                    <View className="flex-row flex-wrap justify-center gap-1.5">
                       {Array.from(
                         { length: currentData.targetSets },
                         (_, i) => {
@@ -545,32 +377,21 @@ export default function WorkoutScreen() {
                           return (
                             <TouchableOpacity
                               key={i}
-                              style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 16,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderWidth: 2,
-                                borderColor: isCompleted
-                                  ? colors.brand.primary
-                                  : colors.neutral.medium[1],
-                                backgroundColor: isCompleted
-                                  ? colors.brand.primary
-                                  : colors.background,
-                              }}
+                              className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                                isCompleted
+                                  ? "border-primary bg-primary"
+                                  : "border-neutral-medium-1 bg-background"
+                              }`}
                               onPress={() =>
                                 updateExerciseData("setsCompleted", i + 1)
                               }
                             >
                               <Text
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: "600",
-                                  color: isCompleted
-                                    ? colors.brand.secondary
-                                    : colors.text.muted,
-                                }}
+                                className={`text-xs font-semibold ${
+                                  isCompleted
+                                    ? "text-secondary"
+                                    : "text-text-muted"
+                                }`}
                               >
                                 {i + 1}
                               </Text>
@@ -582,78 +403,141 @@ export default function WorkoutScreen() {
                   </View>
 
                   {/* Rep Tracker */}
-                  <View style={{ flex: 1, marginLeft: 8 }}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "600",
-                        color: colors.text.primary,
-                        marginBottom: 8,
-                        textAlign: "center",
-                      }}
-                    >
+                  <View className="flex-1 ml-2">
+                    <Text className="text-xs font-semibold text-text-primary mb-2 text-center">
                       Reps ({currentData.repsCompleted}/{currentData.targetReps}
                       )
                     </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        gap: 4,
-                      }}
-                    >
-                      {Array.from(
-                        { length: Math.min(currentData.targetReps, 20) },
-                        (_, i) => {
-                          const isCompleted = i < currentData.repsCompleted;
-                          return (
-                            <TouchableOpacity
-                              key={i}
-                              style={{
-                                width: 18,
-                                height: 18,
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                              onPress={() =>
-                                updateExerciseData("repsCompleted", i + 1)
-                              }
-                            >
-                              <View
-                                style={{
-                                  width: 10,
-                                  height: 10,
-                                  borderRadius: 5,
-                                  backgroundColor: isCompleted
-                                    ? colors.brand.primary
-                                    : colors.background,
-                                }}
-                              />
-                            </TouchableOpacity>
-                          );
+
+                    {/* Compact Rep Controls - Single Row */}
+                    <View className="flex-row flex-wrap justify-center gap-1.5">
+                      <TouchableOpacity
+                        className="bg-neutral-medium-1 rounded-full w-8 h-8 items-center justify-center"
+                        onPress={() =>
+                          updateExerciseData(
+                            "repsCompleted",
+                            Math.max(0, currentData.repsCompleted - 1)
+                          )
                         }
-                      )}
-                      {currentData.targetReps > 20 && (
+                        disabled={currentData.repsCompleted <= 0}
+                      >
+                        <Ionicons
+                          name="remove"
+                          size={12}
+                          color={
+                            currentData.repsCompleted <= 0
+                              ? colors.text.muted
+                              : colors.text.primary
+                          }
+                        />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                          currentData.repsCompleted ===
+                          Math.floor(currentData.targetReps / 3)
+                            ? "border-primary bg-primary"
+                            : "border-neutral-medium-1 bg-background"
+                        }`}
+                        onPress={() =>
+                          updateExerciseData(
+                            "repsCompleted",
+                            Math.floor(currentData.targetReps / 3)
+                          )
+                        }
+                      >
                         <Text
-                          style={{
-                            fontSize: 10,
-                            color: colors.text.muted,
-                            marginTop: 4,
-                          }}
+                          className={`text-xs font-semibold ${
+                            currentData.repsCompleted ===
+                            Math.floor(currentData.targetReps / 3)
+                              ? "text-secondary"
+                              : "text-text-muted"
+                          }`}
                         >
-                          +{currentData.targetReps - 20} more
+                          {Math.floor(currentData.targetReps / 3)}
                         </Text>
-                      )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                          currentData.repsCompleted ===
+                          Math.floor((currentData.targetReps * 2) / 3)
+                            ? "border-primary bg-primary"
+                            : "border-neutral-medium-1 bg-background"
+                        }`}
+                        onPress={() =>
+                          updateExerciseData(
+                            "repsCompleted",
+                            Math.floor((currentData.targetReps * 2) / 3)
+                          )
+                        }
+                      >
+                        <Text
+                          className={`text-xs font-semibold ${
+                            currentData.repsCompleted ===
+                            Math.floor((currentData.targetReps * 2) / 3)
+                              ? "text-secondary"
+                              : "text-text-muted"
+                          }`}
+                        >
+                          {Math.floor((currentData.targetReps * 2) / 3)}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
+                          currentData.repsCompleted === currentData.targetReps
+                            ? "border-primary bg-primary"
+                            : "border-neutral-medium-1 bg-background"
+                        }`}
+                        onPress={() =>
+                          updateExerciseData(
+                            "repsCompleted",
+                            currentData.targetReps
+                          )
+                        }
+                      >
+                        <Text
+                          className={`text-xs font-semibold ${
+                            currentData.repsCompleted === currentData.targetReps
+                              ? "text-secondary"
+                              : "text-text-muted"
+                          }`}
+                        >
+                          {currentData.targetReps}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className="bg-primary rounded-full w-8 h-8 items-center justify-center"
+                        onPress={() =>
+                          updateExerciseData(
+                            "repsCompleted",
+                            Math.min(
+                              currentData.targetReps,
+                              currentData.repsCompleted + 1
+                            )
+                          )
+                        }
+                        disabled={
+                          currentData.repsCompleted >= currentData.targetReps
+                        }
+                      >
+                        <Ionicons
+                          name="add"
+                          size={12}
+                          color={colors.brand.secondary}
+                        />
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
 
                 {/* Weight Input */}
                 {currentData.targetWeight !== undefined && (
-                  <View style={{ alignItems: "center", paddingHorizontal: 10 }}>
+                  <View className="mt-3 px-2">
                     {/* Weight Slider */}
-                    <View style={{ width: "100%", paddingHorizontal: 10 }}>
+                    <View className="w-full">
                       <CustomSlider
                         label="Weight Used"
                         value={Number(currentData.weightUsed || 0)}
@@ -674,14 +558,7 @@ export default function WorkoutScreen() {
               </View>
             )}
 
-            <Text
-              style={{
-                fontSize: 13,
-                color: colors.text.muted,
-                lineHeight: 18,
-                marginBottom: 12,
-              }}
-            >
+            <Text className="text-sm text-text-muted leading-5 mb-3">
               {currentExercise?.exercise.instructions ||
                 "Keep your knees aligned with your toes. Lower until thighs are parallel to the floor. Engage your core throughout the movement."}
             </Text>
@@ -689,52 +566,26 @@ export default function WorkoutScreen() {
             {/* Equipment Pills */}
             {currentExercise?.exercise.equipment &&
               currentExercise.exercise.equipment !== "none" && (
-                <View style={{ marginTop: 12 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
+                <View className="mt-2">
+                  <View className="flex-row items-center mb-2">
                     <Ionicons
                       name="fitness-outline"
                       size={14}
                       color={colors.text.muted}
                     />
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: colors.text.muted,
-                        marginLeft: 6,
-                        fontWeight: "500",
-                      }}
-                    >
+                    <Text className="text-xs text-text-muted ml-2 font-semibold">
                       Equipment needed
                     </Text>
                   </View>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                  <View className="flex-row flex-wrap">
                     {currentExercise.exercise.equipment
                       .split(",")
                       .map((equipment, index) => (
                         <View
                           key={index}
-                          style={{
-                            backgroundColor: colors.neutral.light[1],
-                            borderRadius: 16,
-                            paddingHorizontal: 12,
-                            paddingVertical: 6,
-                            marginRight: 8,
-                            marginBottom: 6,
-                          }}
+                          className="bg-neutral-light-1 rounded-full px-2 py-1 mx-1 mb-1"
                         >
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              fontWeight: "500",
-                              color: colors.text.primary,
-                            }}
-                          >
+                          <Text className="text-xs font-semibold text-text-primary">
                             {formatEquipment(equipment.trim())}
                           </Text>
                         </View>
@@ -745,15 +596,8 @@ export default function WorkoutScreen() {
           </View>
 
           {/* Workout Plan */}
-          <View style={{ marginBottom: 16 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "bold",
-                color: colors.text.primary,
-                marginBottom: 12,
-              }}
-            >
+          <View className="mb-4">
+            <Text className="text-base font-bold text-text-primary mb-2">
               Workout Plan
             </Text>
 
@@ -763,35 +607,14 @@ export default function WorkoutScreen() {
                 return (
                   <View
                     key={index}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      padding: 12,
-                      marginBottom: 6,
-                      borderRadius: 12,
-                      backgroundColor:
-                        status === "Current"
-                          ? "rgba(187, 222, 81, 0.1)"
-                          : "white",
-                      borderWidth: 1,
-                      borderColor:
-                        status === "Current"
-                          ? "rgba(187, 222, 81, 0.3)"
-                          : colors.neutral.light[2],
-                    }}
+                    className={`flex-row items-center py-2 px-4 mb-2 rounded-xl border ${
+                      status === "Current"
+                        ? "bg-primary/10 border-primary/30"
+                        : "bg-white border-neutral-light-2"
+                    }`}
                   >
                     {/* Exercise Icon */}
-                    <View
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        backgroundColor: colors.neutral.light[1],
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 12,
-                      }}
-                    >
+                    <View className="w-12 h-12 rounded-full bg-neutral-light-1 items-center justify-center mr-4">
                       <Ionicons
                         name="fitness"
                         size={18}
@@ -800,23 +623,11 @@ export default function WorkoutScreen() {
                     </View>
 
                     {/* Exercise Info */}
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          color: colors.text.primary,
-                          marginBottom: 2,
-                        }}
-                      >
+                    <View className="flex-1">
+                      <Text className="text-sm font-semibold text-text-primary mb-1">
                         {exercise.exercise.name}
                       </Text>
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: colors.text.muted,
-                        }}
-                      >
+                      <Text className="text-xs text-text-muted">
                         {exercise.sets || 3} sets × {exercise.reps || 12} reps
                         {exercise.reps ? "" : " each leg"}
                       </Text>
@@ -824,33 +635,20 @@ export default function WorkoutScreen() {
 
                     {/* Status Badge */}
                     <View
-                      style={{
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                        borderRadius: 10,
-                        backgroundColor:
-                          status === "Completed"
-                            ? colors.neutral.light[1]
-                            : status === "Current"
-                            ? "rgba(187, 222, 81, 0.2)"
-                            : status === "Next"
-                            ? colors.neutral.light[1]
-                            : colors.neutral.light[1],
-                      }}
+                      className={`px-2 py-1 rounded-full ${
+                        status === "Current"
+                          ? "bg-primary/20"
+                          : "bg-neutral-light-1"
+                      }`}
                     >
                       <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: "500",
-                          color:
-                            status === "Completed"
-                              ? colors.brand.primary
-                              : status === "Current"
-                              ? colors.brand.primary
-                              : status === "Next"
-                              ? colors.brand.primary
-                              : colors.text.muted,
-                        }}
+                        className={`text-xs font-semibold ${
+                          status === "Completed" ||
+                          status === "Current" ||
+                          status === "Next"
+                            ? "text-primary"
+                            : "text-text-muted"
+                        }`}
                       >
                         {status}
                       </Text>
@@ -862,60 +660,28 @@ export default function WorkoutScreen() {
           </View>
 
           {/* Controls */}
-          <View style={{ marginBottom: 16 }}>
+          <View className="mb-4">
             {!isWorkoutActive ? (
               <TouchableOpacity
-                style={{
-                  backgroundColor: colors.brand.primary,
-                  borderRadius: 20,
-                  paddingVertical: 14,
-                  marginBottom: 16,
-                }}
+                className="bg-primary rounded-xl py-3 px-6"
                 onPress={async () => await startWorkout()}
               >
-                <Text
-                  style={{
-                    color: colors.brand.secondary,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                    fontSize: 16,
-                  }}
-                >
+                <Text className="text-secondary font-semibold text-sm text-center">
                   Start Workout
                 </Text>
               </TouchableOpacity>
             ) : (
               <>
                 {/* Media Controls with Timer */}
-                <View style={{ alignItems: "center", marginBottom: 16 }}>
+                <View className="flex items-center mb-4">
                   {/* Exercise Timer */}
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.text.muted,
-                      marginBottom: 8,
-                      textAlign: "center",
-                    }}
-                  >
+                  <Text className="text-xs text-text-muted mb-2 text-center">
                     Exercise: {formatTime(exerciseTimer)}
                   </Text>
 
                   {/* Pause/Play Button */}
                   <TouchableOpacity
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      backgroundColor: colors.brand.primary,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      shadowColor: colors.neutral.dark[1],
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                      elevation: 4,
-                      marginVertical: 8,
-                    }}
+                    className="w-16 h-16 rounded-full bg-primary items-center justify-center shadow-md"
                     onPress={togglePause}
                   >
                     <Ionicons
@@ -926,64 +692,20 @@ export default function WorkoutScreen() {
                   </TouchableOpacity>
 
                   {/* Total Timer */}
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.text.muted,
-                      marginTop: 8,
-                      textAlign: "center",
-                    }}
-                  >
+                  <Text className="text-xs text-text-muted mt-2 text-center">
                     Total: {formatTime(workoutTimer)}
                   </Text>
                 </View>
 
                 {/* Action Buttons */}
-                <View
-                  style={{ flexDirection: "row", marginBottom: 16, gap: 8 }}
+                <TouchableOpacity
+                  className="bg-primary rounded-xl py-4 w-full"
+                  onPress={() => setShowCompleteModal(true)}
                 >
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: colors.brand.primary,
-                      borderRadius: 20,
-                      paddingVertical: 14,
-                      flex: 1,
-                      alignItems: "center",
-                    }}
-                    onPress={() => setShowCompleteModal(true)}
-                  >
-                    <Text
-                      style={{
-                        color: colors.background,
-                        fontWeight: "bold",
-                        fontSize: 14,
-                      }}
-                    >
-                      Complete Exercise
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* <TouchableOpacity
-                    style={{
-                      backgroundColor: "colors.brand.primary",
-                      borderRadius: 20,
-                      paddingVertical: 14,
-                      flex: 1,
-                      alignItems: "center",
-                    }}
-                    onPress={() => setShowEndWorkoutModal(true)}
-                  >
-                    <Text
-                      style={{
-                        color: colors.background,
-                        fontWeight: "bold",
-                        fontSize: 14,
-                      }}
-                    >
-                      End Workout
-                    </Text>
-                  </TouchableOpacity> */}
-                </View>
+                  <Text className="text-secondary font-semibold text-base text-center">
+                    Complete Exercise
+                  </Text>
+                </TouchableOpacity>
               </>
             )}
           </View>
@@ -992,107 +714,45 @@ export default function WorkoutScreen() {
 
       {/* Complete Exercise Modal */}
       <Modal visible={showCompleteModal} transparent animationType="slide">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 24,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderRadius: 16,
-              padding: 24,
-              width: "100%",
-              maxWidth: 400,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "bold",
-                color: colors.text.primary,
-                marginBottom: 4,
-              }}
-            >
+        <View className="flex-1 bg-black/20 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl p-8 shadow-xl border border-neutral-light-2 w-full max-w-md">
+            <Text className="text-lg font-bold text-text-primary mb-4">
               Complete Exercise
             </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.text.muted,
-                marginBottom: 16,
-                lineHeight: 20,
-              }}
-            >
+            <Text className="text-base text-text-muted mb-6 leading-6">
               Mark this exercise as complete? Your progress will be saved.
             </Text>
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
+            <View className="flex-row justify-between gap-4">
               <TouchableOpacity
-                style={{
-                  backgroundColor: isCompletingExercise
-                    ? colors.neutral.light[2]
-                    : colors.neutral.light[1],
-                  borderRadius: 12,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  flex: 1,
-                  alignItems: "center",
-                  marginRight: 8,
-                  opacity: isCompletingExercise ? 0.6 : 1,
-                }}
+                className="bg-neutral-light-1 rounded-xl py-4 px-6 flex-1"
                 onPress={() => setShowCompleteModal(false)}
-                disabled={isCompletingExercise}
               >
-                <Text
-                  style={{
-                    color: colors.text.muted,
-                    fontWeight: "600",
-                    fontSize: 14,
-                  }}
-                >
+                <Text className="text-text-muted font-semibold text-base text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{
-                  backgroundColor: isCompletingExercise
-                    ? colors.brand.primary
-                    : colors.brand.primary,
-                  borderRadius: 12,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  flex: 1,
-                  alignItems: "center",
-                  marginLeft: 8,
-                  opacity: isCompletingExercise ? 0.8 : 1,
-                  flexDirection: "row",
-                  justifyContent: "center",
-                }}
+                className={`bg-primary rounded-xl py-4 px-6 flex-1 ${
+                  isCompletingExercise ? "opacity-75" : ""
+                }`}
                 onPress={handleCompleteExercise}
                 disabled={isCompletingExercise}
               >
-                {isCompletingExercise && (
-                  <ActivityIndicator
-                    size="small"
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
+                {isCompletingExercise ? (
+                  <View className="flex-row items-center justify-center">
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand.secondary}
+                    />
+                    <Text className="text-secondary font-semibold text-base ml-2">
+                      Completing...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-secondary font-semibold text-base text-center">
+                    Complete
+                  </Text>
                 )}
-                <Text
-                  style={{
-                    color: "white",
-                    fontWeight: "600",
-                    fontSize: 14,
-                  }}
-                >
-                  {isCompletingExercise ? "Completing..." : "Complete"}
-                </Text>
               </TouchableOpacity>
             </View>
           </View>

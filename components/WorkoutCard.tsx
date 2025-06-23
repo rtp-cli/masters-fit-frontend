@@ -151,8 +151,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                className="py-2 px-4 rounded-md items-center border border-primary"
-                style={{ flex: 0.5 }}
+                className="py-2 px-4 rounded-md items-center border border-primary flex-1/2"
                 onPress={handleEditWorkout}
               >
                 <Text

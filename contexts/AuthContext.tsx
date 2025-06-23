@@ -5,7 +5,7 @@ import React, {
   useContext,
   useEffect,
 } from "react";
-import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import {
   checkEmailExists,
   completeOnboarding as apiCompleteOnboarding,
@@ -210,18 +210,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Provide the context to children components
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-// Styles
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: colors.text.muted,
-  },
-});

@@ -480,10 +480,7 @@ export default function DashboardScreen() {
     return (
       <View className="flex-1 justify-center items-center bg-background">
         <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text
-          className="mt-md text-sm font-medium"
-          style={{ color: colors.brand.primary }}
-        >
+        <Text className="mt-md text-sm font-medium text-primary">
           One moment...
         </Text>
       </View>
@@ -659,14 +656,11 @@ export default function DashboardScreen() {
                   <View>
                     {/* Icon and workout details */}
                     <View className="flex-row items-center mb-6">
-                      <View
-                        className="w-16 h-16 rounded-full items-center justify-center mr-4"
-                        style={{ backgroundColor: colors.brand.primary }}
-                      >
+                      <View className="w-16 h-16 rounded-full items-center justify-center mr-4 bg-primary">
                         <Ionicons
                           name={todaysWorkout ? "heart-outline" : "bed-outline"}
                           size={24}
-                          color={colors.text.primary}
+                          color={colors.neutral.light[1]}
                         />
                       </View>
                       <View className="flex-1">
@@ -766,10 +760,7 @@ export default function DashboardScreen() {
                 <View className="bg-white rounded-2xl px-4 pt-5 shadow-sm">
                   {/* Chart Section */}
                   <View className="mb-4">
-                    <View
-                      className="flex-row justify-between items-end mb-4"
-                      style={{ height: 120 }}
-                    >
+                    <View className="flex-row justify-between items-end mb-4 h-30">
                       {(() => {
                         // Use the workout start date as the base, not the current week's Monday
                         let weekStartDate = new Date();
@@ -1033,10 +1024,7 @@ export default function DashboardScreen() {
                     {/* Stats Breakdown */}
                     <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                       <View className="items-center">
-                        <Text
-                          className="text-lg font-bold"
-                          style={{ color: colors.brand.medium[1] }}
-                        >
+                        <Text className="text-lg font-bold text-brand-medium-1">
                           {filteredWeightAccuracy.exactMatches || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
@@ -1044,10 +1032,7 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                       <View className="items-center">
-                        <Text
-                          className="text-lg font-bold"
-                          style={{ color: colors.brand.primary }}
-                        >
+                        <Text className="text-lg font-bold text-primary">
                           {filteredWeightAccuracy.higherWeight || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
@@ -1055,10 +1040,7 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                       <View className="items-center">
-                        <Text
-                          className="text-lg font-bold"
-                          style={{ color: colors.brand.dark[1] }}
-                        >
+                        <Text className="text-lg font-bold text-brand-dark-1">
                           {filteredWeightAccuracy.lowerWeight || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
@@ -1310,10 +1292,10 @@ export default function DashboardScreen() {
             )}
 
             {/* Workout Type Progress/Distribution Chart */}
-            {filteredWorkoutTypeMetrics &&
-              filteredWorkoutTypeMetrics.hasData &&
-              filteredWorkoutTypeMetrics.totalSets > 0 &&
-              filteredWorkoutTypeMetrics.distribution.length > 0 && (
+            {workoutTypeMetrics &&
+              workoutTypeMetrics.hasData &&
+              workoutTypeMetrics.totalSets > 0 &&
+              workoutTypeMetrics.distribution.length > 0 && (
                 <View className="px-4 mb-6">
                   <View className="px-4">
                     <Text className="text-base font-semibold text-text-primary mb-1">
@@ -1362,8 +1344,7 @@ export default function DashboardScreen() {
                       <PieChart
                         data={(() => {
                           // Get top 5 and group the rest under "Other"
-                          const allTypes =
-                            filteredWorkoutTypeMetrics!.distribution;
+                          const allTypes = workoutTypeMetrics!.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1410,8 +1391,7 @@ export default function DashboardScreen() {
                       <View className="flex-row flex-wrap justify-center">
                         {(() => {
                           // Get top 5 and group the rest under "Other" for legend too
-                          const allTypes =
-                            filteredWorkoutTypeMetrics!.distribution;
+                          const allTypes = workoutTypeMetrics!.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 

@@ -100,7 +100,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
             name="search"
             size={20}
             color={colors.text.muted}
-            style={{ marginRight: 8 }}
+            className="mr-2"
           />
           <TextInput
             className="flex-1 text-base py-0 text-text-primary"

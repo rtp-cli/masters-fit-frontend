@@ -114,8 +114,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           return (
             <TouchableOpacity
               key={dateString}
-              className="items-center py-2"
-              style={{ width: 70 }}
+              className="items-center py-2 w-17.5"
               onPress={() => onDateSelect(dateString)}
             >
               <Text

@@ -591,7 +591,7 @@ export default function WorkoutRegenerationModal({
         </View>
 
         {/* Action Button */}
-        <View className="px-5 pb-10">
+        <View className="px-5 pb-10 mb-5">
           <TouchableOpacity
             className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
               loading ? "opacity-70" : ""
