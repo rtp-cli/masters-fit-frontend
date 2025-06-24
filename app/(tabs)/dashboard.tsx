@@ -1292,10 +1292,10 @@ export default function DashboardScreen() {
             )}
 
             {/* Workout Type Progress/Distribution Chart */}
-            {workoutTypeMetrics &&
-              workoutTypeMetrics.hasData &&
-              workoutTypeMetrics.totalSets > 0 &&
-              workoutTypeMetrics.distribution.length > 0 && (
+            {filteredWorkoutTypeMetrics &&
+              filteredWorkoutTypeMetrics.hasData &&
+              filteredWorkoutTypeMetrics.totalSets > 0 &&
+              filteredWorkoutTypeMetrics.distribution.length > 0 && (
                 <View className="px-4 mb-6">
                   <View className="px-4">
                     <Text className="text-base font-semibold text-text-primary mb-1">
@@ -1344,7 +1344,8 @@ export default function DashboardScreen() {
                       <PieChart
                         data={(() => {
                           // Get top 5 and group the rest under "Other"
-                          const allTypes = workoutTypeMetrics!.distribution;
+                          const allTypes =
+                            filteredWorkoutTypeMetrics!.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1391,7 +1392,8 @@ export default function DashboardScreen() {
                       <View className="flex-row flex-wrap justify-center">
                         {(() => {
                           // Get top 5 and group the rest under "Other" for legend too
-                          const allTypes = workoutTypeMetrics!.distribution;
+                          const allTypes =
+                            filteredWorkoutTypeMetrics!.distribution;
                           const topTypes = allTypes.slice(0, 5);
                           const otherTypes = allTypes.slice(5);
 
@@ -1451,19 +1453,20 @@ export default function DashboardScreen() {
                         })()}
                       </View>
                       {/* Show additional info if "Other" category exists */}
-                      {filteredWorkoutTypeMetrics.distribution.length > 5 && (
-                        <Text className="text-xs text-text-muted text-center mt-2">
-                          "Other" includes{" "}
-                          {filteredWorkoutTypeMetrics.distribution.length - 5}{" "}
-                          additional exercise types
-                        </Text>
-                      )}
+                      {filteredWorkoutTypeMetrics &&
+                        filteredWorkoutTypeMetrics.distribution.length > 5 && (
+                          <Text className="text-xs text-text-muted text-center mt-2">
+                            "Other" includes{" "}
+                            {filteredWorkoutTypeMetrics.distribution.length - 5}{" "}
+                            additional exercise types
+                          </Text>
+                        )}
                     </View>
 
                     {/* Dominant Type - Now below legend */}
                     <View className="items-center mb-6">
                       <Text className="text-lg font-bold text-text-primary">
-                        {filteredWorkoutTypeMetrics.dominantType}
+                        {filteredWorkoutTypeMetrics?.dominantType || "N/A"}
                       </Text>
                       <Text className="text-sm text-text-muted">
                         Most Common Type
@@ -1474,7 +1477,7 @@ export default function DashboardScreen() {
                     <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
                       <View className="items-center">
                         <Text className="text-lg font-bold text-text-primary">
-                          {filteredWorkoutTypeMetrics.totalExercises}
+                          {filteredWorkoutTypeMetrics?.totalExercises || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Exercises
@@ -1482,7 +1485,7 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-accent">
-                          {filteredWorkoutTypeMetrics.distribution.length}
+                          {filteredWorkoutTypeMetrics?.distribution.length || 0}
                         </Text>
                         <Text className="text-xs text-text-muted text-center">
                           Types
@@ -1490,7 +1493,8 @@ export default function DashboardScreen() {
                       </View>
                       <View className="items-center">
                         <Text className="text-lg font-bold text-secondary">
-                          {filteredWorkoutTypeMetrics.distribution.length > 0
+                          {filteredWorkoutTypeMetrics &&
+                          filteredWorkoutTypeMetrics.distribution.length > 0
                             ? Math.round(
                                 filteredWorkoutTypeMetrics.distribution.reduce(
                                   (sum, item) => sum + item.completedWorkouts,

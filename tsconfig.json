@@ -5,41 +5,19 @@
     "baseUrl": ".",
     "jsx": "react-native",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "paths": {
-      "@/*": [
-        "*/"
-      ],
-      "@components/*": [
-        "components/*"
-      ],
-      "@contexts/*": [
-        "contexts/*"
-      ],
-      "@hooks/*": [
-        "hooks/*"
-      ],
-      "@lib/*": [
-        "lib/*"
-      ],
-      "@utils/*": [
-        "utils/*"
-      ],
-      "@assets/*": [
-        "assets/*"
-      ],
-      "@types/*": [
-        "types/*"
-      ]
-    },
-    "typeRoots": [
-      "./types",
-      "./node_modules/@types"
-    ]
+      "@/*": ["./*"],
+      "@components/*": ["components/*"],
+      "@contexts/*": ["contexts/*"],
+      "@hooks/*": ["hooks/*"],
+      "@lib/*": ["lib/*"],
+      "@utils/*": ["utils/*"],
+      "@assets/*": ["assets/*"],
+      "@types/*": ["types/*"]
+    }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "types/**/*.d.ts",
-    "nativewind-env.d.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", "types/**/*.d.ts", "nativewind-env.d.ts"],
+  "exclude": ["node_modules"]
 }

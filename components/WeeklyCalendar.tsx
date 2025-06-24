@@ -7,7 +7,7 @@ import {
   getDayOfMonth,
   getShortMonth,
   getCurrentDate,
-} from "@/utils";
+} from "../utils";
 
 interface Workout {
   id: number;

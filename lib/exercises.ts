@@ -1,31 +1,5 @@
 import { apiRequest } from "./api";
-
-// Types
-export interface Exercise {
-  id: number;
-  name: string;
-  description: string;
-  muscleGroups: string[];
-  equipment: string[];
-  instructions?: string;
-  imageUrl?: string;
-  link?: string;
-  difficulty: string;
-  category?: string;
-}
-
-export interface WorkoutExercise {
-  id: number;
-  workoutId: number;
-  exerciseId: number;
-  sets?: number;
-  reps?: number;
-  weight?: number;
-  duration?: number;
-  order?: number;
-  completed: boolean;
-  exercise: Exercise;
-}
+import { ExerciseFromLib as Exercise, WorkoutExercise } from "@/types/api";
 
 /**
  * Fetch all exercises from the API

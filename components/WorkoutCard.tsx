@@ -4,7 +4,7 @@ import { View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Text from "./Text";
 import Card from "./Card";
-import { formatDuration, getIntensityText } from "@/utils";
+import { formatDuration, getIntensityText } from "../utils";
 
 interface Workout {
   id: number;

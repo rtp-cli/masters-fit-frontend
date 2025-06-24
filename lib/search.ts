@@ -1,101 +1,20 @@
 import { apiRequest } from "./api";
+import {
+  DateSearchResponse,
+  ExerciseSearchResponse,
+  ExercisesSearchResponse,
+} from "@/types/api";
 
-// Types for search responses
-export interface SearchExerciseDetails {
-  id: number;
-  name: string;
-  description: string;
-  muscleGroups: string[];
-  equipment: string[];
-  difficulty: string;
-  instructions: string;
-  link?: string;
-}
-
-export interface DateSearchExercise {
-  id: number;
-  exercise: SearchExerciseDetails;
-  sets: number | null;
-  reps: number | null;
-  weight: number | null;
-  duration: number | null;
-  completed: boolean;
-  completionRate: number;
-}
-
-export interface DateSearchPlanDay {
-  id: number;
-  date: Date;
-  exercises: DateSearchExercise[];
-}
-
-export interface DateSearchWorkout {
-  id: number;
-  name: string;
-  description: string;
-  completed: boolean;
-  planDay: DateSearchPlanDay;
-  overallCompletionRate: number;
-}
-
-export interface DateSearchResponse {
-  success: boolean;
-  date: string;
-  workout: DateSearchWorkout | null;
-}
-
-export interface ExerciseDetails {
-  id: number;
-  name: string;
-  description: string;
-  muscleGroups: string[];
-  equipment: string[];
-  difficulty: string;
-  instructions: string;
-  link?: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface PersonalRecord {
-  maxWeight: number | null;
-  maxReps: number;
-  maxSets: number;
-}
-
-export interface ExerciseUserStats {
-  totalAssignments: number;
-  totalCompletions: number;
-  completionRate: number;
-  averageSets: number;
-  averageReps: number;
-  averageWeight: number | null;
-  lastPerformed: Date | null;
-  personalRecord: PersonalRecord;
-}
-
-export interface ExerciseSearchResponse {
-  success: boolean;
-  exercise: ExerciseDetails;
-  userStats: ExerciseUserStats | null;
-}
-
-export interface Exercise {
-  id: number;
-  name: string;
-  description: string | null;
-  muscleGroups: string[];
-  equipment: string[] | null;
-  difficulty: string | null;
-  instructions: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ExercisesSearchResponse {
-  success: boolean;
-  exercises: Exercise[];
-}
+// Re-export types for backward compatibility
+export type {
+  DateSearchResponse,
+  ExerciseSearchResponse,
+  ExercisesSearchResponse,
+  SearchExercise as Exercise,
+  DateSearchWorkout,
+  ExerciseDetails,
+  ExerciseUserStats,
+} from "@/types/api";
 
 /**
  * Search for workout by date
@@ -112,6 +31,7 @@ export async function searchByDateAPI(
     console.error("Search by date error:", error);
     return {
       success: false,
+      data: [],
       date,
       workout: null,
     };
@@ -149,6 +69,7 @@ export async function searchExercisesAPI(
     console.error("Search exercises error:", error);
     return {
       success: false,
+      data: [],
       exercises: [],
     };
   }

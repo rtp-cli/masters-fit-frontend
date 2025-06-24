@@ -360,17 +360,7 @@ export default function CalendarScreen() {
             markedDates={getMarkedDates()}
             minDate={
               workoutPlan?.startDate
-                ? (() => {
-                    // Use safe date parsing for startDate
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(workoutPlan.startDate)) {
-                      return workoutPlan.startDate; // Already in YYYY-MM-DD format
-                    }
-                    const [year, month, day] = workoutPlan.startDate
-                      .split("-")
-                      .map(Number);
-                    const safeDate = new Date(year, month - 1, day);
-                    return safeDate.toISOString().split("T")[0];
-                  })()
+                ? formatDateToString(workoutPlan.startDate)
                 : (() => {
                     const today = new Date();
                     return (
@@ -386,37 +376,20 @@ export default function CalendarScreen() {
               workoutPlan?.startDate
                 ? (() => {
                     // Use safe date parsing and add 6 days
-                    let startDate: Date;
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(workoutPlan.startDate)) {
-                      const [year, month, day] = workoutPlan.startDate
-                        .split("-")
-                        .map(Number);
-                      startDate = new Date(year, month - 1, day);
-                    } else {
-                      startDate = new Date(workoutPlan.startDate);
-                    }
+                    const startDate =
+                      workoutPlan.startDate instanceof Date
+                        ? workoutPlan.startDate
+                        : new Date(workoutPlan.startDate);
                     const maxDate = new Date(
                       startDate.getTime() + 6 * 24 * 60 * 60 * 1000
                     );
-                    return (
-                      maxDate.getFullYear() +
-                      "-" +
-                      String(maxDate.getMonth() + 1).padStart(2, "0") +
-                      "-" +
-                      String(maxDate.getDate()).padStart(2, "0")
-                    );
+                    return formatDateToString(maxDate);
                   })()
                 : (() => {
                     const futureDate = new Date(
                       Date.now() + 30 * 24 * 60 * 60 * 1000
                     );
-                    return (
-                      futureDate.getFullYear() +
-                      "-" +
-                      String(futureDate.getMonth() + 1).padStart(2, "0") +
-                      "-" +
-                      String(futureDate.getDate()).padStart(2, "0")
-                    );
+                    return formatDateToString(futureDate);
                   })()
             }
             disableAllTouchEventsForDisabledDays={true}

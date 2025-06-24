@@ -11,13 +11,14 @@ module.exports = function (api) {
         {
           root: ["."],
           alias: {
-            "@": "./app",
+            "@": "./",
             "@components": "./components",
             "@lib": "./lib",
             "@utils": "./utils",
             "@contexts": "./contexts",
             "@hooks": "./hooks",
             "@assets": "./assets",
+            "@types": "./types",
           },
         },
       ],

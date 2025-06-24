@@ -9,45 +9,16 @@ import {
   getCompletedExercises,
   markExerciseCompleted,
   markWorkoutComplete,
-  CreateExerciseLogParams,
   subscribeToWorkoutUpdates,
-} from "@lib/workouts";
+} from "@/lib/workouts";
 import {
   WorkoutSession,
   ExerciseSessionData,
   PlanDayWithExercises,
   PlanDayWithExercise,
-} from "../app/types";
-
-export interface UseWorkoutSessionReturn {
-  // State
-  activeWorkout: PlanDayWithExercises | null;
-  currentExerciseIndex: number;
-  exerciseTimer: number;
-  workoutTimer: number;
-  isWorkoutActive: boolean;
-  isPaused: boolean;
-  exerciseData: ExerciseSessionData[];
-  isLoading: boolean;
-
-  // Actions
-  startWorkout: () => Promise<void>;
-  completeExercise: (notes?: string) => Promise<boolean>;
-  endWorkout: (notes?: string) => Promise<boolean>;
-  updateExerciseData: (field: keyof ExerciseSessionData, value: any) => void;
-  moveToNextExercise: () => void;
-  resetSession: () => void;
-  refreshWorkout: () => Promise<void>;
-  togglePause: () => void;
-
-  // Computed values
-  currentExercise: PlanDayWithExercise | undefined;
-  currentData: ExerciseSessionData | undefined;
-  completedCount: number;
-  totalExercises: number;
-  progressPercentage: number;
-  formatTime: (seconds: number) => string;
-}
+  CreateExerciseLogParams,
+} from "@/types/api";
+import { UseWorkoutSessionReturn } from "@/types/hooks";
 
 export function useWorkoutSession(): UseWorkoutSessionReturn {
   const [activeWorkout, setActiveWorkout] =

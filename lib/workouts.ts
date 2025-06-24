@@ -1,40 +1,13 @@
 import { apiRequest } from "./api";
 import { getCurrentUser } from "./auth";
 import { formatDateAsString, getTodayString, isSameDay } from "../utils";
-
-// Types
-export interface Workout {
-  id: number;
-  name: string;
-  description?: string;
-  type?: string;
-  duration: number;
-  intensity: string;
-  date: string;
-  completed: boolean;
-  caloriesBurned?: number;
-  createdAt?: string;
-}
-
-export interface CreateWorkoutParams {
-  name: string;
-  description?: string;
-  type?: string;
-  duration: number;
-  intensity: string;
-  date: string;
-}
-
-export interface UpdateWorkoutParams {
-  name?: string;
-  description?: string;
-  type?: string;
-  duration?: number;
-  intensity?: string;
-  date?: string;
-  completed?: boolean;
-  caloriesBurned?: number;
-}
+import {
+  Workout,
+  CreateWorkoutParams,
+  UpdateWorkoutParams,
+  CreateExerciseLogParams,
+  CreateWorkoutLogParams,
+} from "@/types/api";
 
 // Simple event system for workout data updates
 const workoutUpdateListeners: Array<() => void> = [];
@@ -308,24 +281,6 @@ export function getNextWorkout(workouts: Workout[]): Workout | null {
 }
 
 // New API functions for workout session functionality
-export interface CreateExerciseLogParams {
-  planDayExerciseId: number;
-  setsCompleted: number;
-  repsCompleted: number;
-  weightUsed: number;
-  isComplete: boolean;
-  timeTaken?: number;
-  notes?: string;
-}
-
-export interface CreateWorkoutLogParams {
-  workoutId: number;
-  planDayId: number;
-  timeTaken: number;
-  notes?: string;
-  isComplete: boolean;
-  completedExercises: number[];
-}
 
 /**
  * Create an exercise log

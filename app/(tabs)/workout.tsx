@@ -751,10 +751,10 @@ export default function WorkoutScreen() {
           <View className="mb-4">
             {!isWorkoutActive ? (
               <TouchableOpacity
-                className="bg-primary rounded-xl py-3 px-6"
+                className="bg-primary rounded-xl py-4 w-full"
                 onPress={async () => await startWorkout()}
               >
-                <Text className="text-secondary font-semibold text-sm text-center">
+                <Text className="text-secondary font-semibold text-base text-center">
                   Start Workout
                 </Text>
               </TouchableOpacity>
