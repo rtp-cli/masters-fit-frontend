@@ -569,7 +569,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Logout Button */}
-        <View className="px-6 mb-8">
+        <View className="px-6 mb-4">
           <TouchableOpacity
             className="bg-white rounded-xl p-4 flex-row items-center justify-center"
             onPress={handleLogout}
@@ -580,7 +580,7 @@ export default function SettingsScreen() {
               color={colors.brand.secondary}
               className="mr-2"
             />
-            <Text className="text-red-500 font-semibold">Log Out</Text>
+            <Text className="text-red-700 font-semibold">Log Out</Text>
           </TouchableOpacity>
         </View>
 

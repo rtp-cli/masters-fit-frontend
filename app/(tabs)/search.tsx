@@ -615,7 +615,7 @@ export default function SearchScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  className="flex-row items-center bg-primary/10 px-3 py-2 rounded-lg ml-2"
+                  className="flex-row items-center bg-brand-light-2 px-3 py-2 rounded-lg ml-2"
                   onPress={() =>
                     handleOpenLinkModal({
                       id: exerciseResult.exercise.id,
@@ -627,10 +627,10 @@ export default function SearchScreen() {
                   <Ionicons
                     name="link"
                     size={14}
-                    color={colors.brand.primary}
+                    color={colors.neutral.dark[1]}
                     className="mr-1"
                   />
-                  <Text className="text-xs font-medium text-primary">
+                  <Text className="text-xs font-medium text-neutral-dark-1">
                     {exerciseResult.exercise.link ? "Update Link" : "Add Link"}
                   </Text>
                 </TouchableOpacity>
@@ -825,7 +825,7 @@ export default function SearchScreen() {
                           dateResult.planDay.exercises
                         ) === 100
                         ? "bg-brand-primary"
-                        : "bg-yellow-800"
+                        : "bg-yellow-600"
                       : "bg-gray-500"
                   }`}
                 >
@@ -933,16 +933,16 @@ export default function SearchScreen() {
                                   exercise?.completed === true
                                     ? "bg-brand-primary"
                                     : exercise?.completed === false
-                                    ? "bg-red-800"
-                                    : "bg-yellow-800"
+                                      ? "bg-red-700"
+                                      : "bg-yellow-700"
                                 }`}
                               >
                                 <Text className="text-xs font-semibold text-white">
                                   {exercise?.completed === true
                                     ? "Done"
                                     : exercise?.completed === false
-                                    ? "Not Done"
-                                    : "Pending"}
+                                      ? "Not Done"
+                                      : "Pending"}
                                 </Text>
                               </View>
                               <Ionicons
@@ -996,18 +996,25 @@ export default function SearchScreen() {
                             exercise.exercise.equipment.length > 0 && (
                               <View className="mt-2">
                                 <View className="flex-row flex-wrap">
-                                  {exercise.exercise.equipment.map(
-                                    (item: string, equipmentIndex: number) => (
-                                      <View
-                                        key={equipmentIndex}
-                                        className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
-                                      >
-                                        <Text className="text-xs font-medium text-text-primary">
-                                          {formatEquipmentProperly(item)}
-                                        </Text>
-                                      </View>
+                                  {exercise.exercise.equipment
+                                    .flatMap((item: string) =>
+                                      item.split(",").map((s) => s.trim())
                                     )
-                                  )}
+                                    .map(
+                                      (
+                                        item: string,
+                                        equipmentIndex: number
+                                      ) => (
+                                        <View
+                                          key={equipmentIndex}
+                                          className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
+                                        >
+                                          <Text className="text-xs font-medium text-text-primary">
+                                            {formatEquipmentProperly(item)}
+                                          </Text>
+                                        </View>
+                                      )
+                                    )}
                                 </View>
                               </View>
                             )}
@@ -1093,8 +1100,11 @@ export default function SearchScreen() {
                     exercise.equipment.length > 0 && (
                       <View className="mb-2">
                         <View className="flex-row flex-wrap">
-                          {exercise.equipment.map(
-                            (item: string, equipmentIndex: number) => (
+                          {exercise.equipment
+                            .flatMap((item: string) =>
+                              item.split(",").map((s) => s.trim())
+                            )
+                            .map((item: string, equipmentIndex: number) => (
                               <View
                                 key={equipmentIndex}
                                 className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
@@ -1103,8 +1113,7 @@ export default function SearchScreen() {
                                   {formatEquipmentProperly(item)}
                                 </Text>
                               </View>
-                            )
-                          )}
+                            ))}
                         </View>
                       </View>
                     )}

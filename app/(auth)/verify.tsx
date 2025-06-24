@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -23,9 +23,11 @@ export default function VerifyScreen() {
   const router = useRouter();
   const pathname = usePathname();
   const { email } = useLocalSearchParams<{ email: string }>();
-  const [code, setCode] = useState("");
+  const [otp, setOtp] = useState(["", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const { isSigningUp, setUserData } = useAuth();
+
+  const inputs = useRef<TextInput[]>([]);
 
   // Redirect if no email
   useEffect(() => {
@@ -33,6 +35,24 @@ export default function VerifyScreen() {
       router.replace("/(auth)/login");
     }
   }, [email]);
+
+  const handleOtpChange = (text: string, index: number) => {
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    // Move to next input
+    if (text && index < 3) {
+      inputs.current[index + 1].focus();
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    // Move to previous input on backspace
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      inputs.current[index - 1].focus();
+    }
+  };
 
   // Function to request a new code
   const requestNewCode = async () => {
@@ -46,7 +66,7 @@ export default function VerifyScreen() {
           "Success",
           "A new verification code has been sent to your email."
         );
-        setCode("");
+        setOtp(["", "", "", ""]);
       } else {
         Alert.alert("Error", "Failed to send new code. Please try again.");
       }
@@ -60,8 +80,9 @@ export default function VerifyScreen() {
   const handleVerify = async () => {
     if (!email) return;
 
-    if (!code.trim()) {
-      Alert.alert("Error", "Please enter the verification code");
+    const code = otp.join("");
+    if (code.length !== 4) {
+      Alert.alert("Error", "Please enter the complete 4-digit OTP");
       return;
     }
 
@@ -146,7 +167,7 @@ export default function VerifyScreen() {
           [
             {
               text: "Try Again",
-              onPress: () => setCode(""),
+              onPress: () => setOtp(["", "", "", ""]),
               style: "default",
             },
             {
@@ -180,66 +201,61 @@ export default function VerifyScreen() {
       {/* Header */}
       <Header />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Title and description */}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View className="px-lg pt-2xl pb-lg">
-          <Text className="text-3xl font-bold text-text-primary mb-sm">
+          {/* Title and description */}
+          <Text className="text-2xl font-semibold text-text-primary mb-md">
             Enter Verification Code
           </Text>
-          <Text className="text-sm text-text-muted leading-5">
-            We've sent a verification code to {email}. Please enter the code
-            below to continue.
+          <Text className="text-sm text-text-muted leading-5 mb-lg">
+            A 4-digit code has been sent to your email address. This code will
+            expire in 10 minutes.
           </Text>
-        </View>
 
-        {/* Form content */}
-        <View className="px-lg pt-lg">
-          {/* Verification code input */}
-          <View className="mb-lg">
-            <Text className="text-base font-medium text-text-primary mb-sm">
-              Verification Code
-            </Text>
-            <TextInput
-              className="bg-background px-md py-md rounded-xl text-base text-center tracking-widest border border-neutral-medium-1"
-              placeholder="Enter verification code"
-              value={code}
-              onChangeText={setCode}
-              keyboardType="default"
-              maxLength={6}
-              editable={!isLoading}
-              autoFocus
-              placeholderTextColor={colors.text.muted}
-            />
+          {/* OTP Input Boxes */}
+          <View className="flex-row justify-center space-x-6 my-lg">
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => {
+                  if (ref) inputs.current[index] = ref;
+                }}
+                className="w-16 h-16 border border-neutral-medium-1 rounded-xl text-center text-2xl font-bold text-text-primary mr-2"
+                value={digit}
+                onChangeText={(text) => handleOtpChange(text, index)}
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="number-pad"
+                maxLength={1}
+                editable={!isLoading}
+                autoFocus={index === 0}
+              />
+            ))}
           </View>
-
-          {/* Request new code link */}
-          <TouchableOpacity
-            className="items-center py-md"
-            onPress={requestNewCode}
-            disabled={isLoading}
-          >
-            <Text className="text-sm text-primary font-medium">
-              Didn't receive a code? Request new code
-            </Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* Bottom button */}
       <View className="px-lg pb-2xl pt-md bg-background">
         <TouchableOpacity
-          className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
-            isLoading ? "opacity-70" : ""
+          className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center flex-row ${
+            isLoading || otp.join("").length !== 4 ? "opacity-50" : ""
           }`}
           onPress={handleVerify}
-          disabled={isLoading || !code.trim()}
+          disabled={isLoading || otp.join("").length !== 4}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-white font-semibold text-base">
-              Verify & Continue
-            </Text>
+            <>
+              <Text className="text-white font-semibold text-base mr-2">
+                Continue
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="white" />
+            </>
           )}
         </TouchableOpacity>
       </View>
