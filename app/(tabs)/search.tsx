@@ -283,6 +283,33 @@ export default function SearchScreen() {
     return description || "No description available";
   };
 
+  // Get difficulty color classes based on level
+  const getDifficultyClasses = (difficulty: string) => {
+    const lowerDifficulty = (difficulty || "").toLowerCase();
+    switch (lowerDifficulty) {
+      case "low":
+        return {
+          bg: "bg-green-500",
+          text: "text-white",
+        };
+      case "moderate":
+        return {
+          bg: "bg-yellow-500",
+          text: "text-white",
+        };
+      case "high":
+        return {
+          bg: "bg-red-500",
+          text: "text-white",
+        };
+      default:
+        return {
+          bg: "bg-gray-500",
+          text: "text-white",
+        };
+    }
+  };
+
   // Format instructions safely
   const formatInstructions = (instructions: string | null | undefined) => {
     return instructions || "No instructions available";
@@ -296,21 +323,6 @@ export default function SearchScreen() {
   // Format name safely
   const formatName = (name: string | null | undefined) => {
     return name || "Unknown Exercise";
-  };
-
-  // Get difficulty color based on level
-  const getDifficultyColor = (difficulty: string) => {
-    const lowerDifficulty = (difficulty || "").toLowerCase();
-    switch (lowerDifficulty) {
-      case "beginner":
-        return colors.brand.dark[1]; // green
-      case "intermediate":
-        return colors.brand.primary; // primary
-      case "advanced":
-        return colors.brand.secondary; // dark
-      default:
-        return colors.text.muted; // gray
-    }
   };
 
   // Safe string conversion for display
@@ -680,6 +692,29 @@ export default function SearchScreen() {
                 </Text>
               </View>
 
+              {/* Difficulty */}
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-text-primary mb-2">
+                  Difficulty
+                </Text>
+                <View
+                  className={`px-3 py-1 rounded-full self-start ${
+                    getDifficultyClasses(exerciseResult.exercise.difficulty).bg
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      getDifficultyClasses(exerciseResult.exercise.difficulty)
+                        .text
+                    }`}
+                  >
+                    {formatDifficultyProperly(
+                      exerciseResult.exercise.difficulty
+                    )}
+                  </Text>
+                </View>
+              </View>
+
               {/* Instructions */}
               <View className="mb-6">
                 <Text className="text-sm font-semibold text-text-primary mb-2">
@@ -983,41 +1018,6 @@ export default function SearchScreen() {
                               </View>
                             )}
                           </View>
-
-                          <Text className="text-sm text-text-muted mb-2">
-                            {formatDifficultyProperly(
-                              exercise?.exercise?.difficulty
-                            )}
-                          </Text>
-
-                          {/* Equipment Pills */}
-                          {exercise?.exercise?.equipment &&
-                            Array.isArray(exercise.exercise.equipment) &&
-                            exercise.exercise.equipment.length > 0 && (
-                              <View className="mt-2">
-                                <View className="flex-row flex-wrap">
-                                  {exercise.exercise.equipment
-                                    .flatMap((item: string) =>
-                                      item.split(",").map((s) => s.trim())
-                                    )
-                                    .map(
-                                      (
-                                        item: string,
-                                        equipmentIndex: number
-                                      ) => (
-                                        <View
-                                          key={equipmentIndex}
-                                          className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
-                                        >
-                                          <Text className="text-xs font-medium text-text-primary">
-                                            {formatEquipmentProperly(item)}
-                                          </Text>
-                                        </View>
-                                      )
-                                    )}
-                                </View>
-                              </View>
-                            )}
                         </TouchableOpacity>
                       )
                     )}
