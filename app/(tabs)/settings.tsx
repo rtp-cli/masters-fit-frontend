@@ -15,13 +15,7 @@ import { useAuth } from "@contexts/AuthContext";
 import { useRouter } from "expo-router";
 import { fetchUserProfile, Profile } from "@lib/profile";
 import { useDashboard } from "@hooks/useDashboard";
-import {
-  formatEnumValue,
-  formatFitnessGoals,
-  formatWorkoutStyles,
-  formatEquipment,
-  getIntensityText,
-} from "@utils/index";
+import { formatEnumValue, getIntensityText } from "@utils/index";
 import { colors } from "../../lib/theme";
 
 export default function SettingsScreen() {
@@ -38,12 +32,7 @@ export default function SettingsScreen() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
   // Dashboard data for statistics
-  const {
-    weeklySummary,
-    workoutConsistency,
-    loading: dashboardLoading,
-    fetchWeeklySummary,
-  } = useDashboard(user?.id || 0);
+  const { fetchWeeklySummary } = useDashboard(user?.id || 0);
 
   // Load user profile and dashboard data
   const loadUserData = async () => {
@@ -95,60 +84,6 @@ export default function SettingsScreen() {
       ],
       { cancelable: true }
     );
-  };
-
-  // Format goals for display with colors
-  const formatGoalsWithColors = (goals: string[] | undefined) => {
-    if (!goals || goals.length === 0) return [];
-    return goals.map((goal) => {
-      const baseColor =
-        goal === "general_fitness"
-          ? "green"
-          : goal === "fat_loss"
-          ? "red"
-          : goal === "endurance"
-          ? "orange"
-          : goal === "muscle_gain"
-          ? "purple"
-          : goal === "strength"
-          ? "blue"
-          : goal === "mobility_flexibility"
-          ? "pink"
-          : goal === "balance"
-          ? "yellow"
-          : goal === "recovery"
-          ? "teal"
-          : "gray";
-
-      return {
-        label: formatEnumValue(goal),
-        color: `bg-${baseColor}-100 text-${baseColor}-700`,
-      };
-    });
-  };
-
-  // Format workout styles for display with colors
-  const formatWorkoutStylesWithColors = (styles: string[] | undefined) => {
-    if (!styles || styles.length === 0) return [];
-    return styles.map((style) => {
-      const baseColor =
-        style === "HIIT"
-          ? "blue"
-          : style === "strength"
-          ? "purple"
-          : style === "cardio"
-          ? "orange"
-          : style === "yoga"
-          ? "green"
-          : style === "pilates"
-          ? "pink"
-          : "gray";
-
-      return {
-        label: style === "HIIT" ? "HIIT" : formatEnumValue(style),
-        color: `bg-${baseColor}-100 text-${baseColor}-700`,
-      };
-    });
   };
 
   // Format available days for display
@@ -290,33 +225,33 @@ export default function SettingsScreen() {
               className="items-center"
               onPress={() => router.push("/profile-edit")}
             >
-              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-2">
+              <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="person-outline"
                   size={20}
-                  color={colors.brand.secondary}
+                  color={colors.neutral.light[1]}
                 />
               </View>
               <Text className="text-xs text-text-muted">Edit Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
-              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-2">
+              <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="help-circle-outline"
                   size={20}
-                  color={colors.brand.secondary}
+                  color={colors.neutral.light[1]}
                 />
               </View>
               <Text className="text-xs text-text-muted">Help</Text>
             </TouchableOpacity>
 
             <TouchableOpacity className="items-center">
-              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center mb-2">
+              <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="share-outline"
                   size={20}
-                  color={colors.brand.secondary}
+                  color={colors.neutral.light[1]}
                 />
               </View>
               <Text className="text-xs text-text-muted">Share</Text>
@@ -424,9 +359,9 @@ export default function SettingsScreen() {
                 {profile.goals.map((goal, index) => (
                   <View
                     key={index}
-                    className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
+                    className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
                   >
-                    <Text className="text-xs font-medium text-text-primary">
+                    <Text className="text-xs font-medium text-neutral-light-1">
                       {formatEnumValue(goal)}
                     </Text>
                   </View>
@@ -447,9 +382,9 @@ export default function SettingsScreen() {
                 {profile.preferredStyles.map((style, index) => (
                   <View
                     key={index}
-                    className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
+                    className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
                   >
-                    <Text className="text-xs font-medium text-text-primary">
+                    <Text className="text-xs font-medium text-neutral-light-1">
                       {style === "HIIT" ? "HIIT" : formatEnumValue(style)}
                     </Text>
                   </View>
@@ -466,18 +401,28 @@ export default function SettingsScreen() {
               Available Equipment
             </Text>
             <View className="px-4 pb-4">
-              <View className="flex-row flex-wrap">
+              <View className="flex-row flex-wrap mb-2">
                 {profile.equipment.map((item, index) => (
                   <View
                     key={index}
-                    className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
+                    className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
                   >
-                    <Text className="text-xs font-medium text-text-primary">
+                    <Text className="text-xs font-medium text-neutral-light-1">
                       {formatEnumValue(item)}
                     </Text>
                   </View>
                 ))}
               </View>
+              {profile.otherEquipment && (
+                <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
+                  <Text className="text-sm font-medium text-text-primary mb-2">
+                    Other Equipment
+                  </Text>
+                  <Text className="text-sm text-text-muted">
+                    {profile.otherEquipment}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         )}
@@ -526,9 +471,9 @@ export default function SettingsScreen() {
                   {profile.limitations.map((limitation, index) => (
                     <View
                       key={index}
-                      className="bg-primary/10 rounded-xl px-3 py-1 mr-2 mb-2"
+                      className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
                     >
-                      <Text className="text-xs font-medium text-secondary">
+                      <Text className="text-xs font-medium text-neutral-light-1">
                         {formatEnumValue(limitation)}
                       </Text>
                     </View>
