@@ -71,6 +71,7 @@ export interface PlanDay {
   id: number;
   workoutId: number;
   date: Date;
+  instructions?: string;
   name: string;
   description?: string;
   dayNumber: number;

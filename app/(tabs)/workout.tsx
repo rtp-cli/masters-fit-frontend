@@ -349,6 +349,25 @@ export default function WorkoutScreen() {
             </View>
           </View>
 
+          {/* Day Instructions */}
+          {activeWorkout.instructions && (
+            <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+              <View className="flex-row items-center mb-2">
+                <Ionicons
+                  name="fitness"
+                  size={16}
+                  color={colors.brand.primary}
+                />
+                <Text className="text-sm font-semibold text-text-primary ml-2">
+                  Today's Workout Instructions
+                </Text>
+              </View>
+              <Text className="text-sm text-text-secondary leading-5">
+                {activeWorkout.instructions}
+              </Text>
+            </View>
+          )}
+
           {/* Exercise Details Card */}
           <View className="bg-background rounded-xl p-4 mb-4 shadow-card border border-neutral-light-2">
             <Text className="text-base font-bold text-text-primary mb-3">

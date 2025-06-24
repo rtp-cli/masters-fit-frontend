@@ -456,47 +456,54 @@ export default function CalendarScreen() {
             ) : (
               <View className="mb-lg">
                 {/* Workout Header */}
-                <View className="flex-row items-center justify-between mb-md">
-                  <View className="flex-1">
-                    <Text className="text-base font-bold text-text-primary">
-                      {currentSelectedPlanDay.description ||
-                        formatDate(selectedDate)}
-                    </Text>
-                    <View className="flex-row items-center mt-xs">
-                      <Text className="text-xs text-text-muted">
-                        {currentSelectedPlanDay.exercises.length} exercises
+                <View className="mb-md">
+                  <View className="flex-row items-center justify-between mb-1">
+                    <View className="flex-1">
+                      <Text className="text-base font-bold text-text-primary">
+                        {currentSelectedPlanDay.description ||
+                          formatDate(selectedDate)}
                       </Text>
-                      {currentSelectedPlanDay.exercises.some(
-                        (ex) => ex.duration && ex.duration > 0
-                      ) && (
-                        <>
-                          <Text className="text-text-muted mx-xs">•</Text>
-                          <Text className="text-xs text-text-muted">
-                            {Math.round(
-                              calculateWorkoutDuration(
-                                currentSelectedPlanDay.exercises
-                              ) / 60
-                            )}{" "}
-                            min
+                      <View className="flex-row items-center mt-xs">
+                        <Text className="text-xs text-text-muted">
+                          {currentSelectedPlanDay.exercises.length} exercises
+                        </Text>
+                        {currentSelectedPlanDay.exercises.some(
+                          (ex) => ex.duration && ex.duration > 0
+                        ) && (
+                          <>
+                            <Text className="text-text-muted mx-xs">•</Text>
+                            <Text className="text-xs text-text-muted">
+                              {Math.round(
+                                calculateWorkoutDuration(
+                                  currentSelectedPlanDay.exercises
+                                ) / 60
+                              )}{" "}
+                              min
+                            </Text>
+                          </>
+                        )}
+                      </View>
+                    </View>
+                    <View className="flex-row items-center space-x-sm">
+                      {isToday() && (
+                        <TouchableOpacity
+                          className="bg-secondary py-2 px-4 rounded-xl"
+                          onPress={() => {
+                            router.push("/(tabs)/workout");
+                          }}
+                        >
+                          <Text className="text-background font-semibold text-sm">
+                            Start
                           </Text>
-                        </>
+                        </TouchableOpacity>
                       )}
                     </View>
                   </View>
-                  <View className="flex-row items-center space-x-sm">
-                    {isToday() && (
-                      <TouchableOpacity
-                        className="bg-secondary py-2 px-4 rounded-xl"
-                        onPress={() => {
-                          router.push("/(tabs)/workout");
-                        }}
-                      >
-                        <Text className="text-background font-semibold text-sm">
-                          Start
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  {currentSelectedPlanDay.instructions && (
+                    <Text className="text-sm text-text-muted leading-5">
+                      {currentSelectedPlanDay.instructions}
+                    </Text>
+                  )}
                 </View>
 
                 {/* Exercises List */}
@@ -508,7 +515,7 @@ export default function CalendarScreen() {
                   {currentSelectedPlanDay.exercises.map((exercise, index) => (
                     <View
                       key={exercise.id}
-                      className="bg-neutral-light-2 rounded-xl p-md mb-sm"
+                      className="bg-brand-light-1 rounded-xl p-md mb-sm"
                     >
                       <View className="flex-col">
                         <View className="flex-row items-center justify-between mb-xs">
@@ -521,33 +528,13 @@ export default function CalendarScreen() {
                                 {exercise.sets && exercise.reps
                                   ? `${exercise.sets} sets • ${exercise.reps} reps`
                                   : exercise.duration
-                                  ? formatExerciseDuration(
-                                      exercise.duration,
-                                      exercise.sets,
-                                      exercise.restTime
-                                    )
-                                  : "Duration varies"}
+                                    ? formatExerciseDuration(
+                                        exercise.duration,
+                                        exercise.sets,
+                                        exercise.restTime
+                                      )
+                                    : "Duration varies"}
                               </Text>
-                              {exercise.exercise.name
-                                .toLowerCase()
-                                .includes("cardio") && (
-                                <>
-                                  <View className="w-1.5 h-1.5 bg-orange-500 rounded-full mx-xs" />
-                                  <Text className="text-xs text-orange-600 font-medium">
-                                    480 kcal
-                                  </Text>
-                                </>
-                              )}
-                              {exercise.exercise.name
-                                .toLowerCase()
-                                .includes("yoga") && (
-                                <>
-                                  <View className="w-1.5 h-1.5 bg-blue-500 rounded-full mx-xs" />
-                                  <Text className="text-xs text-blue-600 font-medium">
-                                    Flexibility
-                                  </Text>
-                                </>
-                              )}
                             </View>
                           </View>
                         </View>
