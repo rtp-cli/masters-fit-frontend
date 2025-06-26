@@ -17,80 +17,30 @@ import {
   regenerateDailyWorkout,
   notifyWorkoutUpdated,
 } from "@lib/workouts";
-import { WorkoutWithDetails, PlanDayWithExercises } from "../types";
+import {
+  WorkoutWithDetails,
+  PlanDayWithBlocks,
+  flattenBlocksToExercises,
+} from "../types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
-import { calculateWorkoutDuration, formatExerciseDuration } from "../../utils";
+import WorkoutBlock from "@components/WorkoutBlock";
+import {
+  calculateWorkoutDuration,
+  formatExerciseDuration,
+  formatDateAsLocalString,
+} from "../../utils";
 import { colors } from "../../lib/theme";
 
 export default function CalendarScreen() {
   const router = useRouter();
 
-  // Helper function to format Date to YYYY-MM-DD string without timezone issues
-  const formatDateToString = (date: Date | string): string => {
-    // Handle both Date objects and ISO date strings
-    if (!date) {
-      console.warn(
-        "formatDateToString received null/undefined date, using current date"
-      );
-      const today = new Date();
-      return (
-        today.getFullYear() +
-        "-" +
-        String(today.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(today.getDate()).padStart(2, "0")
-      );
-    }
-
-    // If it's already a YYYY-MM-DD string, return it directly
-    if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return date;
-    }
-
-    // For other string formats or Date objects, parse safely
-    let dateObj: Date;
-    if (typeof date === "string") {
-      // Try to parse safely first
-      if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
-        const [year, month, day] = date.split("-").map(Number);
-        dateObj = new Date(year, month - 1, day); // month is 0-indexed
-      } else {
-        dateObj = new Date(date); // fallback for other formats
-      }
-    } else {
-      dateObj = date;
-    }
-
-    // Check if date is valid
-    if (isNaN(dateObj.getTime())) {
-      console.warn(
-        "formatDateToString received invalid date:",
-        date,
-        "using current date"
-      );
-      const today = new Date();
-      return (
-        today.getFullYear() +
-        "-" +
-        String(today.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(today.getDate()).padStart(2, "0")
-      );
-    }
-
-    return (
-      dateObj.getFullYear() +
-      "-" +
-      String(dateObj.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(dateObj.getDate()).padStart(2, "0")
-    );
-  };
-
   const [selectedDate, setSelectedDate] = useState(
-    formatDateToString(new Date())
+    formatDateAsLocalString(new Date())
+  );
+  const [currentMonth, setCurrentMonth] = useState(
+    formatDateAsLocalString(new Date())
   );
   const [loading, setLoading] = useState(true);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutWithDetails | null>(
@@ -100,7 +50,10 @@ export default function CalendarScreen() {
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
-    useState<PlanDayWithExercises | null>(null);
+    useState<PlanDayWithBlocks | null>(null);
+  const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
+    {}
+  );
 
   useEffect(() => {
     fetchWorkoutPlan();
@@ -118,6 +71,19 @@ export default function CalendarScreen() {
       const response = await fetchActiveWorkout();
       if (response) {
         setWorkoutPlan(response.workout);
+
+        // Set current month to today's date if no workout plan, or to the first workout day
+        if (
+          response.workout?.planDays &&
+          response.workout.planDays.length > 0
+        ) {
+          const firstWorkoutDate = formatDateAsLocalString(
+            response.workout.planDays[0].date
+          );
+          setCurrentMonth(firstWorkoutDate);
+        } else {
+          setCurrentMonth(formatDateAsLocalString(new Date()));
+        }
       }
     } catch (err) {
       setError("Failed to load workout plan");
@@ -195,104 +161,142 @@ export default function CalendarScreen() {
           notifyWorkoutUpdated();
         }
       }
-
-      setShowRegenerationModal(false);
-      setSelectedPlanDay(null);
     } catch (err) {
-      const regenerateType = selectedType || "week";
-      setError(`Failed to regenerate ${regenerateType} workout`);
+      setError("Failed to regenerate workout");
       console.error("Error regenerating workout:", err);
     } finally {
       setRegenerating(false);
+      setShowRegenerationModal(false);
     }
   };
 
-  const handleOpenRegeneration = (planDay?: PlanDayWithExercises) => {
+  const handleOpenRegeneration = (planDay?: PlanDayWithBlocks) => {
     setSelectedPlanDay(planDay || null);
     setShowRegenerationModal(true);
   };
 
-  // Get the plan day and its index for the selected date
   const getPlanDayForDate = (
     date: string
-  ): { day: PlanDayWithExercises; index: number } | null => {
-    if (!workoutPlan) return null;
-    // Use direct date string comparison to avoid timezone issues
-    const normalizedDate = date; // date is already in YYYY-MM-DD format from calendar
-    const index = workoutPlan.planDays.findIndex((day) => {
-      // Handle both string and Date objects from API
-      const planDate = day.date
-        ? typeof day.date === "string"
-          ? day.date
-          : formatDateToString(day.date)
-        : null;
-      return planDate === normalizedDate;
-    });
-    if (index === -1) return null;
-    return { day: workoutPlan.planDays[index], index };
+  ): { day: PlanDayWithBlocks; index: number } | null => {
+    if (!workoutPlan?.planDays) return null;
+
+    for (let i = 0; i < workoutPlan.planDays.length; i++) {
+      const planDay = workoutPlan.planDays[i];
+      const planDate = formatDateAsLocalString(planDay.date);
+      if (planDate === date) {
+        return { day: planDay, index: i };
+      }
+    }
+    return null;
   };
 
-  // Prepare marked dates for the calendar
   const getMarkedDates = () => {
-    if (!workoutPlan) return {};
-
     const markedDates: any = {};
-    const today = new Date();
-    const todayStr = formatDateToString(today);
-    const normalizedSelectedDate = selectedDate; // Already in YYYY-MM-DD format
+    const today = formatDateAsLocalString(new Date());
 
-    workoutPlan.planDays.forEach((day) => {
-      // Handle both string and Date objects from API
-      if (day.date) {
-        const dateStr =
-          typeof day.date === "string"
-            ? day.date
-            : formatDateToString(day.date);
+    if (workoutPlan?.planDays) {
+      workoutPlan.planDays.forEach((planDay) => {
+        const dateStr = formatDateAsLocalString(planDay.date);
+        const hasBlocks = planDay.blocks && planDay.blocks.length > 0;
+
         markedDates[dateStr] = {
-          marked: true,
-          dotColor: colors.brand.primary,
-          selected: dateStr === normalizedSelectedDate,
-          selectedColor:
-            dateStr === normalizedSelectedDate
-              ? colors.brand.secondary
-              : undefined,
+          marked: hasBlocks,
+          dotColor: hasBlocks ? colors.brand.primary : colors.text.muted,
+          selectedColor: colors.brand.secondary,
+          selected: dateStr === selectedDate,
         };
-      }
-    });
+      });
+    }
 
     // Mark today
-    if (!markedDates[todayStr]) {
-      markedDates[todayStr] = {
-        selected: todayStr === normalizedSelectedDate,
-        selectedColor:
-          todayStr === normalizedSelectedDate
-            ? colors.brand.secondary
-            : undefined,
-      };
+    if (!markedDates[today]) {
+      markedDates[today] = {};
     }
+    markedDates[today] = {
+      ...markedDates[today],
+      today: true,
+    };
+
+    // Ensure selected date is marked
+    if (!markedDates[selectedDate]) {
+      markedDates[selectedDate] = {};
+    }
+    markedDates[selectedDate] = {
+      ...markedDates[selectedDate],
+      selected: true,
+      selectedColor: colors.brand.secondary,
+    };
 
     return markedDates;
   };
 
-  // Handle date selection
   const handleDateSelect = (day: DateData) => {
     setSelectedDate(day.dateString);
+    setCurrentMonth(day.dateString);
+
+    // Reset expanded blocks when selecting a new date
+    // This ensures blocks start expanded for the new date
+    setExpandedBlocks({});
   };
 
-  // Check if selected date is today
   const isToday = () => {
-    const today = new Date();
-    const todayStr = formatDateToString(today);
-    return todayStr === selectedDate;
+    const today = formatDateAsLocalString(new Date());
+    return selectedDate === today;
+  };
+
+  const toggleBlockExpansion = (blockId: number) => {
+    setExpandedBlocks((prev) => ({
+      ...prev,
+      [blockId]: prev[blockId] === false ? undefined : false, // Toggle between undefined (expanded) and false (collapsed)
+    }));
+  };
+
+  const getTotalExerciseCount = (blocks: any[]) => {
+    return blocks.reduce((total, block) => {
+      return total + (block.exercises?.length || 0);
+    }, 0);
+  };
+
+  const calculateTotalWorkoutDuration = (blocks: any[]) => {
+    const allExercises = blocks.flatMap((block) => block.exercises || []);
+
+    // Enhanced duration calculation that considers different exercise types
+    return allExercises.reduce((total, exercise) => {
+      let exerciseDuration = 0;
+
+      // For time-based exercises (duration specified)
+      if (exercise.duration) {
+        exerciseDuration = exercise.duration;
+        // Add rest time if specified
+        if (exercise.restTime) {
+          exerciseDuration += exercise.restTime;
+        }
+        // Multiply by sets if specified
+        if (exercise.sets && exercise.sets > 1) {
+          exerciseDuration *= exercise.sets;
+        }
+      } else if (exercise.sets && exercise.reps) {
+        // For traditional sets/reps exercises, estimate duration
+        // Assume 2 seconds per rep + 60 seconds rest between sets
+        const repTime = exercise.reps * 2;
+        const setRestTime = exercise.sets > 1 ? (exercise.sets - 1) * 60 : 0;
+        exerciseDuration = repTime * exercise.sets + setRestTime;
+      } else {
+        // Default duration for exercises without specific parameters
+        exerciseDuration = 120; // 2 minutes default
+      }
+
+      return total + exerciseDuration;
+    }, 0);
   };
 
   if (loading) {
     return (
-      <View className="flex-1 bg-background">
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={colors.brand.primary} />
-          <Text className="mt-4 text-text-muted">Loading your calendar...</Text>
-        </View>
+      <View className="flex-1 justify-center items-center bg-background">
+        <ActivityIndicator size="large" color={colors.brand.primary} />
+        <Text className="mt-md text-sm font-medium text-text-primary">
+          Loading workout plan...
+        </Text>
       </View>
     );
   }
@@ -355,41 +359,35 @@ export default function CalendarScreen() {
         {/* Calendar */}
         <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
           <RNCalendar
-            current={selectedDate}
+            current={currentMonth}
             onDayPress={handleDateSelect}
+            onMonthChange={(month: any) => {
+              // Update the current month when user manually navigates
+              if (month && month.dateString) {
+                setCurrentMonth(month.dateString);
+              }
+            }}
             markedDates={getMarkedDates()}
             minDate={
               workoutPlan?.startDate
-                ? formatDateToString(workoutPlan.startDate)
-                : (() => {
-                    const today = new Date();
-                    return (
-                      today.getFullYear() +
-                      "-" +
-                      String(today.getMonth() + 1).padStart(2, "0") +
-                      "-" +
-                      String(today.getDate()).padStart(2, "0")
-                    );
-                  })()
+                ? formatDateAsLocalString(workoutPlan.startDate)
+                : formatDateAsLocalString(new Date())
             }
             maxDate={
               workoutPlan?.startDate
                 ? (() => {
                     // Use safe date parsing and add 6 days
-                    const startDate =
-                      workoutPlan.startDate instanceof Date
-                        ? workoutPlan.startDate
-                        : new Date(workoutPlan.startDate);
+                    const startDate = new Date(workoutPlan.startDate);
                     const maxDate = new Date(
                       startDate.getTime() + 6 * 24 * 60 * 60 * 1000
                     );
-                    return formatDateToString(maxDate);
+                    return formatDateAsLocalString(maxDate);
                   })()
                 : (() => {
                     const futureDate = new Date(
                       Date.now() + 30 * 24 * 60 * 60 * 1000
                     );
-                    return formatDateToString(futureDate);
+                    return formatDateAsLocalString(futureDate);
                   })()
             }
             disableAllTouchEventsForDisabledDays={true}
@@ -465,23 +463,29 @@ export default function CalendarScreen() {
                       </Text>
                       <View className="flex-row items-center mt-xs">
                         <Text className="text-xs text-text-muted">
-                          {currentSelectedPlanDay.exercises.length} exercises
+                          {currentSelectedPlanDay.blocks?.length || 0} blocks
                         </Text>
-                        {currentSelectedPlanDay.exercises.some(
-                          (ex) => ex.duration && ex.duration > 0
-                        ) && (
-                          <>
-                            <Text className="text-text-muted mx-xs">•</Text>
-                            <Text className="text-xs text-text-muted">
-                              {Math.round(
-                                calculateWorkoutDuration(
-                                  currentSelectedPlanDay.exercises
-                                ) / 60
-                              )}{" "}
-                              min
-                            </Text>
-                          </>
-                        )}
+                        <Text className="text-text-muted mx-xs">•</Text>
+                        <Text className="text-xs text-text-muted">
+                          {getTotalExerciseCount(
+                            currentSelectedPlanDay.blocks || []
+                          )}{" "}
+                          exercises
+                        </Text>
+                        {currentSelectedPlanDay.blocks &&
+                          currentSelectedPlanDay.blocks.length > 0 && (
+                            <>
+                              <Text className="text-text-muted mx-xs">•</Text>
+                              <Text className="text-xs text-text-muted">
+                                {Math.round(
+                                  calculateTotalWorkoutDuration(
+                                    currentSelectedPlanDay.blocks
+                                  ) / 60
+                                )}{" "}
+                                min
+                              </Text>
+                            </>
+                          )}
                       </View>
                     </View>
                     <View className="flex-row items-center space-x-sm">
@@ -506,59 +510,31 @@ export default function CalendarScreen() {
                   )}
                 </View>
 
-                {/* Exercises List */}
+                {/* Workout Blocks */}
                 <View className="space-y-sm">
-                  <Text className="text-sm font-semibold text-text-primary mb-md">
-                    Exercises
-                  </Text>
-
-                  {currentSelectedPlanDay.exercises.map((exercise, index) => (
-                    <View
-                      key={exercise.id}
-                      className="bg-brand-light-1 rounded-xl p-md mb-sm"
-                    >
-                      <View className="flex-col">
-                        <View className="flex-row items-center justify-between mb-xs">
-                          <View className="flex-1">
-                            <Text className="text-sm font-semibold text-text-primary mb-xs">
-                              {exercise.exercise.name}
-                            </Text>
-                            <View className="flex-row items-center">
-                              <Text className="text-xs text-text-muted">
-                                {exercise.sets && exercise.reps
-                                  ? `${exercise.sets} sets • ${exercise.reps} reps`
-                                  : exercise.duration
-                                    ? formatExerciseDuration(
-                                        exercise.duration,
-                                        exercise.sets,
-                                        exercise.restTime
-                                      )
-                                    : "Duration varies"}
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-
-                        {/* Exercise Notes */}
-                        {exercise.notes && (
-                          <View className="mt-xs">
-                            <Text className="text-xs text-text-muted leading-4">
-                              {exercise.notes}
-                            </Text>
-                          </View>
-                        )}
-
-                        {/* Exercise Instructions */}
-                        {exercise.exercise.instructions && (
-                          <View className="mt-xs">
-                            <Text className="text-xs text-text-muted leading-4 italic">
-                              {exercise.exercise.instructions}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
+                  {currentSelectedPlanDay.blocks &&
+                  currentSelectedPlanDay.blocks.length > 0 ? (
+                    currentSelectedPlanDay.blocks.map((block, blockIndex) => (
+                      <WorkoutBlock
+                        key={block.id}
+                        block={block}
+                        blockIndex={blockIndex}
+                        isExpanded={expandedBlocks[block.id] !== false} // undefined = expanded, false = collapsed
+                        onToggleExpanded={() => toggleBlockExpansion(block.id)}
+                        showDetails={true}
+                        variant="calendar"
+                      />
+                    ))
+                  ) : (
+                    <View className="bg-neutral-light-2 p-6 rounded-xl items-center">
+                      <Text className="text-base font-bold text-text-primary mb-xs">
+                        No Workout Planned
+                      </Text>
+                      <Text className="text-sm text-text-muted text-center leading-5">
+                        This day doesn't have any workout blocks scheduled.
+                      </Text>
                     </View>
-                  ))}
+                  )}
                 </View>
               </View>
             )}

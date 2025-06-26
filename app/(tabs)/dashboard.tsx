@@ -555,17 +555,67 @@ export default function DashboardScreen() {
   }
 
   // Calculate total workout duration (properly accounting for sets and rest)
-  const totalDuration = todaysWorkout?.exercises
-    ? calculateWorkoutDuration(todaysWorkout.exercises)
-    : 0;
+  const totalDuration = (todaysWorkout as any)?.blocks
+    ? (todaysWorkout as any).blocks.reduce((total: number, block: any) => {
+        const blockExercises = block.exercises || [];
+        return (
+          total +
+          blockExercises.reduce((blockTotal: number, exercise: any) => {
+            let exerciseDuration = 0;
+
+            // For time-based exercises (duration specified)
+            if (exercise.duration) {
+              exerciseDuration = exercise.duration;
+              // Add rest time if specified
+              if (exercise.restTime) {
+                exerciseDuration += exercise.restTime;
+              }
+              // Multiply by sets if specified
+              if (exercise.sets && exercise.sets > 1) {
+                exerciseDuration *= exercise.sets;
+              }
+            } else if (exercise.sets && exercise.reps) {
+              // For traditional sets/reps exercises, estimate duration
+              // Assume 2 seconds per rep + 60 seconds rest between sets
+              const repTime = exercise.reps * 2;
+              const setRestTime =
+                exercise.sets > 1 ? (exercise.sets - 1) * 60 : 0;
+              exerciseDuration = repTime * exercise.sets + setRestTime;
+            } else {
+              // Default duration for exercises without specific parameters
+              exerciseDuration = 120; // 2 minutes default
+            }
+
+            return blockTotal + exerciseDuration;
+          }, 0)
+        );
+      }, 0)
+    : todaysWorkout?.exercises
+      ? calculateWorkoutDuration(todaysWorkout.exercises)
+      : 0;
 
   // Calculate workout completion rate for today
-  const todayCompletionRate = todaysWorkout?.exercises
-    ? todaysWorkout.exercises.reduce((sum, exercise) => {
-        // Use completed status instead of completionRate property
-        return sum + (exercise.completed ? 100 : 0);
-      }, 0) / todaysWorkout.exercises.length
-    : 0;
+  const todayCompletionRate = (todaysWorkout as any)?.blocks
+    ? (todaysWorkout as any).blocks.reduce((total: number, block: any) => {
+        const blockExercises = block.exercises || [];
+        const blockCompletion = blockExercises.reduce(
+          (sum: number, exercise: any) => {
+            return sum + (exercise.completed ? 100 : 0);
+          },
+          0
+        );
+        return total + blockCompletion;
+      }, 0) /
+      ((todaysWorkout as any).blocks.reduce(
+        (total: number, block: any) => total + (block.exercises?.length || 0),
+        0
+      ) || 1)
+    : todaysWorkout?.exercises
+      ? todaysWorkout.exercises.reduce((sum, exercise) => {
+          // Use completed status instead of completionRate property
+          return sum + (exercise.completed ? 100 : 0);
+        }, 0) / todaysWorkout.exercises.length
+      : 0;
 
   const isWorkoutCompleted = todayCompletionRate >= 100;
 
@@ -671,7 +721,13 @@ export default function DashboardScreen() {
                           {todaysWorkout
                             ? workoutInfo?.description ||
                               `${
-                                todaysWorkout.exercises?.length || 0
+                                (todaysWorkout as any)?.blocks
+                                  ? (todaysWorkout as any).blocks.reduce(
+                                      (total: number, block: any) =>
+                                        total + (block.exercises?.length || 0),
+                                      0
+                                    )
+                                  : todaysWorkout.exercises?.length || 0
                               } exercises planned`
                             : "Rest day - Recovery is just as important as training"}
                         </Text>
@@ -892,21 +948,21 @@ export default function DashboardScreen() {
                                     day.status === "rest"
                                       ? FULL_HEIGHT // Rest days are full height
                                       : day.status === "upcoming" ||
-                                        day.status === "incomplete"
-                                      ? BASE_HEIGHT // Base height for incomplete/upcoming
-                                      : Math.max(
-                                          (day.completionRate / 100) *
-                                            FULL_HEIGHT,
-                                          BASE_HEIGHT
-                                        ), // Proportional to completion
+                                          day.status === "incomplete"
+                                        ? BASE_HEIGHT // Base height for incomplete/upcoming
+                                        : Math.max(
+                                            (day.completionRate / 100) *
+                                              FULL_HEIGHT,
+                                            BASE_HEIGHT
+                                          ), // Proportional to completion
                                   backgroundColor:
                                     day.status === "complete"
                                       ? colors.brand.primary // Complete - Green
                                       : day.status === "partial"
-                                      ? colors.brand.light[1] // Partial - Primary[1]
-                                      : day.status === "rest"
-                                      ? colors.brand.secondary // Rest - Black
-                                      : colors.neutral.medium[3], // Upcoming/Incomplete - Grey
+                                        ? colors.brand.medium[2] // Partial - Primary[1]
+                                        : day.status === "rest"
+                                          ? colors.brand.secondary // Rest - Black
+                                          : colors.neutral.medium[3], // Upcoming/Incomplete - Grey
                                 }}
                               />
                             </View>

@@ -43,6 +43,15 @@ export interface CreateExerciseLogParams {
   notes?: string;
 }
 
+export interface ExerciseProgress {
+  setsCompleted: number;
+  repsCompleted: number;
+  weightUsed: number;
+  duration: number;
+  restTime: number;
+  notes: string;
+}
+
 export interface CreateWorkoutLogParams {
   workoutId: number;
   planDayId: number;
@@ -79,6 +88,36 @@ export interface PlanDay {
   updated_at: Date;
 }
 
+// New workout block types
+export interface WorkoutBlock {
+  id: number;
+  blockType?: string;
+  blockName?: string;
+  timeCapMinutes?: number;
+  rounds?: number;
+  instructions?: string;
+  order?: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface WorkoutBlockExercise {
+  id: number;
+  workoutBlockId: number;
+  exerciseId: number;
+  sets?: number;
+  reps?: number;
+  weight?: number;
+  duration?: number;
+  restTime?: number;
+  completed: boolean;
+  notes?: string;
+  order?: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Legacy PlanDayExercise for backward compatibility
 export interface PlanDayExercise {
   id: number;
   planDayId: number;
@@ -108,14 +147,28 @@ export interface ExerciseSessionData {
   planDayExerciseId: number;
   targetSets: number;
   targetReps: number;
+  targetRounds?: number;
   targetWeight?: number;
+  targetDuration?: number;
+  targetRestTime?: number;
   setsCompleted: number;
   repsCompleted: number;
+  roundsCompleted?: number;
   weightUsed?: number;
+  duration?: number;
+  restTime?: number;
   timeTaken: number;
   notes?: string;
   isCompleted: boolean;
   startTime?: Date;
+  blockInfo?: {
+    blockId: number;
+    blockType?: string;
+    blockName?: string;
+    instructions?: string;
+    rounds?: number;
+    timeCapMinutes?: number;
+  };
 }
 
 export interface ExerciseLog {
@@ -142,7 +195,34 @@ export interface WorkoutLog {
   updated_at?: Date;
 }
 
-// Composed types
+// Composed types with workout blocks
+export interface WorkoutBlockWithExercise extends WorkoutBlockExercise {
+  exercise: Exercise;
+  blockInfo?: {
+    blockId: number;
+    blockType?: string;
+    blockName?: string;
+    instructions?: string;
+    rounds?: number;
+    timeCapMinutes?: number;
+  };
+}
+
+export interface WorkoutBlockWithExercises
+  extends Omit<WorkoutBlock, "created_at" | "updated_at"> {
+  exercises: WorkoutBlockWithExercise[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PlanDayWithBlocks
+  extends Omit<PlanDay, "created_at" | "updated_at"> {
+  blocks: WorkoutBlockWithExercises[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Legacy types for backward compatibility
 export interface PlanDayWithExercise extends PlanDayExercise {
   exercise: Exercise;
 }
@@ -155,5 +235,48 @@ export interface PlanDayWithExercises
 }
 
 export interface WorkoutWithDetails extends WorkoutDetailed {
-  planDays: PlanDayWithExercises[];
+  planDays: PlanDayWithBlocks[];
+}
+
+// Helper function to flatten blocks into exercises for backward compatibility
+export function flattenBlocksToExercises(
+  blocks: WorkoutBlockWithExercises[]
+): PlanDayWithExercise[] {
+  const exercises: PlanDayWithExercise[] = [];
+
+  blocks.forEach((block) => {
+    if (block.exercises && Array.isArray(block.exercises)) {
+      block.exercises.forEach((exercise) => {
+        exercises.push({
+          ...exercise,
+          planDayId: 0, // This will need to be set by the caller
+        });
+      });
+    }
+  });
+
+  return exercises;
+}
+
+// Helper function to get block type display name
+export function getBlockTypeDisplayName(blockType?: string): string {
+  if (!blockType) return "Workout";
+
+  const displayNames: Record<string, string> = {
+    traditional: "Strength Training",
+    amrap: "AMRAP",
+    emom: "EMOM",
+    for_time: "For Time",
+    circuit: "Circuit",
+    tabata: "Tabata",
+    warmup: "Warm-up",
+    cooldown: "Cool-down",
+    superset: "Superset",
+    flow: "Flow",
+  };
+
+  return (
+    displayNames[blockType] ||
+    blockType.charAt(0).toUpperCase() + blockType.slice(1)
+  );
 }

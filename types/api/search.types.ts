@@ -16,14 +16,26 @@ export interface DateSearchExercise {
   reps: number | null;
   weight: number | null;
   duration: number | null;
+  restTime: number | null;
   completed: boolean;
   completionRate: number;
+}
+
+export interface DateSearchWorkoutBlock {
+  id: number;
+  blockType?: string;
+  blockName?: string;
+  timeCapMinutes?: number;
+  rounds?: number;
+  instructions?: string;
+  exercises: DateSearchExercise[];
 }
 
 export interface DateSearchPlanDay {
   id: number;
   date: Date;
   exercises: DateSearchExercise[];
+  blocks?: DateSearchWorkoutBlock[];
 }
 
 export interface DateSearchWorkout {

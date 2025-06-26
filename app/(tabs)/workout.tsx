@@ -4,859 +4,925 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Alert,
   Modal,
   ActivityIndicator,
-  RefreshControl,
+  TextInput,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
+
 import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import CustomSlider from "@components/ui/Slider";
-import { useWorkoutSession } from "@hooks/useWorkoutSession";
-import { getCompletedExercises } from "@lib/workouts";
-import { calculateWorkoutDuration, formatEquipment } from "../../utils";
-import ExerciseLink from "@components/ExerciseLink";
-import { colors } from "../../lib/theme";
+import { fetchActiveWorkout, createExerciseLog } from "@/lib/workouts";
+import { getCurrentUser } from "@/lib/auth";
+import { calculateWorkoutDuration, formatEquipment } from "@/utils";
+import ExerciseLink from "@/components/ExerciseLink";
+import { colors } from "@/lib/theme";
+import {
+  WorkoutBlockWithExercises,
+  WorkoutBlockWithExercise,
+  PlanDayWithBlocks,
+  CreateExerciseLogParams,
+  getBlockTypeDisplayName,
+} from "@/types/api/workout.types";
+import { Exercise } from "@/types/api/exercise.types";
+
+// Local types for this component
+interface ExerciseProgress {
+  setsCompleted: number;
+  repsCompleted: number;
+  weightUsed: number;
+  duration: number;
+  restTime: number;
+  notes: string;
+}
+
+// Utility functions
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
 
 export default function WorkoutScreen() {
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [showEndWorkoutModal, setShowEndWorkoutModal] = useState(false);
-  const [workoutNotes, setWorkoutNotes] = useState("");
-  const [exerciseNotes, setExerciseNotes] = useState("");
+  // Core state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [workout, setWorkout] = useState<PlanDayWithBlocks | null>(null);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
-  const [isCompletingExercise, setIsCompletingExercise] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Wrap the hook in a try-catch to handle potential errors
-  let hookResult;
-  try {
-    hookResult = useWorkoutSession();
-  } catch (error) {
-    console.error("Error in useWorkoutSession:", error);
-    return (
-      <View className="flex-1 bg-background">
-        <View className="flex-1 justify-center items-center px-lg">
-          <Text className="text-lg font-bold text-text-primary">
-            Error loading workout session
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  // Timer state
+  const [workoutTimer, setWorkoutTimer] = useState(0);
+  const [exerciseTimer, setExerciseTimer] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const {
-    activeWorkout,
-    currentExerciseIndex,
-    exerciseTimer,
-    workoutTimer,
-    isWorkoutActive,
-    isPaused,
-    exerciseData,
-    isLoading,
-    startWorkout,
-    completeExercise,
-    endWorkout,
-    updateExerciseData,
-    moveToNextExercise,
-    resetSession,
-    currentExercise,
-    currentData,
-    completedCount,
-    totalExercises,
-    progressPercentage,
-    formatTime,
-    refreshWorkout,
-    togglePause,
-  } = hookResult;
-
-  // Refresh workout when tab is focused (to handle date changes and navigation)
-  useFocusEffect(
-    React.useCallback(() => {
-      refreshWorkout();
-    }, [refreshWorkout])
+  // Exercise progress state
+  const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>(
+    []
   );
 
-  // Check for date changes every minute to refresh workout at midnight
-  useEffect(() => {
-    const checkDateChange = async () => {
-      // Use safe date formatting
-      const today = new Date();
-      const currentDate =
-        today.getFullYear() +
-        "-" +
-        String(today.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(today.getDate()).padStart(2, "0");
-      const lastCheckDate = await AsyncStorage.getItem("lastWorkoutDate");
+  // Modal state
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [isCompletingExercise, setIsCompletingExercise] = useState(false);
 
-      if (lastCheckDate && lastCheckDate !== currentDate) {
-        refreshWorkout();
+  // UI state
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Get flattened exercises from blocks
+  const getFlattenedExercises = (): WorkoutBlockWithExercise[] => {
+    if (!workout?.blocks) return [];
+    return workout.blocks.flatMap((block) => block.exercises);
+  };
+
+  const exercises = getFlattenedExercises();
+  const currentExercise = exercises[currentExerciseIndex];
+  const currentProgress = exerciseProgress[currentExerciseIndex];
+
+  // Calculate overall workout progress (0 - 100)
+  const progressPercent =
+    exercises.length > 0 ? (currentExerciseIndex / exercises.length) * 100 : 0;
+
+  // Timer management
+  useEffect(() => {
+    if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
+      timerRef.current = setInterval(() => {
+        setWorkoutTimer((prev) => prev + 1);
+        setExerciseTimer((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
+    }
 
-      await AsyncStorage.setItem("lastWorkoutDate", currentDate);
-    };
-
-    // Check immediately
-    checkDateChange();
-
-    // Check every minute for date changes
-    const dateCheckInterval = setInterval(checkDateChange, 60000);
-
-    return () => clearInterval(dateCheckInterval);
-  }, [refreshWorkout]);
-
-  useEffect(() => {
-    const checkWorkoutCompletion = async () => {
-      if (activeWorkout && totalExercises > 0) {
-        try {
-          const completedData = await getCompletedExercises(
-            activeWorkout.workoutId
-          );
-          const completedExerciseIds = completedData.completedExercises || [];
-
-          // Filter completed exercises to only those belonging to this plan day
-          const todaysCompletedExercises = completedExerciseIds.filter(
-            (exerciseId) =>
-              activeWorkout.exercises.some((ex) => ex.id === exerciseId)
-          );
-
-          // Check if ALL exercises for this specific plan day are completed
-          const allTodaysExercisesCompleted =
-            activeWorkout.exercises.length > 0 &&
-            activeWorkout.exercises.every((ex) =>
-              todaysCompletedExercises.includes(ex.id)
-            );
-
-          setIsWorkoutCompleted(allTodaysExercisesCompleted);
-        } catch (error) {
-          console.error("Error checking workout completion:", error);
-          setIsWorkoutCompleted(false);
-        }
-      } else {
-        setIsWorkoutCompleted(false);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
+  }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
 
-    checkWorkoutCompletion();
-  }, [activeWorkout, completedCount, totalExercises]);
-
-  const handleCompleteExercise = async () => {
-    setIsCompletingExercise(true);
+  // Load workout data
+  const loadWorkout = async () => {
     try {
-      const success = await completeExercise(exerciseNotes);
-      if (success) {
-        setShowCompleteModal(false);
-        setExerciseNotes("");
+      setLoading(true);
+      setError(null);
 
-        // Scroll to top of the page
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      const response = await fetchActiveWorkout();
 
-        const nextExerciseIndex = currentExerciseIndex + 1;
-        if (nextExerciseIndex >= totalExercises) {
-          // All exercises for TODAY are complete - don't end the entire workout!
-          // Just refresh to check if there are more days available
-          Alert.alert(
-            "Day Complete!",
-            "Great job! You've completed today's workout. Check back tomorrow for your next workout."
-          );
-
-          // Refresh the workout to potentially load the next day
-          setTimeout(() => {
-            refreshWorkout();
-          }, 2000);
-        } else {
-          moveToNextExercise();
-        }
-      } else {
-        Alert.alert("Error", "Failed to save exercise completion");
+      if (!response?.workout?.planDays?.length) {
+        setWorkout(null);
+        return;
       }
+
+      // Find today's workout
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const todaysWorkout = response.workout.planDays.find((day: any) => {
+        const dayDate = new Date(day.date).toISOString().split("T")[0];
+        return dayDate === today;
+      });
+
+      if (!todaysWorkout) {
+        setWorkout(null);
+        return;
+      }
+
+      setWorkout(todaysWorkout);
+
+      // Initialize exercise progress
+      const flatExercises = todaysWorkout.blocks.flatMap(
+        (block: WorkoutBlockWithExercises) => block.exercises
+      );
+      const initialProgress: ExerciseProgress[] = flatExercises.map(
+        (exercise: WorkoutBlockWithExercise) => ({
+          setsCompleted: 0,
+          repsCompleted: 0,
+          weightUsed: exercise.weight || 0,
+          duration: exercise.duration || 0,
+          restTime: exercise.restTime || 0,
+          notes: "",
+        })
+      );
+      setExerciseProgress(initialProgress);
+    } catch (err) {
+      console.error("Error loading workout:", err);
+      setError("Failed to load workout. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load workout on mount and when tab is focused
+  useEffect(() => {
+    loadWorkout();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWorkout();
+    }, [])
+  );
+
+  // Update exercise progress
+  const updateProgress = (field: keyof ExerciseProgress, value: any) => {
+    setExerciseProgress((prev) => {
+      const updated = [...prev];
+      updated[currentExerciseIndex] = {
+        ...updated[currentExerciseIndex],
+        [field]: value,
+      };
+      return updated;
+    });
+  };
+
+  // Start workout
+  const startWorkout = () => {
+    setIsWorkoutStarted(true);
+    setWorkoutTimer(0);
+    setExerciseTimer(0);
+  };
+
+  // Toggle pause
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+  };
+
+  // Complete current exercise
+  const completeExercise = async () => {
+    if (!currentExercise || !currentProgress) return;
+
+    setIsCompletingExercise(true);
+
+    try {
+      const user = await getCurrentUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Create exercise log - use timer for duration
+      await createExerciseLog({
+        planDayExerciseId: currentExercise.id,
+        setsCompleted: currentProgress.setsCompleted,
+        repsCompleted: currentProgress.repsCompleted,
+        weightUsed: currentProgress.weightUsed,
+        isComplete: true,
+        timeTaken: exerciseTimer, // This logs the actual time spent on exercise
+        notes: currentProgress.notes,
+      });
+
+      // Move to next exercise or complete workout
+      if (currentExerciseIndex < exercises.length - 1) {
+        setCurrentExerciseIndex((prev) => prev + 1);
+        setExerciseTimer(0);
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      } else {
+        // All exercises completed
+        setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
+        setIsWorkoutCompleted(true);
+        Alert.alert(
+          "Workout Complete!",
+          "Congratulations! You've completed today's workout.",
+          [{ text: "OK" }]
+        );
+      }
+
+      setShowCompleteModal(false);
+    } catch (err) {
+      console.error("Error completing exercise:", err);
+      Alert.alert("Error", "Failed to complete exercise. Please try again.");
     } finally {
       setIsCompletingExercise(false);
     }
   };
 
-  const handleEndWorkout = async () => {
-    const success = await endWorkout(workoutNotes);
-    if (success) {
-      setShowEndWorkoutModal(false);
-      Alert.alert("Workout Ended", "Your workout progress has been saved!");
-      resetSession();
-      setWorkoutNotes("");
-      setExerciseNotes("");
-    } else {
-      Alert.alert("Error", "Failed to save workout");
+  // Get current block for the current exercise
+  const getCurrentBlock = (): WorkoutBlockWithExercises | null => {
+    if (!workout?.blocks || !currentExercise) return null;
+
+    for (const block of workout.blocks) {
+      if (block.exercises.some((ex) => ex.id === currentExercise.id)) {
+        return block;
+      }
     }
+    return null;
   };
 
-  const getExerciseStatus = (exerciseIndex: number) => {
-    if (exerciseIndex < currentExerciseIndex) {
-      return exerciseData[exerciseIndex]?.isCompleted ? "Completed" : "Skipped";
-    } else if (exerciseIndex === currentExerciseIndex) {
-      return "Current";
-    } else if (exerciseIndex === currentExerciseIndex + 1) {
-      return "Next";
-    } else {
-      return "Waiting";
-    }
-  };
+  const currentBlock = getCurrentBlock();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "text-green-600";
-      case "Current":
-        return "text-primary";
-      case "Next":
-        return "text-blue-600";
-      default:
-        return "text-text-muted";
-    }
-  };
-
-  const getStatusBg = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-100";
-      case "Current":
-        return "bg-primary/20";
-      case "Next":
-        return "bg-blue-100";
-      default:
-        return "bg-neutral-light-2";
-    }
-  };
-
-  const getRemainingTime = () => {
-    const totalDuration = activeWorkout?.exercises
-      ? calculateWorkoutDuration(activeWorkout.exercises)
-      : 0;
-    const elapsed = workoutTimer;
-    const remaining = Math.max(0, totalDuration - elapsed);
-    return Math.round(remaining / 60);
-  };
-
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  if (isLoading) {
+  // Render loading state
+  if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-background">
+      <View className="flex-1 bg-background justify-center items-center">
         <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="mt-md text-sm font-medium text-text-primary">
-          One moment...
+        <Text className="text-text-primary mt-4 text-base">
+          Loading workout...
         </Text>
       </View>
     );
   }
 
-  if (!activeWorkout) {
+  // Render error state
+  if (error) {
     return (
-      <View className="flex-1 bg-background">
-        <View className="flex-1 justify-center items-center px-6">
-          <Ionicons name="fitness" size={64} color={colors.text.muted} />
-          <Text className="text-lg font-bold text-text-primary mt-4 mb-2">
-            No Active Workout
-          </Text>
-          <Text className="text-sm text-text-muted text-center leading-5 mb-4">
-            You don't have an active workout plan for today. Visit the Calendar
-            tab to start a new workout.
-          </Text>
-          <TouchableOpacity
-            className="bg-primary rounded-xl py-3 px-6"
-            onPress={refreshWorkout}
-          >
-            <Text className="text-secondary font-semibold text-sm">
-              Refresh
-            </Text>
-          </TouchableOpacity>
-        </View>
+      <View className="flex-1 bg-background justify-center items-center px-6">
+        <Ionicons
+          name="alert-circle-outline"
+          size={64}
+          color={colors.text.secondary}
+        />
+        <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
+          Error Loading Workout
+        </Text>
+        <Text className="text-text-muted text-center mb-6 leading-6">
+          {error}
+        </Text>
+        <TouchableOpacity
+          className="bg-primary rounded-xl py-3 px-6"
+          onPress={loadWorkout}
+        >
+          <Text className="text-secondary font-semibold">Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
+  // Render no workout state
+  if (!workout) {
+    return (
+      <View className="flex-1 bg-background justify-center items-center px-6">
+        <Ionicons name="fitness-outline" size={64} color={colors.text.muted} />
+        <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
+          No Workout Today
+        </Text>
+        <Text className="text-text-muted text-center mb-6 leading-6">
+          You don't have a workout scheduled for today. Check back tomorrow or
+          visit the Calendar tab to see your workout plan.
+        </Text>
+        <TouchableOpacity
+          className="bg-primary rounded-xl py-3 px-6"
+          onPress={loadWorkout}
+        >
+          <Text className="text-secondary font-semibold">Refresh</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Render workout completed state
   if (isWorkoutCompleted) {
-    // Use safe date formatting
-    const today = new Date();
-    const currentDate =
-      today.getFullYear() +
-      "-" +
-      String(today.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(today.getDate()).padStart(2, "0");
     return (
-      <View className="flex-1 bg-background">
-        <View className="flex-1 justify-center items-center px-6">
-          <Ionicons
-            name="checkmark-circle"
-            size={64}
-            color={colors.brand.primary}
-          />
-          <Text className="text-xl font-bold text-primary mt-4 mb-2">
-            Workout Complete!
-          </Text>
-          <Text className="text-sm text-text-muted text-center leading-5 mb-2">
-            Great job! You've completed all exercises in today's workout.
-          </Text>
-        </View>
+      <View className="flex-1 bg-background justify-center items-center px-6">
+        <Ionicons
+          name="checkmark-circle"
+          size={80}
+          color={colors.brand.primary}
+        />
+        <Text className="text-2xl font-bold text-text-primary text-center mt-6 mb-4">
+          Workout Complete!
+        </Text>
+        <Text className="text-text-muted text-center mb-4 leading-6">
+          Amazing work! You completed all {exercises.length} exercises in{" "}
+          {formatTime(workoutTimer)}.
+        </Text>
+        <Text className="text-text-muted text-center mb-8 leading-6">
+          Check back tomorrow for your next workout.
+        </Text>
       </View>
     );
   }
 
+  // Main workout interface
   return (
-    <View className="flex-1 bg-background pt-6">
+    <View className="flex-1 bg-background">
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        ref={scrollViewRef}
+        contentContainerStyle={{ paddingBottom: 24 }}
       >
-        {/* Exercise Hero Image/Video */}
-        <ExerciseLink
-          link={currentExercise?.exercise.link}
-          exerciseName={currentExercise?.exercise.name}
-          variant="hero"
-        />
+        {/* Hero Exercise Media */}
+        {currentExercise ? (
+          <ExerciseLink
+            link={currentExercise.exercise.link}
+            exerciseName={currentExercise.exercise.name}
+            variant="hero"
+          />
+        ) : null}
 
-        <View className="px-6">
-          {/* Exercise Title */}
-          <View className="py-4">
-            <Text className="text-xl font-bold text-text-primary mb-1">
-              {currentExercise?.exercise.name || "Bodyweight Squats"}
-            </Text>
-            <Text className="text-sm text-text-muted">
-              Focus on knee alignment and control
-            </Text>
-          </View>
-
-          {/* Progress Card */}
-          <View className="bg-background rounded-xl p-4 mb-4 shadow-card border border-neutral-light-2">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center mr-3">
-                  <Text className="text-sm font-bold text-primary">
-                    {Math.round(progressPercentage)}%
-                  </Text>
-                </View>
-                <View>
-                  <Text className="text-sm font-semibold text-text-primary">
-                    {completedCount}/{totalExercises} Exercises
-                  </Text>
-                  <Text className="text-xs text-text-muted">
-                    {getRemainingTime()} min remaining
-                  </Text>
-                </View>
-              </View>
+        <View className="px-6 pt-6">
+          {/* Workout Header */}
+          {/* Pre-computed progressPercent used for the progress bar */}
+          <View className="mb-6">
+            <View className="w-full h-2 mb-4 bg-neutral-light-2 rounded-full overflow-hidden">
+              <View
+                className="h-full bg-primary rounded-full"
+                style={{ width: `${progressPercent.toFixed(0)}%` } as any}
+              />
             </View>
-          </View>
-
-          {/* Day Instructions */}
-          {activeWorkout.instructions && (
-            <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-              <View className="flex-row items-center mb-2">
-                <Ionicons
-                  name="fitness"
-                  size={16}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-sm font-semibold text-text-primary ml-2">
-                  Today's Workout Instructions
-                </Text>
-              </View>
-              <Text className="text-sm text-text-secondary leading-5">
-                {activeWorkout.instructions}
+            <Text className="text-2xl font-bold text-text-primary mb-2">
+              {workout.name}
+            </Text>
+            {workout.instructions ? (
+              <Text className="text-base text-text-secondary leading-6">
+                {workout.instructions}
               </Text>
-            </View>
-          )}
-
-          {/* Exercise Details Card */}
-          <View className="bg-background rounded-xl p-4 mb-4 shadow-card border border-neutral-light-2">
-            <Text className="text-base font-bold text-text-primary mb-3">
-              {currentExercise?.exercise.name || "Bodyweight Squats"}
-            </Text>
-
-            {/* Logging Section */}
-            {currentData && isWorkoutActive && (
-              <View className="bg-neutral-light-1 rounded-lg p-3 mb-4">
-                <Text className="text-sm font-semibold text-text-primary mb-3 text-center">
-                  Track Your Progress
-                </Text>
-
-                <View className="flex-row justify-between mb-4">
-                  {/* Set Tracker */}
-                  <View className="flex-1 mr-2">
-                    <Text className="text-xs font-semibold text-text-primary mb-2 text-center">
-                      Sets ({currentData.setsCompleted}/{currentData.targetSets}
-                      )
-                    </Text>
-                    <View className="flex-row flex-wrap justify-center gap-1.5">
-                      {Array.from(
-                        { length: currentData.targetSets },
-                        (_, i) => {
-                          const isCompleted = i < currentData.setsCompleted;
-                          return (
-                            <TouchableOpacity
-                              key={i}
-                              className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                                isCompleted
-                                  ? "border-primary bg-primary"
-                                  : "border-neutral-medium-1 bg-background"
-                              }`}
-                              onPress={() =>
-                                updateExerciseData("setsCompleted", i + 1)
-                              }
-                            >
-                              <Text
-                                className={`text-xs font-semibold ${
-                                  isCompleted
-                                    ? "text-secondary"
-                                    : "text-text-muted"
-                                }`}
-                              >
-                                {i + 1}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        }
-                      )}
-                    </View>
-                  </View>
-
-                  {/* Rep Tracker */}
-                  <View className="flex-1 ml-2">
-                    <Text className="text-xs font-semibold text-text-primary mb-2 text-center">
-                      Reps ({currentData.repsCompleted}/{currentData.targetReps}
-                      )
-                    </Text>
-
-                    {/* Compact Rep Controls - Single Row */}
-                    <View className="flex-row flex-wrap justify-center gap-1.5">
-                      {currentData.targetReps < 4 ? (
-                        // For exercises with less than 4 target reps, show individual rep buttons
-                        <>
-                          <TouchableOpacity
-                            className="bg-neutral-medium-1 rounded-full w-8 h-8 items-center justify-center"
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                Math.max(0, currentData.repsCompleted - 1)
-                              )
-                            }
-                            disabled={currentData.repsCompleted <= 0}
-                          >
-                            <Ionicons
-                              name="remove"
-                              size={12}
-                              color={
-                                currentData.repsCompleted <= 0
-                                  ? colors.text.muted
-                                  : colors.text.primary
-                              }
-                            />
-                          </TouchableOpacity>
-
-                          {Array.from(
-                            { length: currentData.targetReps },
-                            (_, i) => {
-                              const repValue = i + 1;
-                              return (
-                                <TouchableOpacity
-                                  key={repValue}
-                                  className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                                    currentData.repsCompleted === repValue
-                                      ? "border-primary bg-primary"
-                                      : "border-neutral-medium-1 bg-background"
-                                  }`}
-                                  onPress={() =>
-                                    updateExerciseData(
-                                      "repsCompleted",
-                                      repValue
-                                    )
-                                  }
-                                >
-                                  <Text
-                                    className={`text-xs font-semibold ${
-                                      currentData.repsCompleted === repValue
-                                        ? "text-secondary"
-                                        : "text-text-muted"
-                                    }`}
-                                  >
-                                    {repValue}
-                                  </Text>
-                                </TouchableOpacity>
-                              );
-                            }
-                          )}
-
-                          <TouchableOpacity
-                            className="bg-primary rounded-full w-8 h-8 items-center justify-center"
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                Math.min(
-                                  currentData.targetReps,
-                                  currentData.repsCompleted + 1
-                                )
-                              )
-                            }
-                            disabled={
-                              currentData.repsCompleted >=
-                              currentData.targetReps
-                            }
-                          >
-                            <Ionicons
-                              name="add"
-                              size={12}
-                              color={colors.brand.secondary}
-                            />
-                          </TouchableOpacity>
-                        </>
-                      ) : (
-                        // For exercises with 4 or more target reps, show the original quick-set buttons
-                        <>
-                          <TouchableOpacity
-                            className="bg-neutral-medium-1 rounded-full w-8 h-8 items-center justify-center"
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                Math.max(0, currentData.repsCompleted - 1)
-                              )
-                            }
-                            disabled={currentData.repsCompleted <= 0}
-                          >
-                            <Ionicons
-                              name="remove"
-                              size={12}
-                              color={
-                                currentData.repsCompleted <= 0
-                                  ? colors.text.muted
-                                  : colors.text.primary
-                              }
-                            />
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                              currentData.repsCompleted ===
-                              Math.floor(currentData.targetReps / 3)
-                                ? "border-primary bg-primary"
-                                : "border-neutral-medium-1 bg-background"
-                            }`}
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                Math.floor(currentData.targetReps / 3)
-                              )
-                            }
-                          >
-                            <Text
-                              className={`text-xs font-semibold ${
-                                currentData.repsCompleted ===
-                                Math.floor(currentData.targetReps / 3)
-                                  ? "text-secondary"
-                                  : "text-text-muted"
-                              }`}
-                            >
-                              {Math.floor(currentData.targetReps / 3)}
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                              currentData.repsCompleted ===
-                              Math.floor((currentData.targetReps * 2) / 3)
-                                ? "border-primary bg-primary"
-                                : "border-neutral-medium-1 bg-background"
-                            }`}
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                Math.floor((currentData.targetReps * 2) / 3)
-                              )
-                            }
-                          >
-                            <Text
-                              className={`text-xs font-semibold ${
-                                currentData.repsCompleted ===
-                                Math.floor((currentData.targetReps * 2) / 3)
-                                  ? "text-secondary"
-                                  : "text-text-muted"
-                              }`}
-                            >
-                              {Math.floor((currentData.targetReps * 2) / 3)}
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            className={`w-8 h-8 rounded-full items-center justify-center border-2 ${
-                              currentData.repsCompleted ===
-                              currentData.targetReps
-                                ? "border-primary bg-primary"
-                                : "border-neutral-medium-1 bg-background"
-                            }`}
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                currentData.targetReps
-                              )
-                            }
-                          >
-                            <Text
-                              className={`text-xs font-semibold ${
-                                currentData.repsCompleted ===
-                                currentData.targetReps
-                                  ? "text-secondary"
-                                  : "text-text-muted"
-                              }`}
-                            >
-                              {currentData.targetReps}
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            className="bg-primary rounded-full w-8 h-8 items-center justify-center"
-                            onPress={() =>
-                              updateExerciseData(
-                                "repsCompleted",
-                                Math.min(
-                                  currentData.targetReps,
-                                  currentData.repsCompleted + 1
-                                )
-                              )
-                            }
-                            disabled={
-                              currentData.repsCompleted >=
-                              currentData.targetReps
-                            }
-                          >
-                            <Ionicons
-                              name="add"
-                              size={12}
-                              color={colors.brand.secondary}
-                            />
-                          </TouchableOpacity>
-                        </>
-                      )}
-                    </View>
-                  </View>
-                </View>
-
-                {/* Weight Input */}
-                {currentData.targetWeight !== undefined && (
-                  <View className="mt-3 px-2">
-                    {/* Weight Slider */}
-                    <View className="w-full">
-                      <CustomSlider
-                        label="Weight Used"
-                        value={Number(currentData.weightUsed || 0)}
-                        minimumValue={0}
-                        maximumValue={200}
-                        step={5}
-                        onValueChange={(value: number) =>
-                          updateExerciseData(
-                            "weightUsed",
-                            Math.round(Number(value))
-                          )
-                        }
-                        unit=" lbs"
-                      />
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-
-            <Text className="text-sm text-text-muted leading-5 mb-3">
-              {currentExercise?.exercise.instructions ||
-                "Keep your knees aligned with your toes. Lower until thighs are parallel to the floor. Engage your core throughout the movement."}
-            </Text>
-
-            {/* Equipment Pills */}
-            {currentExercise?.exercise.equipment &&
-              currentExercise.exercise.equipment !== "none" && (
-                <View className="mt-2">
-                  <View className="flex-row items-center mb-2">
-                    <Ionicons
-                      name="fitness-outline"
-                      size={14}
-                      color={colors.text.muted}
-                    />
-                    <Text className="text-xs text-text-muted ml-2 font-semibold">
-                      Equipment needed
-                    </Text>
-                  </View>
-                  <View className="flex-row flex-wrap">
-                    {currentExercise.exercise.equipment
-                      .split(",")
-                      .map((equipment, index) => (
-                        <View
-                          key={index}
-                          className="bg-neutral-light-1 rounded-full px-2 py-1 mx-1 mb-1"
-                        >
-                          <Text className="text-xs font-semibold text-text-primary">
-                            {formatEquipment(equipment.trim())}
-                          </Text>
-                        </View>
-                      ))}
-                  </View>
-                </View>
-              )}
+            ) : null}
           </View>
 
-          {/* Workout Plan */}
-          <View className="mb-4">
-            <Text className="text-base font-bold text-text-primary mb-2">
-              Workout Plan
-            </Text>
+          {/* Current Block Info */}
+          {currentBlock ? (
+            <View className="bg-brand-light-1 rounded-2xl p-4 mb-6">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <View className="flex-row items-center justify-between px-2 mb-1">
+                    <Text className="text-sm font-bold text-text-primary mb-1">
+                      {currentBlock.blockName ||
+                        getBlockTypeDisplayName(currentBlock.blockType)}
+                    </Text>
+                    <View className="items-end">
+                      {currentBlock.rounds ? (
+                        <Text className="text-sm font-semibold text-text-primary">
+                          {currentBlock.rounds === 1
+                            ? "1 Round"
+                            : `${currentBlock.rounds} Rounds`}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  {currentBlock.instructions ? (
+                    <Text className="text-sm text-text-secondary px-2 leading-5">
+                      {currentBlock.instructions}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+          ) : null}
 
-            <View>
-              {activeWorkout.exercises.map((exercise, index) => {
-                const status = getExerciseStatus(index);
-                return (
-                  <View
-                    key={index}
-                    className={`flex-row items-center py-2 px-4 mb-2 rounded-xl border ${
-                      status === "Current"
-                        ? "bg-primary/10 border-primary/30"
-                        : "bg-white border-neutral-light-2"
-                    }`}
-                  >
-                    {/* Exercise Icon */}
-                    <View className="w-12 h-12 rounded-full bg-neutral-light-1 items-center justify-center mr-4">
+          {/* Current Exercise */}
+          {currentExercise ? (
+            <View className="bg-card rounded-2xl mb-6 p-6 border shadow-sm font-bold border-neutral-light-2">
+              <Text className="text-xl font-bold mb-4 text-text-primary">
+                {currentExercise.exercise.name}
+              </Text>
+
+              <Text className="text-sm text-text-primary leading-6 mb-3">
+                {currentExercise.exercise.description}
+              </Text>
+
+              {/* Equipment */}
+              {currentExercise.exercise.equipment ? (
+                <View className="flex-row justify-start items-center">
+                  <View className="flex-col items-start justify-center mb-2">
+                    <View className="flex-row items-center mb-2">
                       <Ionicons
-                        name="fitness"
-                        size={18}
+                        name="fitness-outline"
+                        size={16}
                         color={colors.text.muted}
                       />
-                    </View>
-
-                    {/* Exercise Info */}
-                    <View className="flex-1">
-                      <Text className="text-sm font-semibold text-text-primary mb-1">
-                        {exercise.exercise.name}
-                      </Text>
-                      <Text className="text-xs text-text-muted">
-                        {exercise.sets || 3} sets × {exercise.reps || 12} reps
-                        {exercise.reps ? "" : " each leg"}
+                      <Text className="text-sm font-semibold text-text-muted mx-2">
+                        Equipment
                       </Text>
                     </View>
-
-                    {/* Status Badge */}
-                    <View
-                      className={`px-2 py-1 rounded-full ${
-                        status === "Current"
-                          ? "bg-primary/20"
-                          : "bg-neutral-light-1"
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs font-semibold ${
-                          status === "Completed" ||
-                          status === "Current" ||
-                          status === "Next"
-                            ? "text-primary"
-                            : "text-text-muted"
-                        }`}
-                      >
-                        {status}
-                      </Text>
+                    <View className="flex-row items-center justify-center flex-wrap">
+                      {currentExercise.exercise.equipment
+                        .split(",")
+                        .map((equipment, index) => (
+                          <View
+                            key={index}
+                            className=" bg-brand-primary rounded-full px-3 py-1 mr-2"
+                          >
+                            <Text className="text-xs text-text-primary font-semibold">
+                              {formatEquipment(equipment.trim())}
+                            </Text>
+                          </View>
+                        ))}
                     </View>
                   </View>
-                );
-              })}
-            </View>
-          </View>
+                </View>
+              ) : null}
 
-          {/* Controls */}
-          <View className="mb-4">
-            {!isWorkoutActive ? (
-              <TouchableOpacity
-                className="bg-primary rounded-xl py-4 w-full"
-                onPress={async () => await startWorkout()}
-              >
-                <Text className="text-secondary font-semibold text-base text-center">
-                  Start Workout
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <>
-                {/* Media Controls with Timer */}
-                <View className="flex items-center mb-4">
-                  {/* Exercise Timer */}
-                  <Text className="text-xs text-text-muted mb-2 text-center">
-                    Exercise: {formatTime(exerciseTimer)}
-                  </Text>
+              {/* Progress Tracking - Sleek Twitter-style */}
+              {isWorkoutStarted && currentProgress ? (
+                <View className="space-y-4">
+                  {/* Sets - Compact bubbles only */}
+                  {currentExercise.sets ? (
+                    <View className=" rounded-2xl p-4">
+                      <View className="flex-row items-center justify-between mb-3">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          Sets
+                        </Text>
+                        <Text className="text-xs text-text-muted">
+                          Target:{" "}
+                          {currentExercise.sets === 1
+                            ? "1 Set"
+                            : `${currentExercise.sets} Sets`}
+                        </Text>
+                      </View>
+                      <View className="flex-row justify-center gap-2">
+                        {Array.from(
+                          { length: currentExercise.sets },
+                          (_, i) => {
+                            const isCompleted =
+                              i < currentProgress.setsCompleted;
+                            return (
+                              <TouchableOpacity
+                                key={i}
+                                className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
+                                  isCompleted
+                                    ? "border-primary bg-primary"
+                                    : "border-neutral-medium-1 bg-background"
+                                }`}
+                                onPress={() =>
+                                  updateProgress("setsCompleted", i + 1)
+                                }
+                              >
+                                {isCompleted ? (
+                                  <Ionicons
+                                    name="checkmark"
+                                    size={14}
+                                    color={colors.text.secondary}
+                                  />
+                                ) : (
+                                  <Text className="text-xs font-semibold text-text-muted">
+                                    {i + 1}
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
+                            );
+                          }
+                        )}
+                      </View>
+                    </View>
+                  ) : null}
 
-                  {/* Pause/Play Button */}
-                  <TouchableOpacity
-                    className="w-16 h-16 rounded-full bg-primary items-center justify-center shadow-md"
-                    onPress={togglePause}
-                  >
-                    <Ionicons
-                      name={isPaused ? "play" : "pause"}
-                      size={20}
-                      color={colors.brand.secondary}
+                  {/* Reps - Tap counter only, no slider */}
+                  {currentExercise.reps ? (
+                    <View className="rounded-2xl p-4">
+                      <View className="flex-row items-center justify-between mb-3">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          Reps
+                        </Text>
+                        <Text className="text-xs text-text-muted">
+                          Target:{" "}
+                          {currentExercise.reps === 1
+                            ? "1 Rep"
+                            : `${currentExercise.reps} Reps`}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center justify-center gap-3">
+                        <TouchableOpacity
+                          className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
+                          onPress={() =>
+                            updateProgress(
+                              "repsCompleted",
+                              Math.max(0, currentProgress.repsCompleted - 1)
+                            )
+                          }
+                        >
+                          <Ionicons
+                            name="remove"
+                            size={18}
+                            color={colors.text.primary}
+                          />
+                        </TouchableOpacity>
+
+                        <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
+                          <TextInput
+                            className="text-lg font-bold text-text-primary text-center"
+                            value={String(currentProgress.repsCompleted)}
+                            onChangeText={(text) =>
+                              updateProgress("repsCompleted", Number(text) || 0)
+                            }
+                            keyboardType="numeric"
+                          />
+                        </View>
+
+                        <TouchableOpacity
+                          className="w-9 h-9 rounded-full bg-primary items-center justify-center"
+                          onPress={() =>
+                            updateProgress(
+                              "repsCompleted",
+                              currentProgress.repsCompleted + 1
+                            )
+                          }
+                        >
+                          <Ionicons
+                            name="add"
+                            size={18}
+                            color={colors.text.secondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* Weight - Quick buttons only, no slider */}
+                  <View className="rounded-2xl p-4">
+                    <View className="flex-row items-center justify-between mb-3">
+                      <Text className="text-sm font-semibold text-text-primary">
+                        Weight (lbs)
+                      </Text>
+                      {currentExercise.weight ? (
+                        <TouchableOpacity
+                          className="bg-primary/10 rounded-full px-2 py-1"
+                          onPress={() =>
+                            updateProgress(
+                              "weightUsed",
+                              currentExercise.weight || 0
+                            )
+                          }
+                        >
+                          <Text className="text-xs font-semibold text-primary">
+                            Target: {currentExercise.weight} lbs
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                    <View className="flex-row items-center justify-center gap-3">
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "weightUsed",
+                            Math.max(0, currentProgress.weightUsed - 10)
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-text-primary">
+                          -10
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "weightUsed",
+                            Math.max(0, currentProgress.weightUsed - 5)
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-text-primary">
+                          -5
+                        </Text>
+                      </TouchableOpacity>
+
+                      <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
+                        <TextInput
+                          className="text-lg font-bold text-text-primary text-center"
+                          value={String(currentProgress.weightUsed)}
+                          onChangeText={(text) =>
+                            updateProgress("weightUsed", Number(text) || 0)
+                          }
+                          keyboardType="numeric"
+                        />
+                      </View>
+
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-primary items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "weightUsed",
+                            currentProgress.weightUsed + 5
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-secondary">
+                          +5
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        className="w-9 h-9 rounded-full bg-primary items-center justify-center"
+                        onPress={() =>
+                          updateProgress(
+                            "weightUsed",
+                            currentProgress.weightUsed + 10
+                          )
+                        }
+                      >
+                        <Text className="text-xs font-semibold text-secondary">
+                          +10
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Duration - Auto-logged, compact display */}
+                  {currentExercise.duration ? (
+                    <View className="rounded-2xl p-4">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          Duration
+                        </Text>
+                        <Text className="text-xs text-text-muted">
+                          Target: {currentExercise.duration}s
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center justify-between">
+                        <Text
+                          className={`text-base font-bold ${
+                            exerciseTimer >= currentExercise.duration
+                              ? "text-primary"
+                              : "text-text-primary"
+                          }`}
+                        >
+                          {formatTime(exerciseTimer)}
+                        </Text>
+                        {exerciseTimer >= currentExercise.duration && (
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={16}
+                              color={colors.brand.primary}
+                            />
+                            <Text className="text-xs font-semibold text-primary ml-1">
+                              Done!
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* Rest Time - Quick presets only */}
+                  {currentExercise.restTime ? (
+                    <View className="rounded-2xl p-4">
+                      <View className="flex-row items-center justify-between mb-3">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          Rest Time
+                        </Text>
+                        <Text className="text-xs text-text-muted">
+                          Target: {currentProgress.restTime}s
+                        </Text>
+                      </View>
+                      <View className="flex-row justify-center gap-2">
+                        {[30, 60, 90, 120].map((time) => (
+                          <TouchableOpacity
+                            key={time}
+                            className={`rounded-xl px-3 py-1 ${
+                              currentProgress.restTime === time
+                                ? "bg-primary"
+                                : "bg-neutral-light-2"
+                            }`}
+                            onPress={() => updateProgress("restTime", time)}
+                          >
+                            <Text
+                              className={`text-sm font-semibold ${
+                                currentProgress.restTime === time
+                                  ? "text-secondary"
+                                  : "text-text-primary"
+                              }`}
+                            >
+                              {time}s
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* Notes - Compact with quick chips */}
+                  <View className="rounded-2xl p-4">
+                    <Text className="text-sm font-semibold text-text-primary mb-3">
+                      Notes
+                    </Text>
+                    <TextInput
+                      className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
+                      placeholder="Add a note... (Optional)"
+                      placeholderTextColor={colors.text.muted}
+                      value={currentProgress.notes}
+                      onChangeText={(text) => updateProgress("notes", text)}
+                      multiline
+                      numberOfLines={2}
                     />
-                  </TouchableOpacity>
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
-                  {/* Total Timer */}
-                  <Text className="text-xs text-text-muted mt-2 text-center">
-                    Total: {formatTime(workoutTimer)}
+          {/* Workout Overview */}
+          <View className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2">
+            <Text className="text-lg font-bold text-text-primary mb-4">
+              Today's Workout Plan
+            </Text>
+
+            {workout.blocks.map((block, blockIndex) => (
+              <View key={block.id} className="mb-4 last:mb-0">
+                <View className="rounded-xl p-3 mb-2">
+                  <Text className="text-sm font-bold text-text-primary">
+                    {block.blockName ||
+                      getBlockTypeDisplayName(block.blockType)}
                   </Text>
+                  {block.instructions ? (
+                    <Text className="text-xs text-text-muted mt-1">
+                      {block.instructions}
+                    </Text>
+                  ) : null}
                 </View>
 
-                {/* Action Buttons */}
-                <TouchableOpacity
-                  className="bg-primary rounded-xl py-4 w-full"
-                  onPress={() => setShowCompleteModal(true)}
-                >
-                  <Text className="text-secondary font-semibold text-base text-center">
-                    Complete Exercise
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
+                {block.exercises.map((exercise, exerciseIndex) => {
+                  const globalIndex = exercises.findIndex(
+                    (ex) => ex.id === exercise.id
+                  );
+                  const isCompleted = globalIndex < currentExerciseIndex;
+                  const isCurrent = globalIndex === currentExerciseIndex;
+
+                  return (
+                    <View
+                      key={exercise.id}
+                      className={`flex-row items-center p-3 rounded-xl mb-2 ${
+                        isCurrent
+                          ? "bg-brand-light-1 border border-brand-light-1"
+                          : isCompleted
+                            ? "bg-brand-light-1 border border-brand-light-1"
+                            : "bg-background border border-neutral-light-2"
+                      }`}
+                    >
+                      <View
+                        className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${isCompleted ? "bg-neutral-dark-1" : "bg-brand-medium-2"}`}
+                      >
+                        {isCompleted ? (
+                          <Ionicons
+                            name="checkmark"
+                            size={16}
+                            color={colors.neutral.light[2]}
+                          />
+                        ) : isCurrent ? (
+                          <Ionicons
+                            name="play"
+                            size={12}
+                            color={colors.neutral.dark[1]}
+                          />
+                        ) : (
+                          <Text className="text-xs font-bold text-neutral-dark-1">
+                            {globalIndex + 1}
+                          </Text>
+                        )}
+                      </View>
+
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          {exercise.exercise.name}
+                        </Text>
+                        <View className="flex-row flex-wrap mt-1">
+                          {exercise.sets ? (
+                            <Text className="text-xs text-text-muted mr-3">
+                              {exercise.sets} sets
+                            </Text>
+                          ) : null}
+                          {exercise.reps ? (
+                            <Text className="text-xs text-text-muted mr-3">
+                              {exercise.reps} reps
+                            </Text>
+                          ) : null}
+                          {exercise.weight ? (
+                            <Text className="text-xs text-text-muted mr-3">
+                              {exercise.weight} lbs
+                            </Text>
+                          ) : null}
+                          {exercise.duration ? (
+                            <Text className="text-xs text-text-muted">
+                              {exercise.duration}s
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
           </View>
         </View>
       </ScrollView>
 
+      {/* Bottom Action Bar */}
+      <View className="bg-card p-6">
+        {!isWorkoutStarted ? (
+          <TouchableOpacity
+            className="bg-primary rounded-2xl py-4 flex-row items-center justify-center"
+            onPress={startWorkout}
+          >
+            <Ionicons name="play" size={20} color={colors.text.secondary} />
+            <Text className="text-secondary font-bold text-lg ml-2">
+              Start Workout
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+              onPress={togglePause}
+            >
+              <Ionicons
+                name={isPaused ? "play" : "pause"}
+                size={20}
+                color={colors.text.primary}
+              />
+              <Text className="text-text-primary font-semibold ml-2">
+                {isPaused ? "Resume" : "Pause"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+              onPress={() => setShowCompleteModal(true)}
+            >
+              <Ionicons
+                name="checkmark"
+                size={20}
+                color={colors.text.secondary}
+              />
+              <Text className="text-secondary font-bold text-lg ml-2">
+                Complete Exercise
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       {/* Complete Exercise Modal */}
-      <Modal visible={showCompleteModal} transparent animationType="slide">
-        <View className="flex-1 bg-black/20 justify-center items-center px-6">
-          <View className="bg-white rounded-2xl p-8 shadow-xl border border-neutral-light-2 w-full max-w-md">
-            <Text className="text-lg font-bold text-text-primary mb-4">
+      <Modal visible={showCompleteModal} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               Complete Exercise
             </Text>
-            <Text className="text-base text-text-muted mb-6 leading-6">
-              Mark this exercise as complete? Your progress will be saved.
+            <Text className="text-base text-text-secondary text-center mb-6 leading-6">
+              Mark "{currentExercise?.exercise.name}" as complete? Your progress
+              will be saved.
             </Text>
-            <View className="flex-row justify-between gap-4">
+
+            <View className="flex-row gap-3">
               <TouchableOpacity
-                className="bg-neutral-light-1 rounded-xl py-4 px-6 flex-1"
+                className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-1"
                 onPress={() => setShowCompleteModal(false)}
               >
-                <Text className="text-text-muted font-semibold text-base text-center">
+                <Text className="text-text-primary font-semibold text-center">
                   Cancel
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                className={`bg-primary rounded-xl py-4 px-6 flex-1 ${
+                className={`bg-primary rounded-xl py-3 px-6 flex-1 ${
                   isCompletingExercise ? "opacity-75" : ""
                 }`}
-                onPress={handleCompleteExercise}
+                onPress={completeExercise}
                 disabled={isCompletingExercise}
               >
                 {isCompletingExercise ? (
                   <View className="flex-row items-center justify-center">
                     <ActivityIndicator
                       size="small"
-                      color={colors.brand.secondary}
+                      color={colors.text.secondary}
                     />
-                    <Text className="text-secondary font-semibold text-base ml-2">
-                      Completing...
+                    <Text className="text-secondary font-semibold ml-2">
+                      Saving...
                     </Text>
                   </View>
                 ) : (
-                  <Text className="text-secondary font-semibold text-base text-center">
+                  <Text className="text-secondary font-semibold text-center">
                     Complete
                   </Text>
                 )}

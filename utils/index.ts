@@ -1,6 +1,53 @@
 // Utility functions for the Masters Fit mobile app
 
 /**
+ * Robust date parsing function that handles various input formats
+ */
+export function parseDateSafely(
+  dateInput: string | Date | null | undefined
+): Date {
+  if (!dateInput) {
+    return new Date();
+  }
+
+  // If it's already a Date object, return it
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+
+  // If it's a string, try to parse it
+  if (typeof dateInput === "string") {
+    // Handle YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      const [year, month, day] = dateInput.split("-").map(Number);
+      return new Date(year, month - 1, day); // month is 0-indexed
+    }
+
+    // Handle ISO date strings (YYYY-MM-DDTHH:mm:ss.sssZ)
+    if (/^\d{4}-\d{2}-\d{2}T/.test(dateInput)) {
+      const date = new Date(dateInput);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+
+    // Try general date parsing
+    const date = new Date(dateInput);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Fallback to current date
+  console.warn(
+    "parseDateSafely: Invalid date input:",
+    dateInput,
+    "using current date"
+  );
+  return new Date();
+}
+
+/**
  * Format a date string into a readable format
  */
 export function formatDate(
@@ -11,7 +58,7 @@ export function formatDate(
     year: "numeric",
   }
 ): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const dateObj = parseDateSafely(date);
   return new Intl.DateTimeFormat("en-US", options).format(dateObj);
 }
 
@@ -19,19 +66,8 @@ export function formatDate(
  * Convert any date input to UTC Date object
  */
 export function toUTCDate(dateInput: string | Date | null | undefined): Date {
-  if (!dateInput) {
-    return new Date();
-  }
-
-  if (typeof dateInput === "string") {
-    // If it's just a date string (YYYY-MM-DD), treat as local date
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
-      return new Date(dateInput + "T00:00:00.000Z");
-    }
-    return new Date(dateInput);
-  }
-
-  return new Date(dateInput);
+  const date = parseDateSafely(dateInput);
+  return new Date(date.toISOString());
 }
 
 /**
@@ -45,11 +81,7 @@ export function formatDateForDisplay(
     day: "numeric",
   }
 ): string {
-  if (!dateInput) {
-    return "";
-  }
-
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const date = parseDateSafely(dateInput);
   return new Intl.DateTimeFormat("en-US", options).format(date);
 }
 
@@ -59,11 +91,7 @@ export function formatDateForDisplay(
 export function formatDateAsString(
   dateInput: Date | string | null | undefined
 ): string {
-  if (!dateInput) {
-    return getCurrentDate();
-  }
-
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const date = parseDateSafely(dateInput);
   return date.toISOString().split("T")[0];
 }
 
@@ -73,18 +101,7 @@ export function formatDateAsString(
 export function formatDateAsLocalString(
   dateInput: Date | string | null | undefined
 ): string {
-  if (!dateInput) {
-    const today = new Date();
-    return (
-      today.getFullYear() +
-      "-" +
-      String(today.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(today.getDate()).padStart(2, "0")
-    );
-  }
-
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const date = parseDateSafely(dateInput);
   return (
     date.getFullYear() +
     "-" +
@@ -98,21 +115,14 @@ export function formatDateAsLocalString(
  * Check if two dates are the same day (in local timezone)
  */
 export function isSameDay(date1: Date | string, date2: Date | string): boolean {
-  const d1 = typeof date1 === "string" ? new Date(date1) : date1;
-  const d2 = typeof date2 === "string" ? new Date(date2) : date2;
+  const d1 = parseDateSafely(date1);
+  const d2 = parseDateSafely(date2);
 
-  // Use direct date components to avoid timezone conversion issues
-  const formatDateToString = (date: Date): string => {
-    return (
-      date.getFullYear() +
-      "-" +
-      String(date.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(date.getDate()).padStart(2, "0")
-    );
-  };
-
-  return formatDateToString(d1) === formatDateToString(d2);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
 }
 
 /**

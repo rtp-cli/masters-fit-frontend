@@ -1,13 +1,14 @@
 import {
   ExerciseSessionData,
-  PlanDayWithExercises,
-  PlanDayWithExercise,
+  PlanDayWithBlocks,
+  WorkoutBlockWithExercise,
 } from "../api/workout.types";
 
 export interface UseWorkoutSessionReturn {
   // State
-  activeWorkout: PlanDayWithExercises | null;
+  activeWorkout: PlanDayWithBlocks | null;
   currentExerciseIndex: number;
+  currentBlockIndex: number;
   exerciseTimer: number;
   workoutTimer: number;
   isWorkoutActive: boolean;
@@ -26,7 +27,7 @@ export interface UseWorkoutSessionReturn {
   togglePause: () => void;
 
   // Computed values
-  currentExercise: PlanDayWithExercise | undefined;
+  currentExercise: WorkoutBlockWithExercise | undefined;
   currentData: ExerciseSessionData | undefined;
   completedCount: number;
   totalExercises: number;

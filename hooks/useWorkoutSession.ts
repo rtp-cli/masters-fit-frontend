@@ -14,16 +14,20 @@ import {
 import {
   WorkoutSession,
   ExerciseSessionData,
-  PlanDayWithExercises,
-  PlanDayWithExercise,
+  PlanDayWithBlocks,
+  WorkoutBlockWithExercise,
   CreateExerciseLogParams,
+  flattenBlocksToExercises,
 } from "@/types/api";
 import { UseWorkoutSessionReturn } from "@/types/hooks";
+import { formatDateAsLocalString } from "@/utils";
 
 export function useWorkoutSession(): UseWorkoutSessionReturn {
-  const [activeWorkout, setActiveWorkout] =
-    useState<PlanDayWithExercises | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<PlanDayWithBlocks | null>(
+    null
+  );
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [exerciseTimer, setExerciseTimer] = useState(0);
   const [workoutTimer, setWorkoutTimer] = useState(0);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
@@ -35,6 +39,46 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   const workoutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const workoutStartTime = useRef<Date | null>(null);
   const exerciseStartTime = useRef<Date | null>(null);
+
+  // Helper function to flatten blocks into exercises for backward compatibility
+  const getFlattenedExercises = useCallback(
+    (planDay: PlanDayWithBlocks | null) => {
+      if (!planDay || !planDay.blocks) return [];
+
+      const exercises: WorkoutBlockWithExercise[] = [];
+      planDay.blocks.forEach((block) => {
+        block.exercises.forEach((exercise) => {
+          exercises.push({
+            ...exercise,
+            blockInfo: {
+              blockId: block.id,
+              blockType: block.blockType,
+              blockName: block.blockName,
+              instructions: block.instructions,
+              rounds: block.rounds,
+              timeCapMinutes: block.timeCapMinutes,
+            },
+          });
+        });
+      });
+
+      return exercises;
+    },
+    []
+  );
+
+  // Get current exercise with block information
+  const getCurrentExercise = useCallback(() => {
+    if (!activeWorkout) return null;
+    const flattenedExercises = getFlattenedExercises(activeWorkout);
+    return flattenedExercises[currentExerciseIndex] || null;
+  }, [activeWorkout, currentExerciseIndex, getFlattenedExercises]);
+
+  // Get current block information
+  const getCurrentBlock = useCallback(() => {
+    if (!activeWorkout || !activeWorkout.blocks) return null;
+    return activeWorkout.blocks[currentBlockIndex] || null;
+  }, [activeWorkout, currentBlockIndex]);
 
   // Timer management
   useEffect(() => {
@@ -78,91 +122,98 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         console.log("📅 Workout data:", workout);
         console.log("📋 Plan days:", workout.planDays);
 
-        // Find today's plan day (similar to calendar logic)
+        // Find today's plan day
         const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format
         console.log("🗓️  Today's date:", today);
-        console.log(
-          "🌍 Timezone:",
-          Intl.DateTimeFormat().resolvedOptions().timeZone
-        );
-
-        // Helper function for safe date parsing
-        const formatDateToString = (dateStr: string): string => {
-          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-            return dateStr; // Already in YYYY-MM-DD format
-          }
-          // For other formats, parse safely
-          const [year, month, day] = dateStr.split("-").map(Number);
-          const safeDate = new Date(year, month - 1, day);
-          return safeDate.toLocaleDateString("en-CA");
-        };
 
         // Debug all plan days
         workout.planDays.forEach((day: any, index: number) => {
-          const planDate = formatDateToString(day.date);
+          const planDate = formatDateAsLocalString(day.date);
           console.log(`📆 Plan day ${index}:`, {
             originalDate: day.date,
+            originalDateType: typeof day.date,
             formattedDate: planDate,
             matchesToday: planDate === today,
-            isCompleted: day.completed,
+            blocks: day.blocks?.length || 0,
+            exercises:
+              day.blocks?.reduce(
+                (total: number, block: any) =>
+                  total + (block.exercises?.length || 0),
+                0
+              ) || 0,
           });
         });
 
+        // Find today's plan day
         const todaysPlan = workout.planDays.find((day: any) => {
-          const planDate = formatDateToString(day.date);
+          const planDate = formatDateAsLocalString(day.date);
           console.log(
             "🔍 Comparing plan date:",
             planDate,
             "with today:",
-            today
+            today,
+            "Match:",
+            planDate === today
           );
           return planDate === today;
         });
 
-        if (!todaysPlan) {
-          console.log("❌ No workout plan found for today");
-          console.log(
-            "Available dates:",
-            workout.planDays.map((day: any) =>
-              new Date(day.date).toLocaleDateString("en-CA")
-            )
+        if (todaysPlan) {
+          console.log("✅ Today's plan found:", todaysPlan);
+          console.log("📊 Plan details:", {
+            id: todaysPlan.id,
+            name: todaysPlan.name,
+            blocks: todaysPlan.blocks?.length || 0,
+            totalExercises:
+              todaysPlan.blocks?.reduce(
+                (total: number, block: any) =>
+                  total + (block.exercises?.length || 0),
+                0
+              ) || 0,
+          });
+
+          setActiveWorkout(todaysPlan);
+
+          // Initialize exercise data
+          const exercises = getFlattenedExercises(todaysPlan);
+          const initialExerciseData: ExerciseSessionData[] = exercises.map(
+            (exercise) => ({
+              exerciseId: exercise.exerciseId,
+              planDayExerciseId: exercise.id,
+              targetSets: exercise.sets || 1,
+              targetReps: exercise.reps || 0,
+              targetRounds: exercise.blockInfo?.rounds || 1,
+              targetWeight: exercise.weight || 0,
+              targetDuration: exercise.duration || 0,
+              targetRestTime: exercise.restTime || 0,
+              setsCompleted: 0,
+              repsCompleted: 0,
+              roundsCompleted: 0,
+              weightUsed: 0,
+              duration: exercise.duration || 0,
+              restTime: exercise.restTime || 0,
+              timeTaken: 0,
+              notes: "",
+              isCompleted: false,
+              blockInfo: exercise.blockInfo,
+            })
           );
+
+          console.log("💪 Initialized exercise data:", initialExerciseData);
+          setExerciseData(initialExerciseData);
+
+          // Check for existing logs
+          await checkExistingLogs(todaysPlan, initialExerciseData);
+        } else {
+          console.log("❌ No plan found for today");
           setActiveWorkout(null);
-          setIsLoading(false);
-          return;
         }
-
-        console.log("✅ Today's plan found:", todaysPlan);
-
-        setActiveWorkout(todaysPlan);
-
-        // Initialize exercise data
-        const initialData = todaysPlan.exercises.map(
-          (exercise: PlanDayWithExercise) => ({
-            exerciseId: exercise.exerciseId,
-            planDayExerciseId: exercise.id,
-            targetSets: exercise.sets || 3,
-            targetReps: exercise.reps || 12,
-            targetWeight: exercise.weight,
-            setsCompleted: 0,
-            repsCompleted: 0,
-            weightUsed: exercise.weight || 0,
-            timeTaken: 0,
-            notes: "",
-            isCompleted: exercise.completed,
-          })
-        );
-        setExerciseData(initialData);
-        console.log("💪 Initialized exercise data:", initialData);
-
-        // Check for existing logs and resume if needed
-        await checkExistingLogs(todaysPlan, initialData);
       } else {
-        console.log("❌ No workout data found in response");
+        console.log("❌ No workout plan found");
         setActiveWorkout(null);
       }
     } catch (error) {
-      console.error("❌ Error loading active workout:", error);
+      console.error("Error loading active workout:", error);
       setActiveWorkout(null);
     } finally {
       setIsLoading(false);
@@ -177,6 +228,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setActiveWorkout(null);
     setExerciseData([]);
     setCurrentExerciseIndex(0);
+    setCurrentBlockIndex(0);
     setExerciseTimer(0);
     setWorkoutTimer(0);
     setIsWorkoutActive(false);
@@ -202,14 +254,34 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     return unsubscribe;
   }, [refreshWorkout]);
 
+  // Update block index when exercise index changes
+  useEffect(() => {
+    if (!activeWorkout || !activeWorkout.blocks) return;
+
+    let exerciseCount = 0;
+    let newBlockIndex = 0;
+
+    for (let i = 0; i < activeWorkout.blocks.length; i++) {
+      const blockExerciseCount = activeWorkout.blocks[i].exercises.length;
+      if (currentExerciseIndex < exerciseCount + blockExerciseCount) {
+        newBlockIndex = i;
+        break;
+      }
+      exerciseCount += blockExerciseCount;
+    }
+
+    if (newBlockIndex !== currentBlockIndex) {
+      setCurrentBlockIndex(newBlockIndex);
+    }
+  }, [currentExerciseIndex, activeWorkout, currentBlockIndex]);
+
   const checkExistingLogs = async (
-    planDay: PlanDayWithExercises,
+    planDay: any, // Workout with exercises for backward compatibility
     initialData: ExerciseSessionData[]
   ) => {
     try {
-      // Check if there's an existing workout log
+      // Get existing workout log
       const workoutLog = await getExistingWorkoutLog(planDay.workoutId);
-
       if (workoutLog) {
         // Note: Don't check workoutLog.isComplete here because that's for the entire
         // multi-day workout. We need to check individual plan day completion instead.
@@ -228,15 +300,18 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       const completedData = await getCompletedExercises(planDay.workoutId);
       const completedExerciseIds = completedData.completedExercises || [];
 
-      // Filter completed exercises to only those belonging to this plan day
+      const exercisesArray = Array.isArray(planDay.exercises)
+        ? planDay.exercises
+        : [];
       const todaysCompletedExercises = completedExerciseIds.filter(
-        (exerciseId) => planDay.exercises.some((ex) => ex.id === exerciseId)
+        (exerciseId: number) =>
+          exercisesArray.some((ex: any) => ex.id === exerciseId)
       );
 
       // Check if ALL exercises for this specific plan day are completed
       const allTodaysExercisesCompleted =
-        planDay.exercises.length > 0 &&
-        planDay.exercises.every((ex) =>
+        exercisesArray.length > 0 &&
+        exercisesArray.every((ex: any) =>
           todaysCompletedExercises.includes(ex.id)
         );
 
@@ -257,8 +332,8 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       const updatedData = [...initialData];
       let lastCompletedIndex = -1;
 
-      for (let i = 0; i < planDay.exercises.length; i++) {
-        const exercise = planDay.exercises[i];
+      for (let i = 0; i < exercisesArray.length; i++) {
+        const exercise = exercisesArray[i];
         const isCompleted = completedExerciseIds.includes(exercise.id);
 
         if (isCompleted) {
@@ -286,8 +361,9 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       }
 
       // Set current exercise index to the next incomplete exercise
-      const nextIncompleteIndex = planDay.exercises.findIndex(
-        (_, idx) => !completedExerciseIds.includes(planDay.exercises[idx].id)
+      const nextIncompleteIndex = exercisesArray.findIndex(
+        (_: any, idx: number) =>
+          !completedExerciseIds.includes(exercisesArray[idx].id)
       );
 
       if (nextIncompleteIndex !== -1) {
@@ -386,13 +462,30 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   const moveToNextExercise = useCallback(() => {
     if (!activeWorkout) return;
 
+    const flattenedExercises = getFlattenedExercises(activeWorkout);
     const nextExerciseIndex = currentExerciseIndex + 1;
-    if (nextExerciseIndex < activeWorkout.exercises.length) {
+    if (nextExerciseIndex < flattenedExercises.length) {
       setCurrentExerciseIndex(nextExerciseIndex);
       setExerciseTimer(0);
       exerciseStartTime.current = new Date();
+
+      // Update block index if we've moved to a new block
+      const nextExercise = flattenedExercises[nextExerciseIndex];
+      if (nextExercise && nextExercise.blockInfo) {
+        const nextBlockIndex = activeWorkout.blocks?.findIndex(
+          (block) => block.id === nextExercise.blockInfo?.blockId
+        );
+        if (nextBlockIndex !== -1 && nextBlockIndex !== currentBlockIndex) {
+          setCurrentBlockIndex(nextBlockIndex);
+        }
+      }
     }
-  }, [currentExerciseIndex, activeWorkout]);
+  }, [
+    currentExerciseIndex,
+    currentBlockIndex,
+    activeWorkout,
+    getFlattenedExercises,
+  ]);
 
   const endWorkout = useCallback(
     async (notes?: string): Promise<boolean> => {
@@ -410,7 +503,8 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         });
 
         // Mark workout as complete with all exercise IDs
-        const totalExerciseIds = activeWorkout.exercises.map((ex) => ex.id);
+        const flattenedExercises = getFlattenedExercises(activeWorkout);
+        const totalExerciseIds = flattenedExercises.map((ex) => ex.id);
         await markWorkoutComplete(activeWorkout.workoutId, totalExerciseIds);
 
         return true;
@@ -419,11 +513,12 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         return false;
       }
     },
-    [activeWorkout, workoutTimer]
+    [activeWorkout, workoutTimer, getFlattenedExercises]
   );
 
   const resetSession = useCallback(() => {
     setCurrentExerciseIndex(0);
+    setCurrentBlockIndex(0);
     setExerciseTimer(0);
     setWorkoutTimer(0);
     setIsWorkoutActive(false);
@@ -448,17 +543,27 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   }, [isPaused]);
 
   // Computed values
-  const currentExercise = activeWorkout?.exercises[currentExerciseIndex];
+  const currentExercise = getCurrentExercise();
   const currentData = exerciseData[currentExerciseIndex];
   const completedCount = exerciseData.filter((data) => data.isCompleted).length;
-  const totalExercises = activeWorkout?.exercises.length || 0;
+  const flattenedExercises = getFlattenedExercises(activeWorkout);
+  const totalExercises = flattenedExercises.length;
   const progressPercentage =
     totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0;
 
+  // Create backward compatible activeWorkout with exercises property
+  const activeWorkoutWithExercises = activeWorkout
+    ? {
+        ...activeWorkout,
+        exercises: flattenedExercises,
+      }
+    : null;
+
   return {
     // State
-    activeWorkout,
+    activeWorkout: activeWorkoutWithExercises as any, // Type assertion for backward compatibility
     currentExerciseIndex,
+    currentBlockIndex,
     exerciseTimer,
     workoutTimer,
     isWorkoutActive,
@@ -477,7 +582,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     togglePause,
 
     // Computed values
-    currentExercise,
+    currentExercise: currentExercise as any, // Type assertion for backward compatibility
     currentData,
     completedCount,
     totalExercises,

@@ -350,10 +350,28 @@ export default function SearchScreen() {
   // Calculate completion rate for workout based on completed exercises
   const calculateWorkoutCompletionRate = (exercises: any[]) => {
     if (!exercises || exercises.length === 0) return 0;
-    const completedCount = exercises.filter(
-      (ex) => ex.completed === true
-    ).length;
-    return Math.round((completedCount / exercises.length) * 100);
+
+    // Handle both old structure (direct exercises) and new structure (blocks)
+    if (exercises[0]?.blocks) {
+      // New structure with blocks
+      const allExercises = exercises[0].blocks.flatMap(
+        (block: any) => block.exercises || []
+      );
+      const completedCount = allExercises.filter(
+        (exercise: any) => exercise.completed
+      ).length;
+      return allExercises.length > 0
+        ? Math.round((completedCount / allExercises.length) * 100)
+        : 0;
+    } else {
+      // Old structure with direct exercises
+      const completedCount = exercises.filter(
+        (exercise: any) => exercise.completed
+      ).length;
+      return exercises.length > 0
+        ? Math.round((completedCount / exercises.length) * 100)
+        : 0;
+    }
   };
 
   // Get individual muscle groups for display
@@ -913,114 +931,326 @@ export default function SearchScreen() {
                   <View>
                     <Text className="text-lg font-semibold text-text-primary mb-4">
                       Exercises (
-                      {safeString(dateResult.planDay.exercises.length)})
-                    </Text>
-                    {dateResult.planDay.exercises.map(
-                      (exercise: any, index: number) => (
-                        <TouchableOpacity
-                          key={index}
-                          className=" rounded-xl p-4 mb-3"
-                          onPress={() => {
-                            try {
-                              if (exercise?.exercise?.id) {
-                                handleExerciseSelect({
-                                  id: Number(exercise.exercise.id),
-                                  name: safeString(
-                                    exercise.exercise.name || "Unknown Exercise"
-                                  ),
-                                  description: safeString(
-                                    exercise.exercise.description || ""
-                                  ),
-                                  muscleGroups: Array.isArray(
-                                    exercise.exercise.muscleGroups
-                                  )
-                                    ? exercise.exercise.muscleGroups
-                                    : [],
-                                  equipment: Array.isArray(
-                                    exercise.exercise.equipment
-                                  )
-                                    ? exercise.exercise.equipment
-                                    : [],
-                                  difficulty: safeString(
-                                    exercise.exercise.difficulty || "Unknown"
-                                  ),
-                                  instructions: safeString(
-                                    exercise.exercise.instructions || ""
-                                  ),
-                                  createdAt: new Date(),
-                                  updatedAt: new Date(),
-                                });
-                              }
-                            } catch (error) {
-                              console.error("Error selecting exercise:", error);
-                            }
-                          }}
-                        >
-                          <View className="flex-row justify-between items-center mb-2">
-                            <Text className="text-base font-semibold text-text-primary flex-1">
-                              {safeString(
-                                exercise?.exercise?.name || "Unknown"
-                              )}
-                            </Text>
-                            <View className="flex-row items-center">
-                              <View
-                                className={`px-2 py-1 rounded-lg ${
-                                  exercise?.completed === true
-                                    ? "bg-brand-primary"
-                                    : exercise?.completed === false
-                                      ? "bg-red-700"
-                                      : "bg-yellow-700"
-                                }`}
-                              >
-                                <Text className="text-xs font-semibold text-white">
-                                  {exercise?.completed === true
-                                    ? "Done"
-                                    : exercise?.completed === false
-                                      ? "Not Done"
-                                      : "Pending"}
-                                </Text>
-                              </View>
-                              <Ionicons
-                                name="chevron-forward"
-                                size={16}
-                                color={colors.text.muted}
-                                className="ml-2"
-                              />
-                            </View>
-                          </View>
-
-                          {/* Individual muscle group tags */}
-                          <View className="flex-row flex-wrap mb-2">
-                            {getIndividualMuscleGroups(
-                              exercise?.exercise?.muscleGroups
-                            )
-                              .slice(0, 3)
-                              .map((muscle: string, muscleIndex: number) => (
-                                <View
-                                  key={muscleIndex}
-                                  className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1"
-                                >
-                                  <Text className="text-xs font-medium text-text-primary">
-                                    {muscle}
-                                  </Text>
-                                </View>
-                              ))}
-                            {getIndividualMuscleGroups(
-                              exercise?.exercise?.muscleGroups
-                            ).length > 3 && (
-                              <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
-                                <Text className="text-xs font-medium text-text-muted">
-                                  +
-                                  {getIndividualMuscleGroups(
-                                    exercise?.exercise?.muscleGroups
-                                  ).length - 3}
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                        </TouchableOpacity>
+                      {(() => {
+                        // Handle both old and new structures
+                        const planDay = dateResult.planDay as any;
+                        if (planDay.blocks && planDay.blocks.length > 0) {
+                          // New structure with blocks
+                          return planDay.blocks.reduce(
+                            (total: number, block: any) =>
+                              total + (block.exercises?.length || 0),
+                            0
+                          );
+                        } else {
+                          // Old structure with direct exercises
+                          return safeString(
+                            dateResult.planDay.exercises.length
+                          );
+                        }
+                      })()}
                       )
-                    )}
+                    </Text>
+
+                    {/* Handle new block structure */}
+                    {(dateResult.planDay as any)?.blocks
+                      ? (dateResult.planDay as any).blocks.map(
+                          (block: any, blockIndex: number) => (
+                            <View key={block.id || blockIndex} className="mb-4">
+                              {/* Block Header */}
+                              <View className="bg-neutral-light-1 rounded-lg p-3 mb-3">
+                                <View className="flex-row items-center justify-between">
+                                  <View className="flex-1">
+                                    <Text className="text-sm font-semibold text-text-primary">
+                                      {block.blockName ||
+                                        `Block ${blockIndex + 1}`}
+                                    </Text>
+                                    <Text className="text-xs text-text-muted">
+                                      {block.exercises?.length || 0} exercises
+                                      {block.rounds && block.rounds > 1
+                                        ? ` • ${block.rounds} rounds`
+                                        : ""}
+                                      {block.timeCapMinutes
+                                        ? ` • ${block.timeCapMinutes} min cap`
+                                        : ""}
+                                    </Text>
+                                  </View>
+                                </View>
+                                {block.instructions && (
+                                  <Text className="text-xs text-text-muted mt-2">
+                                    {block.instructions}
+                                  </Text>
+                                )}
+                              </View>
+
+                              {/* Exercises in this block */}
+                              {block.exercises?.map(
+                                (exercise: any, exerciseIndex: number) => (
+                                  <TouchableOpacity
+                                    key={exercise.id || exerciseIndex}
+                                    className="bg-white rounded-xl p-4 mb-3 border border-neutral-light-2"
+                                    onPress={() => {
+                                      try {
+                                        if (exercise?.exercise?.id) {
+                                          handleExerciseSelect({
+                                            id: Number(exercise.exercise.id),
+                                            name: safeString(
+                                              exercise.exercise.name ||
+                                                "Unknown Exercise"
+                                            ),
+                                            description: safeString(
+                                              exercise.exercise.description ||
+                                                ""
+                                            ),
+                                            muscleGroups: Array.isArray(
+                                              exercise.exercise.muscleGroups
+                                            )
+                                              ? exercise.exercise.muscleGroups
+                                              : [],
+                                            equipment: Array.isArray(
+                                              exercise.exercise.equipment
+                                            )
+                                              ? exercise.exercise.equipment
+                                              : [],
+                                            difficulty: safeString(
+                                              exercise.exercise.difficulty ||
+                                                "Unknown"
+                                            ),
+                                            instructions: safeString(
+                                              exercise.exercise.instructions ||
+                                                ""
+                                            ),
+                                            createdAt: new Date(),
+                                            updatedAt: new Date(),
+                                          });
+                                        }
+                                      } catch (error) {
+                                        console.error(
+                                          "Error selecting exercise:",
+                                          error
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <View className="flex-row justify-between items-center mb-2">
+                                      <Text className="text-base font-semibold text-text-primary flex-1">
+                                        {safeString(
+                                          exercise?.exercise?.name || "Unknown"
+                                        )}
+                                      </Text>
+                                      <View className="flex-row items-center">
+                                        <View
+                                          className={`px-2 py-1 rounded-lg ${
+                                            exercise?.completed === true
+                                              ? "bg-brand-primary"
+                                              : exercise?.completed === false
+                                                ? "bg-red-700"
+                                                : "bg-yellow-700"
+                                          }`}
+                                        >
+                                          <Text className="text-xs font-semibold text-white">
+                                            {exercise?.completed === true
+                                              ? "Done"
+                                              : exercise?.completed === false
+                                                ? "Not Done"
+                                                : "Pending"}
+                                          </Text>
+                                        </View>
+                                        <Ionicons
+                                          name="chevron-forward"
+                                          size={16}
+                                          color={colors.text.muted}
+                                          className="ml-2"
+                                        />
+                                      </View>
+                                    </View>
+
+                                    {/* Exercise Parameters */}
+                                    <View className="flex-row flex-wrap mb-2">
+                                      {exercise.sets && exercise.reps && (
+                                        <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
+                                          <Text className="text-xs font-medium text-text-primary">
+                                            {exercise.sets} × {exercise.reps}
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {exercise.duration && (
+                                        <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
+                                          <Text className="text-xs font-medium text-text-primary">
+                                            {exercise.duration}s
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {exercise.weight && (
+                                        <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
+                                          <Text className="text-xs font-medium text-text-primary">
+                                            {exercise.weight} lbs
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {exercise.restTime &&
+                                        exercise.restTime > 0 && (
+                                          <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
+                                            <Text className="text-xs font-medium text-text-primary">
+                                              {exercise.restTime}s rest
+                                            </Text>
+                                          </View>
+                                        )}
+                                    </View>
+
+                                    {/* Individual muscle group tags */}
+                                    <View className="flex-row flex-wrap mb-2">
+                                      {getIndividualMuscleGroups(
+                                        exercise?.exercise?.muscleGroups
+                                      )
+                                        .slice(0, 3)
+                                        .map(
+                                          (
+                                            muscle: string,
+                                            muscleIndex: number
+                                          ) => (
+                                            <View
+                                              key={muscleIndex}
+                                              className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1"
+                                            >
+                                              <Text className="text-xs font-medium text-text-primary">
+                                                {muscle}
+                                              </Text>
+                                            </View>
+                                          )
+                                        )}
+                                      {getIndividualMuscleGroups(
+                                        exercise?.exercise?.muscleGroups
+                                      ).length > 3 && (
+                                        <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
+                                          <Text className="text-xs font-medium text-text-muted">
+                                            +
+                                            {getIndividualMuscleGroups(
+                                              exercise?.exercise?.muscleGroups
+                                            ).length - 3}
+                                          </Text>
+                                        </View>
+                                      )}
+                                    </View>
+                                  </TouchableOpacity>
+                                )
+                              )}
+                            </View>
+                          )
+                        )
+                      : /* Handle old structure with direct exercises */
+                        dateResult.planDay.exercises.map(
+                          (exercise: any, index: number) => (
+                            <TouchableOpacity
+                              key={index}
+                              className=" rounded-xl p-4 mb-3"
+                              onPress={() => {
+                                try {
+                                  if (exercise?.exercise?.id) {
+                                    handleExerciseSelect({
+                                      id: Number(exercise.exercise.id),
+                                      name: safeString(
+                                        exercise.exercise.name ||
+                                          "Unknown Exercise"
+                                      ),
+                                      description: safeString(
+                                        exercise.exercise.description || ""
+                                      ),
+                                      muscleGroups: Array.isArray(
+                                        exercise.exercise.muscleGroups
+                                      )
+                                        ? exercise.exercise.muscleGroups
+                                        : [],
+                                      equipment: Array.isArray(
+                                        exercise.exercise.equipment
+                                      )
+                                        ? exercise.exercise.equipment
+                                        : [],
+                                      difficulty: safeString(
+                                        exercise.exercise.difficulty ||
+                                          "Unknown"
+                                      ),
+                                      instructions: safeString(
+                                        exercise.exercise.instructions || ""
+                                      ),
+                                      createdAt: new Date(),
+                                      updatedAt: new Date(),
+                                    });
+                                  }
+                                } catch (error) {
+                                  console.error(
+                                    "Error selecting exercise:",
+                                    error
+                                  );
+                                }
+                              }}
+                            >
+                              <View className="flex-row justify-between items-center mb-2">
+                                <Text className="text-base font-semibold text-text-primary flex-1">
+                                  {safeString(
+                                    exercise?.exercise?.name || "Unknown"
+                                  )}
+                                </Text>
+                                <View className="flex-row items-center">
+                                  <View
+                                    className={`px-2 py-1 rounded-lg ${
+                                      exercise?.completed === true
+                                        ? "bg-brand-primary"
+                                        : exercise?.completed === false
+                                          ? "bg-red-700"
+                                          : "bg-yellow-700"
+                                    }`}
+                                  >
+                                    <Text className="text-xs font-semibold text-white">
+                                      {exercise?.completed === true
+                                        ? "Done"
+                                        : exercise?.completed === false
+                                          ? "Not Done"
+                                          : "Pending"}
+                                    </Text>
+                                  </View>
+                                  <Ionicons
+                                    name="chevron-forward"
+                                    size={16}
+                                    color={colors.text.muted}
+                                    className="ml-2"
+                                  />
+                                </View>
+                              </View>
+
+                              {/* Individual muscle group tags */}
+                              <View className="flex-row flex-wrap mb-2">
+                                {getIndividualMuscleGroups(
+                                  exercise?.exercise?.muscleGroups
+                                )
+                                  .slice(0, 3)
+                                  .map(
+                                    (muscle: string, muscleIndex: number) => (
+                                      <View
+                                        key={muscleIndex}
+                                        className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1"
+                                      >
+                                        <Text className="text-xs font-medium text-text-primary">
+                                          {muscle}
+                                        </Text>
+                                      </View>
+                                    )
+                                  )}
+                                {getIndividualMuscleGroups(
+                                  exercise?.exercise?.muscleGroups
+                                ).length > 3 && (
+                                  <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
+                                    <Text className="text-xs font-medium text-text-muted">
+                                      +
+                                      {getIndividualMuscleGroups(
+                                        exercise?.exercise?.muscleGroups
+                                      ).length - 3}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                            </TouchableOpacity>
+                          )
+                        )}
                   </View>
                 )}
             </View>
