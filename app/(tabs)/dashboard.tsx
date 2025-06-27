@@ -93,6 +93,9 @@ export default function DashboardScreen() {
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
   >([]);
+  const [rawWeightProgressionData, setRawWeightProgressionData] = useState<
+    { date: string; avgWeight: number; maxWeight: number; label: string }[]
+  >([]);
   const [rawWeightAccuracyData, setRawWeightAccuracyData] = useState<
     {
       date: string;
@@ -155,6 +158,11 @@ export default function DashboardScreen() {
       // Load raw data with wide range for frontend filtering
       const { startDate, endDate } = calculateWideDataRange();
 
+      // Load raw weight progression data
+      fetchWeightProgression({ startDate, endDate }).then((data) => {
+        setRawWeightProgressionData(data);
+      });
+
       // Load raw weight accuracy data
       fetchWeightAccuracyByDate({ startDate, endDate }).then((data) => {
         setRawWeightAccuracyData(data);
@@ -170,6 +178,7 @@ export default function DashboardScreen() {
   }, [
     user?.id,
     refreshAllData,
+    fetchWeightProgression,
     fetchWeightAccuracyByDate,
     fetchWorkoutTypeByDate,
   ]);
@@ -180,77 +189,6 @@ export default function DashboardScreen() {
       startDate: "2020-01-01",
       endDate: "2030-12-31",
     };
-  };
-
-  // Specific filter function for weight progression data
-  const filterWeightProgressionData = (
-    data: {
-      date: string;
-      avgWeight: number;
-      maxWeight: number;
-      label: string;
-    }[],
-    filter: "1W" | "1M" | "3M"
-  ) => {
-    if (!data || data.length === 0) return data;
-
-    // Sort data by date (oldest first for chronological order)
-    const sortedData = [...data].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    // For strength progress, we want to be more generous with the data
-    // If we have less than 30 days of data, show all of it regardless of filter
-    const dataSpanDays =
-      sortedData.length > 1
-        ? Math.ceil(
-            (new Date(sortedData[sortedData.length - 1].date).getTime() -
-              new Date(sortedData[0].date).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        : 1;
-
-    // If data span is small, show all data
-    if (dataSpanDays <= 30) {
-      return sortedData;
-    }
-
-    // Use current date for filtering instead of latest data date
-    // This ensures we show recent data properly
-    const today = new Date();
-    let cutoffDate = new Date(today);
-
-    switch (filter) {
-      case "1W":
-        cutoffDate.setDate(today.getDate() - 7);
-        break;
-      case "1M":
-        cutoffDate.setDate(today.getDate() - 30);
-        break;
-      case "3M":
-        cutoffDate.setDate(today.getDate() - 90);
-        break;
-      default:
-        cutoffDate.setDate(today.getDate() - 30);
-    }
-
-    // Filter data to only include dates after the cutoff
-    const filteredData = sortedData.filter((item) => {
-      const itemDate = new Date(item.date);
-      return itemDate >= cutoffDate;
-    });
-
-    // If no data matches the filter, return the most recent data points as fallback
-    if (filteredData.length === 0) {
-      return sortedData.slice(-Math.min(sortedData.length, 10));
-    }
-
-    // If we have very few filtered results, expand to show more context
-    if (filteredData.length < 3 && sortedData.length > 3) {
-      return sortedData.slice(-Math.min(sortedData.length, 7));
-    }
-
-    return filteredData;
   };
 
   // Frontend filtering function for weight accuracy data
@@ -487,18 +425,17 @@ export default function DashboardScreen() {
     }
   }, [rawWorkoutTypeData, workoutTypeFilter]);
 
-  // Effect to fetch strength data when filter changes (uses frontend filtering)
+  // Frontend filtering effect for strength progress data
   useEffect(() => {
-    if (user?.id) {
-      const { startDate, endDate } = calculateWideDataRange();
-
-      fetchWeightProgression({ startDate, endDate }).then((data) => {
-        // Apply frontend filtering based on the selected filter
-        const filteredData = filterWeightProgressionData(data, strengthFilter);
-        setWeightProgressionData(filteredData);
-      });
+    if (rawWeightProgressionData.length > 0) {
+      // Use the same reliable filtering function as other charts
+      const filteredData = filterDataByDateRange(
+        rawWeightProgressionData,
+        strengthFilter
+      );
+      setWeightProgressionData(filteredData);
     }
-  }, [strengthFilter, user?.id, fetchWeightProgression]);
+  }, [rawWeightProgressionData, strengthFilter]);
 
   // Update filtered data when main data changes
   useEffect(() => {
@@ -553,6 +490,11 @@ export default function DashboardScreen() {
 
       // Refresh raw data for frontend filtering
       const { startDate, endDate } = calculateWideDataRange();
+
+      // Refresh raw weight progression data
+      fetchWeightProgression({ startDate, endDate }).then((data) => {
+        setRawWeightProgressionData(data);
+      });
 
       fetchWeightAccuracyByDate({ startDate, endDate }).then((data) => {
         setRawWeightAccuracyData(data);

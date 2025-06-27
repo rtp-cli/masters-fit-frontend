@@ -116,7 +116,7 @@ export default function WorkoutBlock({
         disabled={!onToggleExpanded}
       >
         <View className="flex-row items-center">
-          <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center mr-3">
+          <View className="w-8 h-8 rounded-full items-center justify-center mr-3">
             <Ionicons
               name={getBlockIcon(block.blockType) as any}
               size={16}

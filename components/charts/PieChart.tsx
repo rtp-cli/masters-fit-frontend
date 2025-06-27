@@ -64,6 +64,44 @@ export const PieChart: React.FC<PieChartProps> = ({
     const startAngleRad = (startAngle * Math.PI) / 180;
     const endAngleRad = (endAngle * Math.PI) / 180;
 
+    // Special handling for single data point (full circle)
+    if (data.length === 1 || percentage >= 99.9) {
+      if (donut && calculatedInnerRadius > 0) {
+        // Full donut circle
+        return (
+          <G key={`slice-${index}`}>
+            <Circle
+              cx={center}
+              cy={center}
+              r={radius}
+              fill={color}
+              stroke={colors.background}
+              strokeWidth="1"
+            />
+            <Circle
+              cx={center}
+              cy={center}
+              r={calculatedInnerRadius}
+              fill={colors.background}
+            />
+          </G>
+        );
+      } else {
+        // Full pie circle
+        return (
+          <Circle
+            key={`slice-${index}`}
+            cx={center}
+            cy={center}
+            r={radius}
+            fill={color}
+            stroke={colors.background}
+            strokeWidth="1"
+          />
+        );
+      }
+    }
+
     const x1 = center + radius * Math.cos(startAngleRad);
     const y1 = center + radius * Math.sin(startAngleRad);
     const x2 = center + radius * Math.cos(endAngleRad);

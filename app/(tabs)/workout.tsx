@@ -587,19 +587,9 @@ export default function WorkoutScreen() {
                         Weight (lbs)
                       </Text>
                       {currentExercise.weight ? (
-                        <TouchableOpacity
-                          className="bg-primary/10 rounded-full px-2 py-1"
-                          onPress={() =>
-                            updateProgress(
-                              "weightUsed",
-                              currentExercise.weight || 0
-                            )
-                          }
-                        >
-                          <Text className="text-xs font-semibold text-primary">
-                            Target: {currentExercise.weight} lbs
-                          </Text>
-                        </TouchableOpacity>
+                        <Text className="text-xs font-semibold text-text-muted">
+                          Target: {currentExercise.weight} lbs
+                        </Text>
                       ) : null}
                     </View>
                     <View className="flex-row items-center justify-center gap-3">
@@ -792,25 +782,6 @@ export default function WorkoutScreen() {
                       numberOfLines={2}
                     />
                   </View>
-
-                  {/* Complete Exercise Button */}
-                  <TouchableOpacity
-                    className="bg-primary rounded-2xl py-4 mt-6"
-                    onPress={() => {
-                      // For single-set exercises, automatically mark the set as completed
-                      if (currentExercise.sets === 1) {
-                        updateProgress("setsCompleted", 1);
-                      }
-                      setShowCompleteModal(true);
-                    }}
-                    disabled={isCompletingExercise}
-                  >
-                    <Text className="text-center text-secondary font-semibold">
-                      {isCompletingExercise
-                        ? "Completing..."
-                        : "Complete Exercise"}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               ) : null}
             </View>

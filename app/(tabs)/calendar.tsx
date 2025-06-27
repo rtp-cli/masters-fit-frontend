@@ -442,7 +442,7 @@ export default function CalendarScreen() {
                 <Text className="text-base font-bold text-text-primary mb-md">
                   {formatDate(selectedDate)}
                 </Text>
-                <View className="bg-neutral-light-2 p-6 rounded-xl items-center">
+                <View className="bg-brand-light-2 p-6 rounded-xl items-center">
                   <Text className="text-base font-bold text-text-primary mb-xs">
                     Rest Day
                   </Text>
