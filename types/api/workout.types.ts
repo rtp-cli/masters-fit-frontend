@@ -95,6 +95,7 @@ export interface WorkoutBlock {
   id: number;
   blockType?: string;
   blockName?: string;
+  blockDurationMinutes?: number;
   timeCapMinutes?: number;
   rounds?: number;
   instructions?: string;
@@ -167,6 +168,7 @@ export interface ExerciseSessionData {
     blockId: number;
     blockType?: string;
     blockName?: string;
+    blockDurationMinutes?: number;
     instructions?: string;
     rounds?: number;
     timeCapMinutes?: number;
@@ -204,6 +206,7 @@ export interface WorkoutBlockWithExercise extends WorkoutBlockExercise {
     blockId: number;
     blockType?: string;
     blockName?: string;
+    blockDurationMinutes?: number;
     instructions?: string;
     rounds?: number;
     timeCapMinutes?: number;

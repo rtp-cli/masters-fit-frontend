@@ -5,7 +5,11 @@ import {
   WorkoutBlockWithExercises,
   getBlockTypeDisplayName,
 } from "../types/api/workout.types";
-import { formatEquipment, formatExerciseDuration } from "../utils";
+import {
+  formatEquipment,
+  formatExerciseDuration,
+  formatWorkoutDuration,
+} from "../utils";
 import { colors } from "../lib/theme";
 
 interface WorkoutBlockProps {
@@ -46,6 +50,11 @@ export default function WorkoutBlock({
 
   const getBlockDescription = (block: WorkoutBlockWithExercises) => {
     const parts = [];
+
+    // Show block duration if available (most accurate)
+    if (block.blockDurationMinutes && block.blockDurationMinutes > 0) {
+      parts.push(formatWorkoutDuration(block.blockDurationMinutes));
+    }
 
     if (block.rounds && block.rounds > 1) {
       parts.push(`${block.rounds} rounds`);

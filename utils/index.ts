@@ -365,6 +365,97 @@ export function calculateWorkoutDuration(
 }
 
 /**
+ * Calculate total workout duration from blocks using blockDurationMinutes when available
+ * @param blocks Array of workout blocks with blockDurationMinutes or exercises
+ * @returns Total workout time in minutes
+ */
+export function calculateWorkoutDurationFromBlocks(
+  blocks: Array<{
+    blockDurationMinutes?: number;
+    exercises?: Array<{
+      duration?: number;
+      sets?: number;
+      restTime?: number;
+    }>;
+  }>
+): number {
+  return blocks.reduce((total, block) => {
+    // Use blockDurationMinutes if available (most accurate)
+    if (block.blockDurationMinutes && block.blockDurationMinutes > 0) {
+      return total + block.blockDurationMinutes;
+    }
+
+    // Fallback to calculating from exercises
+    if (block.exercises && block.exercises.length > 0) {
+      const blockDurationSeconds = calculateWorkoutDuration(block.exercises);
+      return total + Math.round(blockDurationSeconds / 60); // Convert to minutes
+    }
+
+    return total;
+  }, 0);
+}
+
+/**
+ * Calculate estimated workout duration for a plan day using blocks
+ * @param planDay Plan day with blocks containing blockDurationMinutes or exercises
+ * @returns Total estimated workout time in minutes
+ */
+export function calculatePlanDayDuration(planDay: {
+  blocks?: Array<{
+    blockDurationMinutes?: number;
+    exercises?: Array<{
+      duration?: number;
+      sets?: number;
+      restTime?: number;
+    }>;
+  }>;
+}): number {
+  if (!planDay.blocks || planDay.blocks.length === 0) {
+    return 0;
+  }
+
+  const blockDuration = calculateWorkoutDurationFromBlocks(planDay.blocks);
+
+  // Check if we have AI-calculated blockDurationMinutes (which already include overhead)
+  const hasAICalculatedDurations = planDay.blocks.some(
+    (block) => block.blockDurationMinutes && block.blockDurationMinutes > 0
+  );
+
+  if (hasAICalculatedDurations) {
+    // AI-calculated durations already include overhead time, so just sum them
+    return blockDuration;
+  } else {
+    // Legacy calculation from exercises - add overhead time
+    const overheadMinutes = 10; // 5min warm-up + 3min cool-down + 2min transitions
+    return blockDuration + overheadMinutes;
+  }
+}
+
+/**
+ * Format workout duration with proper units
+ * @param durationMinutes Duration in minutes
+ * @returns Formatted duration string (e.g., "45 min", "1h 15m")
+ */
+export function formatWorkoutDuration(durationMinutes: number): string {
+  if (durationMinutes <= 0) {
+    return "0 min";
+  }
+
+  if (durationMinutes < 60) {
+    return `${Math.round(durationMinutes)} min`;
+  }
+
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = Math.round(durationMinutes % 60);
+
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${minutes}m`;
+}
+
+/**
  * Format exercise duration for display
  * @param duration Duration per set in seconds
  * @param sets Number of sets

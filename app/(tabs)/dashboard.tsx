@@ -25,6 +25,8 @@ import {
   formatNumber,
   formatDuration,
   calculateWorkoutDuration,
+  calculatePlanDayDuration,
+  formatWorkoutDuration,
   getCurrentDate,
   formatDateAsString,
 } from "../../utils";
@@ -32,6 +34,7 @@ import { fetchActiveWorkout } from "@lib/workouts";
 import {
   WorkoutWithDetails,
   PlanDayWithExercises,
+  PlanDayWithBlocks,
   PlanDayWithExercise,
 } from "../types";
 import { Ionicons } from "@expo/vector-icons";
@@ -525,45 +528,28 @@ export default function DashboardScreen() {
     );
   }
 
-  // Calculate total workout duration (properly accounting for sets and rest)
-  const totalDuration = (todaysWorkout as any)?.blocks
-    ? (todaysWorkout as any).blocks.reduce((total: number, block: any) => {
-        const blockExercises = block.exercises || [];
-        return (
-          total +
-          blockExercises.reduce((blockTotal: number, exercise: any) => {
-            let exerciseDuration = 0;
+  // Helper function to calculate duration for both legacy and new workout structures
+  const calculateTotalDuration = (
+    workout: PlanDayWithExercises | null
+  ): number => {
+    if (!workout) return 0;
 
-            // For time-based exercises (duration specified)
-            if (exercise.duration) {
-              exerciseDuration = exercise.duration;
-              // Add rest time if specified
-              if (exercise.restTime) {
-                exerciseDuration += exercise.restTime;
-              }
-              // Multiply by sets if specified
-              if (exercise.sets && exercise.sets > 1) {
-                exerciseDuration *= exercise.sets;
-              }
-            } else if (exercise.sets && exercise.reps) {
-              // For traditional sets/reps exercises, estimate duration
-              // Assume 2 seconds per rep + 60 seconds rest between sets
-              const repTime = exercise.reps * 2;
-              const setRestTime =
-                exercise.sets > 1 ? (exercise.sets - 1) * 60 : 0;
-              exerciseDuration = repTime * exercise.sets + setRestTime;
-            } else {
-              // Default duration for exercises without specific parameters
-              exerciseDuration = 120; // 2 minutes default
-            }
+    // Check if this is the new structure with blocks
+    if ((workout as any).blocks) {
+      return calculatePlanDayDuration(workout as any);
+    }
 
-            return blockTotal + exerciseDuration;
-          }, 0)
-        );
-      }, 0)
-    : todaysWorkout?.exercises
-      ? calculateWorkoutDuration(todaysWorkout.exercises)
-      : 0;
+    // Legacy structure with exercises directly
+    if (workout.exercises) {
+      const durationSeconds = calculateWorkoutDuration(workout.exercises);
+      return Math.round(durationSeconds / 60); // Convert to minutes
+    }
+
+    return 0;
+  };
+
+  // Calculate total workout duration
+  const totalDurationMinutes = calculateTotalDuration(todaysWorkout);
 
   // Calculate workout completion rate for today
   const todayCompletionRate = (todaysWorkout as any)?.blocks
@@ -656,9 +642,9 @@ export default function DashboardScreen() {
                   <Text className="text-base font-semibold text-text-primary mb-1">
                     Active Workout
                   </Text>
-                  {todaysWorkout && totalDuration > 0 ? (
+                  {todaysWorkout && totalDurationMinutes > 0 ? (
                     <Text className="text-base font-semibold text-text-primary">
-                      {Math.floor(totalDuration / 60)} min
+                      {formatWorkoutDuration(totalDurationMinutes)}
                     </Text>
                   ) : (
                     <Text className="text-base font-semibold text-text-muted">

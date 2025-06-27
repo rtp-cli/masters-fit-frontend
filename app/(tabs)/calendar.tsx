@@ -28,6 +28,8 @@ import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
 import WorkoutBlock from "@components/WorkoutBlock";
 import {
   calculateWorkoutDuration,
+  calculatePlanDayDuration,
+  formatWorkoutDuration,
   formatExerciseDuration,
   formatDateAsString,
 } from "../../utils";
@@ -257,37 +259,9 @@ export default function CalendarScreen() {
     }, 0);
   };
 
-  const calculateTotalWorkoutDuration = (blocks: any[]) => {
-    const allExercises = blocks.flatMap((block) => block.exercises || []);
-
-    // Enhanced duration calculation that considers different exercise types
-    return allExercises.reduce((total, exercise) => {
-      let exerciseDuration = 0;
-
-      // For time-based exercises (duration specified)
-      if (exercise.duration) {
-        exerciseDuration = exercise.duration;
-        // Add rest time if specified
-        if (exercise.restTime) {
-          exerciseDuration += exercise.restTime;
-        }
-        // Multiply by sets if specified
-        if (exercise.sets && exercise.sets > 1) {
-          exerciseDuration *= exercise.sets;
-        }
-      } else if (exercise.sets && exercise.reps) {
-        // For traditional sets/reps exercises, estimate duration
-        // Assume 2 seconds per rep + 60 seconds rest between sets
-        const repTime = exercise.reps * 2;
-        const setRestTime = exercise.sets > 1 ? (exercise.sets - 1) * 60 : 0;
-        exerciseDuration = repTime * exercise.sets + setRestTime;
-      } else {
-        // Default duration for exercises without specific parameters
-        exerciseDuration = 120; // 2 minutes default
-      }
-
-      return total + exerciseDuration;
-    }, 0);
+  const calculateTotalWorkoutDuration = (planDay: any) => {
+    // Use the new utility function that prioritizes blockDurationMinutes
+    return calculatePlanDayDuration(planDay);
   };
 
   if (loading) {
@@ -467,6 +441,14 @@ export default function CalendarScreen() {
                             currentSelectedPlanDay.blocks || []
                           )}{" "}
                           exercises
+                        </Text>
+                        <Text className="text-xs text-text-muted mx-2">•</Text>
+                        <Text className="text-xs text-text-muted">
+                          {formatWorkoutDuration(
+                            calculateTotalWorkoutDuration(
+                              currentSelectedPlanDay
+                            )
+                          )}
                         </Text>
                       </View>
                     </View>
