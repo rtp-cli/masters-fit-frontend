@@ -456,7 +456,7 @@ export default function SearchScreen() {
                   onSubmitEditing={performExerciseSearch}
                   placeholderTextColor={colors.neutral.medium[3]}
                 />
-                {exerciseQuery.length > 0 && (
+                {exerciseQuery.length > 0 ? (
                   <TouchableOpacity
                     onPress={() => setExerciseQuery("")}
                     className="p-1"
@@ -467,7 +467,7 @@ export default function SearchScreen() {
                       color={colors.neutral.medium[3]}
                     />
                   </TouchableOpacity>
-                )}
+                ) : null}
               </View>
             </View>
 
@@ -488,7 +488,7 @@ export default function SearchScreen() {
         </View>
 
         {/* Date Picker - iOS and Android handled separately */}
-        {showDatePicker && (
+        {showDatePicker ? (
           <>
             {Platform.OS === "ios" ? (
               <Modal
@@ -594,10 +594,10 @@ export default function SearchScreen() {
               />
             )}
           </>
-        )}
+        ) : null}
 
         {/* Date Search Results Header */}
-        {selectedDate && dateResult && (
+        {selectedDate && dateResult ? (
           <View className="px-4 pb-2">
             <View className="flex-row items-center justify-between">
               <Text className="text-sm text-text-muted">
@@ -625,10 +625,10 @@ export default function SearchScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Exercise Detail View */}
-        {exerciseResult && (
+        {exerciseResult ? (
           <View className="px-4 pb-4">
             <View className="bg-white rounded-2xl p-5 shadow-sm">
               {/* Exercise Link at the top inside card */}
@@ -747,7 +747,7 @@ export default function SearchScreen() {
               </View>
 
               {/* User Performance Stats */}
-              {exerciseResult.userStats && (
+              {exerciseResult.userStats ? (
                 <View className="mt-6 pt-6 border-t border-neutral-light-2">
                   <Text className="text-lg font-semibold text-text-primary mb-4">
                     Your Performance
@@ -850,7 +850,7 @@ export default function SearchScreen() {
                   </View>
 
                   {/* Last Performed */}
-                  {exerciseResult.userStats.lastPerformed && (
+                  {exerciseResult.userStats.lastPerformed ? (
                     <View className="mt-5 items-center">
                       <Text className="text-sm text-text-muted text-center">
                         Last performed:{" "}
@@ -859,15 +859,15 @@ export default function SearchScreen() {
                         )}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
                 </View>
-              )}
+              ) : null}
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Date Search Results */}
-        {dateResult && (
+        {dateResult ? (
           <View className="px-4">
             <View className="bg-white rounded-2xl p-5 shadow-sm">
               <View className="flex-row justify-between items-center mb-3">
@@ -923,7 +923,7 @@ export default function SearchScreen() {
                 </Text>
               </View>
 
-              {dateResult.planDay && (
+              {dateResult.planDay ? (
                 <View>
                   <Text className="text-lg font-semibold text-text-primary mb-4">
                     Exercises (
@@ -969,11 +969,11 @@ export default function SearchScreen() {
                                   </Text>
                                 </View>
                               </View>
-                              {block.instructions && (
+                              {block.instructions ? (
                                 <Text className="text-xs text-text-muted mt-2">
                                   {block.instructions}
                                 </Text>
-                              )}
+                              ) : null}
                             </View>
 
                             {/* Exercises in this block */}
@@ -1058,35 +1058,35 @@ export default function SearchScreen() {
 
                                   {/* Exercise Parameters */}
                                   <View className="flex-row flex-wrap mb-2">
-                                    {exercise.sets && exercise.reps && (
+                                    {exercise.sets && exercise.reps ? (
                                       <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                         <Text className="text-xs font-medium text-text-primary">
                                           {exercise.sets} × {exercise.reps}
                                         </Text>
                                       </View>
-                                    )}
-                                    {exercise.duration && (
+                                    ) : null}
+                                    {exercise.duration ? (
                                       <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                         <Text className="text-xs font-medium text-text-primary">
                                           {exercise.duration}s
                                         </Text>
                                       </View>
-                                    )}
-                                    {exercise.weight && (
+                                    ) : null}
+                                    {exercise.weight ? (
                                       <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                         <Text className="text-xs font-medium text-text-primary">
                                           {exercise.weight} lbs
                                         </Text>
                                       </View>
-                                    )}
+                                    ) : null}
                                     {exercise.restTime &&
-                                      exercise.restTime > 0 && (
-                                        <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
-                                          <Text className="text-xs font-medium text-text-primary">
-                                            {exercise.restTime}s rest
-                                          </Text>
-                                        </View>
-                                      )}
+                                    exercise.restTime > 0 ? (
+                                      <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
+                                        <Text className="text-xs font-medium text-text-primary">
+                                          {exercise.restTime}s rest
+                                        </Text>
+                                      </View>
+                                    ) : null}
                                   </View>
 
                                   {/* Individual muscle group tags */}
@@ -1112,7 +1112,7 @@ export default function SearchScreen() {
                                       )}
                                     {getIndividualMuscleGroups(
                                       exercise?.exercise?.muscleGroups
-                                    ).length > 3 && (
+                                    ).length > 3 ? (
                                       <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
                                         <Text className="text-xs font-medium text-text-muted">
                                           +
@@ -1121,7 +1121,7 @@ export default function SearchScreen() {
                                           ).length - 3}
                                         </Text>
                                       </View>
-                                    )}
+                                    ) : null}
                                   </View>
                                 </TouchableOpacity>
                               )
@@ -1211,34 +1211,34 @@ export default function SearchScreen() {
 
                             {/* Exercise Parameters */}
                             <View className="flex-row flex-wrap mb-2">
-                              {exercise.sets && exercise.reps && (
+                              {exercise.sets && exercise.reps ? (
                                 <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                   <Text className="text-xs font-medium text-text-primary">
                                     {exercise.sets} × {exercise.reps}
                                   </Text>
                                 </View>
-                              )}
-                              {exercise.duration && (
+                              ) : null}
+                              {exercise.duration ? (
                                 <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                   <Text className="text-xs font-medium text-text-primary">
                                     {exercise.duration}s
                                   </Text>
                                 </View>
-                              )}
-                              {exercise.weight && (
+                              ) : null}
+                              {exercise.weight ? (
                                 <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                   <Text className="text-xs font-medium text-text-primary">
                                     {exercise.weight} lbs
                                   </Text>
                                 </View>
-                              )}
-                              {exercise.restTime && exercise.restTime > 0 && (
+                              ) : null}
+                              {exercise.restTime && exercise.restTime > 0 ? (
                                 <View className="bg-brand-light-2 rounded-full px-2 py-1 mr-1 mb-1">
                                   <Text className="text-xs font-medium text-text-primary">
                                     {exercise.restTime}s rest
                                   </Text>
                                 </View>
-                              )}
+                              ) : null}
                             </View>
 
                             {/* Individual muscle group tags */}
@@ -1259,7 +1259,7 @@ export default function SearchScreen() {
                                 ))}
                               {getIndividualMuscleGroups(
                                 exercise?.exercise?.muscleGroups
-                              ).length > 3 && (
+                              ).length > 3 ? (
                                 <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
                                   <Text className="text-xs font-medium text-text-muted">
                                     +
@@ -1268,19 +1268,19 @@ export default function SearchScreen() {
                                     ).length - 3}
                                   </Text>
                                 </View>
-                              )}
+                              ) : null}
                             </View>
                           </TouchableOpacity>
                         )
                       )}
                 </View>
-              )}
+              ) : null}
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* General Exercise Search Results */}
-        {generalResults.length > 0 && (
+        {generalResults.length > 0 ? (
           <View className="px-4">
             <Text className="text-lg font-semibold text-text-primary mb-4 p-4">
               Exercise Results ({safeString(generalResults.length)})
@@ -1331,7 +1331,7 @@ export default function SearchScreen() {
                         </View>
                       ))}
                     {getIndividualMuscleGroups(exercise?.muscleGroups).length >
-                      3 && (
+                    3 ? (
                       <View className="bg-neutral-300 rounded-full px-2 py-1 mr-1 mb-1">
                         <Text className="text-xs font-medium text-text-muted">
                           +
@@ -1339,7 +1339,7 @@ export default function SearchScreen() {
                             .length - 3}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
 
                   <Text className="text-sm text-text-muted mb-2">
@@ -1348,32 +1348,32 @@ export default function SearchScreen() {
 
                   {/* Equipment Pills */}
                   {exercise?.equipment &&
-                    Array.isArray(exercise.equipment) &&
-                    exercise.equipment.length > 0 && (
-                      <View className="mb-2">
-                        <View className="flex-row flex-wrap">
-                          {exercise.equipment
-                            .flatMap((item: string) =>
-                              item.split(",").map((s) => s.trim())
-                            )
-                            .map((item: string, equipmentIndex: number) => (
-                              <View
-                                key={equipmentIndex}
-                                className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
-                              >
-                                <Text className="text-xs font-medium text-text-primary">
-                                  {formatEquipmentProperly(item)}
-                                </Text>
-                              </View>
-                            ))}
-                        </View>
+                  Array.isArray(exercise.equipment) &&
+                  exercise.equipment.length > 0 ? (
+                    <View className="mb-2">
+                      <View className="flex-row flex-wrap">
+                        {exercise.equipment
+                          .flatMap((item: string) =>
+                            item.split(",").map((s) => s.trim())
+                          )
+                          .map((item: string, equipmentIndex: number) => (
+                            <View
+                              key={equipmentIndex}
+                              className="bg-neutral-light-1 rounded-full px-2 py-1 mr-1.5 mb-1"
+                            >
+                              <Text className="text-xs font-medium text-text-primary">
+                                {formatEquipmentProperly(item)}
+                              </Text>
+                            </View>
+                          ))}
                       </View>
-                    )}
-                  {exercise?.description && (
+                    </View>
+                  ) : null}
+                  {exercise?.description ? (
                     <Text className="text-sm text-text-muted mb-2">
                       {safeString(exercise.description)}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
                 <Ionicons
                   name="chevron-forward"
@@ -1383,67 +1383,67 @@ export default function SearchScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        )}
+        ) : null}
 
         {/* Empty State */}
         {!isLoading &&
-          !dateResult &&
-          !exerciseResult &&
-          generalResults.length === 0 &&
-          (exerciseQuery.trim() || dateQuery.trim()) && (
-            <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-sm">
-              <Ionicons
-                name="search-outline"
-                size={40}
-                color={colors.neutral.medium[1]}
-              />
-              <Text className="text-lg font-semibold text-text-muted mt-4">
-                No results found
-              </Text>
-              <Text className="text-sm text-text-muted text-center mt-2">
-                Try searching for a date (YYYY-MM-DD) or exercise name
-              </Text>
-            </View>
-          )}
+        !dateResult &&
+        !exerciseResult &&
+        generalResults.length === 0 &&
+        (exerciseQuery.trim() || dateQuery.trim()) ? (
+          <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-sm">
+            <Ionicons
+              name="search-outline"
+              size={40}
+              color={colors.neutral.medium[1]}
+            />
+            <Text className="text-lg font-semibold text-text-muted mt-4">
+              No results found
+            </Text>
+            <Text className="text-sm text-text-muted text-center mt-2">
+              Try searching for a date (YYYY-MM-DD) or exercise name
+            </Text>
+          </View>
+        ) : null}
 
         {/* How to Search Instructions */}
         {!exerciseQuery.trim() &&
-          !dateQuery.trim() &&
-          !dateResult &&
-          !exerciseResult &&
-          generalResults.length === 0 && (
-            <View className="px-4">
-              <Text className="text-lg font-semibold text-text-primary mb-5 ml-2">
-                How to Search
+        !dateQuery.trim() &&
+        !dateResult &&
+        !exerciseResult &&
+        generalResults.length === 0 ? (
+          <View className="px-4">
+            <Text className="text-lg font-semibold text-text-primary mb-5 ml-2">
+              How to Search
+            </Text>
+
+            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={colors.brand.primary}
+                />
+              </View>
+              <Text className="flex-1 text-sm text-text-muted">
+                Search by date to see the workout for that day
               </Text>
-
-              <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
-                <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.brand.primary}
-                  />
-                </View>
-                <Text className="flex-1 text-sm text-text-muted">
-                  Search by date to see the workout for that day
-                </Text>
-              </View>
-
-              <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
-                <View className="bg-yellow-100 p-2 rounded-lg mr-3">
-                  <Ionicons
-                    name="barbell-outline"
-                    size={20}
-                    color={colors.brand.primary}
-                  />
-                </View>
-                <Text className="flex-1 text-sm text-text-muted">
-                  Search by exercise name to see exercises and performance stats
-                </Text>
-              </View>
             </View>
-          )}
+
+            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+                <Ionicons
+                  name="barbell-outline"
+                  size={20}
+                  color={colors.brand.primary}
+                />
+              </View>
+              <Text className="flex-1 text-sm text-text-muted">
+                Search by exercise name to see exercises and performance stats
+              </Text>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
 
       {/* Exercise Link Modal */}

@@ -983,7 +983,9 @@ export default function DashboardScreen() {
                       How you're progressing with your planned weights (
                       {weightPerformanceFilter === "3M"
                         ? "Last 3 months"
-                        : weightPerformanceFilter}
+                        : weightPerformanceFilter === "1M"
+                          ? "Last 1 month"
+                          : "Last 1 week"}
                       )
                     </Text>
                   </View>
@@ -1100,7 +1102,9 @@ export default function DashboardScreen() {
                       How you're progressing with your planned weights (
                       {weightPerformanceFilter === "3M"
                         ? "Last 3 months"
-                        : weightPerformanceFilter}
+                        : weightPerformanceFilter === "1M"
+                          ? "Last 1 month"
+                          : "Last 1 week"}
                       )
                     </Text>
                   </View>
@@ -1160,7 +1164,11 @@ export default function DashboardScreen() {
 
                   <Text className="text-xs text-text-muted mb-3">
                     Your weight progression over time (
-                    {strengthFilter === "3M" ? "Last 3 months" : strengthFilter}
+                    {strengthFilter === "3M"
+                      ? "Last 3 months"
+                      : strengthFilter === "1M"
+                        ? "Last 1 month"
+                        : "Last 1 week"}
                     )
                   </Text>
                 </View>
@@ -1333,7 +1341,9 @@ export default function DashboardScreen() {
                       Types of exercises you've been completing (
                       {workoutTypeFilter === "3M"
                         ? "Last 3 months"
-                        : workoutTypeFilter}
+                        : workoutTypeFilter === "1M"
+                          ? "Last 1 month"
+                          : "Last 1 week"}
                       )
                     </Text>
                   </View>
