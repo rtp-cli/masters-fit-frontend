@@ -37,6 +37,7 @@ export interface CreateExerciseLogParams {
   planDayExerciseId: number;
   setsCompleted: number;
   repsCompleted: number;
+  roundsCompleted?: number;
   weightUsed: number;
   isComplete: boolean;
   timeTaken?: number;
@@ -46,6 +47,7 @@ export interface CreateExerciseLogParams {
 export interface ExerciseProgress {
   setsCompleted: number;
   repsCompleted: number;
+  roundsCompleted: number;
   weightUsed: number;
   duration: number;
   restTime: number;

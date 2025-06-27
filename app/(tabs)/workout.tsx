@@ -35,6 +35,7 @@ import { Exercise } from "@/types/api/exercise.types";
 interface ExerciseProgress {
   setsCompleted: number;
   repsCompleted: number;
+  roundsCompleted: number;
   weightUsed: number;
   duration: number;
   restTime: number;
@@ -156,6 +157,7 @@ export default function WorkoutScreen() {
         (exercise: WorkoutBlockWithExercise) => ({
           setsCompleted: 0,
           repsCompleted: 0,
+          roundsCompleted: 0,
           weightUsed: exercise.weight || 0,
           duration: exercise.duration || 0,
           restTime: exercise.restTime || 0,
@@ -221,6 +223,7 @@ export default function WorkoutScreen() {
         planDayExerciseId: currentExercise.id,
         setsCompleted: currentProgress.setsCompleted,
         repsCompleted: currentProgress.repsCompleted,
+        roundsCompleted: currentProgress.roundsCompleted,
         weightUsed: currentProgress.weightUsed,
         isComplete: true,
         timeTaken: exerciseTimer, // This logs the actual time spent on exercise
@@ -468,9 +471,55 @@ export default function WorkoutScreen() {
                 </View>
               ) : null}
 
-              {/* Progress Tracking - Sleek Twitter-style */}
               {isWorkoutStarted && currentProgress ? (
                 <View className="space-y-4">
+                  {/* Rounds - Show if block has multiple rounds */}
+                  {currentBlock &&
+                  currentBlock.rounds &&
+                  currentBlock.rounds > 1 ? (
+                    <View className="rounded-2xl p-4">
+                      <View className="flex-row items-center justify-between mb-3">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          Rounds
+                        </Text>
+                        <Text className="text-xs text-text-muted">
+                          Target: {currentBlock.rounds} Rounds
+                        </Text>
+                      </View>
+                      <View className="flex-row justify-center gap-2">
+                        {Array.from({ length: currentBlock.rounds }, (_, i) => {
+                          const isCompleted =
+                            i < currentProgress.roundsCompleted;
+                          return (
+                            <TouchableOpacity
+                              key={i}
+                              className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
+                                isCompleted
+                                  ? "border-primary bg-primary"
+                                  : "border-neutral-medium-1 bg-background"
+                              }`}
+                              onPress={() =>
+                                updateProgress("roundsCompleted", i + 1)
+                              }
+                            >
+                              {isCompleted ? (
+                                <Ionicons
+                                  name="checkmark"
+                                  size={14}
+                                  color={colors.text.secondary}
+                                />
+                              ) : (
+                                <Text className="text-xs font-semibold text-text-muted">
+                                  {i + 1}
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ) : null}
+
                   {/* Sets - Only show if more than 1 set */}
                   {currentExercise.sets && currentExercise.sets > 1 ? (
                     <View className=" rounded-2xl p-4">

@@ -7,6 +7,7 @@ import {
   UpdateWorkoutParams,
   CreateExerciseLogParams,
   CreateWorkoutLogParams,
+  ExerciseLog,
 } from "@/types/api";
 
 // Simple event system for workout data updates
@@ -271,15 +272,28 @@ export function getNextWorkout(workouts: Workout[]): Workout | null {
  */
 export async function createExerciseLog(
   params: CreateExerciseLogParams
-): Promise<any | null> {
+): Promise<ExerciseLog | null> {
   try {
-    const exerciseLog = await apiRequest("/logs/exercise", {
+    console.log("🔄 Creating exercise log...", params);
+
+    const response = await apiRequest<ExerciseLog>("/logs/exercise", {
       method: "POST",
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        planDayExerciseId: params.planDayExerciseId,
+        setsCompleted: params.setsCompleted,
+        repsCompleted: params.repsCompleted,
+        roundsCompleted: params.roundsCompleted,
+        weightUsed: params.weightUsed,
+        isComplete: params.isComplete,
+        timeTaken: params.timeTaken,
+        notes: params.notes,
+      }),
     });
-    return exerciseLog;
+
+    console.log("✅ Exercise log created successfully:", response);
+    return response;
   } catch (error) {
-    console.error("Error creating exercise log:", error);
+    console.error("❌ Error creating exercise log:", error);
     return null;
   }
 }

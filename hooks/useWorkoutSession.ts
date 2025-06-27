@@ -421,6 +421,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
           planDayExerciseId: currentData.planDayExerciseId,
           setsCompleted: currentData.setsCompleted,
           repsCompleted: currentData.repsCompleted,
+          roundsCompleted: currentData.roundsCompleted,
           weightUsed: currentData.weightUsed || 0,
           timeTaken: exerciseTimer,
           notes: notes || currentData.notes,
