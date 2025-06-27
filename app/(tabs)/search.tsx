@@ -1413,16 +1413,16 @@ export default function SearchScreen() {
         !exerciseResult &&
         generalResults.length === 0 ? (
           <View className="px-4">
-            <Text className="text-lg font-semibold text-text-primary mb-5 ml-2">
+            <Text className="text-lg font-bold text-text-primary p-4">
               How to Search
             </Text>
 
             <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
-              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+              <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="calendar-outline"
                   size={20}
-                  color={colors.brand.primary}
+                  color={colors.neutral.light[1]}
                 />
               </View>
               <Text className="flex-1 text-sm text-text-muted">
@@ -1431,11 +1431,11 @@ export default function SearchScreen() {
             </View>
 
             <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
-              <View className="bg-yellow-100 p-2 rounded-lg mr-3">
+              <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="barbell-outline"
                   size={20}
-                  color={colors.brand.primary}
+                  color={colors.neutral.light[1]}
                 />
               </View>
               <Text className="flex-1 text-sm text-text-muted">
