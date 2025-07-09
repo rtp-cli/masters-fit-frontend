@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { fetchUserProfile, Profile } from "@lib/profile";
 import { useDashboard } from "@hooks/useDashboard";
 import { formatEnumValue, getIntensityText } from "@utils/index";
+import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
 
 export default function SettingsScreen() {
@@ -279,7 +280,9 @@ export default function SettingsScreen() {
               <View className="flex-row justify-between items-center">
                 <Text className="text-sm text-text-primary">Height</Text>
                 <Text className="text-sm text-text-muted">
-                  {profile.height ? `${profile.height} cm` : "Not specified"}
+                  {profile.height
+                    ? formatHeight(profile.height)
+                    : "Not specified"}
                 </Text>
               </View>
             </View>
@@ -288,7 +291,7 @@ export default function SettingsScreen() {
               <View className="flex-row justify-between items-center">
                 <Text className="text-sm text-text-primary">Weight</Text>
                 <Text className="text-sm text-text-muted">
-                  {profile.weight ? `${profile.weight} kg` : "Not specified"}
+                  {profile.weight ? `${profile.weight} lbs` : "Not specified"}
                 </Text>
               </View>
             </View>
