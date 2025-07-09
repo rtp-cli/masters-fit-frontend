@@ -969,7 +969,7 @@ export default function WorkoutScreen() {
                 size={20}
                 color={colors.text.secondary}
               />
-              <Text className="text-secondary font-bold text-lg ml-2">
+              <Text className="text-secondary font-semibold ml-2">
                 Complete Exercise
               </Text>
             </TouchableOpacity>
