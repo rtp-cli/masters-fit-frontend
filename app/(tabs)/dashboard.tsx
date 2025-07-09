@@ -62,6 +62,23 @@ const DONUT_COLORS = [
   colors.brand.dark[5],
 ];
 
+function formatWorkoutTypeLabel(tag: string): string {
+  if (!tag) return "";
+  const specialCases: Record<string, string> = {
+    amrap: "AMRAP",
+    emom: "EMOM",
+    tabata: "Tabata",
+    hiit: "HIIT",
+    rft: "RFT",
+    ladder: "Ladder",
+    pyramid: "Pyramid",
+    superset: "Superset",
+    circuit: "Circuit",
+  };
+  if (specialCases[tag.toLowerCase()]) return specialCases[tag.toLowerCase()];
+  return tag.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -304,24 +321,33 @@ export default function DashboardScreen() {
     >();
 
     filteredData.forEach((day) => {
-      day.workoutTypes.forEach((type) => {
-        if (!typeAggregates.has(type.tag)) {
-          typeAggregates.set(type.tag, {
-            tag: type.tag,
-            label: type.label,
-            totalSets: 0,
-            totalReps: 0,
-            exerciseCount: 0,
-            completedWorkouts: 0,
-          });
-        }
+      day.workoutTypes
+        .filter(
+          (type) =>
+            // Filter out warm-up and cool-down exercises
+            type.tag !== "warmup" &&
+            type.tag !== "cooldown" &&
+            type.tag !== "warm-up" &&
+            type.tag !== "cool-down"
+        )
+        .forEach((type) => {
+          if (!typeAggregates.has(type.tag)) {
+            typeAggregates.set(type.tag, {
+              tag: type.tag,
+              label: type.label,
+              totalSets: 0,
+              totalReps: 0,
+              exerciseCount: 0,
+              completedWorkouts: 0,
+            });
+          }
 
-        const aggregate = typeAggregates.get(type.tag)!;
-        aggregate.totalSets += type.totalSets;
-        aggregate.totalReps += type.totalReps;
-        aggregate.exerciseCount += type.exerciseCount;
-        aggregate.completedWorkouts += 1; // Count days where this type appeared
-      });
+          const aggregate = typeAggregates.get(type.tag)!;
+          aggregate.totalSets += type.totalSets;
+          aggregate.totalReps += type.totalReps;
+          aggregate.exerciseCount += type.exerciseCount;
+          aggregate.completedWorkouts += 1; // Count days where this type appeared
+        });
     });
 
     const totalSets = Array.from(typeAggregates.values()).reduce(
@@ -337,6 +363,14 @@ export default function DashboardScreen() {
 
     // Create distribution with percentages and colors
     const distribution = Array.from(typeAggregates.values())
+      .filter(
+        (type) =>
+          // Filter out warm-up and cool-down exercises
+          type.tag !== "warmup" &&
+          type.tag !== "cooldown" &&
+          type.tag !== "warm-up" &&
+          type.tag !== "cool-down"
+      )
       .map((type) => ({
         ...type,
         percentage:
