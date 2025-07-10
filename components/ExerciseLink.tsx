@@ -94,7 +94,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         if (videoId) {
           return {
             type: "youtube",
-            embedUrl: `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0&modestbranding=1`,
+            embedUrl: `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0&modestbranding=1&autoplay=1`,
             thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
             isValid: true,
           };
@@ -497,21 +497,28 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     if (variant === "hero") {
       return (
         <TouchableOpacity
-          className="h-80 border border-gray-300 rounded-lg bg-white items-center justify-center"
+          className="relative h-80"
           onPress={() => setShowVideo(true)}
         >
-          <Ionicons
-            name="play-circle-outline"
-            size={48}
-            color={colors.text.muted}
+          <Image
+            source={{ uri: linkInfo.thumbnailUrl }}
+            className="w-full h-full"
+            resizeMode="cover"
+            onError={() => {
+              // Fallback to generic placeholder if thumbnail fails
+              setImageError(true);
+            }}
           />
-          <Text
-            variant="bodySmall"
-            color={colors.text.muted}
-            className="mt-2 text-center"
-          >
-            YouTube Video: {exerciseName}
-          </Text>
+          {/* Play button overlay */}
+          <View className="absolute inset-0 bg-black/20 items-center justify-center">
+            <View className="bg-red-600 rounded-full w-20 h-20 items-center justify-center">
+              <Ionicons
+                name="play"
+                size={32}
+                color="white"
+              />
+            </View>
+          </View>
         </TouchableOpacity>
       );
     }
@@ -519,21 +526,28 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     return (
       <View className={`my-2 ${style ? "" : ""}`}>
         <TouchableOpacity
-          className="border border-gray-300 rounded-lg bg-white p-4 items-center justify-center h-32"
+          className="relative rounded-lg overflow-hidden"
           onPress={() => setShowVideo(true)}
         >
-          <Ionicons
-            name="play-circle-outline"
-            size={32}
-            color={colors.text.muted}
+          <Image
+            source={{ uri: linkInfo.thumbnailUrl }}
+            className="w-full h-48"
+            resizeMode="cover"
+            onError={() => {
+              // Fallback to generic placeholder if thumbnail fails
+              setImageError(true);
+            }}
           />
-          <Text
-            variant="bodySmall"
-            color={colors.text.muted}
-            className="mt-2 text-center"
-          >
-            YouTube Video: {exerciseName}
-          </Text>
+          {/* Play button overlay */}
+          <View className="absolute inset-0 bg-black/20 items-center justify-center">
+            <View className="bg-red-600 rounded-full w-16 h-16 items-center justify-center">
+              <Ionicons
+                name="play"
+                size={24}
+                color="white"
+              />
+            </View>
+          </View>
         </TouchableOpacity>
       </View>
     );
