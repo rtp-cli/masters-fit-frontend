@@ -8,7 +8,16 @@ import {
   CreateExerciseLogParams,
   CreateWorkoutLogParams,
   ExerciseLog,
+  PlanDayWithBlocks,
 } from "@/types/api";
+
+// Simple cache for active workout
+let activeWorkoutCache: {
+  timestamp: number;
+  workout: PlanDayWithBlocks | null;
+} | null = null;
+
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 // Simple event system for workout data updates
 const workoutUpdateListeners: Array<() => void> = [];
@@ -31,6 +40,12 @@ export const notifyWorkoutUpdated = () => {
       console.error("Error in workout update listener:", error);
     }
   });
+};
+
+export const invalidateActiveWorkoutCache = () => {
+  console.log("Invalidating active workout cache");
+  activeWorkoutCache = null;
+  notifyWorkoutUpdated();
 };
 
 /**
@@ -225,9 +240,45 @@ export async function regenerateWorkoutPlan(
 }
 
 /**
+ * Mark a plan day as complete
+ */
+export async function markPlanDayAsComplete(
+  planDayId: number
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/day/${planDayId}/complete`,
+      {
+        method: "POST",
+      }
+    );
+    // When a plan day is completed, the active workout cache should be invalidated
+    // to reflect this change on next load.
+    invalidateActiveWorkoutCache();
+    return response;
+  } catch (error) {
+    console.error(`Error marking plan day ${planDayId} as complete:`, error);
+    return null;
+  }
+}
+
+/**
  * Fetch active workout
  */
-export async function fetchActiveWorkout(): Promise<any | null> {
+export async function fetchActiveWorkout(
+  forceRefresh = false
+): Promise<any | null> {
+  const now = Date.now();
+
+  if (
+    !forceRefresh &&
+    activeWorkoutCache &&
+    now - activeWorkoutCache.timestamp < CACHE_DURATION_MS
+  ) {
+    console.log("Returning cached active workout");
+    return activeWorkoutCache.workout;
+  }
+
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -236,6 +287,13 @@ export async function fetchActiveWorkout(): Promise<any | null> {
     const response = await apiRequest<any>(
       `/workouts/${user.id}/active-workout`
     );
+
+    // Update cache
+    activeWorkoutCache = {
+      timestamp: now,
+      workout: response,
+    };
+
     return response;
   } catch (error) {
     console.error("Error fetching active workout:", error);
@@ -433,6 +491,7 @@ export async function markExerciseCompleted(
   workoutId: number,
   planDayExerciseId: number
 ): Promise<any | null> {
+  invalidateActiveWorkoutCache();
   try {
     const response = await apiRequest<any>(
       `/logs/workout/${workoutId}/exercise/${planDayExerciseId}`,
@@ -477,6 +536,7 @@ export async function regenerateDailyWorkout(
   planDayId: number,
   regenerationReason: string
 ): Promise<{ success: boolean; planDay: any } | null> {
+  invalidateActiveWorkoutCache();
   try {
     const response = await apiRequest<{ success: boolean; planDay: any }>(
       `/workouts/${userId}/days/${planDayId}/regenerate`,

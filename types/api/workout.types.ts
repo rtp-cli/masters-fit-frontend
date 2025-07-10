@@ -223,6 +223,7 @@ export interface WorkoutBlockWithExercises
 export interface PlanDayWithBlocks
   extends Omit<PlanDay, "created_at" | "updated_at"> {
   blocks: WorkoutBlockWithExercises[];
+  isComplete: boolean;
   created_at: Date;
   updated_at: Date;
 }

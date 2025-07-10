@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,16 @@ import {
   Modal,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useFocusEffect } from "@react-navigation/native";
-import { fetchActiveWorkout, createExerciseLog } from "@/lib/workouts";
+import {
+  fetchActiveWorkout,
+  createExerciseLog,
+  markPlanDayAsComplete,
+} from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import {
   calculateWorkoutDuration,
@@ -58,6 +63,7 @@ export default function WorkoutScreen() {
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Timer state
   const [workoutTimer, setWorkoutTimer] = useState(0);
@@ -90,6 +96,7 @@ export default function WorkoutScreen() {
   const progressPercent =
     exercises.length > 0 ? (currentExerciseIndex / exercises.length) * 100 : 0;
 
+  console.log("WORKOUT", workout);
   // Timer management
   useEffect(() => {
     if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
@@ -111,12 +118,14 @@ export default function WorkoutScreen() {
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
 
   // Load workout data
-  const loadWorkout = async () => {
+  const loadWorkout = async (forceRefresh = false) => {
     try {
-      setLoading(true);
+      if (!forceRefresh) {
+        setLoading(true);
+      }
       setError(null);
 
-      const response = await fetchActiveWorkout();
+      const response = await fetchActiveWorkout(forceRefresh);
 
       if (!response?.workout?.planDays?.length) {
         setWorkout(null);
@@ -147,6 +156,13 @@ export default function WorkoutScreen() {
         return;
       }
 
+      // If the plan day is already marked as complete, show the completed screen.
+      if (todaysWorkout.isComplete) {
+        setWorkout(todaysWorkout);
+        setIsWorkoutCompleted(true);
+        return;
+      }
+
       setWorkout(todaysWorkout);
 
       // Initialize exercise progress
@@ -170,8 +186,17 @@ export default function WorkoutScreen() {
       setError("Failed to load workout. Please try again.");
     } finally {
       setLoading(false);
+      if (forceRefresh) {
+        setRefreshing(false);
+      }
     }
   };
+
+  // Pull to refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadWorkout(true);
+  }, []);
 
   // Load workout on mount and when tab is focused
   useEffect(() => {
@@ -180,7 +205,8 @@ export default function WorkoutScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadWorkout();
+      // Don't force refresh on focus, rely on cache
+      loadWorkout(false);
     }, [])
   );
 
@@ -236,7 +262,11 @@ export default function WorkoutScreen() {
         setExerciseTimer(0);
         scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       } else {
-        // All exercises completed
+        // All exercises completed, so mark the plan day as complete
+        if (workout?.id) {
+          await markPlanDayAsComplete(workout.id);
+        }
+
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
         setIsWorkoutCompleted(true);
         Alert.alert(
@@ -298,7 +328,7 @@ export default function WorkoutScreen() {
         </Text>
         <TouchableOpacity
           className="bg-primary rounded-xl py-3 px-6"
-          onPress={loadWorkout}
+          onPress={() => loadWorkout(true)}
         >
           <Text className="text-secondary font-semibold">Try Again</Text>
         </TouchableOpacity>
@@ -320,7 +350,7 @@ export default function WorkoutScreen() {
         </Text>
         <TouchableOpacity
           className="bg-primary rounded-xl py-3 px-6"
-          onPress={loadWorkout}
+          onPress={() => loadWorkout(true)}
         >
           <Text className="text-secondary font-semibold">Refresh</Text>
         </TouchableOpacity>
@@ -359,6 +389,13 @@ export default function WorkoutScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#fff"
+          />
+        }
       >
         {/* Hero Exercise Media */}
         {currentExercise ? (
