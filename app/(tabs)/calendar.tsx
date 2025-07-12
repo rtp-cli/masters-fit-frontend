@@ -200,13 +200,13 @@ export default function CalendarScreen() {
       workoutPlan.planDays.forEach((planDay) => {
         const dateStr = formatDateAsString(planDay.date);
         const hasBlocks = planDay.blocks && planDay.blocks.length > 0;
-
-        markedDates[dateStr] = {
-          marked: hasBlocks,
-          dotColor: hasBlocks ? colors.brand.primary : colors.text.muted,
-          selectedColor: colors.brand.secondary,
-          selected: dateStr === selectedDate,
-        };
+        if (hasBlocks) {
+          markedDates[dateStr] = {
+            dots: [{ color: colors.brand.primary }],
+            selectedColor: colors.brand.secondary,
+            selected: dateStr === selectedDate,
+          };
+        }
       });
     }
 
@@ -342,6 +342,7 @@ export default function CalendarScreen() {
               }
             }}
             markedDates={getMarkedDates()}
+            markingType="multi-dot"
             minDate={
               workoutPlan?.startDate
                 ? formatDateAsString(workoutPlan.startDate)
@@ -373,7 +374,6 @@ export default function CalendarScreen() {
               todayTextColor: colors.brand.primary,
               dayTextColor: colors.text.primary,
               textDisabledColor: colors.neutral.medium[2],
-              dotColor: colors.brand.primary,
               arrowColor: colors.text.primary,
               monthTextColor: colors.text.primary,
               indicatorColor: colors.brand.primary,
