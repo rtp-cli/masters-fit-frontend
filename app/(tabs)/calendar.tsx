@@ -398,12 +398,12 @@ export default function CalendarScreen() {
             disabled={regenerating}
           >
             <Ionicons
-              name="refresh"
+              name="settings-outline"
               size={18}
               color={colors.neutral.light[1]}
             />
-            <Text className="text-neutral-light-1 font-semibold text-sm ml-sm">
-              Regenerate Workout Flow
+            <Text className="text-neutral-light-1 font-semibold text-md ml-sm">
+              Edit your workout plan
             </Text>
           </TouchableOpacity>
         </View>
@@ -515,7 +515,7 @@ export default function CalendarScreen() {
         }}
         onRegenerate={handleRegenerate}
         loading={regenerating}
-        regenerationType="week"
+        regenerationType="day"
       />
     </View>
   );

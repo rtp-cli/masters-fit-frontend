@@ -35,6 +35,7 @@ import {
   getBlockTypeDisplayName,
 } from "@/types/api/workout.types";
 import { Exercise } from "@/types/api/exercise.types";
+import { useWorkout } from "@/contexts/WorkoutContext";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -55,6 +56,9 @@ const formatTime = (seconds: number): string => {
 };
 
 export default function WorkoutScreen() {
+  // Get workout context for tab disabling
+  const { setWorkoutInProgress } = useWorkout();
+
   // Core state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +121,32 @@ export default function WorkoutScreen() {
     };
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
 
+  // Sync context with workout state
+  useEffect(() => {
+    console.log(
+      "🔄 Syncing context - isWorkoutStarted:",
+      isWorkoutStarted,
+      "isWorkoutCompleted:",
+      isWorkoutCompleted
+    );
+
+    if (isWorkoutCompleted) {
+      setWorkoutInProgress(false);
+    } else if (isWorkoutStarted) {
+      setWorkoutInProgress(true);
+    } else {
+      setWorkoutInProgress(false);
+    }
+  }, [isWorkoutStarted, isWorkoutCompleted, setWorkoutInProgress]);
+
+  // Cleanup workout context on unmount
+  useEffect(() => {
+    return () => {
+      console.log("🧹 Component unmounting, clearing workout context");
+      setWorkoutInProgress(false);
+    };
+  }, [setWorkoutInProgress]);
+
   // Load workout data
   const loadWorkout = async (forceRefresh = false) => {
     try {
@@ -160,10 +190,14 @@ export default function WorkoutScreen() {
       if (todaysWorkout.isComplete) {
         setWorkout(todaysWorkout);
         setIsWorkoutCompleted(true);
+        setWorkoutInProgress(false); // Make sure context knows workout is complete
         return;
       }
 
       setWorkout(todaysWorkout);
+
+      // Check if there's an existing workout session in progress
+      // (You might need to add logic here to detect if a workout was previously started)
 
       // Initialize exercise progress
       const flatExercises = todaysWorkout.blocks.flatMap(
@@ -227,6 +261,8 @@ export default function WorkoutScreen() {
     setIsWorkoutStarted(true);
     setWorkoutTimer(0);
     setExerciseTimer(0);
+    console.log("🏃 Starting workout, setting context to true");
+    setWorkoutInProgress(true); // Notify context that workout started
   };
 
   // Toggle pause
@@ -269,6 +305,7 @@ export default function WorkoutScreen() {
 
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
         setIsWorkoutCompleted(true);
+        setWorkoutInProgress(false); // Notify context that workout ended
         Alert.alert(
           "Workout Complete!",
           "Congratulations! You've completed today's workout.",
@@ -350,7 +387,7 @@ export default function WorkoutScreen() {
         </Text>
         <TouchableOpacity
           className="bg-primary rounded-xl py-3 px-6"
-          onPress={() => loadWorkout(true)}
+          onPress={() => loadWorkout()}
         >
           <Text className="text-secondary font-semibold">Refresh</Text>
         </TouchableOpacity>
@@ -416,13 +453,13 @@ export default function WorkoutScreen() {
                 style={{ width: `${progressPercent.toFixed(0)}%` } as any}
               />
             </View>
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-2xl font-bold text-text-primary">
+            <View className="flex-row items-start mb-2">
+              <Text className="text-2xl font-bold text-text-primary flex-1 mr-3">
                 {workout.name}
               </Text>
               {isWorkoutStarted && (
-                <View className="bg-background rounded-xl px-3 py-1">
-                  <Text className="text-lg font-bold text-text-primary">
+                <View className="bg-background rounded-xl px-3 py-1 min-w-[80px]">
+                  <Text className="text-lg font-bold text-text-primary text-center">
                     {formatTime(workoutTimer)}
                   </Text>
                 </View>
@@ -526,7 +563,7 @@ export default function WorkoutScreen() {
                       <View className="flex-row justify-center gap-2">
                         {Array.from({ length: currentBlock.rounds }, (_, i) => {
                           const isCompleted =
-                            i < currentProgress.roundsCompleted;
+                            i < (currentProgress?.roundsCompleted || 0);
                           return (
                             <TouchableOpacity
                               key={i}
@@ -684,7 +721,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "weightUsed",
-                            Math.max(0, currentProgress.weightUsed - 10)
+                            Math.max(0, (currentProgress?.weightUsed || 0) - 10)
                           )
                         }
                       >
@@ -697,7 +734,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "weightUsed",
-                            Math.max(0, currentProgress.weightUsed - 5)
+                            Math.max(0, (currentProgress?.weightUsed || 0) - 5)
                           )
                         }
                       >
@@ -709,7 +746,7 @@ export default function WorkoutScreen() {
                       <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
                         <TextInput
                           className="text-lg font-bold text-text-primary text-center"
-                          value={String(currentProgress.weightUsed)}
+                          value={String(currentProgress?.weightUsed || 0)}
                           onChangeText={(text) =>
                             updateProgress("weightUsed", Number(text) || 0)
                           }
@@ -722,7 +759,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "weightUsed",
-                            currentProgress.weightUsed + 5
+                            (currentProgress?.weightUsed || 0) + 5
                           )
                         }
                       >
@@ -735,7 +772,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "weightUsed",
-                            currentProgress.weightUsed + 10
+                            (currentProgress?.weightUsed || 0) + 10
                           )
                         }
                       >
@@ -791,7 +828,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "restTime",
-                            Math.max(0, currentProgress.restTime - 15)
+                            Math.max(0, (currentProgress?.restTime || 0) - 15)
                           )
                         }
                       >
@@ -804,7 +841,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "restTime",
-                            Math.max(0, currentProgress.restTime - 5)
+                            Math.max(0, (currentProgress?.restTime || 0) - 5)
                           )
                         }
                       >
@@ -816,7 +853,7 @@ export default function WorkoutScreen() {
                       <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
                         <TextInput
                           className="text-lg font-bold text-text-primary text-center"
-                          value={String(currentProgress.restTime)}
+                          value={String(currentProgress?.restTime || 0)}
                           onChangeText={(text) =>
                             updateProgress("restTime", Number(text) || 0)
                           }
@@ -829,7 +866,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "restTime",
-                            currentProgress.restTime + 5
+                            (currentProgress?.restTime || 0) + 5
                           )
                         }
                       >
@@ -842,7 +879,7 @@ export default function WorkoutScreen() {
                         onPress={() =>
                           updateProgress(
                             "restTime",
-                            currentProgress.restTime + 15
+                            (currentProgress?.restTime || 0) + 15
                           )
                         }
                       >

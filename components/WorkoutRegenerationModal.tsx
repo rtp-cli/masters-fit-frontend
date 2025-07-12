@@ -149,7 +149,7 @@ export default function WorkoutRegenerationModal({
   onClose,
   onRegenerate,
   loading = false,
-  regenerationType = "week",
+  regenerationType = "day",
 }: WorkoutRegenerationModalProps) {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -338,8 +338,8 @@ export default function WorkoutRegenerationModal({
           profile.intensityLevel === 1
             ? IntensityLevels.LOW
             : profile.intensityLevel === 2
-            ? IntensityLevels.MODERATE
-            : IntensityLevels.HIGH;
+              ? IntensityLevels.MODERATE
+              : IntensityLevels.HIGH;
       } else {
         intensityLevel = profile.intensityLevel as IntensityLevels;
       }
@@ -476,7 +476,7 @@ export default function WorkoutRegenerationModal({
             <Ionicons name="close" size={20} color={colors.text.muted} />
           </TouchableOpacity>
           <Text className="text-base font-semibold text-text-primary">
-            Regenerate Workout Plan
+            Edit Workout Plan
           </Text>
           <View className="w-8" />
         </View>
@@ -489,31 +489,6 @@ export default function WorkoutRegenerationModal({
 
           {/* Week/Day Toggle - Fixed shadow issue */}
           <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
-            <TouchableOpacity
-              className={`flex-1 py-3 rounded-sm items-center ${
-                selectedType === "week" ? "bg-white" : "bg-transparent"
-              }`}
-              style={
-                selectedType === "week"
-                  ? {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 2,
-                      elevation: 2,
-                    }
-                  : undefined
-              }
-              onPress={() => setSelectedType("week")}
-            >
-              <Text
-                className={`font-medium text-sm ${
-                  selectedType === "week" ? "text-secondary" : "text-text-muted"
-                }`}
-              >
-                Week
-              </Text>
-            </TouchableOpacity>
             <TouchableOpacity
               className={`flex-1 py-3 rounded-sm items-center ${
                 selectedType === "day" ? "bg-white" : "bg-transparent"
@@ -537,6 +512,31 @@ export default function WorkoutRegenerationModal({
                 }`}
               >
                 Day
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`flex-1 py-3 rounded-sm items-center ${
+                selectedType === "week" ? "bg-white" : "bg-transparent"
+              }`}
+              style={
+                selectedType === "week"
+                  ? {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 2,
+                    }
+                  : undefined
+              }
+              onPress={() => setSelectedType("week")}
+            >
+              <Text
+                className={`font-medium text-sm ${
+                  selectedType === "week" ? "text-secondary" : "text-text-muted"
+                }`}
+              >
+                Week
               </Text>
             </TouchableOpacity>
           </View>

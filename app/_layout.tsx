@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { AuthProvider } from "@contexts/AuthContext";
+import { WorkoutProvider } from "@contexts/WorkoutContext";
 import DebugButton from "../components/DebugButton";
 import { useFonts } from "expo-font";
 import {
@@ -37,18 +38,20 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <View className="flex-1">
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </View>
+      <WorkoutProvider>
+        <View className="flex-1">
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </View>
+      </WorkoutProvider>
     </AuthProvider>
   );
 }
