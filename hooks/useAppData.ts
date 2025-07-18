@@ -110,11 +110,13 @@ export const useAppData = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      // Use last 30 days as default to improve initial load performance
+      // Use last 30 days + next 7 days as default to include planned workouts
       if (!filters?.startDate && !filters?.endDate && !filters?.timeRange) {
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - 30);
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
         
         queryParams.append("startDate", startDate.toISOString().split('T')[0]);
         queryParams.append("endDate", endDate.toISOString().split('T')[0]);

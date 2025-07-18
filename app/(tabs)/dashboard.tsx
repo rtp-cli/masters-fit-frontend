@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -220,7 +220,7 @@ export default function DashboardScreen() {
     }
   }, [user?.id, hasLoadedInitialData, weeklySummary]);
 
-  // Wide date range function for frontend filtering (strength progress)
+  // Wide date range function for getting all data
   const calculateWideDataRange = () => {
     return {
       startDate: "2020-01-01",
@@ -458,7 +458,7 @@ export default function DashboardScreen() {
     return filteredData;
   };
 
-  // Load weight accuracy data once
+  // Load weight accuracy data - reload when dashboard data changes
   useEffect(() => {
     const loadWeightAccuracyData = async () => {
       try {
@@ -472,7 +472,7 @@ export default function DashboardScreen() {
     if (user?.id && hasLoadedInitialData) {
       loadWeightAccuracyData();
     }
-  }, [user?.id, hasLoadedInitialData, fetchWeightAccuracyByDate]);
+  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWeightAccuracyByDate]);
   
   // Filter weight accuracy data when filter changes
   useEffect(() => {
@@ -482,10 +482,13 @@ export default function DashboardScreen() {
         weightPerformanceFilter
       );
       setFilteredWeightAccuracy(filteredData);
+    } else {
+      // Clear filtered data when no raw data
+      setFilteredWeightAccuracy(null);
     }
   }, [rawWeightAccuracyData, weightPerformanceFilter]);
 
-  // Load workout type data once
+  // Load workout type data - reload when dashboard data changes
   useEffect(() => {
     const loadWorkoutTypeData = async () => {
       try {
@@ -499,7 +502,7 @@ export default function DashboardScreen() {
     if (user?.id && hasLoadedInitialData) {
       loadWorkoutTypeData();
     }
-  }, [user?.id, hasLoadedInitialData, fetchWorkoutTypeByDate]);
+  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWorkoutTypeByDate]);
   
   // Filter workout type data when filter changes
   useEffect(() => {
@@ -509,10 +512,13 @@ export default function DashboardScreen() {
         workoutTypeFilter
       );
       setFilteredWorkoutTypeMetrics(filteredData);
+    } else {
+      // Clear filtered data when no raw data
+      setFilteredWorkoutTypeMetrics(null);
     }
   }, [rawWorkoutTypeData, workoutTypeFilter]);
 
-  // Load weight progression data once
+  // Load weight progression data - reload when dashboard data changes
   useEffect(() => {
     const loadWeightProgressionData = async () => {
       try {
@@ -526,7 +532,7 @@ export default function DashboardScreen() {
     if (user?.id && hasLoadedInitialData) {
       loadWeightProgressionData();
     }
-  }, [user?.id, hasLoadedInitialData, fetchWeightProgression]);
+  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWeightProgression]);
   
   // Filter weight progression data when filter changes
   useEffect(() => {
@@ -536,6 +542,9 @@ export default function DashboardScreen() {
         strengthFilter
       );
       setWeightProgressionData(filteredData);
+    } else {
+      // Clear filtered data when no raw data
+      setWeightProgressionData([]);
     }
   }, [rawWeightProgressionData, strengthFilter]);
 
@@ -599,15 +608,18 @@ export default function DashboardScreen() {
 
   const handleRefresh = () => {
     if (user?.id) {
-      // Use 30-day range for manual refresh
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
+      // Use 30-day lookback + 7-day lookahead for manual refresh to include planned workouts
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 30);
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
       
       const refreshDateRange = {
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0]
       };
+
 
       // Just refresh dashboard data - this includes all dashboard metrics
       refreshAllData(refreshDateRange);
@@ -682,7 +694,7 @@ export default function DashboardScreen() {
 
   const isWorkoutCompleted = todayCompletionRate >= 100;
 
-  // Prepare chart data
+  // Prepare chart data (computed on each render - will update when dependencies change)
   const consistencyChartData = workoutConsistency.map((week) => ({
     label: formatDate(new Date(week.week), { month: "short", day: "numeric" }),
     value: week.completionRate,
@@ -695,6 +707,121 @@ export default function DashboardScreen() {
         : metric.name,
     value: metric.totalWeight,
   }));
+
+  // Compute weekly progress data (will update when dependencies change)
+  const getWeeklyProgressData = () => {
+    if (!dailyWorkoutProgress) {
+      console.log('No dailyWorkoutProgress data available');
+      return [];
+    }
+    
+    console.log('Computing weekly progress with data:', dailyWorkoutProgress);
+
+    // Use the workout start date as the base, not the current week's Monday
+    let weekStartDate = new Date();
+
+    // Use the actual workout start date from the API response
+    if (workoutInfo?.startDate) {
+      // Use safe date parsing to avoid timezone issues
+      if (/^\d{4}-\d{2}-\d{2}$/.test(workoutInfo.startDate)) {
+        const [year, month, day] = workoutInfo.startDate
+          .split("-")
+          .map(Number);
+        weekStartDate = new Date(year, month - 1, day); // month is 0-indexed
+      } else {
+        weekStartDate = new Date(workoutInfo.startDate);
+      }
+    } else {
+      // Fallback: use current week's Monday
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      weekStartDate.setDate(today.getDate() - daysFromMonday);
+    }
+
+    const workout7Days = [];
+    const today = new Date();
+    const todayStr = formatDateAsString(today);
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStartDate);
+      date.setDate(weekStartDate.getDate() + i);
+
+      // Generate day name dynamically based on actual date using safe method
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      // Use manual date string formatting to avoid timezone issues
+      const dateStr =
+        date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0");
+
+      // Get day name safely - match with planned workout dates
+      let dayName = dayNames[date.getDay()];
+
+      // Double-check with the actual planned workout dates to ensure consistency
+      const plannedWorkoutDay = dailyWorkoutProgress.find(
+        (day) => day.date === dateStr
+      );
+      if (plannedWorkoutDay && plannedWorkoutDay.date === dateStr) {
+        // If we have a planned workout for this date, verify the day matches expectations
+        const safeDayCheck = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate()
+        );
+        dayName = dayNames[safeDayCheck.getDay()];
+      }
+
+      // Find corresponding data from dailyWorkoutProgress
+      const dayData = dailyWorkoutProgress.find((day) => {
+        return day.date === dateStr;
+      });
+      
+      console.log(`Date ${dateStr}: dayData =`, dayData);
+
+      // Check if there's a planned workout for this day
+      const hasPlannedWorkout = dayData?.hasPlannedWorkout || false;
+
+      const isToday = dateStr === todayStr;
+      const isFuture = date > today;
+
+      let completionRate = 0;
+      let status = "incomplete";
+
+      // First check if it's a rest day (no planned workout)
+      if (!hasPlannedWorkout) {
+        status = "rest";
+        completionRate = 0;
+      } else if (dayData) {
+        // Only process completion rate if there's a planned workout
+        completionRate = dayData.completionRate;
+        if (completionRate === 100) status = "complete";
+        else if (completionRate > 0) status = "partial";
+        else if (isFuture) status = "upcoming";
+        else status = "incomplete";
+      } else if (isFuture) {
+        status = "upcoming";
+      }
+      
+      console.log(`Date ${dateStr}: status=${status}, completionRate=${completionRate}, isToday=${isToday}`);
+
+      workout7Days.push({
+        dayName,
+        dateStr,
+        completionRate,
+        status,
+        isToday,
+        isFuture,
+      });
+    }
+
+    return workout7Days;
+  };
+
+  const weeklyProgressData = getWeeklyProgressData();
 
   return (
     <View className="flex-1 bg-background">
@@ -881,124 +1008,10 @@ export default function DashboardScreen() {
                   <View className="mb-4">
                     <View className="flex-row justify-between items-end mb-4 h-30">
                       {(() => {
-                        // Use the workout start date as the base, not the current week's Monday
-                        let weekStartDate = new Date();
-
-                        // Use the actual workout start date from the API response
-                        if (workoutInfo?.startDate) {
-                          // Use safe date parsing to avoid timezone issues
-                          if (
-                            /^\d{4}-\d{2}-\d{2}$/.test(workoutInfo.startDate)
-                          ) {
-                            const [year, month, day] = workoutInfo.startDate
-                              .split("-")
-                              .map(Number);
-                            weekStartDate = new Date(year, month - 1, day); // month is 0-indexed
-                          } else {
-                            weekStartDate = new Date(workoutInfo.startDate);
-                          }
-                        } else {
-                          // Fallback: use current week's Monday
-                          const today = new Date();
-                          const dayOfWeek = today.getDay();
-                          const daysFromMonday =
-                            dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                          weekStartDate.setDate(
-                            today.getDate() - daysFromMonday
-                          );
-                        }
-
-                        const workout7Days = [];
-                        const today = new Date();
-                        const todayStr = formatDateAsString(today);
-
-                        for (let i = 0; i < 7; i++) {
-                          const date = new Date(weekStartDate);
-                          date.setDate(weekStartDate.getDate() + i);
-
-                          // Generate day name dynamically based on actual date using safe method
-                          const dayNames = [
-                            "Sun",
-                            "Mon",
-                            "Tue",
-                            "Wed",
-                            "Thu",
-                            "Fri",
-                            "Sat",
-                          ];
-
-                          // Use manual date string formatting to avoid timezone issues
-                          const dateStr =
-                            date.getFullYear() +
-                            "-" +
-                            String(date.getMonth() + 1).padStart(2, "0") +
-                            "-" +
-                            String(date.getDate()).padStart(2, "0");
-
-                          // Get day name safely - match with planned workout dates
-                          let dayName = dayNames[date.getDay()];
-
-                          // Double-check with the actual planned workout dates to ensure consistency
-                          const plannedWorkoutDay = dailyWorkoutProgress.find(
-                            (day) => day.date === dateStr
-                          );
-                          if (
-                            plannedWorkoutDay &&
-                            plannedWorkoutDay.date === dateStr
-                          ) {
-                            // If we have a planned workout for this date, verify the day matches expectations
-                            const safeDayCheck = new Date(
-                              date.getFullYear(),
-                              date.getMonth(),
-                              date.getDate()
-                            );
-                            dayName = dayNames[safeDayCheck.getDay()];
-                          }
-
-                          // Find corresponding data from dailyWorkoutProgress
-                          const dayData = dailyWorkoutProgress.find((day) => {
-                            return day.date === dateStr;
-                          });
-
-                          // Check if there's a planned workout for this day
-                          const hasPlannedWorkout =
-                            dayData?.hasPlannedWorkout || false;
-
-                          const isToday = dateStr === todayStr;
-                          const isFuture = date > today;
-
-                          let completionRate = 0;
-                          let status = "incomplete";
-
-                          // First check if it's a rest day (no planned workout)
-                          if (!hasPlannedWorkout) {
-                            status = "rest";
-                            completionRate = 0;
-                          } else if (dayData) {
-                            // Only process completion rate if there's a planned workout
-                            completionRate = dayData.completionRate;
-                            if (completionRate === 100) status = "complete";
-                            else if (completionRate > 0) status = "partial";
-                            else if (isFuture) status = "upcoming";
-                            else status = "incomplete";
-                          } else if (isFuture) {
-                            status = "upcoming";
-                          }
-
-                          workout7Days.push({
-                            dayName,
-                            dateStr,
-                            completionRate,
-                            status,
-                            isToday,
-                            isFuture,
-                          });
-                        }
-
                         const FULL_HEIGHT = 100; // Full bar height in pixels
                         const BASE_HEIGHT = 20; // Base height for incomplete/upcoming days
 
-                        return workout7Days.map((day, index) => (
+                        return weeklyProgressData.map((day, index) => (
                           <View
                             key={index}
                             className="items-center flex-1 mx-1"

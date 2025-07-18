@@ -46,13 +46,25 @@ function DisabledTabButton({
   onPress?: () => void;
   disabled: boolean;
 }) {
+  const { abandonWorkout } = useWorkout();
+
   const handlePress = () => {
     console.log("🖱️ Tab button pressed, disabled:", disabled);
     if (disabled) {
       Alert.alert(
         "Workout In Progress",
-        "Please finish your current workout to continue using the app as usual.",
-        [{ text: "OK" }]
+        "You have a workout in progress. Leaving will require you to start the workout over again.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Leave Anyway",
+            style: "destructive",
+            onPress: () => {
+              abandonWorkout();
+              onPress?.();
+            },
+          },
+        ]
       );
     } else {
       onPress?.();

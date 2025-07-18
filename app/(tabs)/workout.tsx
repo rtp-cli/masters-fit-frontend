@@ -59,7 +59,7 @@ const formatTime = (seconds: number): string => {
 
 export default function WorkoutScreen() {
   // Get workout context for tab disabling
-  const { setWorkoutInProgress } = useWorkout();
+  const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
   
   // Get data refresh functions
   const { refresh: { refreshDashboard } } = useAppDataContext();
@@ -179,6 +179,28 @@ export default function WorkoutScreen() {
       setWorkoutInProgress(false);
     }
   }, [isWorkoutStarted, isWorkoutCompleted, setWorkoutInProgress]);
+
+  // Handle workout abandonment - reset workout state when context says no workout in progress
+  // but local state thinks workout is started
+  useEffect(() => {
+    if (!isWorkoutInProgress && isWorkoutStarted && !isWorkoutCompleted) {
+      console.log("🚪 Workout abandoned - resetting workout state");
+      setIsWorkoutStarted(false);
+      setIsPaused(false);
+      setWorkoutTimer(0);
+      setExerciseTimer(0);
+      setCurrentExerciseIndex(0);
+      setIsRestTimerActive(false);
+      setRestTimerCountdown(0);
+      // Clear any active timers
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (restTimerRef.current) {
+        clearInterval(restTimerRef.current);
+      }
+    }
+  }, [isWorkoutInProgress, isWorkoutStarted, isWorkoutCompleted]);
 
   // Cleanup workout context on unmount
   useEffect(() => {
@@ -360,8 +382,18 @@ export default function WorkoutScreen() {
         // All exercises completed, so mark the plan day as complete
         if (workout?.id) {
           await markPlanDayAsComplete(workout.id);
-          // Refresh dashboard data after workout completion
-          await refreshDashboard();
+          // Refresh dashboard data with current date range to ensure today's data is included
+          // Include both past workouts and upcoming planned workouts for weekly progress
+          const today = new Date();
+          const startDate = new Date(today);
+          startDate.setDate(today.getDate() - 30); // 30 days back for historical data
+          const endDate = new Date(today);
+          endDate.setDate(today.getDate() + 7); // 7 days forward for planned workouts
+          
+          await refreshDashboard({
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0]
+          });
         }
 
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%

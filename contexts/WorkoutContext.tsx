@@ -10,6 +10,7 @@ import React, {
 interface WorkoutContextType {
   isWorkoutInProgress: boolean;
   setWorkoutInProgress: (inProgress: boolean) => void;
+  abandonWorkout: () => void;
 }
 
 // Create the context
@@ -39,10 +40,16 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setIsWorkoutInProgress(inProgress);
   };
 
+  const abandonWorkout = () => {
+    console.log("🚪 WorkoutContext: Abandoning workout - user chose to leave");
+    setIsWorkoutInProgress(false);
+  };
+
   // Create the context value object
   const value: WorkoutContextType = {
     isWorkoutInProgress,
     setWorkoutInProgress,
+    abandonWorkout,
   };
 
   // Provide the context to children components
