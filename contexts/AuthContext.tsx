@@ -28,9 +28,11 @@ interface AuthContextType {
   isLoading: boolean;
   isSigningUp: boolean;
   isGeneratingWorkout: boolean;
+  isPreloadingData: boolean;
   setIsSigningUp: (value: boolean) => void;
   setUserData: (user: User | null) => void;
   setIsGeneratingWorkout: (value: boolean) => void;
+  setIsPreloadingData: (value: boolean) => void;
   checkEmail: (
     email: string
   ) => Promise<{ success: boolean; needsOnboarding?: boolean }>;
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
+  const [isPreloadingData, setIsPreloadingData] = useState(false);
 
   // Initialize user from secure storage on app start
   useEffect(() => {
@@ -197,9 +200,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isSigningUp,
     isGeneratingWorkout,
+    isPreloadingData,
     setIsSigningUp,
     setUserData,
     setIsGeneratingWorkout,
+    setIsPreloadingData,
     checkEmail,
     signup,
     login,

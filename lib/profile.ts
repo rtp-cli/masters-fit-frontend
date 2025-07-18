@@ -18,6 +18,7 @@ export async function fetchUserProfile(): Promise<Profile | null> {
     const response = await apiRequest<{ success: boolean; profile: Profile }>(
       `/profile/${user.id}`
     );
+
     return response.profile;
   } catch (error) {
     console.error("Error fetching user profile:", error);

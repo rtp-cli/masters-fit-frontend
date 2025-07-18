@@ -13,56 +13,47 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import { useRouter } from "expo-router";
-import { fetchUserProfile, Profile } from "@lib/profile";
-import { useDashboard } from "@hooks/useDashboard";
+import { Profile } from "@lib/profile";
+import { useAppDataContext } from "@contexts/AppDataContext";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
+import { SettingsSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
-
-  // State for user data
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: { profileData }, refresh: { refreshProfile }, loading } = useAppDataContext();
 
   // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
-  // Dashboard data for statistics
-  const { fetchWeeklySummary } = useDashboard(user?.id || 0);
+  // Use profile data from the centralized store
+  const profile = profileData;
 
-  // Load user profile and dashboard data
+  // Load user profile data
   const loadUserData = async () => {
     if (!user?.id) return;
 
     try {
-      setLoading(true);
-      const [profileData] = await Promise.all([
-        fetchUserProfile(),
-        fetchWeeklySummary(),
-      ]);
-      setProfile(profileData);
+      await refreshProfile();
     } catch (error) {
       console.error("Error loading user data:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
   // Refresh data
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadUserData();
-    setRefreshing(false);
+    await refreshProfile();
   };
 
   useEffect(() => {
-    loadUserData();
-  }, [user?.id]);
+    // Only fetch if we don't have profile data yet
+    if (!profileData) {
+      loadUserData();
+    }
+  }, [user?.id, profileData]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -181,16 +172,8 @@ export default function SettingsScreen() {
     return "Not specified";
   };
 
-  if (loading && !profile) {
-    return (
-      <SafeAreaView
-        edges={["top"]}
-        className="flex-1 bg-background justify-center items-center"
-      >
-        <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="text-text-muted mt-2">Loading your profile...</Text>
-      </SafeAreaView>
-    );
+  if (loading.profileLoading && !profile) {
+    return <SettingsSkeleton />;
   }
 
   return (
@@ -198,7 +181,7 @@ export default function SettingsScreen() {
       <ScrollView
         className="flex-1"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={loading.profileLoading} onRefresh={handleRefresh} />
         }
       >
         {/* Profile Section */}

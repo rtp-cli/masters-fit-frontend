@@ -11,12 +11,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAppDataContext } from "@contexts/AppDataContext";
 import {
-  useDashboard,
   TotalVolumeMetrics,
   WeightAccuracyMetrics,
   WorkoutTypeMetrics,
-} from "@hooks/useDashboard";
+} from "@/types/api";
 import { SimpleCircularProgress } from "@components/charts/CircularProgress";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
@@ -143,65 +143,82 @@ export default function DashboardScreen() {
     useState<WeightAccuracyMetrics | null>(null);
   const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] =
     useState<WorkoutTypeMetrics | null>(null);
+  
+  // State to track if we've loaded initial data
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
     // Data
-    weeklySummary,
-    workoutConsistency,
-    weightMetrics,
-    weightAccuracy,
-    goalProgress,
-    totalVolumeMetrics,
-    dailyWorkoutProgress,
-    workoutTypeMetrics,
+    data: {
+      weeklySummary,
+      workoutConsistency,
+      weightMetrics,
+      weightAccuracy,
+      goalProgress,
+      totalVolumeMetrics,
+      dailyWorkoutProgress,
+      workoutTypeMetrics,
+    },
 
     // State
     loading,
     error,
 
     // Actions
-    fetchDashboardMetrics,
-    fetchWeightAccuracy,
-    fetchTotalVolumeMetrics,
-    fetchWorkoutTypeMetrics,
-    fetchWeightProgression,
-    fetchWeightAccuracyByDate,
-    fetchWorkoutTypeByDate,
-    refreshAllData,
-  } = useDashboard(user?.id || 0);
+    refresh: {
+      refreshDashboard: fetchDashboardMetrics,
+      refreshWeightAccuracy,
+      refreshTotalVolumeMetrics,
+      refreshWorkoutTypeMetrics,
+      fetchWeightProgression,
+      fetchWeightAccuracyByDate,
+      fetchWorkoutTypeByDate,
+      refreshAll: refreshAllData,
+    },
+  } = useAppDataContext();
+
+  const fetchTodaysWorkout = async () => {
+    try {
+      setLoadingToday(true);
+      const workoutPlan = await fetchActiveWorkout();
+      if (workoutPlan) {
+        // Store workout info (name and description are at workout level)
+        setWorkoutInfo({
+          name: workoutPlan.workout.name,
+          description: workoutPlan.workout.description,
+          startDate: workoutPlan.workout.startDate,
+          endDate: workoutPlan.workout.endDate,
+          planDays: workoutPlan.workout.planDays,
+        });
+
+        const today = getCurrentDate();
+        const todaysPlanDay = workoutPlan.workout.planDays.find(
+          (day: PlanDayWithExercises) => {
+            const planDate = formatDateAsString(day.date);
+            return planDate === today;
+          }
+        );
+        setTodaysWorkout(todaysPlanDay || null);
+      }
+    } catch (err) {
+      console.error("Error fetching today's workout:", err);
+    } finally {
+      setLoadingToday(false);
+    }
+  };
 
   useEffect(() => {
-    if (user?.id) {
-      // Load general dashboard data with wide range for things like weekly summary, consistency, etc.
-      refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
-
-      // Load raw data with wide range for frontend filtering
-      const { startDate, endDate } = calculateWideDataRange();
-
-      // Load raw weight progression data
-      fetchWeightProgression({ startDate, endDate }).then((data) => {
-        setRawWeightProgressionData(data);
+    if (user?.id && !hasLoadedInitialData && weeklySummary) {
+      setIsInitialLoad(true);
+      
+      // Just load today's workout - dashboard data comes from preload
+      fetchTodaysWorkout().then(() => {
+        setHasLoadedInitialData(true);
+        setIsInitialLoad(false);
       });
-
-      // Load raw weight accuracy data
-      fetchWeightAccuracyByDate({ startDate, endDate }).then((data) => {
-        setRawWeightAccuracyData(data);
-      });
-
-      // Load raw workout type data
-      fetchWorkoutTypeByDate({ startDate, endDate }).then((data) => {
-        setRawWorkoutTypeData(data);
-      });
-
-      fetchTodaysWorkout();
     }
-  }, [
-    user?.id,
-    refreshAllData,
-    fetchWeightProgression,
-    fetchWeightAccuracyByDate,
-    fetchWorkoutTypeByDate,
-  ]);
+  }, [user?.id, hasLoadedInitialData, weeklySummary]);
 
   // Wide date range function for frontend filtering (strength progress)
   const calculateWideDataRange = () => {
@@ -441,7 +458,23 @@ export default function DashboardScreen() {
     return filteredData;
   };
 
-  // Frontend filtering effects for weight accuracy and workout type
+  // Load weight accuracy data once
+  useEffect(() => {
+    const loadWeightAccuracyData = async () => {
+      try {
+        const data = await fetchWeightAccuracyByDate(calculateWideDataRange());
+        setRawWeightAccuracyData(data);
+      } catch (error) {
+        console.error('Error loading weight accuracy data:', error);
+      }
+    };
+    
+    if (user?.id && hasLoadedInitialData) {
+      loadWeightAccuracyData();
+    }
+  }, [user?.id, hasLoadedInitialData, fetchWeightAccuracyByDate]);
+  
+  // Filter weight accuracy data when filter changes
   useEffect(() => {
     if (rawWeightAccuracyData.length > 0) {
       const filteredData = filterWeightAccuracyData(
@@ -452,6 +485,23 @@ export default function DashboardScreen() {
     }
   }, [rawWeightAccuracyData, weightPerformanceFilter]);
 
+  // Load workout type data once
+  useEffect(() => {
+    const loadWorkoutTypeData = async () => {
+      try {
+        const data = await fetchWorkoutTypeByDate(calculateWideDataRange());
+        setRawWorkoutTypeData(data);
+      } catch (error) {
+        console.error('Error loading workout type data:', error);
+      }
+    };
+    
+    if (user?.id && hasLoadedInitialData) {
+      loadWorkoutTypeData();
+    }
+  }, [user?.id, hasLoadedInitialData, fetchWorkoutTypeByDate]);
+  
+  // Filter workout type data when filter changes
   useEffect(() => {
     if (rawWorkoutTypeData.length > 0) {
       const filteredData = filterWorkoutTypeData(
@@ -462,10 +512,25 @@ export default function DashboardScreen() {
     }
   }, [rawWorkoutTypeData, workoutTypeFilter]);
 
-  // Frontend filtering effect for strength progress data
+  // Load weight progression data once
+  useEffect(() => {
+    const loadWeightProgressionData = async () => {
+      try {
+        const data = await fetchWeightProgression(calculateWideDataRange());
+        setRawWeightProgressionData(data);
+      } catch (error) {
+        console.error('Error loading weight progression data:', error);
+      }
+    };
+    
+    if (user?.id && hasLoadedInitialData) {
+      loadWeightProgressionData();
+    }
+  }, [user?.id, hasLoadedInitialData, fetchWeightProgression]);
+  
+  // Filter weight progression data when filter changes
   useEffect(() => {
     if (rawWeightProgressionData.length > 0) {
-      // Use the same reliable filtering function as other charts
       const filteredData = filterDataByDateRange(
         rawWeightProgressionData,
         strengthFilter
@@ -474,73 +539,80 @@ export default function DashboardScreen() {
     }
   }, [rawWeightProgressionData, strengthFilter]);
 
-  // Update filtered data when main data changes
-  useEffect(() => {
-    // No need to update filteredWeightAccuracy directly, as it's handled by the component
-  }, [weightAccuracy]);
 
-  if (loading || loadingToday) {
+  if (loading.dashboardLoading || loadingToday || isInitialLoad) {
     return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="mt-md text-sm font-medium text-primary">
-          One moment...
-        </Text>
+      <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1">
+          <ScrollView 
+            className="flex-1" 
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header Skeleton */}
+            <View className="px-5 pt-3 pb-4">
+              <View className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2" />
+              <View className="h-5 w-48 bg-gray-100 rounded animate-pulse" />
+            </View>
+
+            {/* Today's Schedule Skeleton */}
+            <View className="px-5 mb-6">
+              <View className="bg-white rounded-2xl p-5 shadow-sm">
+                <View className="flex-row items-center justify-between mb-4">
+                  <View className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+                  <View className="h-8 w-20 bg-gray-100 rounded animate-pulse" />
+                </View>
+                <View className="h-20 bg-gray-100 rounded animate-pulse mb-3" />
+                <View className="flex-row justify-between">
+                  <View className="h-12 w-24 bg-gray-100 rounded animate-pulse" />
+                  <View className="h-12 w-24 bg-gray-100 rounded animate-pulse" />
+                  <View className="h-12 w-24 bg-gray-100 rounded animate-pulse" />
+                </View>
+              </View>
+            </View>
+
+            {/* Weekly Progress Skeleton */}
+            <View className="px-5 mb-6">
+              <View className="h-6 w-36 bg-gray-200 rounded animate-pulse mb-4" />
+              <View className="bg-white rounded-2xl p-5 shadow-sm">
+                <View className="h-40 bg-gray-100 rounded animate-pulse" />
+              </View>
+            </View>
+
+            {/* Progress Charts Skeleton */}
+            <View className="px-5 mb-6">
+              <View className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+              <View className="flex-row justify-between">
+                <View className="bg-white rounded-2xl p-4 shadow-sm flex-1 mr-3">
+                  <View className="h-32 bg-gray-100 rounded animate-pulse" />
+                </View>
+                <View className="bg-white rounded-2xl p-4 shadow-sm flex-1">
+                  <View className="h-32 bg-gray-100 rounded animate-pulse" />
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
       </View>
     );
   }
 
-  const fetchTodaysWorkout = async () => {
-    try {
-      setLoadingToday(true);
-      const workoutPlan = await fetchActiveWorkout();
-      if (workoutPlan) {
-        // Store workout info (name and description are at workout level)
-        setWorkoutInfo({
-          name: workoutPlan.workout.name,
-          description: workoutPlan.workout.description,
-          startDate: workoutPlan.workout.startDate,
-          endDate: workoutPlan.workout.endDate,
-          planDays: workoutPlan.workout.planDays,
-        });
-
-        const today = getCurrentDate();
-        const todaysPlanDay = workoutPlan.workout.planDays.find(
-          (day: PlanDayWithExercises) => {
-            const planDate = formatDateAsString(day.date);
-            return planDate === today;
-          }
-        );
-        setTodaysWorkout(todaysPlanDay || null);
-      }
-    } catch (err) {
-      console.error("Error fetching today's workout:", err);
-    } finally {
-      setLoadingToday(false);
-    }
-  };
-
   const handleRefresh = () => {
     if (user?.id) {
-      // Refresh general dashboard data with wide range
-      refreshAllData({ startDate: "2020-01-01", endDate: "2030-12-31" });
+      // Use 30-day range for manual refresh
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      
+      const refreshDateRange = {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
 
-      // Refresh raw data for frontend filtering
-      const { startDate, endDate } = calculateWideDataRange();
-
-      // Refresh raw weight progression data
-      fetchWeightProgression({ startDate, endDate }).then((data) => {
-        setRawWeightProgressionData(data);
-      });
-
-      fetchWeightAccuracyByDate({ startDate, endDate }).then((data) => {
-        setRawWeightAccuracyData(data);
-      });
-
-      fetchWorkoutTypeByDate({ startDate, endDate }).then((data) => {
-        setRawWorkoutTypeData(data);
-      });
-
+      // Just refresh dashboard data - this includes all dashboard metrics
+      refreshAllData(refreshDateRange);
+      
+      // Refresh today's workout
       fetchTodaysWorkout();
     }
   };
@@ -629,7 +701,7 @@ export default function DashboardScreen() {
       <ScrollView
         className="flex-1"
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={loading.dashboardLoading} onRefresh={handleRefresh} />
         }
       >
         {/* Header with Streak */}
@@ -659,7 +731,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {loading && !totalVolumeMetrics ? (
+        {loading.dashboardLoading && !totalVolumeMetrics ? (
           <View className="flex-1 justify-center items-center py-12">
             <ActivityIndicator size="large" color={colors.brand.primary} />
             <Text className="mt-3 text-sm text-text-muted">
@@ -1571,19 +1643,32 @@ export default function DashboardScreen() {
               )}
 
             {/* Empty State Message - Only show when no charts are visible */}
-            {(!filteredWeightAccuracy ||
-              !filteredWeightAccuracy.hasExerciseData ||
-              filteredWeightAccuracy.totalSets === 0) &&
-              (!totalVolumeMetrics ||
-                totalVolumeMetrics.length === 0 ||
-                !totalVolumeMetrics.some((metric) => metric.totalVolume > 0)) &&
-              (!filteredWorkoutTypeMetrics ||
-                filteredWorkoutTypeMetrics.totalSets === 0) &&
-              (!goalProgress ||
-                goalProgress.length === 0 ||
-                !goalProgress.some(
-                  (goal) => goal.totalSets > 0 || goal.completedWorkouts > 0
-                )) && (
+            {!hasLoadedInitialData && (
+              <View className="px-4 mb-6">
+                <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
+                  <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
+                    <Ionicons
+                      name="analytics-outline"
+                      size={32}
+                      color={colors.brand.primary}
+                    />
+                  </View>
+                  <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                    Loading Your Progress...
+                  </Text>
+                  <Text className="text-sm text-text-muted text-center mb-4 leading-5">
+                    Please wait while we load your fitness data.
+                  </Text>
+                </View>
+              </View>
+            )}
+            
+            {/* No data state - show when loaded but no workout data */}
+            {hasLoadedInitialData && 
+              (!filteredWeightAccuracy || !filteredWeightAccuracy.hasExerciseData || filteredWeightAccuracy.totalSets === 0) &&
+              (!filteredWorkoutTypeMetrics || !filteredWorkoutTypeMetrics.hasData || filteredWorkoutTypeMetrics.totalSets === 0) &&
+              (!weightProgressionData || weightProgressionData.length === 0) &&
+              (!weeklySummary || weeklySummary.totalWorkouts === 0) && (
                 <View className="px-4 mb-6">
                   <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
                     <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">

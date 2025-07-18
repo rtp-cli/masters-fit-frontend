@@ -24,9 +24,10 @@ export async function searchByDateAPI(
   date: string
 ): Promise<DateSearchResponse> {
   try {
-    return await apiRequest<DateSearchResponse>(
+    const result = await apiRequest<DateSearchResponse>(
       `/search/date/${userId}?date=${date}`
     );
+    return result;
   } catch (error) {
     console.error("Search by date error:", error);
     return {
@@ -46,9 +47,10 @@ export async function searchExerciseAPI(
   exerciseId: number
 ): Promise<ExerciseSearchResponse> {
   try {
-    return await apiRequest<ExerciseSearchResponse>(
+    const result = await apiRequest<ExerciseSearchResponse>(
       `/search/exercise/${userId}/${exerciseId}`
     );
+    return result;
   } catch (error) {
     console.error("Search exercise error:", error);
     throw error;
@@ -62,9 +64,10 @@ export async function searchExercisesAPI(
   query: string
 ): Promise<ExercisesSearchResponse> {
   try {
-    return await apiRequest<ExercisesSearchResponse>(
+    const result = await apiRequest<ExercisesSearchResponse>(
       `/search/exercises?query=${encodeURIComponent(query)}`
     );
+    return result;
   } catch (error) {
     console.error("Search exercises error:", error);
     return {

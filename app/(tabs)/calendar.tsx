@@ -12,11 +12,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
 import { useRouter } from "expo-router";
 import {
-  fetchActiveWorkout,
   regenerateWorkoutPlan,
   regenerateDailyWorkout,
   notifyWorkoutUpdated,
 } from "@lib/workouts";
+import { useAppDataContext } from "@contexts/AppDataContext";
 import {
   WorkoutWithDetails,
   PlanDayWithBlocks,
@@ -34,9 +34,11 @@ import {
   formatDateAsString,
 } from "../../utils";
 import { colors } from "../../lib/theme";
+import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 export default function CalendarScreen() {
   const router = useRouter();
+  const { data: { workoutData }, refresh: { refreshWorkout }, loading } = useAppDataContext();
 
   const [selectedDate, setSelectedDate] = useState(
     formatDateAsString(new Date())
@@ -44,11 +46,6 @@ export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState(
     formatDateAsString(new Date())
   );
-  const [loading, setLoading] = useState(true);
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutWithDetails | null>(
-    null
-  );
-  const [error, setError] = useState<string | null>(null);
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
@@ -56,44 +53,30 @@ export default function CalendarScreen() {
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Use workout data from the centralized store
+  const workoutPlan = workoutData;
+  const error = null; // Error handling is centralized in useAppData
 
   useEffect(() => {
-    fetchWorkoutPlan();
-  }, []);
-
-  const fetchWorkoutPlan = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const user = await getCurrentUser();
-      if (!user) {
-        setError("User not found");
-        return;
-      }
-      const response = await fetchActiveWorkout();
-      if (response) {
-        setWorkoutPlan(response.workout);
-
-        // Set current month to today's date if no workout plan, or to the first workout day
-        if (
-          response.workout?.planDays &&
-          response.workout.planDays.length > 0
-        ) {
-          const firstWorkoutDate = formatDateAsString(
-            response.workout.planDays[0].date
-          );
-          setCurrentMonth(firstWorkoutDate);
-        } else {
-          setCurrentMonth(formatDateAsString(new Date()));
-        }
-      }
-    } catch (err) {
-      setError("Failed to load workout plan");
-      console.error("Error fetching workout plan:", err);
-    } finally {
-      setLoading(false);
+    // Only fetch if we don't have data yet
+    if (!workoutData) {
+      refreshWorkout();
     }
-  };
+  }, [workoutData, refreshWorkout]);
+
+  // Set current month when workout data is available
+  useEffect(() => {
+    if (workoutPlan?.planDays && workoutPlan.planDays.length > 0) {
+      const firstWorkoutDate = formatDateAsString(
+        workoutPlan.planDays[0].date
+      );
+      setCurrentMonth(firstWorkoutDate);
+    } else {
+      setCurrentMonth(formatDateAsString(new Date()));
+    }
+  }, [workoutPlan]);
 
   const handleRegenerate = async (
     data: any, // Using any to avoid type conflicts for now
@@ -135,7 +118,7 @@ export default function CalendarScreen() {
             };
           });
           // Refresh to ensure consistency
-          await fetchWorkoutPlan();
+          await refreshWorkout();
           // Notify other components that workout data has been updated
           notifyWorkoutUpdated();
         }
@@ -158,7 +141,7 @@ export default function CalendarScreen() {
         if (response) {
           setWorkoutPlan(response.workout);
           // Refresh the workout data to ensure consistency across all components
-          await fetchWorkoutPlan();
+          await refreshWorkout();
           // Notify other components that workout data has been updated
           notifyWorkoutUpdated();
         }
@@ -264,15 +247,8 @@ export default function CalendarScreen() {
     return calculatePlanDayDuration(planDay);
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="mt-md text-sm font-medium text-text-primary">
-          Loading workout plan...
-        </Text>
-      </View>
-    );
+  if (loading.workoutLoading) {
+    return <CalendarSkeleton />;
   }
 
   if (error) {
@@ -281,7 +257,7 @@ export default function CalendarScreen() {
         <Text className="text-sm text-red-500 mb-md text-center">{error}</Text>
         <TouchableOpacity
           className="bg-secondary py-3 px-6 rounded-xl"
-          onPress={fetchWorkoutPlan}
+          onPress={refreshWorkout}
         >
           <Text className="text-background font-semibold text-sm">Retry</Text>
         </TouchableOpacity>
@@ -318,9 +294,32 @@ export default function CalendarScreen() {
     });
   };
 
+  // Handle pull to refresh
+  const handleRefresh = async () => {
+    console.log('Calendar refresh triggered');
+    setIsRefreshing(true);
+    try {
+      await refreshWorkout();
+      console.log('Calendar refresh completed');
+    } catch (error) {
+      console.error('Calendar refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <View className="flex-1 pt-4 bg-background">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={handleRefresh}
+          />
+        }
+      >
         <View className="pt-6">
           {workoutPlan?.name && (
             <View className="flex justify-center items-center px-4">
@@ -349,15 +348,8 @@ export default function CalendarScreen() {
                 : formatDateAsString(new Date())
             }
             maxDate={
-              workoutPlan?.startDate
-                ? (() => {
-                    // Use safe date parsing and add 6 days
-                    const startDate = new Date(workoutPlan.startDate);
-                    const maxDate = new Date(
-                      startDate.getTime() + 6 * 24 * 60 * 60 * 1000
-                    );
-                    return formatDateAsString(maxDate);
-                  })()
+              workoutPlan?.endDate
+                ? formatDateAsString(workoutPlan.endDate)
                 : (() => {
                     const futureDate = new Date(
                       Date.now() + 30 * 24 * 60 * 60 * 1000

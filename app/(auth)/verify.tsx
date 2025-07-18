@@ -25,7 +25,7 @@ export default function VerifyScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
-  const { isSigningUp, setUserData } = useAuth();
+  const { isSigningUp, setUserData, setIsPreloadingData } = useAuth();
 
   const inputs = useRef<TextInput[]>([]);
 
@@ -150,15 +150,10 @@ export default function VerifyScreen() {
             );
           }
         } else {
-          // Only redirect if not already on calendar page
-          if (pathname !== "/(tabs)/calendar") {
-            console.log("🔍 Verify - Redirecting to calendar");
-            router.replace("/(tabs)/calendar");
-          } else {
-            console.log(
-              "🔍 Verify - Already on calendar page, skipping redirect"
-            );
-          }
+          // Clear verification flag and let index.tsx handle the preloading
+          await SecureStore.deleteItemAsync("isVerifyingUser");
+          console.log("🔍 Verify - Redirecting to index for data preload");
+          router.replace("/");
         }
       } else {
         Alert.alert(

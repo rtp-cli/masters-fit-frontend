@@ -8,11 +8,14 @@ import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import Header from "@components/Header";
+import WarmingUpScreen from "@components/ui/WarmingUpScreen";
+import { useDataPreload } from "@hooks/useDataPreload";
 
 export default function GetStarted() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, user, isGeneratingWorkout } = useAuth();
+  const { isAuthenticated, isLoading, user, isGeneratingWorkout, isPreloadingData, setIsPreloadingData } = useAuth();
+  const { preloadAllData } = useDataPreload();
   const hasRedirected = useRef(false);
   const [isVerifyingUser, setIsVerifyingUser] = useState<boolean | null>(null);
 
@@ -29,11 +32,33 @@ export default function GetStarted() {
     checkVerificationFlag();
   }, []);
 
+  // Handle data preloading completion
+  useEffect(() => {
+    if (isPreloadingData && user && !isLoading) {
+      const handlePreloadComplete = async () => {
+        console.log("🔄 Starting data preload...");
+        await preloadAllData();
+        console.log("✅ Data preload completed, redirecting to dashboard");
+        setIsPreloadingData(false);
+        hasRedirected.current = true;
+        router.replace("/(tabs)/dashboard");
+      };
+
+      handlePreloadComplete();
+    }
+  }, [isPreloadingData, user, isLoading, preloadAllData, setIsPreloadingData, router]);
+
   // If user is already authenticated, redirect based on onboarding status
   useEffect(() => {
     // Don't redirect if we're generating a workout
     if (isGeneratingWorkout) {
       console.log("🚫 Skipping redirect - workout generation in progress");
+      return;
+    }
+
+    // Don't redirect if we're preloading data
+    if (isPreloadingData) {
+      console.log("🚫 Skipping redirect - data preloading in progress");
       return;
     }
 
@@ -54,14 +79,10 @@ export default function GetStarted() {
       const needsOnboarding = user.needsOnboarding ?? true;
 
       if (!needsOnboarding) {
-        // Only redirect to calendar if not already there
-        if (pathname !== "/(tabs)/calendar") {
-          console.log("✅ Redirecting to calendar - onboarding complete");
-          hasRedirected.current = true;
-          router.replace("/(tabs)/dashboard");
-        } else {
-          console.log("🚫 Already on calendar page, skipping redirect");
-        }
+        // Trigger data preloading instead of direct redirect
+        console.log("✅ Starting data preload - onboarding complete");
+        console.log("📊 Current state:", { isPreloadingData, isVerifyingUser, hasRedirected: hasRedirected.current });
+        setIsPreloadingData(true);
       } else {
         // Only redirect to onboarding if not already there
         if (pathname !== "/(auth)/onboarding") {
@@ -78,9 +99,11 @@ export default function GetStarted() {
     isLoading,
     user?.needsOnboarding,
     isGeneratingWorkout,
+    isPreloadingData,
     isVerifyingUser,
     pathname,
     router,
+    setIsPreloadingData,
   ]);
 
   // Reset redirect flag when authentication state changes (e.g., logout)
@@ -100,6 +123,12 @@ export default function GetStarted() {
         <Text className="text-base text-neutral-medium-4">Loading...</Text>
       </View>
     );
+  }
+
+  // Show warming up screen when preloading data
+  if (isPreloadingData) {
+    console.log("🔥 Showing WarmingUpScreen - isPreloadingData is true");
+    return <WarmingUpScreen />;
   }
 
   return (

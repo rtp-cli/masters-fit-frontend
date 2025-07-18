@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -18,9 +18,6 @@ import { useAuth } from "@contexts/AuthContext";
 import ExerciseLink from "@components/ExerciseLink";
 import ExerciseLinkModal from "@components/ExerciseLinkModal";
 import {
-  searchByDateAPI,
-  searchExerciseAPI,
-  searchExercisesAPI,
   DateSearchResponse,
   ExerciseSearchResponse,
   Exercise,
@@ -28,6 +25,7 @@ import {
   ExerciseDetails,
   ExerciseUserStats,
 } from "@lib/search";
+import { useAppDataContext } from "@contexts/AppDataContext";
 import { updateExerciseLink } from "@lib/exercises";
 import {
   formatEquipment,
@@ -36,17 +34,20 @@ import {
   formatDate as utilFormatDate,
 } from "../../utils";
 import { colors } from "../../lib/theme";
+import { SearchSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 type SearchType = "date" | "exercise" | "general";
 
 export default function SearchScreen() {
   const { user } = useAuth();
+  const { refresh: { searchByDate, searchExercise, searchExercises }, loading } = useAppDataContext();
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchType, setSearchType] = useState<SearchType>("general");
-  const [isLoading, setIsLoading] = useState(false);
+  // Use centralized loading state
+  const isLoading = loading.searchLoading;
 
   // Search results
   const [dateResult, setDateResult] = useState<DateSearchWorkout | null>(null);
@@ -106,10 +107,10 @@ export default function SearchScreen() {
     setExerciseResult(null);
     setGeneralResults([]);
 
-    setIsLoading(true);
+    // Loading state is handled by useAppData
 
     try {
-      const result = await searchByDateAPI(user.id, dateString);
+      const result = await searchByDate(dateString);
       if (result.success) {
         setDateResult(result.workout);
         setSearchType("date");
@@ -118,24 +119,38 @@ export default function SearchScreen() {
       console.error("Date search error:", error);
       Alert.alert("Error", "Failed to search by date. Please try again.");
     } finally {
-      setIsLoading(false);
+      // Loading state is handled by useAppData
     }
   };
 
-  // Handle exercise search
-  const performExerciseSearch = async () => {
-    if (!exerciseQuery.trim() || !user) return;
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (query: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (query.trim() && user) {
+            performExerciseSearchInternal(query);
+          }
+        }, 300); // 300ms delay
+      };
+    })(),
+    [user]
+  );
 
+  // Internal search function
+  const performExerciseSearchInternal = async (query: string) => {
     // Clear current data before loading
     setDateResult(null);
     setExerciseResult(null);
     setGeneralResults([]);
 
-    setIsLoading(true);
+    // Loading state is handled by useAppData
     setDateQuery(""); // Clear date query
 
     try {
-      const result = await searchExercisesAPI(exerciseQuery);
+      const result = await searchExercises(query);
       if (result.success) {
         setGeneralResults(result.exercises);
         setSearchType("general");
@@ -144,9 +159,22 @@ export default function SearchScreen() {
       console.error("Exercise search error:", error);
       Alert.alert("Error", "Failed to search exercises. Please try again.");
     } finally {
-      setIsLoading(false);
+      // Loading state is handled by useAppData
     }
   };
+
+  // Handle exercise search
+  const performExerciseSearch = async () => {
+    if (!exerciseQuery.trim() || !user) return;
+    await performExerciseSearchInternal(exerciseQuery);
+  };
+
+  // Auto-search when query changes
+  useEffect(() => {
+    if (exerciseQuery.trim().length > 2) {
+      debouncedSearch(exerciseQuery);
+    }
+  }, [exerciseQuery, debouncedSearch]);
 
   // Handle exercise selection for detailed view
   const handleExerciseSelect = async (exercise: Exercise) => {
@@ -157,9 +185,9 @@ export default function SearchScreen() {
     setExerciseResult(null);
     setGeneralResults([]);
 
-    setIsLoading(true);
+    // Loading state is handled by useAppData
     try {
-      const result = await searchExerciseAPI(user.id, exercise.id);
+      const result = await searchExercise(exercise.id);
       if (result.success) {
         setExerciseResult({
           exercise: result.exercise,
@@ -174,7 +202,7 @@ export default function SearchScreen() {
         "Failed to load exercise details. Please try again."
       );
     } finally {
-      setIsLoading(false);
+      // Loading state is handled by useAppData
     }
   };
 
@@ -422,16 +450,24 @@ export default function SearchScreen() {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 bg-background">
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={colors.brand.primary} />
-          <Text className="mt-4 text-text-muted">Loading exercises...</Text>
+  // Helper component for results skeleton
+  const ResultsSkeleton = () => (
+    <View className="px-4">
+      <View className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+      {Array.from({length: 5}).map((_, index) => (
+        <View key={index} className="bg-white rounded-xl p-4 mb-3 shadow-sm">
+          <View className="flex-row items-center">
+            <View className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mr-3" />
+            <View className="flex-1">
+              <View className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-2" />
+              <View className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+            </View>
+            <View className="w-6 h-6 bg-gray-100 rounded animate-pulse" />
+          </View>
         </View>
-      </View>
-    );
-  }
+      ))}
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-background">
@@ -596,8 +632,13 @@ export default function SearchScreen() {
           </>
         ) : null}
 
+        {/* Loading State - Only for results area */}
+        {isLoading && (
+          <ResultsSkeleton />
+        )}
+        
         {/* Date Search Results Header */}
-        {selectedDate && dateResult ? (
+        {!isLoading && selectedDate && dateResult ? (
           <View className="px-4 pb-2">
             <View className="flex-row items-center justify-between">
               <Text className="text-sm text-text-muted">
@@ -628,7 +669,7 @@ export default function SearchScreen() {
         ) : null}
 
         {/* Exercise Detail View */}
-        {exerciseResult ? (
+        {!isLoading && exerciseResult ? (
           <View className="px-4 pb-4">
             <View className="bg-white rounded-2xl p-5 shadow-sm">
               {/* Exercise Link at the top inside card */}
@@ -867,7 +908,7 @@ export default function SearchScreen() {
         ) : null}
 
         {/* Date Search Results */}
-        {dateResult ? (
+        {!isLoading && dateResult ? (
           <View className="px-4">
             <View className="bg-white rounded-2xl p-5 shadow-sm">
               <View className="flex-row justify-between items-center mb-3">
@@ -1280,7 +1321,7 @@ export default function SearchScreen() {
         ) : null}
 
         {/* General Exercise Search Results */}
-        {generalResults.length > 0 ? (
+        {!isLoading && generalResults.length > 0 ? (
           <View className="px-4">
             <Text className="text-lg font-semibold text-text-primary mb-4 p-4">
               Exercise Results ({safeString(generalResults.length)})
@@ -1407,7 +1448,8 @@ export default function SearchScreen() {
         ) : null}
 
         {/* How to Search Instructions */}
-        {!exerciseQuery.trim() &&
+        {!isLoading &&
+        !exerciseQuery.trim() &&
         !dateQuery.trim() &&
         !dateResult &&
         !exerciseResult &&

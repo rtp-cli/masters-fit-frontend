@@ -36,6 +36,8 @@ import {
 } from "@/types/api/workout.types";
 import { Exercise } from "@/types/api/exercise.types";
 import { useWorkout } from "@/contexts/WorkoutContext";
+import { useAppDataContext } from "@/contexts/AppDataContext";
+import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -58,6 +60,9 @@ const formatTime = (seconds: number): string => {
 export default function WorkoutScreen() {
   // Get workout context for tab disabling
   const { setWorkoutInProgress } = useWorkout();
+  
+  // Get data refresh functions
+  const { refresh: { refreshDashboard } } = useAppDataContext();
 
   // Core state
   const [loading, setLoading] = useState(true);
@@ -355,6 +360,8 @@ export default function WorkoutScreen() {
         // All exercises completed, so mark the plan day as complete
         if (workout?.id) {
           await markPlanDayAsComplete(workout.id);
+          // Refresh dashboard data after workout completion
+          await refreshDashboard();
         }
 
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
@@ -392,14 +399,7 @@ export default function WorkoutScreen() {
 
   // Render loading state
   if (loading) {
-    return (
-      <View className="flex-1 bg-background justify-center items-center">
-        <ActivityIndicator size="large" color={colors.brand.primary} />
-        <Text className="text-text-primary mt-4 text-base">
-          Loading workout...
-        </Text>
-      </View>
-    );
+    return <WorkoutSkeleton />;
   }
 
   // Render error state

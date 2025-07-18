@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
+import { useAppDataContext } from "@contexts/AppDataContext";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@components/OnboardingForm";
 import { colors } from "../lib/theme";
@@ -116,6 +117,9 @@ enum IntensityLevels {
 export default function ProfileEditScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  
+  // Get data refresh functions
+  const { refresh: { refreshProfile } } = useAppDataContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -315,6 +319,8 @@ export default function ProfileEditScreen() {
       const updatedProfile = await updateUserProfile(profileData as any);
 
       if (updatedProfile) {
+        // Refresh profile data after successful update
+        await refreshProfile();
         Alert.alert("Success", "Your profile has been updated successfully!", [
           {
             text: "OK",
