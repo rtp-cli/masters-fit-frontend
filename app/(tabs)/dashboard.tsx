@@ -422,8 +422,9 @@ export default function DashboardScreen() {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    // Use current date as reference point, not the latest data date
+    // Use current date as reference point
     const today = new Date();
+    today.setHours(23, 59, 59, 999); // Set to end of day for inclusive comparison
     let cutoffDate = new Date(today);
 
     switch (filter) {
@@ -431,28 +432,31 @@ export default function DashboardScreen() {
         cutoffDate.setDate(today.getDate() - 7);
         break;
       case "1M":
-        cutoffDate.setDate(today.getDate() - 30); // Use days instead of months for consistency
+        cutoffDate.setDate(today.getDate() - 30);
         break;
       case "3M":
-        cutoffDate.setDate(today.getDate() - 90); // Use days instead of months for consistency
+        cutoffDate.setDate(today.getDate() - 90);
         break;
       default:
         cutoffDate.setDate(today.getDate() - 30);
     }
+    cutoffDate.setHours(0, 0, 0, 0); // Set to start of day for inclusive comparison
 
-    // Filter data to only include dates after the cutoff
-    const filteredData = sortedData.filter(
-      (item) => new Date(item.date) >= cutoffDate
-    );
+    console.log(`🔍 Filtering data from ${cutoffDate.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]} for ${filter}`);
+
+    // Filter data to only include dates within the range
+    const filteredData = sortedData.filter((item) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= cutoffDate && itemDate <= today;
+    });
+
+    console.log(`📊 Original data: ${sortedData.length} points, Filtered: ${filteredData.length} points`);
 
     // If no data matches the filter, return the most recent data points as fallback
     if (filteredData.length === 0) {
-      return sortedData.slice(-Math.min(sortedData.length, 5));
-    }
-
-    // If we have very few filtered results, expand to show more context
-    if (filteredData.length < 3 && sortedData.length > 3) {
-      return sortedData.slice(-Math.min(sortedData.length, 7));
+      const fallback = sortedData.slice(-Math.min(sortedData.length, 5));
+      console.log(`⚠️ No data in range, using fallback: ${fallback.length} points`);
+      return fallback;
     }
 
     return filteredData;
@@ -482,6 +486,7 @@ export default function DashboardScreen() {
         weightPerformanceFilter
       );
       setFilteredWeightAccuracy(filteredData);
+      console.log(`📊 Filtered weight accuracy data for ${weightPerformanceFilter}:`, filteredData);
     } else {
       // Clear filtered data when no raw data
       setFilteredWeightAccuracy(null);
@@ -512,6 +517,7 @@ export default function DashboardScreen() {
         workoutTypeFilter
       );
       setFilteredWorkoutTypeMetrics(filteredData);
+      console.log(`📊 Filtered workout type data for ${workoutTypeFilter}:`, filteredData);
     } else {
       // Clear filtered data when no raw data
       setFilteredWorkoutTypeMetrics(null);
@@ -542,6 +548,7 @@ export default function DashboardScreen() {
         strengthFilter
       );
       setWeightProgressionData(filteredData);
+      console.log(`📊 Filtered weight progression data for ${strengthFilter}:`, filteredData.length, 'points');
     } else {
       // Clear filtered data when no raw data
       setWeightProgressionData([]);
