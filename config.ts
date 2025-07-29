@@ -6,13 +6,13 @@ const getApiUrl = (): string => {
   if (__DEV__) {
     if (Platform.OS === "android") {
       // For Android, we need to use the special IP address
-      return `https://mastersfit-api.onrender.com/api`;
+      return `http://localhost:5000/api`;
     } else if (Platform.OS === "ios") {
       // For iOS simulator, use localhost
-      return `https://mastersfit-api.onrender.com/api`;
+      return `http://localhost:5000/api`;
     }
     // Default development API URL
-    return "https://mastersfit-api.onrender.com/api";
+    return "http://localhost:5000/api";
   }
 
   // For production, use the production URL

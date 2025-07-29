@@ -551,3 +551,47 @@ export async function regenerateDailyWorkout(
     return null;
   }
 }
+
+/**
+ * Skip an exercise
+ */
+export async function skipExercise(
+  workoutId: number,
+  planDayExerciseId: number
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/${workoutId}/exercise/${planDayExerciseId}/skip`,
+      {
+        method: "POST",
+      }
+    );
+    invalidateActiveWorkoutCache();
+    return response;
+  } catch (error) {
+    console.error("Error skipping exercise:", error);
+    return null;
+  }
+}
+
+/**
+ * Skip a workout block
+ */
+export async function skipWorkoutBlock(
+  workoutId: number,
+  workoutBlockId: number
+): Promise<any | null> {
+  try {
+    const response = await apiRequest<any>(
+      `/logs/workout/${workoutId}/block/${workoutBlockId}/skip`,
+      {
+        method: "POST",
+      }
+    );
+    invalidateActiveWorkoutCache();
+    return response;
+  } catch (error) {
+    console.error("Error skipping workout block:", error);
+    return null;
+  }
+}

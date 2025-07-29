@@ -17,6 +17,8 @@ import {
   fetchActiveWorkout,
   createExerciseLog,
   markPlanDayAsComplete,
+  skipExercise,
+  skipWorkoutBlock,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -88,10 +90,16 @@ export default function WorkoutScreen() {
     []
   );
 
+  // Skip state
+  const [skippedExercises, setSkippedExercises] = useState<number[]>([]);
+  const [skippedBlocks, setSkippedBlocks] = useState<number[]>([]);
+
   // Modal state
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showRestCompleteModal, setShowRestCompleteModal] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
+  const [isSkippingExercise, setIsSkippingExercise] = useState(false);
 
   // Rest timer state
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
@@ -112,9 +120,13 @@ export default function WorkoutScreen() {
   const currentExercise = exercises[currentExerciseIndex];
   const currentProgress = exerciseProgress[currentExerciseIndex];
 
-  // Calculate overall workout progress (0 - 100)
+  // Calculate overall workout progress (0 - 100) including skipped exercises
+  const completedAndSkippedCount =
+    currentExerciseIndex + skippedExercises.length;
   const progressPercent =
-    exercises.length > 0 ? (currentExerciseIndex / exercises.length) * 100 : 0;
+    exercises.length > 0
+      ? (completedAndSkippedCount / exercises.length) * 100
+      : 0;
 
   // Timer management
   useEffect(() => {
@@ -444,6 +456,63 @@ export default function WorkoutScreen() {
     }
   };
 
+  // Skip current exercise
+  const skipCurrentExercise = async () => {
+    if (!currentExercise || !workout) return;
+
+    setIsSkippingExercise(true);
+
+    try {
+      // Call skip API
+      await skipExercise(workout.workoutId, currentExercise.id);
+
+      // Update local state
+      setSkippedExercises((prev) => [...prev, currentExercise.id]);
+
+      // Mark progress as skipped
+      setExerciseProgress((prev) => {
+        const updated = [...prev];
+        updated[currentExerciseIndex] = {
+          ...updated[currentExerciseIndex],
+          isSkipped: true,
+        };
+        return updated;
+      });
+
+      // Move to next exercise or complete workout
+      if (currentExerciseIndex < exercises.length - 1) {
+        setCurrentExerciseIndex((prev) => prev + 1);
+        setExerciseTimer(0);
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      } else {
+        // Check if all exercises are completed or skipped
+        const allProcessed = exercises.every(
+          (ex, index) =>
+            index < currentExerciseIndex ||
+            skippedExercises.includes(ex.id) ||
+            index === currentExerciseIndex
+        );
+
+        if (allProcessed && workout?.id) {
+          await markPlanDayAsComplete(workout.id);
+          setCurrentExerciseIndex(exercises.length);
+          setIsWorkoutCompleted(true);
+          setWorkoutInProgress(false);
+          Alert.alert("Workout Complete!", "You've finished today's workout.", [
+            { text: "OK" },
+          ]);
+        }
+      }
+
+      setShowSkipModal(false);
+    } catch (err) {
+      console.error("Error skipping exercise:", err);
+      Alert.alert("Error", "Failed to skip exercise. Please try again.");
+    } finally {
+      setIsSkippingExercise(false);
+    }
+  };
+
   // Get current block for the current exercise
   const getCurrentBlock = (): WorkoutBlockWithExercises | null => {
     if (!workout?.blocks || !currentExercise) return null;
@@ -523,8 +592,10 @@ export default function WorkoutScreen() {
           Workout Complete!
         </Text>
         <Text className="text-text-muted text-center mb-4 leading-6">
-          Amazing work! You completed all {exercises.length} exercises in{" "}
-          {formatTime(workoutTimer)}.
+          Amazing work! You completed {currentExerciseIndex} exercises
+          {skippedExercises.length > 0 &&
+            ` (${skippedExercises.length} skipped)`}{" "}
+          in {formatTime(workoutTimer)}.
         </Text>
         <Text className="text-text-muted text-center mb-8 leading-6">
           Check back tomorrow for your next workout.
@@ -597,14 +668,16 @@ export default function WorkoutScreen() {
                       {currentBlock.blockName ||
                         getBlockTypeDisplayName(currentBlock.blockType)}
                     </Text>
-                    <View className="items-end">
-                      {currentBlock.rounds ? (
-                        <Text className="text-sm font-semibold text-text-primary">
-                          {currentBlock.rounds === 1
-                            ? "1 Round"
-                            : `${currentBlock.rounds} Rounds`}
-                        </Text>
-                      ) : null}
+                    <View className="flex-row items-center gap-2">
+                      <View className="items-end">
+                        {currentBlock.rounds && (
+                          <Text className="text-sm font-semibold text-text-primary">
+                            {currentBlock.rounds === 1
+                              ? "1 Round"
+                              : `${currentBlock.rounds} Rounds`}
+                          </Text>
+                        )}
+                      </View>
                     </View>
                   </View>
                   {currentBlock.instructions ? (
@@ -866,6 +939,7 @@ export default function WorkoutScreen() {
                   );
                   const isCompleted = globalIndex < currentExerciseIndex;
                   const isCurrent = globalIndex === currentExerciseIndex;
+                  const isSkipped = skippedExercises.includes(exercise.id);
 
                   return (
                     <View
@@ -873,15 +947,25 @@ export default function WorkoutScreen() {
                       className={`flex-row items-center p-3 rounded-xl mb-2 ${
                         isCurrent
                           ? "bg-brand-light-1 border border-brand-light-1"
-                          : isCompleted
+                          : isCompleted || isSkipped
                             ? "bg-brand-light-1 border border-brand-light-1"
                             : "bg-background border border-neutral-light-2"
                       }`}
                     >
                       <View
-                        className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${isCompleted ? "bg-neutral-dark-1" : "bg-brand-medium-2"}`}
+                        className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
+                          isCompleted
+                            ? "bg-neutral-dark-1"
+                            : "bg-brand-medium-2"
+                        }`}
                       >
-                        {isCompleted ? (
+                        {isSkipped ? (
+                          <Ionicons
+                            name="play-skip-forward-outline"
+                            size={16}
+                            color="white"
+                          />
+                        ) : isCompleted ? (
                           <Ionicons
                             name="checkmark"
                             size={16}
@@ -889,7 +973,7 @@ export default function WorkoutScreen() {
                           />
                         ) : isCurrent ? (
                           <Ionicons
-                            name="play"
+                            name="play-outline"
                             size={12}
                             color={colors.neutral.dark[1]}
                           />
@@ -949,13 +1033,25 @@ export default function WorkoutScreen() {
             </Text>
           </TouchableOpacity>
         ) : (
-          <View className="flex-row gap-3">
+          <View className="flex-row gap-2">
+            <TouchableOpacity
+              className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+              onPress={() => setShowSkipModal(true)}
+            >
+              <Ionicons
+                name="play-skip-forward-outline"
+                size={20}
+                color={colors.text.primary}
+              />
+              <Text className="text-text-primary font-semibold ml-2">Skip</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
               onPress={togglePause}
             >
               <Ionicons
-                name={isPaused ? "play" : "pause"}
+                name={isPaused ? "play-outline" : "pause-outline"}
                 size={20}
                 color={colors.text.primary}
               />
@@ -974,7 +1070,7 @@ export default function WorkoutScreen() {
                 color={colors.text.secondary}
               />
               <Text className="text-secondary font-semibold ml-2">
-                Complete Exercise
+                Complete
               </Text>
             </TouchableOpacity>
           </View>
@@ -1023,6 +1119,56 @@ export default function WorkoutScreen() {
                 ) : (
                   <Text className="text-secondary font-semibold text-center">
                     Complete
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Skip Exercise Modal */}
+      <Modal visible={showSkipModal} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <Text className="text-xl font-bold text-text-primary mb-4 text-center">
+              Skip Exercise
+            </Text>
+            <Text className="text-base text-text-secondary text-center mb-6 leading-6">
+              Skip "{currentExercise?.exercise.name}"? This exercise will be
+              marked as incomplete.
+            </Text>
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-1"
+                onPress={() => setShowSkipModal(false)}
+              >
+                <Text className="text-text-primary font-semibold text-center">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className={`bg-primary rounded-xl py-3 px-6 flex-1 ${
+                  isSkippingExercise ? "opacity-75" : ""
+                }`}
+                onPress={skipCurrentExercise}
+                disabled={isSkippingExercise}
+              >
+                {isSkippingExercise ? (
+                  <View className="flex-row items-center justify-center">
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.text.primary}
+                    />
+                    <Text className="text-text-primary font-semibold ml-2">
+                      Skipping...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-text-primary font-semibold text-center">
+                    Skip
                   </Text>
                 )}
               </TouchableOpacity>

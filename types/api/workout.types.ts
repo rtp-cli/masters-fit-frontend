@@ -58,6 +58,7 @@ export interface ExerciseProgress {
   duration: number;
   restTime: number;
   notes: string;
+  isSkipped?: boolean;
 }
 
 export interface CreateWorkoutLogParams {
