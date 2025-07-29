@@ -2,6 +2,7 @@ import {
   ExerciseSessionData,
   PlanDayWithBlocks,
   WorkoutBlockWithExercise,
+  ExerciseSet,
 } from "../api/workout.types";
 
 export interface UseWorkoutSessionReturn {
@@ -21,6 +22,7 @@ export interface UseWorkoutSessionReturn {
   completeExercise: (notes?: string) => Promise<boolean>;
   endWorkout: (notes?: string) => Promise<boolean>;
   updateExerciseData: (field: keyof ExerciseSessionData, value: any) => void;
+  updateExerciseSets: (sets: ExerciseSet[]) => void;
   moveToNextExercise: () => void;
   resetSession: () => void;
   refreshWorkout: () => Promise<void>;

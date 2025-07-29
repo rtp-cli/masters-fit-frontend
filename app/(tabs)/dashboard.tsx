@@ -143,7 +143,7 @@ export default function DashboardScreen() {
     useState<WeightAccuracyMetrics | null>(null);
   const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] =
     useState<WorkoutTypeMetrics | null>(null);
-  
+
   // State to track if we've loaded initial data
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -211,7 +211,7 @@ export default function DashboardScreen() {
   useEffect(() => {
     if (user?.id && !hasLoadedInitialData && weeklySummary) {
       setIsInitialLoad(true);
-      
+
       // Just load today's workout - dashboard data comes from preload
       fetchTodaysWorkout().then(() => {
         setHasLoadedInitialData(true);
@@ -442,7 +442,9 @@ export default function DashboardScreen() {
     }
     cutoffDate.setHours(0, 0, 0, 0); // Set to start of day for inclusive comparison
 
-    console.log(`🔍 Filtering data from ${cutoffDate.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]} for ${filter}`);
+    console.log(
+      `🔍 Filtering data from ${cutoffDate.toISOString().split("T")[0]} to ${today.toISOString().split("T")[0]} for ${filter}`
+    );
 
     // Filter data to only include dates within the range
     const filteredData = sortedData.filter((item) => {
@@ -450,12 +452,16 @@ export default function DashboardScreen() {
       return itemDate >= cutoffDate && itemDate <= today;
     });
 
-    console.log(`📊 Original data: ${sortedData.length} points, Filtered: ${filteredData.length} points`);
+    console.log(
+      `📊 Original data: ${sortedData.length} points, Filtered: ${filteredData.length} points`
+    );
 
     // If no data matches the filter, return the most recent data points as fallback
     if (filteredData.length === 0) {
       const fallback = sortedData.slice(-Math.min(sortedData.length, 5));
-      console.log(`⚠️ No data in range, using fallback: ${fallback.length} points`);
+      console.log(
+        `⚠️ No data in range, using fallback: ${fallback.length} points`
+      );
       return fallback;
     }
 
@@ -469,15 +475,21 @@ export default function DashboardScreen() {
         const data = await fetchWeightAccuracyByDate(calculateWideDataRange());
         setRawWeightAccuracyData(data);
       } catch (error) {
-        console.error('Error loading weight accuracy data:', error);
+        console.error("Error loading weight accuracy data:", error);
       }
     };
-    
+
     if (user?.id && hasLoadedInitialData) {
       loadWeightAccuracyData();
     }
-  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWeightAccuracyByDate]);
-  
+  }, [
+    user?.id,
+    hasLoadedInitialData,
+    weeklySummary,
+    dailyWorkoutProgress,
+    fetchWeightAccuracyByDate,
+  ]);
+
   // Filter weight accuracy data when filter changes
   useEffect(() => {
     if (rawWeightAccuracyData.length > 0) {
@@ -486,7 +498,10 @@ export default function DashboardScreen() {
         weightPerformanceFilter
       );
       setFilteredWeightAccuracy(filteredData);
-      console.log(`📊 Filtered weight accuracy data for ${weightPerformanceFilter}:`, filteredData);
+      console.log(
+        `📊 Filtered weight accuracy data for ${weightPerformanceFilter}:`,
+        filteredData
+      );
     } else {
       // Clear filtered data when no raw data
       setFilteredWeightAccuracy(null);
@@ -500,15 +515,21 @@ export default function DashboardScreen() {
         const data = await fetchWorkoutTypeByDate(calculateWideDataRange());
         setRawWorkoutTypeData(data);
       } catch (error) {
-        console.error('Error loading workout type data:', error);
+        console.error("Error loading workout type data:", error);
       }
     };
-    
+
     if (user?.id && hasLoadedInitialData) {
       loadWorkoutTypeData();
     }
-  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWorkoutTypeByDate]);
-  
+  }, [
+    user?.id,
+    hasLoadedInitialData,
+    weeklySummary,
+    dailyWorkoutProgress,
+    fetchWorkoutTypeByDate,
+  ]);
+
   // Filter workout type data when filter changes
   useEffect(() => {
     if (rawWorkoutTypeData.length > 0) {
@@ -517,7 +538,10 @@ export default function DashboardScreen() {
         workoutTypeFilter
       );
       setFilteredWorkoutTypeMetrics(filteredData);
-      console.log(`📊 Filtered workout type data for ${workoutTypeFilter}:`, filteredData);
+      console.log(
+        `📊 Filtered workout type data for ${workoutTypeFilter}:`,
+        filteredData
+      );
     } else {
       // Clear filtered data when no raw data
       setFilteredWorkoutTypeMetrics(null);
@@ -531,15 +555,21 @@ export default function DashboardScreen() {
         const data = await fetchWeightProgression(calculateWideDataRange());
         setRawWeightProgressionData(data);
       } catch (error) {
-        console.error('Error loading weight progression data:', error);
+        console.error("Error loading weight progression data:", error);
       }
     };
-    
+
     if (user?.id && hasLoadedInitialData) {
       loadWeightProgressionData();
     }
-  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWeightProgression]);
-  
+  }, [
+    user?.id,
+    hasLoadedInitialData,
+    weeklySummary,
+    dailyWorkoutProgress,
+    fetchWeightProgression,
+  ]);
+
   // Filter weight progression data when filter changes
   useEffect(() => {
     if (rawWeightProgressionData.length > 0) {
@@ -548,20 +578,23 @@ export default function DashboardScreen() {
         strengthFilter
       );
       setWeightProgressionData(filteredData);
-      console.log(`📊 Filtered weight progression data for ${strengthFilter}:`, filteredData.length, 'points');
+      console.log(
+        `📊 Filtered weight progression data for ${strengthFilter}:`,
+        filteredData.length,
+        "points"
+      );
     } else {
       // Clear filtered data when no raw data
       setWeightProgressionData([]);
     }
   }, [rawWeightProgressionData, strengthFilter]);
 
-
   if (loading.dashboardLoading || loadingToday || isInitialLoad) {
     return (
       <View className="flex-1 bg-background">
         <SafeAreaView className="flex-1">
-          <ScrollView 
-            className="flex-1" 
+          <ScrollView
+            className="flex-1"
             contentContainerStyle={{ paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
           >
@@ -621,16 +654,15 @@ export default function DashboardScreen() {
       startDate.setDate(today.getDate() - 30);
       const endDate = new Date(today);
       endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
-      
-      const refreshDateRange = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
-      };
 
+      const refreshDateRange = {
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+      };
 
       // Just refresh dashboard data - this includes all dashboard metrics
       refreshAllData(refreshDateRange);
-      
+
       // Refresh today's workout
       fetchTodaysWorkout();
     }
@@ -718,11 +750,11 @@ export default function DashboardScreen() {
   // Compute weekly progress data (will update when dependencies change)
   const getWeeklyProgressData = () => {
     if (!dailyWorkoutProgress) {
-      console.log('No dailyWorkoutProgress data available');
+      console.log("No dailyWorkoutProgress data available");
       return [];
     }
-    
-    console.log('Computing weekly progress with data:', dailyWorkoutProgress);
+
+    console.log("Computing weekly progress with data:", dailyWorkoutProgress);
 
     // Use the workout start date as the base, not the current week's Monday
     let weekStartDate = new Date();
@@ -731,9 +763,7 @@ export default function DashboardScreen() {
     if (workoutInfo?.startDate) {
       // Use safe date parsing to avoid timezone issues
       if (/^\d{4}-\d{2}-\d{2}$/.test(workoutInfo.startDate)) {
-        const [year, month, day] = workoutInfo.startDate
-          .split("-")
-          .map(Number);
+        const [year, month, day] = workoutInfo.startDate.split("-").map(Number);
         weekStartDate = new Date(year, month - 1, day); // month is 0-indexed
       } else {
         weekStartDate = new Date(workoutInfo.startDate);
@@ -786,8 +816,6 @@ export default function DashboardScreen() {
       const dayData = dailyWorkoutProgress.find((day) => {
         return day.date === dateStr;
       });
-      
-      console.log(`Date ${dateStr}: dayData =`, dayData);
 
       // Check if there's a planned workout for this day
       const hasPlannedWorkout = dayData?.hasPlannedWorkout || false;
@@ -812,8 +840,6 @@ export default function DashboardScreen() {
       } else if (isFuture) {
         status = "upcoming";
       }
-      
-      console.log(`Date ${dateStr}: status=${status}, completionRate=${completionRate}, isToday=${isToday}`);
 
       workout7Days.push({
         dayName,
@@ -835,7 +861,10 @@ export default function DashboardScreen() {
       <ScrollView
         className="flex-1"
         refreshControl={
-          <RefreshControl refreshing={loading.dashboardLoading} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={loading.dashboardLoading}
+            onRefresh={handleRefresh}
+          />
         }
       >
         {/* Header with Streak */}
@@ -1682,11 +1711,15 @@ export default function DashboardScreen() {
                 </View>
               </View>
             )}
-            
+
             {/* No data state - show when loaded but no workout data */}
-            {hasLoadedInitialData && 
-              (!filteredWeightAccuracy || !filteredWeightAccuracy.hasExerciseData || filteredWeightAccuracy.totalSets === 0) &&
-              (!filteredWorkoutTypeMetrics || !filteredWorkoutTypeMetrics.hasData || filteredWorkoutTypeMetrics.totalSets === 0) &&
+            {hasLoadedInitialData &&
+              (!filteredWeightAccuracy ||
+                !filteredWeightAccuracy.hasExerciseData ||
+                filteredWeightAccuracy.totalSets === 0) &&
+              (!filteredWorkoutTypeMetrics ||
+                !filteredWorkoutTypeMetrics.hasData ||
+                filteredWorkoutTypeMetrics.totalSets === 0) &&
               (!weightProgressionData || weightProgressionData.length === 0) &&
               (!weeklySummary || weeklySummary.totalWorkouts === 0) && (
                 <View className="px-4 mb-6">

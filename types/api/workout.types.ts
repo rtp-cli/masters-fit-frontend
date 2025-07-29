@@ -35,13 +35,19 @@ export interface UpdateWorkoutParams {
 
 export interface CreateExerciseLogParams {
   planDayExerciseId: number;
-  setsCompleted: number;
-  repsCompleted: number;
-  roundsCompleted?: number;
-  weightUsed: number;
+  sets: Array<{
+    roundNumber: number;
+    setNumber: number;
+    weight: number;
+    reps: number;
+    restAfter?: number;
+  }>;
+  durationCompleted?: number;
   isComplete: boolean;
   timeTaken?: number;
   notes?: string;
+  difficulty?: string;
+  rating?: number;
 }
 
 export interface ExerciseProgress {
@@ -145,6 +151,14 @@ export interface WorkoutSession {
   isActive: boolean;
 }
 
+export interface ExerciseSet {
+  roundNumber: number;
+  setNumber: number;
+  weight: number;
+  reps: number;
+  restAfter?: number;
+}
+
 export interface ExerciseSessionData {
   exerciseId: number;
   planDayExerciseId: number;
@@ -158,6 +172,7 @@ export interface ExerciseSessionData {
   repsCompleted: number;
   roundsCompleted?: number;
   weightUsed?: number;
+  sets?: ExerciseSet[];
   duration?: number;
   restTime?: number;
   timeTaken: number;
@@ -178,14 +193,26 @@ export interface ExerciseSessionData {
 export interface ExerciseLog {
   id?: number;
   planDayExerciseId: number;
-  setsCompleted: number;
-  repsCompleted: number;
-  weightUsed: number;
+  durationCompleted?: number;
   status: "complete" | "incomplete";
   timeTaken?: number; // in seconds
   notes?: string;
+  difficulty?: string;
+  rating?: number;
   created_at?: Date;
   updated_at?: Date;
+  sets?: ExerciseSetLog[];
+}
+
+export interface ExerciseSetLog {
+  id: number;
+  exerciseLogId: number;
+  roundNumber: number;
+  setNumber: number;
+  weight: number | null;
+  reps: number | null;
+  restAfter: number | null;
+  createdAt: Date;
 }
 
 export interface WorkoutLog {

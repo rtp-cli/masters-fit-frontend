@@ -18,7 +18,9 @@ import {
   WorkoutBlockWithExercise,
   CreateExerciseLogParams,
   flattenBlocksToExercises,
+  ExerciseSetLog,
 } from "@/types/api";
+import { ExerciseSet } from "@/components/SetTracker";
 import { UseWorkoutSessionReturn } from "@/types/hooks";
 import { formatDateAsLocalString } from "@/utils";
 
@@ -190,6 +192,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
               repsCompleted: 0,
               roundsCompleted: 0,
               weightUsed: 0,
+              sets: [] as ExerciseSet[],
               duration: exercise.duration || 0,
               restTime: exercise.restTime || 0,
               timeTaken: 0,
@@ -407,6 +410,17 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     [currentExerciseIndex]
   );
 
+  const updateExerciseSets = useCallback(
+    (sets: ExerciseSet[]) => {
+      setExerciseData((prev) =>
+        prev.map((data, index) =>
+          index === currentExerciseIndex ? { ...data, sets } : data
+        )
+      );
+    },
+    [currentExerciseIndex]
+  );
+
   const completeExercise = useCallback(
     async (notes?: string): Promise<boolean> => {
       const currentData = exerciseData[currentExerciseIndex];
@@ -417,12 +431,13 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         // regardless of whether they hit the exact target sets/reps
         const isComplete = true;
 
+        // Calculate total reps and weight for backwards compatibility
+        const currentSets = currentData.sets || [];
+        
         const exerciseLogParams: CreateExerciseLogParams = {
           planDayExerciseId: currentData.planDayExerciseId,
-          setsCompleted: currentData.setsCompleted,
-          repsCompleted: currentData.repsCompleted,
-          roundsCompleted: currentData.roundsCompleted,
-          weightUsed: currentData.weightUsed || 0,
+          sets: currentSets,
+          durationCompleted: currentData.duration,
           timeTaken: exerciseTimer,
           notes: notes || currentData.notes,
           isComplete,
@@ -577,6 +592,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     completeExercise,
     endWorkout,
     updateExerciseData,
+    updateExerciseSets,
     moveToNextExercise,
     resetSession,
     refreshWorkout,

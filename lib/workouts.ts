@@ -338,13 +338,13 @@ export async function createExerciseLog(
       method: "POST",
       body: JSON.stringify({
         planDayExerciseId: params.planDayExerciseId,
-        setsCompleted: params.setsCompleted,
-        repsCompleted: params.repsCompleted,
-        roundsCompleted: params.roundsCompleted,
-        weightUsed: params.weightUsed,
+        sets: params.sets,
+        durationCompleted: params.durationCompleted,
         isComplete: params.isComplete,
         timeTaken: params.timeTaken,
         notes: params.notes,
+        difficulty: params.difficulty,
+        rating: params.rating,
       }),
     });
 

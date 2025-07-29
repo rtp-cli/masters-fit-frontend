@@ -26,6 +26,7 @@ import {
   formatDateAsString,
 } from "@/utils";
 import ExerciseLink from "@/components/ExerciseLink";
+import SetTracker, { ExerciseSet } from "@/components/SetTracker";
 import { colors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
@@ -45,6 +46,7 @@ interface ExerciseProgress {
   repsCompleted: number;
   roundsCompleted: number;
   weightUsed: number;
+  sets: ExerciseSet[];
   duration: number;
   restTime: number;
   notes: string;
@@ -60,9 +62,11 @@ const formatTime = (seconds: number): string => {
 export default function WorkoutScreen() {
   // Get workout context for tab disabling
   const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
-  
+
   // Get data refresh functions
-  const { refresh: { refreshDashboard } } = useAppDataContext();
+  const {
+    refresh: { refreshDashboard },
+  } = useAppDataContext();
 
   // Core state
   const [loading, setLoading] = useState(true);
@@ -86,10 +90,12 @@ export default function WorkoutScreen() {
 
   // Modal state
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showRestCompleteModal, setShowRestCompleteModal] = useState(false);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
 
   // Rest timer state
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
+  const [isRestTimerPaused, setIsRestTimerPaused] = useState(false);
   const [restTimerCountdown, setRestTimerCountdown] = useState(0);
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -110,7 +116,6 @@ export default function WorkoutScreen() {
   const progressPercent =
     exercises.length > 0 ? (currentExerciseIndex / exercises.length) * 100 : 0;
 
-  console.log("WORKOUT", workout);
   // Timer management
   useEffect(() => {
     if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
@@ -133,17 +138,18 @@ export default function WorkoutScreen() {
 
   // Rest timer management
   useEffect(() => {
-    if (isRestTimerActive && restTimerCountdown > 0) {
+    if (isRestTimerActive && !isRestTimerPaused && restTimerCountdown > 0) {
       restTimerRef.current = setInterval(() => {
         setRestTimerCountdown((prev) => {
           if (prev <= 1) {
             // Timer finished
             setIsRestTimerActive(false);
+            setIsRestTimerPaused(false);
             if (restTimerRef.current) {
               clearInterval(restTimerRef.current);
             }
-            // Show completion modal when rest timer finishes
-            setShowCompleteModal(true);
+            // Show rest completion modal when rest timer finishes
+            setShowRestCompleteModal(true);
             return 0;
           }
           return prev - 1;
@@ -160,7 +166,7 @@ export default function WorkoutScreen() {
         clearInterval(restTimerRef.current);
       }
     };
-  }, [isRestTimerActive, restTimerCountdown]);
+  }, [isRestTimerActive, isRestTimerPaused, restTimerCountdown]);
 
   // Sync context with workout state
   useEffect(() => {
@@ -191,6 +197,7 @@ export default function WorkoutScreen() {
       setExerciseTimer(0);
       setCurrentExerciseIndex(0);
       setIsRestTimerActive(false);
+      setIsRestTimerPaused(false);
       setRestTimerCountdown(0);
       // Clear any active timers
       if (timerRef.current) {
@@ -272,6 +279,7 @@ export default function WorkoutScreen() {
           repsCompleted: 0,
           roundsCompleted: 0,
           weightUsed: exercise.weight || 0,
+          sets: [],
           duration: exercise.duration || 0,
           restTime: exercise.restTime || 0,
           notes: "",
@@ -339,12 +347,26 @@ export default function WorkoutScreen() {
     if (restTime > 0) {
       setRestTimerCountdown(restTime);
       setIsRestTimerActive(true);
+      setIsRestTimerPaused(false);
     }
   };
 
-  // Stop rest timer
-  const stopRestTimer = () => {
+  // Pause/Resume rest timer
+  const toggleRestTimerPause = () => {
+    setIsRestTimerPaused(!isRestTimerPaused);
+  };
+
+  // Reset rest timer
+  const resetRestTimer = () => {
+    const restTime = currentExercise?.restTime || 0;
+    setRestTimerCountdown(restTime);
+    setIsRestTimerPaused(false);
+  };
+
+  // Cancel rest timer
+  const cancelRestTimer = () => {
     setIsRestTimerActive(false);
+    setIsRestTimerPaused(false);
     setRestTimerCountdown(0);
     if (restTimerRef.current) {
       clearInterval(restTimerRef.current);
@@ -362,12 +384,19 @@ export default function WorkoutScreen() {
       if (!user) throw new Error("User not authenticated");
 
       // Create exercise log - use timer for duration
+      if (!currentProgress.sets || currentProgress.sets.length === 0) {
+        Alert.alert(
+          "No Sets Logged",
+          "Please click 'Add Set' and log your weights and reps before completing this exercise.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       await createExerciseLog({
         planDayExerciseId: currentExercise.id,
-        setsCompleted: currentProgress.setsCompleted,
-        repsCompleted: currentProgress.repsCompleted,
-        roundsCompleted: currentProgress.roundsCompleted,
-        weightUsed: currentProgress.weightUsed,
+        sets: currentProgress.sets,
+        durationCompleted: currentProgress.duration,
         isComplete: true,
         timeTaken: exerciseTimer, // This logs the actual time spent on exercise
         notes: currentProgress.notes,
@@ -389,10 +418,10 @@ export default function WorkoutScreen() {
           startDate.setDate(today.getDate() - 30); // 30 days back for historical data
           const endDate = new Date(today);
           endDate.setDate(today.getDate() + 7); // 7 days forward for planned workouts
-          
+
           await refreshDashboard({
-            startDate: startDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0]
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
           });
         }
 
@@ -680,221 +709,23 @@ export default function WorkoutScreen() {
                     </View>
                   ) : null}
 
-                  {/* Sets - Only show if more than 1 set */}
-                  {currentExercise.sets && currentExercise.sets > 1 ? (
-                    <View className=" rounded-2xl p-4">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Sets
-                        </Text>
-                        <Text className="text-xs text-text-muted">
-                          Target: {currentExercise.sets} Sets
-                        </Text>
-                      </View>
-                      <View className="flex-row justify-center gap-2">
-                        {Array.from(
-                          { length: currentExercise.sets },
-                          (_, i) => {
-                            const isCompleted =
-                              i < currentProgress.setsCompleted;
-                            return (
-                              <TouchableOpacity
-                                key={i}
-                                className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
-                                  isCompleted
-                                    ? "border-primary bg-primary"
-                                    : "border-neutral-medium-1 bg-background"
-                                }`}
-                                onPress={() =>
-                                  updateProgress("setsCompleted", i + 1)
-                                }
-                              >
-                                {isCompleted ? (
-                                  <Ionicons
-                                    name="checkmark"
-                                    size={14}
-                                    color={colors.text.secondary}
-                                  />
-                                ) : (
-                                  <Text className="text-xs font-semibold text-text-muted">
-                                    {i + 1}
-                                  </Text>
-                                )}
-                              </TouchableOpacity>
-                            );
-                          }
-                        )}
-                      </View>
-                    </View>
-                  ) : null}
-
-                  {/* Reps - Tap counter only, no slider */}
-                  {currentExercise.reps ? (
-                    <View className="rounded-2xl p-4">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Reps
-                        </Text>
-                        <Text className="text-xs text-text-muted">
-                          Target:{" "}
-                          {currentExercise.reps === 1
-                            ? "1 Rep"
-                            : `${currentExercise.reps} Reps`}
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center justify-center gap-3">
-                        <TouchableOpacity
-                          className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
-                          onPress={() =>
-                            updateProgress(
-                              "repsCompleted",
-                              Math.max(0, currentProgress.repsCompleted - 1)
-                            )
-                          }
-                        >
-                          <Ionicons
-                            name="remove"
-                            size={18}
-                            color={colors.text.primary}
-                          />
-                        </TouchableOpacity>
-
-                        <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
-                          <TextInput
-                            className="text-lg font-bold text-text-primary text-center"
-                            value={String(currentProgress.repsCompleted)}
-                            onChangeText={(text) =>
-                              updateProgress("repsCompleted", Number(text) || 0)
-                            }
-                            keyboardType="numeric"
-                          />
-                        </View>
-
-                        <TouchableOpacity
-                          className="w-9 h-9 rounded-full bg-primary items-center justify-center"
-                          onPress={() =>
-                            updateProgress(
-                              "repsCompleted",
-                              currentProgress.repsCompleted + 1
-                            )
-                          }
-                        >
-                          <Ionicons
-                            name="add"
-                            size={18}
-                            color={colors.text.secondary}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : null}
-
-                  {/* Weight - Quick buttons only, no slider */}
+                  {/* Set Tracker Component */}
                   <View className="rounded-2xl p-4">
                     <View className="flex-row items-center justify-between mb-3">
                       <Text className="text-sm font-semibold text-text-primary">
-                        Weight (lbs)
+                        Exercise Sets
                       </Text>
-                      {currentExercise.weight ? (
-                        <Text className="text-xs font-semibold text-text-muted">
-                          Target: {currentExercise.weight} lbs
-                        </Text>
-                      ) : null}
                     </View>
-                    <View className="flex-row items-center justify-center gap-3">
-                      <TouchableOpacity
-                        className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
-                        onPress={() =>
-                          updateProgress(
-                            "weightUsed",
-                            Math.max(0, (currentProgress?.weightUsed || 0) - 10)
-                          )
-                        }
-                      >
-                        <Text className="text-xs font-semibold text-text-primary">
-                          -10
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        className="w-9 h-9 rounded-full bg-neutral-light-2 items-center justify-center"
-                        onPress={() =>
-                          updateProgress(
-                            "weightUsed",
-                            Math.max(0, (currentProgress?.weightUsed || 0) - 5)
-                          )
-                        }
-                      >
-                        <Text className="text-xs font-semibold text-text-primary">
-                          -5
-                        </Text>
-                      </TouchableOpacity>
-
-                      <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
-                        <TextInput
-                          className="text-lg font-bold text-text-primary text-center"
-                          value={String(currentProgress?.weightUsed || 0)}
-                          onChangeText={(text) =>
-                            updateProgress("weightUsed", Number(text) || 0)
-                          }
-                          keyboardType="numeric"
-                        />
-                      </View>
-
-                      <TouchableOpacity
-                        className="w-9 h-9 rounded-full bg-primary items-center justify-center"
-                        onPress={() =>
-                          updateProgress(
-                            "weightUsed",
-                            (currentProgress?.weightUsed || 0) + 5
-                          )
-                        }
-                      >
-                        <Text className="text-xs font-semibold text-secondary">
-                          +5
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        className="w-9 h-9 rounded-full bg-primary items-center justify-center"
-                        onPress={() =>
-                          updateProgress(
-                            "weightUsed",
-                            (currentProgress?.weightUsed || 0) + 10
-                          )
-                        }
-                      >
-                        <Text className="text-xs font-semibold text-secondary">
-                          +10
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                    <SetTracker
+                      targetSets={currentExercise.sets || 3}
+                      targetReps={currentExercise.reps || 10}
+                      targetWeight={currentExercise.weight || 0}
+                      targetRounds={currentBlock?.rounds || 1}
+                      sets={currentProgress.sets}
+                      onSetsChange={(sets) => updateProgress("sets", sets)}
+                      blockType={currentBlock?.blockType}
+                    />
                   </View>
-
-                  {/* Duration - Auto-logged, centered display */}
-                  {/* {currentExercise.duration ? (
-                    <View className="rounded-2xl p-4">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Duration
-                        </Text>
-                        <Text className="text-xs text-text-muted">
-                          Target: {currentExercise.duration}s
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center justify-center">
-                        <View className="bg-background rounded-2xl px-4 py-3 border border-dashed border-neutral-light-2 min-w-[80px] items-center">
-                          <Text
-                            className={`text-lg font-bold ${
-                              exerciseTimer >= currentExercise.duration
-                                ? "text-primary"
-                                : "text-text-primary"
-                            }`}
-                          >
-                            {formatTime(exerciseTimer)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  ) : null} */}
 
                   {/* Notes - Compact with quick chips */}
                   <View className="rounded-2xl p-4">
@@ -925,16 +756,67 @@ export default function WorkoutScreen() {
                       </View>
 
                       {isRestTimerActive ? (
-                        // Active countdown display
-                        <View className="items-center">
+                        // Active countdown display with control buttons
+                        <View className="items-center space-y-3">
                           <View className="bg-background rounded-2xl px-4 py-3 min-w-[80px] items-center">
-                            <Text className="text-lg font-bold text-text-primary text-center">
+                            <Text
+                              className={`text-lg font-bold text-center ${isRestTimerPaused ? "text-orange-500" : "text-text-primary"}`}
+                            >
                               {formatTime(restTimerCountdown)}
                             </Text>
+                            {isRestTimerPaused && (
+                              <Text className="text-xs text-orange-500 mt-1">
+                                PAUSED
+                              </Text>
+                            )}
+                          </View>
+
+                          {/* Rest Timer Control Buttons */}
+                          <View className="flex-row gap-2">
+                            <TouchableOpacity
+                              className="bg-neutral-light-2 rounded-xl py-2 px-3 flex-row items-center justify-center"
+                              onPress={toggleRestTimerPause}
+                            >
+                              <Ionicons
+                                name={isRestTimerPaused ? "play" : "pause"}
+                                size={14}
+                                color={colors.text.primary}
+                              />
+                              <Text className="text-text-primary text-xs font-semibold ml-1">
+                                {isRestTimerPaused ? "Resume" : "Pause"}
+                              </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              className="bg-neutral-light-2 rounded-xl py-2 px-3 flex-row items-center justify-center"
+                              onPress={resetRestTimer}
+                            >
+                              <Ionicons
+                                name="refresh"
+                                size={14}
+                                color={colors.text.primary}
+                              />
+                              <Text className="text-text-primary text-xs font-semibold ml-1">
+                                Reset
+                              </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              className="bg-red-100 rounded-xl py-2 px-3 flex-row items-center justify-center"
+                              onPress={cancelRestTimer}
+                            >
+                              <Ionicons
+                                name="close"
+                                size={14}
+                                color="#ef4444"
+                              />
+                              <Text className="text-red-500 text-xs font-semibold ml-1">
+                                Cancel
+                              </Text>
+                            </TouchableOpacity>
                           </View>
                         </View>
                       ) : (
-                        // Rest timer button styled like main action buttons
                         <View className="items-center">
                           <TouchableOpacity
                             className="bg-primary rounded-2xl py-2 px-6 flex-row items-center justify-center"
@@ -1143,6 +1025,76 @@ export default function WorkoutScreen() {
                     Complete
                   </Text>
                 )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Rest Complete Modal */}
+      <Modal visible={showRestCompleteModal} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <View className="items-center mb-4">
+              <Ionicons name="timer" size={48} color={colors.brand.primary} />
+            </View>
+            <Text className="text-xl font-bold text-text-primary mb-4 text-center">
+              Rest Complete!
+            </Text>
+            <Text className="text-base text-text-secondary text-center mb-6 leading-6">
+              Your {currentExercise?.restTime}s rest is finished. What would you
+              like to do next?
+            </Text>
+
+            {/* Show current progress */}
+            {currentProgress && currentExercise && (
+              <View className="bg-neutral-light-1 rounded-xl p-3 mb-6">
+                <Text className="text-sm font-semibold text-text-primary mb-2 text-center">
+                  Current Progress
+                </Text>
+                <View className="flex-row justify-center items-center space-x-4">
+                  <View className="items-center">
+                    <Text className="text-lg font-bold text-text-primary">
+                      {currentProgress.sets?.length || 0}
+                    </Text>
+                    <Text className="text-xs text-text-muted">
+                      of {currentExercise.sets || 3} sets
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            <View className="space-y-3">
+              {/* Continue button - only show if more sets are needed */}
+              {currentProgress &&
+                currentExercise &&
+                (currentProgress.sets?.length || 0) <
+                  (currentExercise.sets || 3) && (
+                  <TouchableOpacity
+                    className="bg-primary rounded-xl py-3 mb-3 px-6"
+                    onPress={() => {
+                      setShowRestCompleteModal(false);
+                      // Timer is already finished, user can continue with next set
+                    }}
+                  >
+                    <Text className="text-secondary font-semibold text-center">
+                      Continue Exercise
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+              {/* Complete exercise button */}
+              <TouchableOpacity
+                className="bg-neutral-light-2 rounded-xl py-3 px-6"
+                onPress={() => {
+                  setShowRestCompleteModal(false);
+                  setShowCompleteModal(true);
+                }}
+              >
+                <Text className="text-text-primary font-semibold text-center">
+                  Complete Exercise
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
