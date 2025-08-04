@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { apiRequest } from "@/lib/api";
-import { fetchActiveWorkout } from "@lib/workouts";
+import { fetchActiveWorkout, fetchWorkoutHistory } from "@lib/workouts";
 import { fetchUserProfile } from "@lib/profile";
 import { searchByDateAPI, searchExerciseAPI, searchExercisesAPI } from "@lib/search";
 import { useAuth } from "@contexts/AuthContext";
@@ -32,6 +32,7 @@ interface AppDataState {
   dailyWorkoutProgress: DailyWorkoutProgress[];
   workoutData: WorkoutWithDetails | null;
   profileData: Profile | null;
+  historyData: any[] | null; // Historical workout data
 }
 
 // Loading states
@@ -40,6 +41,7 @@ interface LoadingState {
   workoutLoading: boolean;
   profileLoading: boolean;
   searchLoading: boolean;
+  historyLoading: boolean;
 }
 
 // Refresh functions
@@ -47,7 +49,9 @@ interface RefreshFunctions {
   refreshDashboard: (filters?: DashboardFilters) => Promise<void>;
   refreshWorkout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshHistory: () => Promise<void>;
   refreshAll: (filters?: DashboardFilters) => Promise<void>;
+  reset: () => void;
   
   // Individual dashboard metric refreshes
   refreshWeeklySummary: () => Promise<void>;
@@ -87,6 +91,7 @@ export const useAppData = () => {
     dailyWorkoutProgress: [],
     workoutData: null,
     profileData: null,
+    historyData: null,
   });
 
   // Loading states
@@ -95,6 +100,7 @@ export const useAppData = () => {
     workoutLoading: false,
     profileLoading: false,
     searchLoading: false,
+    historyLoading: false,
   });
 
   // Error state
@@ -171,9 +177,18 @@ export const useAppData = () => {
       const response = await fetchActiveWorkout();
       setData(prev => ({
         ...prev,
-        workoutData: response?.workout || null,
+        workoutData: response || null,
       }));
+      
+      // No active workout is a normal state, not an error
+      if (!response) {
+        console.log("✅ Workout data refresh completed - no active workout");
+      } else {
+        console.log("✅ Workout data refresh completed - active workout found");
+      }
     } catch (err) {
+      // Only set error for actual failures, not "no workout" states
+      console.error("❌ Failed to refresh workout data:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch workout data");
     } finally {
       setLoading(prev => ({ ...prev, workoutLoading: false }));
@@ -197,6 +212,29 @@ export const useAppData = () => {
       setError(err instanceof Error ? err.message : "Failed to fetch profile data");
     } finally {
       setLoading(prev => ({ ...prev, profileLoading: false }));
+    }
+  }, [userId]);
+
+  // History data refresh
+  const refreshHistory = useCallback(async () => {
+    if (!userId) return;
+    
+    setLoading(prev => ({ ...prev, historyLoading: true }));
+    try {
+      const history = await fetchWorkoutHistory(userId);
+      setData(prev => ({
+        ...prev,
+        historyData: history || [],
+      }));
+    } catch (err) {
+      console.error("❌ Failed to fetch workout history:", err);
+      // Don't set error for history as it's not critical - just set empty array
+      setData(prev => ({
+        ...prev,
+        historyData: [],
+      }));
+    } finally {
+      setLoading(prev => ({ ...prev, historyLoading: false }));
     }
   }, [userId]);
 
@@ -589,6 +627,34 @@ export const useAppData = () => {
     }
   }, []);
 
+  // Reset all data to initial state
+  const reset = useCallback(() => {
+    console.log("🔄 Resetting all app data to initial state...");
+    setData({
+      dashboardData: null,
+      weeklySummary: null,
+      workoutConsistency: [],
+      weightMetrics: [],
+      weightAccuracy: null,
+      goalProgress: [],
+      totalVolumeMetrics: [],
+      workoutTypeMetrics: null,
+      dailyWorkoutProgress: [],
+      workoutData: null,
+      profileData: null,
+      historyData: null,
+    });
+    setLoading({
+      dashboardLoading: false,
+      workoutLoading: false,
+      profileLoading: false,
+      searchLoading: false,
+      historyLoading: false,
+    });
+    setError(null);
+    console.log("✅ All app data reset to initial state");
+  }, []);
+
   // Refresh all data
   const refreshAll = useCallback(async (filters?: DashboardFilters) => {
     console.log("🔄 Refreshing all app data...");
@@ -598,20 +664,23 @@ export const useAppData = () => {
         refreshDashboard(filters),
         refreshWorkout(),
         refreshProfile(),
+        refreshHistory(),
       ]);
       
       console.log("✅ All app data refreshed successfully");
     } catch (err) {
       console.error("❌ Error refreshing all data:", err);
     }
-  }, [refreshDashboard, refreshWorkout, refreshProfile]);
+  }, [refreshDashboard, refreshWorkout, refreshProfile, refreshHistory]);
 
   // Memoized refresh functions object to prevent infinite loops
   const refresh: RefreshFunctions = useMemo(() => ({
     refreshDashboard,
     refreshWorkout,
     refreshProfile,
+    refreshHistory,
     refreshAll,
+    reset,
     refreshWeeklySummary,
     refreshWorkoutConsistency,
     refreshWeightMetrics,
@@ -631,6 +700,7 @@ export const useAppData = () => {
     refreshWorkout,
     refreshProfile,
     refreshAll,
+    reset,
     refreshWeeklySummary,
     refreshWorkoutConsistency,
     refreshWeightMetrics,

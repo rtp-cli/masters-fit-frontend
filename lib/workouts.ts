@@ -192,12 +192,22 @@ export function getWorkoutsForWeek(
  */
 export async function generateWorkoutPlan(userId: number): Promise<any | null> {
   try {
+    console.log("🏗️ Generating workout plan for user:", userId);
+
     const response = await apiRequest<any>(`/workouts/${userId}/generate`, {
       method: "POST",
     });
-    return response;
+
+    if (response?.success) {
+      console.log("✅ Successfully generated workout plan");
+      // Invalidate cache to force fresh data fetch
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error(response?.message || "Failed to generate workout plan");
+    }
   } catch (error) {
-    console.error("Error generating workout plan:", error);
+    console.error("❌ Error generating workout plan:", error);
     return null;
   }
 }
@@ -228,13 +238,23 @@ export async function regenerateWorkoutPlan(
   }
 ): Promise<any | null> {
   try {
+    console.log("🔄 Regenerating workout plan for user:", userId);
+
     const response = await apiRequest<any>(`/workouts/${userId}/regenerate`, {
       method: "POST",
       body: JSON.stringify(data),
     });
-    return response;
+
+    if (response?.success) {
+      console.log("✅ Successfully regenerated workout plan");
+      // Invalidate cache to force fresh data fetch
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error(response?.message || "Failed to regenerate workout plan");
+    }
   } catch (error) {
-    console.error("Error regenerating workout plan:", error);
+    console.error("❌ Error regenerating workout plan:", error);
     return null;
   }
 }
@@ -282,21 +302,38 @@ export async function fetchActiveWorkout(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      throw new Error("User not found");
+      console.log("No user found, returning null for active workout");
+      return null;
     }
     const response = await apiRequest<any>(
       `/workouts/${user.id}/active-workout`
     );
 
-    // Update cache
+    // Check if response indicates no active workout (this is normal, not an error)
+    if (!response?.workout) {
+      console.log("No active workout found for user");
+      // Update cache with null workout
+      activeWorkoutCache = {
+        timestamp: now,
+        workout: null,
+      };
+      return null;
+    }
+
+    // Update cache with workout data
     activeWorkoutCache = {
       timestamp: now,
-      workout: response,
+      workout: response.workout,
     };
 
-    return response;
+    return response.workout;
   } catch (error) {
-    console.error("Error fetching active workout:", error);
+    // Only log actual network/API errors, not expected "no workout" states
+    if (error instanceof Error && error.message.includes("404")) {
+      console.log("No active workout available (404 response)");
+      return null;
+    }
+    console.error("Actual error fetching active workout:", error);
     return null;
   }
 }
@@ -593,5 +630,104 @@ export async function skipWorkoutBlock(
   } catch (error) {
     console.error("Error skipping workout block:", error);
     return null;
+  }
+}
+
+/**
+ * Repeat a previous week's workout with a new start date
+ */
+export async function repeatPreviousWeekWorkout(
+  userId: number,
+  originalWorkoutId: number,
+  newStartDate: string
+): Promise<any | null> {
+  try {
+    console.log("🔄 Repeating previous week workout:", {
+      userId,
+      originalWorkoutId,
+      newStartDate,
+    });
+
+    const response = await apiRequest<any>(
+      `/workouts/${userId}/repeat-week/${originalWorkoutId}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ newStartDate }),
+      }
+    );
+
+    if (response?.success) {
+      console.log("Successfully repeated workout:", response);
+      // Invalidate cache to force fresh data fetch
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error(response?.message || "Failed to repeat workout");
+    }
+  } catch (error) {
+    console.error("❌ Error repeating previous week workout:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch workout history for a user
+ */
+export async function fetchWorkoutHistory(
+  userId: number
+): Promise<any[] | null> {
+  try {
+    console.log("📚 Fetching workout history for user:", userId);
+
+    const response = await apiRequest<{
+      success: boolean;
+      workouts: any[];
+    }>(`/workouts/${userId}/history`);
+
+    if (response?.success) {
+      console.log(
+        "✅ Successfully fetched workout history:",
+        response.workouts?.length || 0,
+        "workouts"
+      );
+      return response.workouts || [];
+    } else {
+      console.log("⚠️ No workout history found");
+      return [];
+    }
+  } catch (error) {
+    console.error("❌ Error fetching workout history:", error);
+    return [];
+  }
+}
+
+/**
+ * Get list of previous workouts from past month for selection
+ */
+export async function fetchPreviousWorkouts(
+  userId: number
+): Promise<any[] | null> {
+  try {
+    console.log("📋 Fetching previous workouts for user:", userId);
+
+    const response = await apiRequest<{
+      success: boolean;
+      workouts: any[];
+    }>(`/workouts/${userId}/previous-workouts`);
+
+    if (response?.success) {
+      console.log(
+        "✅ Successfully fetched previous workouts:",
+        response.workouts?.length || 0,
+        "workouts"
+      );
+      return response.workouts || [];
+    } else {
+      console.log("⚠️ No previous workouts found");
+      return [];
+    }
+  } catch (error) {
+    console.error("❌ Error fetching previous workouts:", error);
+    return [];
   }
 }

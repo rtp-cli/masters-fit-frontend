@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,12 +11,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   regenerateWorkoutPlan,
   regenerateDailyWorkout,
   notifyWorkoutUpdated,
 } from "@lib/workouts";
 import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAuth } from "@contexts/AuthContext";
 import {
   WorkoutWithDetails,
   PlanDayWithBlocks,
@@ -38,7 +40,12 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const { data: { workoutData }, refresh: { refreshWorkout }, loading } = useAppDataContext();
+  const { setIsGeneratingWorkout, user } = useAuth();
+  const {
+    data: { workoutData, historyData },
+    refresh: { refreshWorkout, refreshHistory, reset },
+    loading: { historyLoading, workoutLoading },
+  } = useAppDataContext();
 
   const [selectedDate, setSelectedDate] = useState(
     formatDateAsString(new Date())
@@ -47,7 +54,6 @@ export default function CalendarScreen() {
     formatDateAsString(new Date())
   );
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
@@ -55,8 +61,49 @@ export default function CalendarScreen() {
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Use workout data from the centralized store
-  const workoutPlan = workoutData;
+  // Use workout data from the centralized store - only if it's active and current
+  const workoutPlan = useMemo(() => {
+    console.log("🔍 Calendar: Evaluating workoutData", {
+      hasWorkoutData: !!workoutData,
+      workoutData: workoutData ? {
+        id: workoutData.id,
+        name: workoutData.name,
+        startDate: workoutData.startDate,
+        endDate: workoutData.endDate,
+        isActive: (workoutData as any).isActive,
+        completed: (workoutData as any).completed
+      } : null
+    });
+    
+    if (!workoutData) {
+      console.log("✅ Calendar: No workoutData, returning null");
+      return null;
+    }
+    
+    // Check if workout is active and within date range
+    const today = new Date();
+    const todayString = formatDateAsString(today);
+    const startDate = workoutData.startDate ? formatDateAsString(workoutData.startDate) : null;
+    const endDate = workoutData.endDate ? formatDateAsString(workoutData.endDate) : null;
+    
+    // Only show workout as active if today is within the date range
+    // If today is after the end date, the workout should be considered historical
+    if (startDate && endDate && todayString >= startDate && todayString <= endDate) {
+      console.log("✅ Calendar: Workout is within active date range");
+      return workoutData;
+    }
+    
+    console.log("🚫 Calendar: Filtering out inactive/historical workout", {
+      today: todayString,
+      startDate,
+      endDate,
+      isAfterEndDate: endDate ? todayString > endDate : false,
+      isBeforeStartDate: startDate ? todayString < startDate : false
+    });
+    
+    return null;
+  }, [workoutData]);
+  
   const error = null; // Error handling is centralized in useAppData
 
   useEffect(() => {
@@ -64,14 +111,25 @@ export default function CalendarScreen() {
     if (!workoutData) {
       refreshWorkout();
     }
-  }, [workoutData, refreshWorkout]);
+
+    // Always load historical data for calendar - this is the entire point!
+    if (!historyData) {
+      refreshHistory();
+    }
+  }, [workoutData, historyData, refreshWorkout, refreshHistory]);
+
+  // Clear app data when user logs out
+  useEffect(() => {
+    if (!user) {
+      console.log("🔄 Calendar: User logged out, clearing app data");
+      reset();
+    }
+  }, [user, reset]);
 
   // Set current month when workout data is available
   useEffect(() => {
     if (workoutPlan?.planDays && workoutPlan.planDays.length > 0) {
-      const firstWorkoutDate = formatDateAsString(
-        workoutPlan.planDays[0].date
-      );
+      const firstWorkoutDate = formatDateAsString(workoutPlan.planDays[0].date);
       setCurrentMonth(firstWorkoutDate);
     } else {
       setCurrentMonth(formatDateAsString(new Date()));
@@ -83,10 +141,13 @@ export default function CalendarScreen() {
     selectedType?: "week" | "day"
   ) => {
     try {
-      setRegenerating(true);
+      // Show global generating modal
+      setIsGeneratingWorkout(true);
+      setShowRegenerationModal(false);
+      
       const user = await getCurrentUser();
       if (!user) {
-        setError("User not found");
+        console.error("User not found");
         return;
       }
 
@@ -97,7 +158,7 @@ export default function CalendarScreen() {
         const dayToRegenerate = selectedPlanDay || currentPlanDayResult?.day;
 
         if (!dayToRegenerate) {
-          setError("No workout found for the selected day");
+          console.error("No workout found for the selected day");
           return;
         }
 
@@ -107,20 +168,10 @@ export default function CalendarScreen() {
           data.customFeedback || "User requested regeneration"
         );
         if (response) {
-          setWorkoutPlan((prev) => {
-            if (!prev) return prev;
-            const updatedPlanDays = prev.planDays.map((day) =>
-              day.id === dayToRegenerate.id ? response.planDay : day
-            );
-            return {
-              ...prev,
-              planDays: updatedPlanDays,
-            };
-          });
-          // Refresh to ensure consistency
+          // Refresh workout data and notify other components
           await refreshWorkout();
-          // Notify other components that workout data has been updated
           notifyWorkoutUpdated();
+          console.log("✅ Daily workout regenerated, data refreshed");
         }
       } else {
         // Transform data to match backend API expectations
@@ -139,19 +190,17 @@ export default function CalendarScreen() {
 
         const response = await regenerateWorkoutPlan(user.id, apiData);
         if (response) {
-          setWorkoutPlan(response.workout);
-          // Refresh the workout data to ensure consistency across all components
+          // Refresh workout data and notify other components
           await refreshWorkout();
-          // Notify other components that workout data has been updated
           notifyWorkoutUpdated();
+          console.log("✅ Weekly workout regenerated, data refreshed");
         }
       }
     } catch (err) {
-      setError("Failed to regenerate workout");
-      console.error("Error regenerating workout:", err);
+      console.error("Failed to regenerate workout:", err);
     } finally {
-      setRegenerating(false);
-      setShowRegenerationModal(false);
+      // Hide global generating modal
+      setIsGeneratingWorkout(false);
     }
   };
 
@@ -162,16 +211,50 @@ export default function CalendarScreen() {
 
   const getPlanDayForDate = (
     date: string
-  ): { day: PlanDayWithBlocks; index: number } | null => {
-    if (!workoutPlan?.planDays) return null;
-
-    for (let i = 0; i < workoutPlan.planDays.length; i++) {
-      const planDay = workoutPlan.planDays[i];
-      const planDate = formatDateAsString(planDay.date);
-      if (planDate === date) {
-        return { day: planDay, index: i };
+  ): {
+    day: PlanDayWithBlocks;
+    index: number;
+    isHistorical?: boolean;
+  } | null => {
+    // First check current workout plan
+    if (workoutPlan?.planDays) {
+      for (let i = 0; i < workoutPlan.planDays.length; i++) {
+        const planDay = workoutPlan.planDays[i];
+        const planDate = formatDateAsString(planDay.date);
+        if (planDate === date) {
+          return { day: planDay, index: i, isHistorical: false };
+        }
       }
     }
+
+    // If not found in current plan, check historical data
+    // Only show workouts that have actually ended (past their end date)
+    if (historyData && Array.isArray(historyData)) {
+      const today = formatDateAsString(new Date());
+      
+      for (const historicalWorkout of historyData) {
+        // Only show workouts that have ended
+        const workoutEndDate = historicalWorkout.endDate ? formatDateAsString(historicalWorkout.endDate) : null;
+        if (!workoutEndDate || today <= workoutEndDate) {
+          // Skip workouts that haven't ended yet
+          continue;
+        }
+        
+        if (
+          historicalWorkout.planDays &&
+          Array.isArray(historicalWorkout.planDays)
+        ) {
+          for (let i = 0; i < historicalWorkout.planDays.length; i++) {
+            const planDay = historicalWorkout.planDays[i];
+            const planDate = formatDateAsString(planDay.date);
+            if (planDate === date) {
+              return { day: planDay, index: i, isHistorical: true };
+            }
+          }
+        }
+      }
+    }
+
     return null;
   };
 
@@ -179,16 +262,71 @@ export default function CalendarScreen() {
     const markedDates: any = {};
     const today = formatDateAsString(new Date());
 
+    // Build marked dates for calendar display
+
+    // Mark current workout plan days
     if (workoutPlan?.planDays) {
       workoutPlan.planDays.forEach((planDay) => {
         const dateStr = formatDateAsString(planDay.date);
         const hasBlocks = planDay.blocks && planDay.blocks.length > 0;
         if (hasBlocks) {
+          const dots = [];
+
+          // Add dot based on completion status
+          if (planDay.isComplete) {
+            // Completed workout - green dot
+            dots.push({ color: colors.brand.primary });
+          } else {
+            // Planned workout - blue dot
+            dots.push({ color: colors.brand.secondary });
+          }
+
           markedDates[dateStr] = {
-            dots: [{ color: colors.brand.primary }],
+            dots,
             selectedColor: colors.brand.secondary,
             selected: dateStr === selectedDate,
           };
+        }
+      });
+    }
+
+    if (historyData && Array.isArray(historyData)) {
+      const today = formatDateAsString(new Date());
+      
+      historyData.forEach((historicalWorkout: any) => {
+        // Only show workouts that have ended
+        const workoutEndDate = historicalWorkout.endDate ? formatDateAsString(historicalWorkout.endDate) : null;
+        if (!workoutEndDate || today <= workoutEndDate) {
+          // Skip workouts that haven't ended yet
+          return;
+        }
+        
+        if (
+          historicalWorkout.planDays &&
+          Array.isArray(historicalWorkout.planDays)
+        ) {
+          historicalWorkout.planDays.forEach((planDay: any) => {
+            const dateStr = formatDateAsString(planDay.date);
+
+            // Only mark historical dates that aren't already in current plan
+            if (!markedDates[dateStr] && planDay.blocks?.length > 0) {
+              const dots = [];
+
+              if (planDay.isComplete) {
+                // Historical completed workout - green dot
+                dots.push({ color: colors.brand.primary });
+              } else {
+                // Historical incomplete workout - muted dot
+                dots.push({ color: colors.text.muted });
+              }
+
+              markedDates[dateStr] = {
+                dots,
+                selectedColor: colors.neutral.light[2],
+                selected: dateStr === selectedDate,
+              };
+            }
+          });
         }
       });
     }
@@ -217,7 +355,6 @@ export default function CalendarScreen() {
 
   const handleDateSelect = (day: DateData) => {
     setSelectedDate(day.dateString);
-    setCurrentMonth(day.dateString);
 
     // Reset expanded blocks when selecting a new date
     // This ensures blocks start expanded for the new date
@@ -247,7 +384,7 @@ export default function CalendarScreen() {
     return calculatePlanDayDuration(planDay);
   };
 
-  if (loading.workoutLoading) {
+  if (workoutLoading) {
     return <CalendarSkeleton />;
   }
 
@@ -269,9 +406,7 @@ export default function CalendarScreen() {
   const currentSelectedPlanDay = selectedPlanDayResult
     ? selectedPlanDayResult.day
     : null;
-  const selectedPlanDayIndex = selectedPlanDayResult
-    ? selectedPlanDayResult.index
-    : null;
+  const isHistoricalWorkout = selectedPlanDayResult?.isHistorical || false;
 
   const formatDate = (dateString: string) => {
     // Use safe parsing for YYYY-MM-DD format strings
@@ -296,13 +431,16 @@ export default function CalendarScreen() {
 
   // Handle pull to refresh
   const handleRefresh = async () => {
-    console.log('Calendar refresh triggered');
+    console.log("Calendar refresh triggered");
     setIsRefreshing(true);
     try {
-      await refreshWorkout();
-      console.log('Calendar refresh completed');
+      await Promise.all([
+        refreshWorkout(),
+        refreshHistory(), // Always refresh historical data too
+      ]);
+      console.log("Calendar refresh completed");
     } catch (error) {
-      console.error('Calendar refresh error:', error);
+      console.error("Calendar refresh error:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -310,14 +448,11 @@ export default function CalendarScreen() {
 
   return (
     <View className="flex-1 pt-4 bg-background">
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl 
-            refreshing={isRefreshing} 
-            onRefresh={handleRefresh}
-          />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
         <View className="pt-6">
@@ -342,22 +477,8 @@ export default function CalendarScreen() {
             }}
             markedDates={getMarkedDates()}
             markingType="multi-dot"
-            minDate={
-              workoutPlan?.startDate
-                ? formatDateAsString(workoutPlan.startDate)
-                : formatDateAsString(new Date())
-            }
-            maxDate={
-              workoutPlan?.endDate
-                ? formatDateAsString(workoutPlan.endDate)
-                : (() => {
-                    const futureDate = new Date(
-                      Date.now() + 30 * 24 * 60 * 60 * 1000
-                    );
-                    return formatDateAsString(futureDate);
-                  })()
-            }
-            disableAllTouchEventsForDisabledDays={true}
+            hideExtraDays={false}
+            disableMonthChange={false}
             theme={{
               calendarBackground: colors.background,
               textSectionTitleColor: colors.text.muted,
@@ -382,23 +503,24 @@ export default function CalendarScreen() {
           />
         </View>
 
-        {/* Regenerate Button */}
-        <View className="px-lg my-lg">
-          <TouchableOpacity
-            className="bg-primary py-md rounded-xl items-center flex-row justify-center"
-            onPress={() => handleOpenRegeneration()}
-            disabled={regenerating}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={18}
-              color={colors.neutral.light[1]}
-            />
-            <Text className="text-neutral-light-1 font-semibold text-md ml-sm">
-              Edit your workout plan
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Regenerate Button - Only show for current workouts */}
+        {workoutPlan && !isHistoricalWorkout && (
+          <View className="px-lg my-lg">
+            <TouchableOpacity
+              className="bg-primary py-md rounded-xl items-center flex-row justify-center"
+              onPress={() => handleOpenRegeneration()}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={18}
+                color={colors.neutral.light[1]}
+              />
+              <Text className="text-neutral-light-1 font-semibold text-md ml-sm">
+                Edit your workout plan
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Selected Date Workout */}
         {selectedDate && (
@@ -442,10 +564,27 @@ export default function CalendarScreen() {
                             )
                           )}
                         </Text>
+                        {currentSelectedPlanDay.isComplete && (
+                          <>
+                            <Text className="text-xs text-text-muted mx-2">
+                              •
+                            </Text>
+                            <View className="flex-row items-center">
+                              <Ionicons
+                                name="checkmark-circle"
+                                size={12}
+                                color={colors.brand.primary}
+                              />
+                              <Text className="text-xs text-brand-primary ml-1 font-medium">
+                                Completed
+                              </Text>
+                            </View>
+                          </>
+                        )}
                       </View>
                     </View>
                     <View className="flex-row items-center space-x-sm">
-                      {isToday() && (
+                      {isToday() && !isHistoricalWorkout && workoutPlan && (
                         <TouchableOpacity
                           className="bg-secondary py-2 px-4 rounded-xl"
                           onPress={() => {
@@ -506,7 +645,7 @@ export default function CalendarScreen() {
           setSelectedPlanDay(null);
         }}
         onRegenerate={handleRegenerate}
-        loading={regenerating}
+        loading={false}
         regenerationType="day"
       />
     </View>

@@ -14,6 +14,7 @@ import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./OnboardingForm";
 import GeneratingPlanScreen from "./ui/GeneratingPlanScreen";
 import { colors } from "../lib/theme";
+import { useAppDataContext } from "@contexts/AppDataContext";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -142,6 +143,7 @@ interface WorkoutRegenerationModalProps {
   ) => void;
   loading?: boolean;
   regenerationType?: "day" | "week";
+  onSuccess?: () => void; // New prop for refresh callback
 }
 
 export default function WorkoutRegenerationModal({
@@ -150,6 +152,7 @@ export default function WorkoutRegenerationModal({
   onRegenerate,
   loading = false,
   regenerationType = "day",
+  onSuccess,
 }: WorkoutRegenerationModalProps) {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -159,6 +162,9 @@ export default function WorkoutRegenerationModal({
   const [selectedType, setSelectedType] = useState<"week" | "day">(
     regenerationType
   );
+
+  // Get refresh functions for data refresh after regeneration
+  const { refresh: { refreshAll } } = useAppDataContext();
 
   useEffect(() => {
     if (visible) {
@@ -224,6 +230,11 @@ export default function WorkoutRegenerationModal({
         },
         selectedType
       );
+      
+      // Refresh data after regeneration if callback provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       console.error("Failed to update your profile");
@@ -327,6 +338,11 @@ export default function WorkoutRegenerationModal({
       { customFeedback: customFeedback.trim() || undefined },
       selectedType
     );
+    
+    // Refresh data after regeneration if callback provided
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   const convertProfileToFormData = (profile: any): Partial<FormData> => {
@@ -393,18 +409,18 @@ export default function WorkoutRegenerationModal({
     );
   }
 
-  // Show generating plan screen when regenerating workout
-  if (loading) {
-    return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <GeneratingPlanScreen />
-      </Modal>
-    );
-  }
+  // Don't show internal generating screen - the global one will handle it
+  // if (loading) {
+  //   return (
+  //     <Modal
+  //       visible={visible}
+  //       animationType="slide"
+  //       presentationStyle="pageSheet"
+  //     >
+  //       <GeneratingPlanScreen />
+  //     </Modal>
+  //   );
+  // }
 
   if (showOnboardingForm && currentProfile) {
     return (

@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAppDataContext } from "@contexts/AppDataContext";
+import GeneratingPlanScreen from "@components/ui/GeneratingPlanScreen";
 import {
   TotalVolumeMetrics,
   WeightAccuracyMetrics,
@@ -20,6 +21,8 @@ import {
 import { SimpleCircularProgress } from "@components/charts/CircularProgress";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
+import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
+import { generateWorkoutPlan } from "@lib/workouts";
 import {
   formatDate,
   formatNumber,
@@ -81,7 +84,7 @@ function formatWorkoutTypeLabel(tag: string): string {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
 
   // Today's schedule state
   const [todaysWorkout, setTodaysWorkout] =
@@ -148,6 +151,9 @@ export default function DashboardScreen() {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Modal states
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
+
   const {
     // Data
     data: {
@@ -175,6 +181,7 @@ export default function DashboardScreen() {
       fetchWeightAccuracyByDate,
       fetchWorkoutTypeByDate,
       refreshAll: refreshAllData,
+      reset,
     },
   } = useAppDataContext();
 
@@ -185,24 +192,30 @@ export default function DashboardScreen() {
       if (workoutPlan) {
         // Store workout info (name and description are at workout level)
         setWorkoutInfo({
-          name: workoutPlan.workout.name,
-          description: workoutPlan.workout.description,
-          startDate: workoutPlan.workout.startDate,
-          endDate: workoutPlan.workout.endDate,
-          planDays: workoutPlan.workout.planDays,
+          name: workoutPlan.name,
+          description: workoutPlan.description,
+          startDate: workoutPlan.startDate,
+          endDate: workoutPlan.endDate,
+          planDays: workoutPlan.planDays,
         });
 
         const today = getCurrentDate();
-        const todaysPlanDay = workoutPlan.workout.planDays.find(
+        const todaysPlanDay = workoutPlan.planDays?.find(
           (day: PlanDayWithExercises) => {
             const planDate = formatDateAsString(day.date);
             return planDate === today;
           }
         );
         setTodaysWorkout(todaysPlanDay || null);
+      } else {
+        // No active workout
+        setWorkoutInfo(null);
+        setTodaysWorkout(null);
       }
     } catch (err) {
       console.error("Error fetching today's workout:", err);
+      setWorkoutInfo(null);
+      setTodaysWorkout(null);
     } finally {
       setLoadingToday(false);
     }
@@ -219,6 +232,14 @@ export default function DashboardScreen() {
       });
     }
   }, [user?.id, hasLoadedInitialData, weeklySummary]);
+
+  // Clear app data when user logs out
+  useEffect(() => {
+    if (!user) {
+      console.log("🔄 Dashboard: User logged out, clearing app data");
+      reset();
+    }
+  }, [user, reset]);
 
   // Wide date range function for getting all data
   const calculateWideDataRange = () => {
@@ -668,9 +689,41 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleGenerateNewWorkout = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsGeneratingWorkout(true);
+      
+      const result = await generateWorkoutPlan(user.id);
+
+      if (result?.success) {
+        // Trigger app reload to show warming up screen
+        setIsPreloadingData(true);
+        
+        // Navigate to home to trigger the warming up flow
+        router.replace("/");
+      } else {
+        throw new Error("Failed to generate workout");
+      }
+    } catch (error) {
+      console.error("Error generating workout:", error);
+      Alert.alert("Error", "Failed to generate new workout. Please try again.");
+    } finally {
+      setIsGeneratingWorkout(false);
+    }
+  };
+
+  const handleRepeatWorkoutSuccess = () => {
+    // Refresh all data after successful workout repetition
+    handleRefresh();
+  };
+
   if (error) {
     Alert.alert("Error", error);
   }
+
+  // The global generating screen will handle workout generation display
 
   // Show message if user is not authenticated
   if (!isAuthenticated || !user?.id) {
@@ -1009,10 +1062,10 @@ export default function DashboardScreen() {
                     )}
                   </View>
                 ) : (
-                  <View className="items-center py-8">
+                  <View className="items-center py-6">
                     <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
                       <Ionicons
-                        name="bed-outline"
+                        name="fitness-outline"
                         size={24}
                         color={colors.text.muted}
                       />
@@ -1020,9 +1073,40 @@ export default function DashboardScreen() {
                     <Text className="text-base font-semibold text-text-primary mb-2">
                       No Active Workout
                     </Text>
-                    <Text className="text-sm text-text-muted text-center">
-                      Start a new workout plan to begin your fitness journey
+                    <Text className="text-sm text-text-muted text-center mb-6 leading-5">
+                      You don't have a workout scheduled for this week.
                     </Text>
+
+                    {/* Action buttons */}
+                    <View className="w-full space-y-3">
+                      <TouchableOpacity
+                        className="bg-primary rounded-xl py-3 px-6 mb-2 flex-row items-center justify-center"
+                        onPress={() => setShowRepeatModal(true)}
+                      >
+                        <Ionicons
+                          name="repeat"
+                          size={18}
+                          color={colors.text.secondary}
+                        />
+                        <Text className="text-secondary font-semibold text-sm ml-2">
+                          Repeat Previous Workout
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-row items-center justify-center"
+                        onPress={handleGenerateNewWorkout}
+                      >
+                        <Ionicons
+                          name="sparkles"
+                          size={18}
+                          color={colors.text.primary}
+                        />
+                        <Text className="text-text-primary font-semibold text-sm ml-2">
+                          Generate New Workout
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 )}
               </View>
@@ -1721,7 +1805,7 @@ export default function DashboardScreen() {
                 !filteredWorkoutTypeMetrics.hasData ||
                 filteredWorkoutTypeMetrics.totalSets === 0) &&
               (!weightProgressionData || weightProgressionData.length === 0) &&
-              (!weeklySummary || weeklySummary.totalWorkouts === 0) && (
+              (!weeklySummary || weeklySummary.workoutCount === 0) && (
                 <View className="px-4 mb-6">
                   <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
                     <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
@@ -1752,6 +1836,13 @@ export default function DashboardScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Workout Repeat Modal */}
+      <WorkoutRepeatModal
+        visible={showRepeatModal}
+        onClose={() => setShowRepeatModal(false)}
+        onSuccess={handleRepeatWorkoutSuccess}
+      />
     </View>
   );
 }

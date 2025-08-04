@@ -41,6 +41,9 @@ import { Exercise } from "@/types/api/exercise.types";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useAppDataContext } from "@/contexts/AppDataContext";
 import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
+import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
+import { generateWorkoutPlan } from "@/lib/workouts";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -65,9 +68,12 @@ export default function WorkoutScreen() {
   // Get workout context for tab disabling
   const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
 
+  // Get user from auth context
+  const { user, setIsGeneratingWorkout } = useAuth();
+
   // Get data refresh functions
   const {
-    refresh: { refreshDashboard },
+    refresh: { refreshDashboard, reset },
   } = useAppDataContext();
 
   // Core state
@@ -100,6 +106,9 @@ export default function WorkoutScreen() {
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
   const [isSkippingExercise, setIsSkippingExercise] = useState(false);
+
+  // New modal states for repeat workout
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
 
   // Rest timer state
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
@@ -239,7 +248,7 @@ export default function WorkoutScreen() {
 
       const response = await fetchActiveWorkout(forceRefresh);
 
-      if (!response?.workout?.planDays?.length) {
+      if (!response?.planDays?.length) {
         setWorkout(null);
         return;
       }
@@ -249,13 +258,13 @@ export default function WorkoutScreen() {
       console.log("🗓️ Looking for workout for today:", today);
       console.log(
         "📅 Available plan days:",
-        response.workout.planDays.map((day: any) => ({
+        response.planDays.map((day: any) => ({
           date: day.date,
           normalizedDate: formatDateAsString(day.date),
         }))
       );
 
-      const todaysWorkout = response.workout.planDays.find((day: any) => {
+      const todaysWorkout = response.planDays.find((day: any) => {
         // Use the formatDateAsString function to normalize dates consistently
         const normalizedDayDate = formatDateAsString(day.date);
         return normalizedDayDate === today;
@@ -315,10 +324,49 @@ export default function WorkoutScreen() {
     loadWorkout(true);
   }, []);
 
+  // Handle generating new workout
+  const handleGenerateNewWorkout = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsGeneratingWorkout(true);
+      const result = await generateWorkoutPlan(user.id);
+
+      if (result?.success) {
+        Alert.alert(
+          "Success! 🎉",
+          "Your new workout plan has been generated!",
+          [{ text: "Great!", onPress: () => loadWorkout(true) }]
+        );
+      } else {
+        throw new Error("Failed to generate workout");
+      }
+    } catch (error) {
+      console.error("Error generating workout:", error);
+      Alert.alert("Error", "Failed to generate new workout. Please try again.");
+    } finally {
+      setIsGeneratingWorkout(false);
+    }
+  };
+
+  // Handle successful workout repetition
+  const handleRepeatWorkoutSuccess = () => {
+    // Refresh workout data after successful repetition
+    loadWorkout(true);
+  };
+
   // Load workout on mount and when tab is focused
   useEffect(() => {
     loadWorkout();
   }, []);
+
+  // Clear app data when user logs out
+  useEffect(() => {
+    if (!user) {
+      console.log("🔄 Workout: User logged out, clearing app data");
+      reset();
+    }
+  }, [user, reset]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -560,21 +608,100 @@ export default function WorkoutScreen() {
   // Render no workout state
   if (!workout) {
     return (
-      <View className="flex-1 bg-background justify-center items-center px-6">
-        <Ionicons name="fitness-outline" size={64} color={colors.text.muted} />
-        <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
-          No Workout Today
-        </Text>
-        <Text className="text-text-muted text-center mb-6 leading-6">
-          You don't have a workout scheduled for today. Check back tomorrow or
-          visit the Calendar tab to see your workout plan.
-        </Text>
-        <TouchableOpacity
-          className="bg-primary rounded-xl py-3 px-6"
-          onPress={() => loadWorkout()}
+      <View className="flex-1 bg-background">
+        <ScrollView
+          className="flex-1"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#fff"
+            />
+          }
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: "center",
+            paddingHorizontal: 24,
+          }}
         >
-          <Text className="text-secondary font-semibold">Refresh</Text>
-        </TouchableOpacity>
+          <View className="items-center">
+            <Ionicons
+              name="fitness-outline"
+              size={64}
+              color={colors.text.muted}
+            />
+            <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
+              No Workout Today
+            </Text>
+            <Text className="text-text-muted text-center mb-8 leading-6">
+              You don't have a workout scheduled for this week.
+            </Text>
+
+            {/* Action buttons */}
+            <View className="w-full space-y-3">
+              <TouchableOpacity
+                className="bg-primary rounded-xl py-4 px-6 mb-2 flex-row items-center justify-center"
+                onPress={() => setShowRepeatModal(true)}
+              >
+                <Ionicons
+                  name="repeat"
+                  size={20}
+                  color={colors.text.secondary}
+                />
+                <Text className="text-secondary font-semibold text-base ml-2">
+                  Repeat Previous Workout
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="bg-neutral-light-2 rounded-xl py-4 px-6 flex-row items-center justify-center"
+                onPress={handleGenerateNewWorkout}
+              >
+                <Ionicons
+                  name="sparkles"
+                  size={20}
+                  color={colors.text.primary}
+                />
+                <Text className="text-text-primary font-semibold text-base ml-2">
+                  Generate New Workout
+                </Text>
+              </TouchableOpacity>
+
+              {/* <TouchableOpacity
+                className="bg-transparent rounded-xl py-3 px-6 flex-row items-center justify-center border border-neutral-light-2"
+                onPress={onRefresh}
+                disabled={refreshing}
+              >
+                {refreshing ? (
+                  <>
+                    <ActivityIndicator size="small" color={colors.text.muted} />
+                    <Text className="text-text-muted font-medium text-sm ml-2">
+                      Refreshing...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons
+                      name="refresh"
+                      size={18}
+                      color={colors.text.muted}
+                    />
+                    <Text className="text-text-muted font-medium text-sm ml-2">
+                      Refresh
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity> */}
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Workout Repeat Modal */}
+        <WorkoutRepeatModal
+          visible={showRepeatModal}
+          onClose={() => setShowRepeatModal(false)}
+          onSuccess={handleRepeatWorkoutSuccess}
+        />
       </View>
     );
   }

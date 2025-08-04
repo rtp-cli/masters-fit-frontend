@@ -17,6 +17,7 @@ import {
   getCurrentUser,
   saveUserToSecureStorage,
 } from "../lib/auth";
+import { invalidateActiveWorkoutCache } from "../lib/workouts";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { colors } from "../lib/theme";
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initializeAuth();
   }, []);
+
 
   // Check if the email exists in the system
   const checkEmail = async (email: string) => {
@@ -174,6 +176,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
+      // Clear workout cache before clearing other data
+      invalidateActiveWorkoutCache();
       await clearAllData();
       setUser(null);
     } catch (error) {

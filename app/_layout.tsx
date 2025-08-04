@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
-import { AuthProvider } from "@contexts/AuthContext";
+import { AuthProvider, useAuth } from "@contexts/AuthContext";
 import { WorkoutProvider } from "@contexts/WorkoutContext";
 import { AppDataProvider } from "@contexts/AppDataContext";
 import DebugButton from "../components/DebugButton";
@@ -14,10 +14,36 @@ import {
 } from "@expo-google-fonts/inter";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import GeneratingPlanScreen from "../components/ui/GeneratingPlanScreen";
 import "../global.css";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
+
+// Inner component that can access auth context
+function AppContent() {
+  const { isGeneratingWorkout } = useAuth();
+
+  // Show global generating screen when workout is being generated/regenerated
+  if (isGeneratingWorkout) {
+    return <GeneratingPlanScreen />;
+  }
+
+  return (
+    <View className="flex-1">
+      <StatusBar style="dark" />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -41,18 +67,7 @@ export default function RootLayout() {
     <AuthProvider>
       <WorkoutProvider>
         <AppDataProvider>
-          <View className="flex-1">
-            <StatusBar style="dark" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-            </Stack>
-          </View>
+          <AppContent />
         </AppDataProvider>
       </WorkoutProvider>
     </AuthProvider>

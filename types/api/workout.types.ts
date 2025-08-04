@@ -314,3 +314,31 @@ export function getBlockTypeDisplayName(blockType?: string): string {
     blockType.charAt(0).toUpperCase() + blockType.slice(1)
   );
 }
+
+// Type for previous workouts in repeat modal
+export interface PreviousWorkout {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  totalWorkouts: number;
+  completedWorkouts: number;
+  completionRate: number;
+  duration: string;
+  description?: string;
+  planDays?: {
+    id: number;
+    dayNumber: number;
+    date: string;
+    name: string;
+    description?: string;
+    isComplete: boolean;
+    totalExercises: number;
+    blocks: {
+      id: number;
+      blockName?: string;
+      blockType?: string;
+      exerciseCount: number;
+    }[];
+  }[];
+}

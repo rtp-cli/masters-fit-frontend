@@ -7,10 +7,10 @@ import { getCurrentUser, getPendingEmail, getPendingUserId } from "@lib/auth";
 import { useRouter } from "expo-router";
 import { generateWorkoutPlan, fetchActiveWorkout } from "@lib/workouts";
 import OnboardingForm, { FormData } from "../../components/OnboardingForm";
-import GeneratingPlanScreen from "../../components/ui/GeneratingPlanScreen";
 import * as SecureStore from "expo-secure-store";
 import { colors } from "../../lib/theme";
 import Header from "@components/Header";
+import { useAppDataContext } from "@contexts/AppDataContext";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -21,10 +21,13 @@ export default function OnboardingScreen() {
     isLoading: authLoading,
     setIsGeneratingWorkout,
   } = useAuth();
+  
+  // Get refresh functions for data refresh after workout generation
+  const { refresh: { refreshAll } } = useAppDataContext();
   const [isLoading, setIsLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  const [generatingWorkout, setGeneratingWorkout] = useState(false);
+  // Local generating workout state removed - using global state from AuthContext
   const [error, setError] = useState<string | null>(null);
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
 
@@ -59,7 +62,6 @@ export default function OnboardingScreen() {
         isAuthenticated,
         user: user?.email,
         needsOnboarding: user?.needsOnboarding,
-        generatingWorkout,
         isCompletingOnboarding,
       });
     }
@@ -67,17 +69,10 @@ export default function OnboardingScreen() {
     authLoading,
     isAuthenticated,
     user?.needsOnboarding,
-    generatingWorkout,
     isCompletingOnboarding,
   ]);
 
-  // Debug logging for generating workout state
-  useEffect(() => {
-    console.log("🔄 Onboarding - Generating workout state changed:", {
-      generatingWorkout,
-      shouldShowGeneratingScreen: generatingWorkout,
-    });
-  }, [generatingWorkout]);
+  // Debug logging for generating workout state is now handled globally
 
   // Fetch and apply pending email and user ID on component mount
   useEffect(() => {
@@ -111,7 +106,24 @@ export default function OnboardingScreen() {
     if (!user) {
       throw new Error("User not found");
     }
-    await generateWorkoutPlan(user.id);
+    const result = await generateWorkoutPlan(user.id);
+    
+    if (result?.success) {
+      // Refresh all data after successful workout generation
+      console.log("✅ Workout generation successful, refreshing app data");
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 7); // Include some historical data
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
+
+      await refreshAll({
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+      });
+    }
+    
+    return result;
   };
 
   // Submit onboarding data
@@ -148,7 +160,6 @@ export default function OnboardingScreen() {
       // Step 1: Set global flag BEFORE onboarding completion to prevent redirects
       console.log("🚧 Setting generating workout flag to prevent redirects");
       setIsGeneratingWorkout(true); // Prevent redirects globally FIRST
-      setGeneratingWorkout(true);
       setIsLoading(false); // Stop showing form loading, show generating screen
 
       // Step 2: Complete onboarding (this will update user state and trigger redirect logic)
@@ -174,14 +185,12 @@ export default function OnboardingScreen() {
 
       // Step 5: Now it's safe to navigate
       console.log("Navigating to calendar...");
-      setGeneratingWorkout(false);
       setIsGeneratingWorkout(false); // Allow redirects again
       setIsCompletingOnboarding(false);
       router.replace("/(tabs)/calendar");
     } catch (error) {
       console.error("Error:", error);
       setIsLoading(false);
-      setGeneratingWorkout(false);
       setIsGeneratingWorkout(false); // Allow redirects again
       setIsCompletingOnboarding(false);
       Alert.alert("Error", "Something went wrong. Please try again.");
@@ -207,15 +216,7 @@ export default function OnboardingScreen() {
     return null;
   }
 
-  // Show generating screen during workout generation
-  if (generatingWorkout) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <StatusBar style="dark" />
-        <GeneratingPlanScreen />
-      </SafeAreaView>
-    );
-  }
+  // Global generating screen will handle workout generation display
 
   return (
     <SafeAreaView className="flex-1 bg-background">
