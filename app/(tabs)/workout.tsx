@@ -69,7 +69,7 @@ export default function WorkoutScreen() {
   const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
 
   // Get user from auth context
-  const { user, setIsGeneratingWorkout } = useAuth();
+  const { user, setIsGeneratingWorkout, isLoading: authLoading } = useAuth();
 
   // Get data refresh functions
   const {
@@ -230,6 +230,22 @@ export default function WorkoutScreen() {
     }
   }, [isWorkoutInProgress, isWorkoutStarted, isWorkoutCompleted]);
 
+  // Auto-add first set when moving to a new exercise
+  useEffect(() => {
+    if (isWorkoutStarted && !isWorkoutCompleted && currentExercise && currentProgress) {
+      // Only add first set if no sets exist for this exercise
+      if (currentProgress.sets.length === 0) {
+        const firstSet = {
+          roundNumber: 1,
+          setNumber: 1,
+          weight: currentExercise.weight || 0,
+          reps: currentExercise.reps || 0,
+        };
+        updateProgress("sets", [firstSet]);
+      }
+    }
+  }, [currentExerciseIndex, isWorkoutStarted, isWorkoutCompleted]);
+
   // Cleanup workout context on unmount
   useEffect(() => {
     return () => {
@@ -360,13 +376,13 @@ export default function WorkoutScreen() {
     loadWorkout();
   }, []);
 
-  // Clear app data when user logs out
+  // Clear app data when user logs out (but not during initial auth loading)
   useEffect(() => {
-    if (!user) {
+    if (!user && !authLoading) {
       console.log("🔄 Workout: User logged out, clearing app data");
       reset();
     }
-  }, [user, reset]);
+  }, [user, authLoading, reset]);
 
   useFocusEffect(
     React.useCallback(() => {
