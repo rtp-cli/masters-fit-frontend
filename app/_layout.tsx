@@ -12,13 +12,10 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
-import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import GeneratingPlanScreen from "../components/ui/GeneratingPlanScreen";
 import "../global.css";
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
 
 // Inner component that can access auth context
 function AppContent() {
@@ -53,11 +50,6 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
     return null;

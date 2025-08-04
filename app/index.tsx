@@ -14,7 +14,14 @@ import { useDataPreload } from "@hooks/useDataPreload";
 export default function GetStarted() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, user, isGeneratingWorkout, isPreloadingData, setIsPreloadingData } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading,
+    user,
+    isGeneratingWorkout,
+    isPreloadingData,
+    setIsPreloadingData,
+  } = useAuth();
   const { preloadAllData } = useDataPreload();
   const hasRedirected = useRef(false);
   const [isVerifyingUser, setIsVerifyingUser] = useState<boolean | null>(null);
@@ -46,7 +53,14 @@ export default function GetStarted() {
 
       handlePreloadComplete();
     }
-  }, [isPreloadingData, user, isLoading, preloadAllData, setIsPreloadingData, router]);
+  }, [
+    isPreloadingData,
+    user,
+    isLoading,
+    preloadAllData,
+    setIsPreloadingData,
+    router,
+  ]);
 
   // If user is already authenticated, redirect based on onboarding status
   useEffect(() => {
@@ -81,7 +95,11 @@ export default function GetStarted() {
       if (!needsOnboarding) {
         // Trigger data preloading instead of direct redirect
         console.log("✅ Starting data preload - onboarding complete");
-        console.log("📊 Current state:", { isPreloadingData, isVerifyingUser, hasRedirected: hasRedirected.current });
+        console.log("📊 Current state:", {
+          isPreloadingData,
+          isVerifyingUser,
+          hasRedirected: hasRedirected.current,
+        });
         setIsPreloadingData(true);
       } else {
         // Only redirect to onboarding if not already there
@@ -143,7 +161,7 @@ export default function GetStarted() {
         <View className="flex-1 justify-center items-center">
           <Image
             source={require("../assets/home.png")}
-            className="w-80 h-80 mb-10"
+            className="w-80 h-80 mb-10 rounded-lg"
             resizeMode="contain"
           />
           <Text className="text-xl font-bold text-text-primary text-center mb-4">

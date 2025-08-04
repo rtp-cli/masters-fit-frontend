@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../lib/theme";
+import { Image } from "react-native";
 
 interface WarmingUpScreenProps {
   onComplete?: () => void;
@@ -36,20 +37,23 @@ export default function WarmingUpScreen({
       <View className="flex-1 justify-center items-center px-8">
         {/* Main Content */}
         <View className="items-center mb-12">
-          {/* Animated Spinner */}
-          <View className="mb-8">
-            <ActivityIndicator size="large" color={colors.brand.primary} />
-          </View>
-
+          <Image
+            source={require("../../assets/icon.png")}
+            className="w-48 h-48 mb-8 rounded-lg"
+            resizeMode="contain"
+          />
           {/* Title */}
           <Text className="text-2xl font-bold text-text-primary mb-4 text-center">
             Warming Up MastersFit
           </Text>
-
           {/* Dynamic Message */}
           <Text className="text-base text-text-muted text-center mb-8 leading-6">
             {messages[currentMessageIndex]}
           </Text>
+          {/* Animated Spinner */}
+          <View className="mb-8">
+            <ActivityIndicator size="large" color={colors.brand.primary} />
+          </View>
         </View>
 
         {/* Bottom Message */}

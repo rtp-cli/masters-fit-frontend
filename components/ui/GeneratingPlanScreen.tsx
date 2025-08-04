@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../lib/theme";
 
@@ -50,10 +50,12 @@ export default function GeneratingPlanScreen({
       <View className="flex-1 justify-center items-center px-8">
         {/* Main Content */}
         <View className="items-center mb-12">
-          {/* Animated Spinner */}
-          <View className="mb-8">
-            <ActivityIndicator size="large" color={colors.brand.primary} />
-          </View>
+          {/* Logo */}
+          <Image
+            source={require("../../assets/icon.png")}
+            className="w-48 h-48 mb-8 rounded-lg"
+            resizeMode="contain"
+          />
 
           {/* Title */}
           <Text className="text-2xl font-bold text-text-primary mb-4 text-center">
@@ -65,19 +67,10 @@ export default function GeneratingPlanScreen({
             {messages[currentMessageIndex]}
           </Text>
 
-          {/* TODO: Make this real */}
-          {/* Progress Bar */}
-          {/* <View className="w-full max-w-xs">
-            <View className="bg-neutral-light-2 rounded-full h-2 mb-2">
-              <View
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </View>
-            <Text className="text-xs text-text-muted text-center">
-              {progress}% Complete
-            </Text>
-          </View> */}
+          {/* Animated Spinner */}
+          <View className="mb-8">
+            <ActivityIndicator size="large" color={colors.brand.primary} />
+          </View>
         </View>
 
         {/* Bottom Message */}
