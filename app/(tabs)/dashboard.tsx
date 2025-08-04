@@ -84,7 +84,7 @@ function formatWorkoutTypeLabel(tag: string): string {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user, isAuthenticated, setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
 
   // Today's schedule state
   const [todaysWorkout, setTodaysWorkout] =
@@ -233,13 +233,16 @@ export default function DashboardScreen() {
     }
   }, [user?.id, hasLoadedInitialData, weeklySummary]);
 
-  // Clear app data when user logs out
+  // Clear app data when user logs out (but not during initial auth loading)
   useEffect(() => {
-    if (!user) {
+    if (!user && !authLoading && hasLoadedInitialData) {
       console.log("🔄 Dashboard: User logged out, clearing app data");
       reset();
+      setHasLoadedInitialData(false);
+      setTodaysWorkout(null);
+      setWorkoutInfo(null);
     }
-  }, [user, reset]);
+  }, [user, authLoading, hasLoadedInitialData, reset]);
 
   // Wide date range function for getting all data
   const calculateWideDataRange = () => {

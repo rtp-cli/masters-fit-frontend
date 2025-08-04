@@ -40,7 +40,7 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const { setIsGeneratingWorkout, user } = useAuth();
+  const { setIsGeneratingWorkout, user, isLoading: authLoading } = useAuth();
   const {
     data: { workoutData, historyData },
     refresh: { refreshWorkout, refreshHistory, reset },
@@ -118,13 +118,13 @@ export default function CalendarScreen() {
     }
   }, [workoutData, historyData, refreshWorkout, refreshHistory]);
 
-  // Clear app data when user logs out
+  // Clear app data when user logs out (but not during initial auth loading)
   useEffect(() => {
-    if (!user) {
+    if (!user && !authLoading) {
       console.log("🔄 Calendar: User logged out, clearing app data");
       reset();
     }
-  }, [user, reset]);
+  }, [user, authLoading, reset]);
 
   // Set current month when workout data is available
   useEffect(() => {
