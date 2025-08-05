@@ -17,6 +17,7 @@ import {
   fetchActiveWorkout,
   createExerciseLog,
   markPlanDayAsComplete,
+  getPlanDayLog,
   skipExercise,
   skipWorkoutBlock,
 } from "@/lib/workouts";
@@ -55,6 +56,7 @@ interface ExerciseProgress {
   duration: number;
   restTime: number;
   notes: string;
+  isSkipped?: boolean;
 }
 
 // Utility functions
@@ -85,6 +87,8 @@ export default function WorkoutScreen() {
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasCompletedWorkoutDuration, setHasCompletedWorkoutDuration] = useState(false);
+  const [completedExercisesCount, setCompletedExercisesCount] = useState(0);
 
   // Timer state
   const [workoutTimer, setWorkoutTimer] = useState(0);
@@ -212,6 +216,7 @@ export default function WorkoutScreen() {
   useEffect(() => {
     if (!isWorkoutInProgress && isWorkoutStarted && !isWorkoutCompleted) {
       console.log("🚪 Workout abandoned - resetting workout state");
+      console.log("⚠️ TIMER RESET: workoutTimer was", workoutTimer, "seconds before reset");
       setIsWorkoutStarted(false);
       setIsPaused(false);
       setWorkoutTimer(0);
@@ -235,11 +240,16 @@ export default function WorkoutScreen() {
     if (isWorkoutStarted && !isWorkoutCompleted && currentExercise && currentProgress) {
       // Only add first set if no sets exist for this exercise
       if (currentProgress.sets.length === 0) {
+        // Use the same target values that are passed to SetTracker
+        const targetSets = currentExercise.sets || 3;
+        const targetReps = currentExercise.reps || 10;
+        const targetWeight = currentExercise.weight || 0;
+        
         const firstSet = {
           roundNumber: 1,
           setNumber: 1,
-          weight: currentExercise.weight || 0,
-          reps: currentExercise.reps || 0,
+          weight: targetWeight,
+          reps: targetReps,
         };
         updateProgress("sets", [firstSet]);
       }
@@ -253,6 +263,37 @@ export default function WorkoutScreen() {
       setWorkoutInProgress(false);
     };
   }, [setWorkoutInProgress]);
+
+  // Load completed workout duration from plan day log
+  const loadCompletedWorkoutDuration = async (planDayId: number) => {
+    try {
+      console.log("🔍 Attempting to load duration for plan day:", planDayId);
+      const planDayLog = await getPlanDayLog(planDayId);
+      console.log("📋 Plan day log response:", planDayLog);
+      
+      if (planDayLog?.totalTimeSeconds) {
+        console.log("✅ Loaded completed workout data:", {
+          totalTimeSeconds: planDayLog.totalTimeSeconds,
+          exercisesCompleted: planDayLog.exercisesCompleted,
+          blocksCompleted: planDayLog.blocksCompleted
+        });
+        setWorkoutTimer(planDayLog.totalTimeSeconds);
+        setCompletedExercisesCount(planDayLog.exercisesCompleted || 0);
+        setHasCompletedWorkoutDuration(true);
+      } else {
+        console.log("⚠️ No duration found in plan day log for completed workout (likely completed before duration tracking was implemented)");
+        // For completed workouts without duration, show 0:00 rather than confusing display
+        setWorkoutTimer(0);
+        setCompletedExercisesCount(0);
+        setHasCompletedWorkoutDuration(false);
+      }
+    } catch (error) {
+      console.error("❌ Error loading completed workout duration:", error);
+      setWorkoutTimer(0);
+      setCompletedExercisesCount(0);
+      setHasCompletedWorkoutDuration(false);
+    }
+  };
 
   // Load workout data
   const loadWorkout = async (forceRefresh = false) => {
@@ -298,6 +339,9 @@ export default function WorkoutScreen() {
         setWorkout(todaysWorkout);
         setIsWorkoutCompleted(true);
         setWorkoutInProgress(false); // Make sure context knows workout is complete
+        
+        // Load the actual workout duration from plan day log
+        await loadCompletedWorkoutDuration(todaysWorkout.id);
         return;
       }
 
@@ -405,6 +449,7 @@ export default function WorkoutScreen() {
 
   // Start workout
   const startWorkout = () => {
+    console.log("🏃 Starting workout, resetting timers to 0");
     setIsWorkoutStarted(true);
     setWorkoutTimer(0);
     setExerciseTimer(0);
@@ -486,7 +531,23 @@ export default function WorkoutScreen() {
       } else {
         // All exercises completed, so mark the plan day as complete
         if (workout?.id) {
-          await markPlanDayAsComplete(workout.id);
+          // Calculate completion data
+          const completedExerciseCount = currentExerciseIndex + 1; // +1 because we just completed this exercise
+          const completedBlockCount = workout.blocks.length; // All blocks completed
+          
+          console.log("🏁 Marking workout complete with:", {
+            workoutTimer,
+            totalTimeSeconds: workoutTimer,
+            exercisesCompleted: completedExerciseCount,
+            blocksCompleted: completedBlockCount,
+          });
+          
+          // Mark plan day as complete with detailed timing in seconds
+          await markPlanDayAsComplete(workout.id, {
+            totalTimeSeconds: workoutTimer,
+            exercisesCompleted: completedExerciseCount,
+            blocksCompleted: completedBlockCount,
+          });
           // Refresh dashboard data with current date range to ensure today's data is included
           // Include both past workouts and upcoming planned workouts for weekly progress
           const today = new Date();
@@ -558,7 +619,25 @@ export default function WorkoutScreen() {
         );
 
         if (allProcessed && workout?.id) {
-          await markPlanDayAsComplete(workout.id);
+          // Calculate completion data (including skipped exercises/blocks)
+          const completedExerciseCount = currentExerciseIndex; // Current index is number of completed
+          const skippedExerciseCount = skippedExercises.length;
+          const totalProcessedExercises = completedExerciseCount + skippedExerciseCount;
+          const completedBlockCount = workout.blocks.length; // All blocks processed
+          
+          console.log("🏁 Marking workout complete (with skips) with:", {
+            workoutTimer,
+            totalTimeSeconds: workoutTimer,
+            exercisesCompleted: totalProcessedExercises,
+            blocksCompleted: completedBlockCount,
+          });
+          
+          // Mark plan day as complete with detailed timing in seconds
+          await markPlanDayAsComplete(workout.id, {
+            totalTimeSeconds: workoutTimer,
+            exercisesCompleted: totalProcessedExercises,
+            blocksCompleted: completedBlockCount,
+          });
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
           setWorkoutInProgress(false);
@@ -735,10 +814,13 @@ export default function WorkoutScreen() {
           Workout Complete!
         </Text>
         <Text className="text-text-muted text-center mb-4 leading-6">
-          Amazing work! You completed {currentExerciseIndex} exercises
-          {skippedExercises.length > 0 &&
+          Amazing work! You completed {hasCompletedWorkoutDuration ? completedExercisesCount : currentExerciseIndex} exercises
+          {!hasCompletedWorkoutDuration && skippedExercises.length > 0 &&
             ` (${skippedExercises.length} skipped)`}{" "}
-          in {formatTime(workoutTimer)}.
+          {hasCompletedWorkoutDuration 
+            ? `in ${formatTime(workoutTimer)}.`
+            : "(duration not available)."
+          }
         </Text>
         <Text className="text-text-muted text-center mb-8 leading-6">
           Check back tomorrow for your next workout.

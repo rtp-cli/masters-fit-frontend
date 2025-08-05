@@ -149,7 +149,6 @@ export default function DashboardScreen() {
 
   // State to track if we've loaded initial data
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Modal states
   const [showRepeatModal, setShowRepeatModal] = useState(false);
@@ -221,15 +220,20 @@ export default function DashboardScreen() {
     }
   };
 
+  // Initialize data loading on mount
   useEffect(() => {
-    if (user?.id && !hasLoadedInitialData && weeklySummary) {
-      setIsInitialLoad(true);
-
+    if (user?.id && !hasLoadedInitialData) {
       // Just load today's workout - dashboard data comes from preload
       fetchTodaysWorkout().then(() => {
         setHasLoadedInitialData(true);
-        setIsInitialLoad(false);
       });
+    }
+  }, [user?.id, hasLoadedInitialData]);
+
+  // Mark as loaded when we have essential dashboard data
+  useEffect(() => {
+    if (user?.id && !hasLoadedInitialData && weeklySummary !== null) {
+      setHasLoadedInitialData(true);
     }
   }, [user?.id, hasLoadedInitialData, weeklySummary]);
 
@@ -613,7 +617,7 @@ export default function DashboardScreen() {
     }
   }, [rawWeightProgressionData, strengthFilter]);
 
-  if (loading.dashboardLoading || loadingToday || isInitialLoad) {
+  if (loading.dashboardLoading || loadingToday) {
     return (
       <View className="flex-1 bg-background">
         <SafeAreaView className="flex-1">
@@ -1808,7 +1812,7 @@ export default function DashboardScreen() {
                 !filteredWorkoutTypeMetrics.hasData ||
                 filteredWorkoutTypeMetrics.totalSets === 0) &&
               (!weightProgressionData || weightProgressionData.length === 0) &&
-              (!weeklySummary || weeklySummary.workoutCount === 0) && (
+              (!weeklySummary || weeklySummary.totalWorkoutsThisWeek === 0) && (
                 <View className="px-4 mb-6">
                   <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
                     <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">

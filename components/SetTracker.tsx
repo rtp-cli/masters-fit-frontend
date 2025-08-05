@@ -79,8 +79,8 @@ export default function SetTracker({
     const newSet: ExerciseSet = {
       roundNumber: newRoundNumber,
       setNumber: newSetNumber,
-      weight: lastSet?.weight || targetWeight || 0,
-      reps: lastSet?.reps || targetReps || 0,
+      weight: targetWeight || 0,
+      reps: targetReps || 0,
     };
     const updatedSets = [...localSets, newSet];
     setLocalSets(updatedSets);

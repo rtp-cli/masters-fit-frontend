@@ -260,16 +260,57 @@ export async function regenerateWorkoutPlan(
 }
 
 /**
+ * Get plan day log for a completed plan day
+ */
+export async function getPlanDayLog(planDayId: number): Promise<{
+  totalTimeSeconds?: number;
+  exercisesCompleted?: number;
+  blocksCompleted?: number;
+  notes?: string;
+} | null> {
+  try {
+    // First try to get the latest plan day log
+    console.log("🔗 Fetching plan day log from:", `/logs/plan-day/plan-day/${planDayId}/latest`);
+    const response = await apiRequest<any>(
+      `/logs/plan-day/plan-day/${planDayId}/latest`
+    );
+    console.log("📨 Raw API response:", JSON.stringify(response, null, 2));
+    return response?.log || null;
+  } catch (error) {
+    console.error(`Error fetching plan day log for ${planDayId}:`, error);
+    
+    // If that fails, try getting all logs for the plan day and take the first one
+    try {
+      const allLogsResponse = await apiRequest<any>(
+        `/logs/plan-day/plan-day/${planDayId}`
+      );
+      const logs = allLogsResponse?.logs || [];
+      return logs.length > 0 ? logs[0] : null;
+    } catch (secondError) {
+      console.error(`Error fetching all plan day logs for ${planDayId}:`, secondError);
+      return null;
+    }
+  }
+}
+
+/**
  * Mark a plan day as complete
  */
 export async function markPlanDayAsComplete(
-  planDayId: number
+  planDayId: number,
+  completionData?: {
+    totalTimeSeconds?: number;
+    exercisesCompleted?: number;
+    blocksCompleted?: number;
+    notes?: string;
+  }
 ): Promise<any | null> {
   try {
     const response = await apiRequest<any>(
       `/logs/workout/day/${planDayId}/complete`,
       {
         method: "POST",
+        body: completionData ? JSON.stringify(completionData) : undefined,
       }
     );
     // When a plan day is completed, the active workout cache should be invalidated
@@ -480,7 +521,7 @@ export async function updateWorkoutLog(
   workoutId: number,
   params: {
     isComplete?: boolean;
-    totalTimeTaken?: number;
+    totalTimeMinutes?: number;
     completedExercises?: number[];
     notes?: string;
   }
