@@ -5,11 +5,9 @@ import React, {
   useContext,
   useEffect,
 } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
 import {
   checkEmailExists,
   completeOnboarding as apiCompleteOnboarding,
-  logout as apiLogout,
   getPendingUserId,
   signup as apiSignup,
   login as apiLogin,
@@ -20,7 +18,7 @@ import {
 import { invalidateActiveWorkoutCache } from "../lib/workouts";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
-import { colors } from "../lib/theme";
+import { logger } from "../lib/logger";
 
 // Define the shape of our context
 interface AuthContextType {
@@ -87,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
   }, []);
 
-
   // Check if the email exists in the system
   const checkEmail = async (email: string) => {
     setIsLoading(true);
@@ -96,13 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success && result.token) {
         // Store the token if it's returned
         await SecureStore.setItemAsync("token", result.token);
+        logger.info("User authentication successful", {
+          needsOnboarding: result.needsOnboarding,
+        });
       }
       return {
         success: result.success,
         needsOnboarding: result.needsOnboarding,
       };
     } catch (error) {
-      console.error("Email check error:", error);
+      logger.error("Email check failed", { error: error });
       return { success: false };
     } finally {
       setIsLoading(false);
@@ -114,9 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const result = await apiSignup(params);
+      if (result.success) {
+        logger.info("User signup successful", { name: params.name });
+      }
       return { success: result.success };
     } catch (error) {
-      console.error("Signup error:", error);
+      logger.error("User signup failed", {
+        error: error,
+        name: params.name,
+      });
       return { success: false };
     } finally {
       setIsLoading(false);
@@ -130,7 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await apiLogin(params);
       return { success: result.success };
     } catch (error) {
-      console.error("Login error:", error);
+      logger.error("User login failed", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
       return { success: false };
     } finally {
       setIsLoading(false);
@@ -161,11 +169,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await saveUserToSecureStorage(updatedUser);
         await SecureStore.deleteItemAsync("pendingEmail");
         await SecureStore.deleteItemAsync("pendingUserId");
+
+        logger.businessEvent("Onboarding completed", {
+          userId: updatedUser.id,
+          fitnessLevel: userData.fitnessLevel,
+          goals: userData.goals?.length || 0,
+        });
+
         return true;
       }
       throw new Error("Onboarding API call failed");
     } catch (error) {
-      console.error("Onboarding error:", error);
+      logger.error("Onboarding failed", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
       return false;
     } finally {
       setIsLoading(false);
@@ -177,11 +194,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       // Clear workout cache before clearing other data
+      logger.info("User logout initiated", { userId: user?.id });
+
       invalidateActiveWorkoutCache();
       await clearAllData();
       setUser(null);
     } catch (error) {
-      console.error("Logout error:", error);
+      logger.error("Logout failed", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +210,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Update user data
   const setUserData = (userData: User | null) => {
-    console.log("🔄 AuthContext - Setting user data:", userData);
     setUser(userData);
     // Also save to SecureStore to maintain consistency
     if (userData) {

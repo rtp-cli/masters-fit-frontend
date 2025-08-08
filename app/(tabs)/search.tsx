@@ -1,25 +1,21 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
   ScrollView,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   Platform,
   Modal,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "@contexts/AuthContext";
 import ExerciseLink from "@components/ExerciseLink";
 import ExerciseLinkModal from "@components/ExerciseLinkModal";
 import {
-  DateSearchResponse,
-  ExerciseSearchResponse,
   Exercise,
   DateSearchWorkout,
   ExerciseDetails,
@@ -27,20 +23,20 @@ import {
 } from "@lib/search";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { updateExerciseLink } from "@lib/exercises";
-import {
-  formatEquipment,
-  formatMuscleGroups,
-  formatDifficulty,
-  formatDate as utilFormatDate,
-} from "../../utils";
+
 import { colors } from "../../lib/theme";
-import { SearchSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 type SearchType = "date" | "exercise" | "general";
 
 export default function SearchScreen() {
   const { user } = useAuth();
-  const { refresh: { searchByDate, searchExercise, searchExercises }, loading } = useAppDataContext();
+  const {
+    refresh: { searchByDate, searchExercise, searchExercises },
+    loading,
+  } = useAppDataContext();
+
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -69,6 +65,13 @@ export default function SearchScreen() {
     name: string;
     link?: string;
   } | null>(null);
+
+  // Scroll to top when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   // Handle date selection from DateTimePicker
   const handleDateChange = (event: any, date?: Date) => {
@@ -454,7 +457,7 @@ export default function SearchScreen() {
   const ResultsSkeleton = () => (
     <View className="px-4">
       <View className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4" />
-      {Array.from({length: 5}).map((_, index) => (
+      {Array.from({ length: 5 }).map((_, index) => (
         <View key={index} className="bg-white rounded-xl p-4 mb-3 shadow-sm">
           <View className="flex-row items-center">
             <View className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mr-3" />
@@ -471,7 +474,7 @@ export default function SearchScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <ScrollView className="flex-1">
+      <ScrollView ref={scrollViewRef} className="flex-1">
         {/* Search Inputs */}
         <View className="p-4 pt-6">
           <View className="flex-row space-x-3">
@@ -633,10 +636,8 @@ export default function SearchScreen() {
         ) : null}
 
         {/* Loading State - Only for results area */}
-        {isLoading && (
-          <ResultsSkeleton />
-        )}
-        
+        {isLoading && <ResultsSkeleton />}
+
         {/* Date Search Results Header */}
         {!isLoading && selectedDate && dateResult ? (
           <View className="px-4 pb-2">

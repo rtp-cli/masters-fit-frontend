@@ -117,9 +117,11 @@ enum IntensityLevels {
 export default function ProfileEditScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   // Get data refresh functions
-  const { refresh: { refreshProfile } } = useAppDataContext();
+  const {
+    refresh: { refreshProfile },
+  } = useAppDataContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -154,8 +156,8 @@ export default function ProfileEditScreen() {
           profile.intensityLevel === 1
             ? IntensityLevels.LOW
             : profile.intensityLevel === 2
-            ? IntensityLevels.MODERATE
-            : IntensityLevels.HIGH;
+              ? IntensityLevels.MODERATE
+              : IntensityLevels.HIGH;
       } else {
         // Handle string values
         switch (profile.intensityLevel.toLowerCase()) {
@@ -312,8 +314,6 @@ export default function ProfileEditScreen() {
         intensityLevel: formData.intensityLevel.toString(),
         medicalNotes: formData.medicalNotes,
       };
-
-      console.log("Sending profile data:", profileData);
 
       // Update the profile
       const updatedProfile = await updateUserProfile(profileData as any);

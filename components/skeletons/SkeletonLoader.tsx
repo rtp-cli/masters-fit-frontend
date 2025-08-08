@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, ViewProps } from 'react-native';
+import { View, ViewProps, DimensionValue } from 'react-native';
 
 interface SkeletonLoaderProps extends ViewProps {
-  width?: number | string;
-  height?: number | string;
+  width?: DimensionValue;
+  height?: DimensionValue;
   variant?: 'text' | 'circular' | 'rectangular';
   animate?: boolean;
 }

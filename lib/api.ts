@@ -1,6 +1,7 @@
 import { API_URL } from "../config";
 import { User, OnboardingData, AuthResponse } from "./types";
 import * as SecureStore from "expo-secure-store";
+import { logger } from "./logger";
 
 /**
  * Get the JWT token from secure storage
@@ -9,7 +10,7 @@ export async function getAuthToken(): Promise<string | null> {
   try {
     return await SecureStore.getItemAsync("token");
   } catch (error) {
-    console.error("❌ Error retrieving token:", error);
+    logger.error("Error retrieving authentication token", { error: error });
     return null;
   }
 }
@@ -36,30 +37,39 @@ export async function apiRequest<T>(
     headers,
   };
 
+  const startTime = Date.now();
+  const method = options.method || "GET";
+
   try {
-    console.log(`🔄 API Request: ${endpoint}`, {
-      method: options.method || "GET",
-      headers: config.headers,
-    });
+    logger.apiRequest(endpoint, method);
 
     const response = await fetch(url, config);
+    const duration = Date.now() - startTime;
 
     // Handle HTTP errors
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(`❌ API Error: ${endpoint}`, {
-        status: response.status,
-        error: errorData,
-      });
+      logger.apiError(
+        endpoint,
+        {
+          status: response.status,
+          message: errorData.message || `HTTP error ${response.status}`,
+          ...errorData,
+        },
+        method
+      );
       throw new Error(errorData.message || `HTTP error ${response.status}`);
     }
 
     // Parse JSON response
     const data: T = await response.json();
-    console.log(`✅ API Response: ${endpoint}`, data);
+    logger.apiRequest(endpoint, method, duration);
     return data;
   } catch (error) {
-    console.error(`❌ API Request Failed: ${endpoint}`, error);
+    if (!(error instanceof Error && error.message.includes("HTTP error"))) {
+      // Only log network/unexpected errors, not HTTP errors (already logged above)
+      logger.apiError(endpoint, error, method);
+    }
     throw error;
   }
 }

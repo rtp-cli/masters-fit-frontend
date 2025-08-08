@@ -43,9 +43,7 @@ export default function GetStarted() {
   useEffect(() => {
     if (isPreloadingData && user && !isLoading) {
       const handlePreloadComplete = async () => {
-        console.log("🔄 Starting data preload...");
         await preloadAllData();
-        console.log("✅ Data preload completed, redirecting to dashboard");
         setIsPreloadingData(false);
         hasRedirected.current = true;
         router.replace("/(tabs)/dashboard");
@@ -66,25 +64,21 @@ export default function GetStarted() {
   useEffect(() => {
     // Don't redirect if we're generating a workout
     if (isGeneratingWorkout) {
-      console.log("🚫 Skipping redirect - workout generation in progress");
       return;
     }
 
     // Don't redirect if we're preloading data
     if (isPreloadingData) {
-      console.log("🚫 Skipping redirect - data preloading in progress");
       return;
     }
 
     // Don't redirect if user is in verification flow
     if (isVerifyingUser) {
-      console.log("🚫 Skipping redirect - user in verification flow");
       return;
     }
 
     // Don't redirect if we already have
     if (hasRedirected.current) {
-      console.log("🚫 Skipping redirect - already redirected");
       return;
     }
 
@@ -93,22 +87,13 @@ export default function GetStarted() {
       const needsOnboarding = user.needsOnboarding ?? true;
 
       if (!needsOnboarding) {
-        // Trigger data preloading instead of direct redirect
-        console.log("✅ Starting data preload - onboarding complete");
-        console.log("📊 Current state:", {
-          isPreloadingData,
-          isVerifyingUser,
-          hasRedirected: hasRedirected.current,
-        });
         setIsPreloadingData(true);
       } else {
         // Only redirect to onboarding if not already there
         if (pathname !== "/(auth)/onboarding") {
-          console.log("📋 Redirecting to onboarding - onboarding needed");
           hasRedirected.current = true;
           router.replace("/(auth)/onboarding");
         } else {
-          console.log("🚫 Already on onboarding page, skipping redirect");
         }
       }
     }
@@ -145,7 +130,6 @@ export default function GetStarted() {
 
   // Show warming up screen when preloading data
   if (isPreloadingData) {
-    console.log("🔥 Showing WarmingUpScreen - isPreloadingData is true");
     return <WarmingUpScreen />;
   }
 

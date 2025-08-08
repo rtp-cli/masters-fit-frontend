@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import {
   View,
   Text,
@@ -10,15 +16,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAppDataContext } from "@contexts/AppDataContext";
-import GeneratingPlanScreen from "@components/ui/GeneratingPlanScreen";
 import {
   TotalVolumeMetrics,
   WeightAccuracyMetrics,
   WorkoutTypeMetrics,
 } from "@/types/api";
-import { SimpleCircularProgress } from "@components/charts/CircularProgress";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
@@ -26,7 +31,6 @@ import { generateWorkoutPlan } from "@lib/workouts";
 import {
   formatDate,
   formatNumber,
-  formatDuration,
   calculateWorkoutDuration,
   calculatePlanDayDuration,
   formatWorkoutDuration,
@@ -34,12 +38,7 @@ import {
   formatDateAsString,
 } from "../../utils";
 import { fetchActiveWorkout } from "@lib/workouts";
-import {
-  WorkoutWithDetails,
-  PlanDayWithExercises,
-  PlanDayWithBlocks,
-  PlanDayWithExercise,
-} from "../types";
+import { PlanDayWithExercises } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
 
@@ -65,26 +64,18 @@ const DONUT_COLORS = [
   colors.brand.dark[5],
 ];
 
-function formatWorkoutTypeLabel(tag: string): string {
-  if (!tag) return "";
-  const specialCases: Record<string, string> = {
-    amrap: "AMRAP",
-    emom: "EMOM",
-    tabata: "Tabata",
-    hiit: "HIIT",
-    rft: "RFT",
-    ladder: "Ladder",
-    pyramid: "Pyramid",
-    superset: "Superset",
-    circuit: "Circuit",
-  };
-  if (specialCases[tag.toLowerCase()]) return specialCases[tag.toLowerCase()];
-  return tag.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading, setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    isLoading: authLoading,
+    setIsPreloadingData,
+    setIsGeneratingWorkout,
+  } = useAuth();
+
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Today's schedule state
   const [todaysWorkout, setTodaysWorkout] =
@@ -159,11 +150,8 @@ export default function DashboardScreen() {
       weeklySummary,
       workoutConsistency,
       weightMetrics,
-      weightAccuracy,
-      goalProgress,
       totalVolumeMetrics,
       dailyWorkoutProgress,
-      workoutTypeMetrics,
     },
 
     // State
@@ -172,10 +160,6 @@ export default function DashboardScreen() {
 
     // Actions
     refresh: {
-      refreshDashboard: fetchDashboardMetrics,
-      refreshWeightAccuracy,
-      refreshTotalVolumeMetrics,
-      refreshWorkoutTypeMetrics,
       fetchWeightProgression,
       fetchWeightAccuracyByDate,
       fetchWorkoutTypeByDate,
@@ -240,13 +224,19 @@ export default function DashboardScreen() {
   // Clear app data when user logs out (but not during initial auth loading)
   useEffect(() => {
     if (!user && !authLoading && hasLoadedInitialData) {
-      console.log("🔄 Dashboard: User logged out, clearing app data");
       reset();
       setHasLoadedInitialData(false);
       setTodaysWorkout(null);
       setWorkoutInfo(null);
     }
   }, [user, authLoading, hasLoadedInitialData, reset]);
+
+  // Scroll to top when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   // Wide date range function for getting all data
   const calculateWideDataRange = () => {
@@ -470,26 +460,15 @@ export default function DashboardScreen() {
     }
     cutoffDate.setHours(0, 0, 0, 0); // Set to start of day for inclusive comparison
 
-    console.log(
-      `🔍 Filtering data from ${cutoffDate.toISOString().split("T")[0]} to ${today.toISOString().split("T")[0]} for ${filter}`
-    );
-
     // Filter data to only include dates within the range
     const filteredData = sortedData.filter((item) => {
       const itemDate = new Date(item.date);
       return itemDate >= cutoffDate && itemDate <= today;
     });
 
-    console.log(
-      `📊 Original data: ${sortedData.length} points, Filtered: ${filteredData.length} points`
-    );
-
     // If no data matches the filter, return the most recent data points as fallback
     if (filteredData.length === 0) {
       const fallback = sortedData.slice(-Math.min(sortedData.length, 5));
-      console.log(
-        `⚠️ No data in range, using fallback: ${fallback.length} points`
-      );
       return fallback;
     }
 
@@ -526,10 +505,6 @@ export default function DashboardScreen() {
         weightPerformanceFilter
       );
       setFilteredWeightAccuracy(filteredData);
-      console.log(
-        `📊 Filtered weight accuracy data for ${weightPerformanceFilter}:`,
-        filteredData
-      );
     } else {
       // Clear filtered data when no raw data
       setFilteredWeightAccuracy(null);
@@ -566,10 +541,6 @@ export default function DashboardScreen() {
         workoutTypeFilter
       );
       setFilteredWorkoutTypeMetrics(filteredData);
-      console.log(
-        `📊 Filtered workout type data for ${workoutTypeFilter}:`,
-        filteredData
-      );
     } else {
       // Clear filtered data when no raw data
       setFilteredWorkoutTypeMetrics(null);
@@ -606,11 +577,6 @@ export default function DashboardScreen() {
         strengthFilter
       );
       setWeightProgressionData(filteredData);
-      console.log(
-        `📊 Filtered weight progression data for ${strengthFilter}:`,
-        filteredData.length,
-        "points"
-      );
     } else {
       // Clear filtered data when no raw data
       setWeightProgressionData([]);
@@ -701,13 +667,13 @@ export default function DashboardScreen() {
 
     try {
       setIsGeneratingWorkout(true);
-      
+
       const result = await generateWorkoutPlan(user.id);
 
       if (result?.success) {
         // Trigger app reload to show warming up screen
         setIsPreloadingData(true);
-        
+
         // Navigate to home to trigger the warming up flow
         router.replace("/");
       } else {
@@ -810,11 +776,8 @@ export default function DashboardScreen() {
   // Compute weekly progress data (will update when dependencies change)
   const getWeeklyProgressData = () => {
     if (!dailyWorkoutProgress) {
-      console.log("No dailyWorkoutProgress data available");
       return [];
     }
-
-    console.log("Computing weekly progress with data:", dailyWorkoutProgress);
 
     // Use the workout start date as the base, not the current week's Monday
     let weekStartDate = new Date();
@@ -919,6 +882,7 @@ export default function DashboardScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         refreshControl={
           <RefreshControl

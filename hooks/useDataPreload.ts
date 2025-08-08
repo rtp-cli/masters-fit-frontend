@@ -13,14 +13,12 @@ export const useDataPreload = () => {
     }
 
     try {
-      console.log("🔄 Starting data preload for user:", user.id);
 
       // Use the centralized refresh function to load all data
       await refresh.refreshAll();
       
-      console.log("✅ Data preload completed successfully");
     } catch (error) {
-      console.error("❌ Data preload failed:", error);
+      console.error("Data preload failed:", error);
     }
   }, [user?.id, refresh.refreshAll]);
 

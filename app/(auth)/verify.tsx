@@ -99,31 +99,17 @@ export default function VerifyScreen() {
 
         // Set the user data in auth context if available
         if (response.user) {
-          console.log("🔍 Verify - Setting user data:", response.user);
-          // Include needsOnboarding from the response in the user object
           const userWithOnboardingStatus = {
             ...response.user,
             needsOnboarding: response.needsOnboarding ?? false,
           };
-          console.log(
-            "🔍 Verify - User with onboarding status:",
-            userWithOnboardingStatus
-          );
           setUserData(userWithOnboardingStatus);
           // Save the complete user data to SecureStore
           await SecureStore.setItemAsync(
             "user",
             JSON.stringify(userWithOnboardingStatus)
           );
-          console.log("🔍 Verify - User data saved to SecureStore");
         }
-
-        console.log("🔍 Verify - Response analysis:", {
-          isSigningUp,
-          responseNeedsOnboarding: response.needsOnboarding,
-          userNeedsOnboarding: response.user?.needsOnboarding,
-          willRedirectToOnboarding: isSigningUp || response.needsOnboarding,
-        });
 
         // If user is signing up or response indicates onboarding is needed, store email and user ID
         if (isSigningUp || response.needsOnboarding) {
@@ -142,17 +128,11 @@ export default function VerifyScreen() {
 
           // Only redirect if not already on onboarding page
           if (pathname !== "/(auth)/onboarding") {
-            console.log("🔍 Verify - Redirecting to onboarding");
             router.replace("/(auth)/onboarding");
-          } else {
-            console.log(
-              "🔍 Verify - Already on onboarding page, skipping redirect"
-            );
           }
         } else {
           // Clear verification flag and let index.tsx handle the preloading
           await SecureStore.deleteItemAsync("isVerifyingUser");
-          console.log("🔍 Verify - Redirecting to index for data preload");
           router.replace("/");
         }
       } else {

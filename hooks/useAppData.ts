@@ -2,7 +2,11 @@ import { useState, useCallback, useMemo } from "react";
 import { apiRequest } from "@/lib/api";
 import { fetchActiveWorkout, fetchWorkoutHistory } from "@lib/workouts";
 import { fetchUserProfile } from "@lib/profile";
-import { searchByDateAPI, searchExerciseAPI, searchExercisesAPI } from "@lib/search";
+import {
+  searchByDateAPI,
+  searchExerciseAPI,
+  searchExercisesAPI,
+} from "@lib/search";
 import { useAuth } from "@contexts/AuthContext";
 import {
   DashboardMetrics,
@@ -52,7 +56,7 @@ interface RefreshFunctions {
   refreshHistory: () => Promise<void>;
   refreshAll: (filters?: DashboardFilters) => Promise<void>;
   reset: () => void;
-  
+
   // Individual dashboard metric refreshes
   refreshWeeklySummary: () => Promise<void>;
   refreshWorkoutConsistency: (filters?: DashboardFilters) => Promise<void>;
@@ -62,12 +66,12 @@ interface RefreshFunctions {
   refreshTotalVolumeMetrics: (filters?: DashboardFilters) => Promise<void>;
   refreshWorkoutTypeMetrics: (filters?: DashboardFilters) => Promise<void>;
   refreshDailyWorkoutProgress: (filters?: DashboardFilters) => Promise<void>;
-  
+
   // Chart data functions
   fetchWeightProgression: (filters?: DashboardFilters) => Promise<any[]>;
   fetchWeightAccuracyByDate: (filters?: DashboardFilters) => Promise<any[]>;
   fetchWorkoutTypeByDate: (filters?: DashboardFilters) => Promise<any[]>;
-  
+
   // Search functions
   searchByDate: (date: string) => Promise<any>;
   searchExercise: (exerciseId: number) => Promise<any>;
@@ -107,148 +111,154 @@ export const useAppData = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Dashboard data refresh
-  const refreshDashboard = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    setLoading(prev => ({ ...prev, dashboardLoading: true }));
-    setError(null);
+  const refreshDashboard = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-    try {
-      const queryParams = new URLSearchParams();
+      setLoading((prev) => ({ ...prev, dashboardLoading: true }));
+      setError(null);
 
-      // Use last 30 days + next 7 days as default to include planned workouts
-      if (!filters?.startDate && !filters?.endDate && !filters?.timeRange) {
-        const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - 30);
-        const endDate = new Date(today);
-        endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
-        
-        queryParams.append("startDate", startDate.toISOString().split('T')[0]);
-        queryParams.append("endDate", endDate.toISOString().split('T')[0]);
-      } else {
-        if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-        if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+      try {
+        const queryParams = new URLSearchParams();
+
+        // Use last 30 days + next 7 days as default to include planned workouts
+        if (!filters?.startDate && !filters?.endDate && !filters?.timeRange) {
+          const today = new Date();
+          const startDate = new Date(today);
+          startDate.setDate(today.getDate() - 30);
+          const endDate = new Date(today);
+          endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
+
+          queryParams.append(
+            "startDate",
+            startDate.toISOString().split("T")[0]
+          );
+          queryParams.append("endDate", endDate.toISOString().split("T")[0]);
+        } else {
+          if (filters?.startDate)
+            queryParams.append("startDate", filters.startDate);
+          if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+          if (filters?.timeRange)
+            queryParams.append("timeRange", filters.timeRange);
+        }
+
+        const response = await apiRequest<{
+          success: boolean;
+          data: DashboardMetrics;
+        }>(`/dashboard/${userId}/metrics?${queryParams.toString()}`);
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            dashboardData: response.data,
+            weeklySummary: response.data.weeklySummary,
+            workoutConsistency: response.data.workoutConsistency,
+            weightMetrics: response.data.weightMetrics,
+            weightAccuracy: response.data.weightAccuracy,
+            goalProgress: response.data.goalProgress,
+            totalVolumeMetrics: response.data.totalVolumeMetrics,
+            workoutTypeMetrics: response.data.workoutTypeMetrics || {
+              distribution: [],
+              totalExercises: 0,
+              totalSets: 0,
+              dominantType: "",
+              hasData: false,
+            },
+            dailyWorkoutProgress: response.data.dailyWorkoutProgress,
+          }));
+        } else {
+          throw new Error("Failed to fetch dashboard metrics");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading((prev) => ({ ...prev, dashboardLoading: false }));
       }
-
-      const response = await apiRequest<{
-        success: boolean;
-        data: DashboardMetrics;
-      }>(`/dashboard/${userId}/metrics?${queryParams.toString()}`);
-
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          dashboardData: response.data,
-          weeklySummary: response.data.weeklySummary,
-          workoutConsistency: response.data.workoutConsistency,
-          weightMetrics: response.data.weightMetrics,
-          weightAccuracy: response.data.weightAccuracy,
-          goalProgress: response.data.goalProgress,
-          totalVolumeMetrics: response.data.totalVolumeMetrics,
-          workoutTypeMetrics: response.data.workoutTypeMetrics || {
-            distribution: [],
-            totalExercises: 0,
-            totalSets: 0,
-            dominantType: "",
-            hasData: false,
-          },
-          dailyWorkoutProgress: response.data.dailyWorkoutProgress,
-        }));
-      } else {
-        throw new Error("Failed to fetch dashboard metrics");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(prev => ({ ...prev, dashboardLoading: false }));
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
   // Workout data refresh
   const refreshWorkout = useCallback(async () => {
     if (!userId) return;
-    
-    setLoading(prev => ({ ...prev, workoutLoading: true }));
+
+    setLoading((prev) => ({ ...prev, workoutLoading: true }));
     setError(null);
 
     try {
       const response = await fetchActiveWorkout();
-      setData(prev => ({
+      setData((prev) => ({
         ...prev,
         workoutData: response || null,
       }));
-      
-      // No active workout is a normal state, not an error
-      if (!response) {
-        console.log("✅ Workout data refresh completed - no active workout");
-      } else {
-        console.log("✅ Workout data refresh completed - active workout found");
-      }
     } catch (err) {
       // Only set error for actual failures, not "no workout" states
-      console.error("❌ Failed to refresh workout data:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch workout data");
+      console.error("Failed to refresh workout data:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch workout data"
+      );
     } finally {
-      setLoading(prev => ({ ...prev, workoutLoading: false }));
+      setLoading((prev) => ({ ...prev, workoutLoading: false }));
     }
   }, [userId]);
 
   // Profile data refresh
   const refreshProfile = useCallback(async () => {
     if (!userId) return;
-    
-    setLoading(prev => ({ ...prev, profileLoading: true }));
+
+    setLoading((prev) => ({ ...prev, profileLoading: true }));
     setError(null);
 
     try {
       const profile = await fetchUserProfile();
-      setData(prev => ({
+      setData((prev) => ({
         ...prev,
         profileData: profile,
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch profile data");
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch profile data"
+      );
     } finally {
-      setLoading(prev => ({ ...prev, profileLoading: false }));
+      setLoading((prev) => ({ ...prev, profileLoading: false }));
     }
   }, [userId]);
 
   // History data refresh
   const refreshHistory = useCallback(async () => {
     if (!userId) return;
-    
-    setLoading(prev => ({ ...prev, historyLoading: true }));
+
+    setLoading((prev) => ({ ...prev, historyLoading: true }));
     try {
       const history = await fetchWorkoutHistory(userId);
-      setData(prev => ({
+      setData((prev) => ({
         ...prev,
         historyData: history || [],
       }));
     } catch (err) {
-      console.error("❌ Failed to fetch workout history:", err);
+      console.error("Failed to fetch workout history:", err);
       // Don't set error for history as it's not critical - just set empty array
-      setData(prev => ({
+      setData((prev) => ({
         ...prev,
         historyData: [],
       }));
     } finally {
-      setLoading(prev => ({ ...prev, historyLoading: false }));
+      setLoading((prev) => ({ ...prev, historyLoading: false }));
     }
   }, [userId]);
 
   // Individual dashboard metric refresh functions
   const refreshWeeklySummary = useCallback(async () => {
     if (!userId) return;
-    
+
     try {
-      const response = await apiRequest<{ success: boolean; data: WeeklySummary }>(
-        `/dashboard/${userId}/weekly-summary`
-      );
+      const response = await apiRequest<{
+        success: boolean;
+        data: WeeklySummary;
+      }>(`/dashboard/${userId}/weekly-summary`);
 
       if (response.success) {
-        setData(prev => ({
+        setData((prev) => ({
           ...prev,
           weeklySummary: response.data,
         }));
@@ -258,80 +268,112 @@ export const useAppData = () => {
     }
   }, [userId]);
 
-  const refreshWorkoutConsistency = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const refreshWorkoutConsistency = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: WorkoutConsistency[];
-      }>(`/dashboard/${userId}/workout-consistency?${queryParams.toString()}`);
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          workoutConsistency: response.data,
-        }));
+        const response = await apiRequest<{
+          success: boolean;
+          data: WorkoutConsistency[];
+        }>(
+          `/dashboard/${userId}/workout-consistency?${queryParams.toString()}`
+        );
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            workoutConsistency: response.data,
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching workout consistency:", err);
       }
-    } catch (err) {
-      console.error("Error fetching workout consistency:", err);
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
-  const refreshWeightMetrics = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
-      if (filters?.groupBy) queryParams.append("groupBy", filters.groupBy);
+  const refreshWeightMetrics = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: WeightMetrics[];
-      }>(`/dashboard/${userId}/weight-metrics?${queryParams.toString()}`);
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+        if (filters?.groupBy) queryParams.append("groupBy", filters.groupBy);
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          weightMetrics: response.data,
-        }));
+        const response = await apiRequest<{
+          success: boolean;
+          data: WeightMetrics[];
+        }>(`/dashboard/${userId}/weight-metrics?${queryParams.toString()}`);
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            weightMetrics: response.data,
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching weight metrics:", err);
       }
-    } catch (err) {
-      console.error("Error fetching weight metrics:", err);
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
-  const refreshWeightAccuracy = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const refreshWeightAccuracy = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      queryParams.append("_t", Date.now().toString());
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: WeightAccuracyMetrics;
-      }>(`/dashboard/${userId}/weight-accuracy?${queryParams.toString()}`);
+        queryParams.append("_t", Date.now().toString());
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          weightAccuracy: response.data,
-        }));
-      } else {
-        setData(prev => ({
+        const response = await apiRequest<{
+          success: boolean;
+          data: WeightAccuracyMetrics;
+        }>(`/dashboard/${userId}/weight-accuracy?${queryParams.toString()}`);
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            weightAccuracy: response.data,
+          }));
+        } else {
+          setData((prev) => ({
+            ...prev,
+            weightAccuracy: {
+              accuracyRate: 0,
+              totalSets: 0,
+              exactMatches: 0,
+              higherWeight: 0,
+              lowerWeight: 0,
+              avgWeightDifference: 0,
+              chartData: [],
+              hasPlannedWeights: false,
+              hasExerciseData: false,
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching weight accuracy:", err);
+        setData((prev) => ({
           ...prev,
           weightAccuracy: {
             accuracyRate: 0,
@@ -346,98 +388,111 @@ export const useAppData = () => {
           },
         }));
       }
-    } catch (err) {
-      console.error("Error fetching weight accuracy:", err);
-      setData(prev => ({
-        ...prev,
-        weightAccuracy: {
-          accuracyRate: 0,
-          totalSets: 0,
-          exactMatches: 0,
-          higherWeight: 0,
-          lowerWeight: 0,
-          avgWeightDifference: 0,
-          chartData: [],
-          hasPlannedWeights: false,
-          hasExerciseData: false,
-        },
-      }));
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
-  const refreshGoalProgress = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const refreshGoalProgress = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: GoalProgress[];
-      }>(`/dashboard/${userId}/goal-progress?${queryParams.toString()}`);
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          goalProgress: response.data,
-        }));
+        const response = await apiRequest<{
+          success: boolean;
+          data: GoalProgress[];
+        }>(`/dashboard/${userId}/goal-progress?${queryParams.toString()}`);
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            goalProgress: response.data,
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching goal progress:", err);
       }
-    } catch (err) {
-      console.error("Error fetching goal progress:", err);
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
-  const refreshTotalVolumeMetrics = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const refreshTotalVolumeMetrics = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: TotalVolumeMetrics[];
-      }>(`/dashboard/${userId}/total-volume?${queryParams.toString()}`);
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          totalVolumeMetrics: response.data,
-        }));
+        const response = await apiRequest<{
+          success: boolean;
+          data: TotalVolumeMetrics[];
+        }>(`/dashboard/${userId}/total-volume?${queryParams.toString()}`);
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            totalVolumeMetrics: response.data,
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching total volume metrics:", err);
       }
-    } catch (err) {
-      console.error("Error fetching total volume metrics:", err);
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
-  const refreshWorkoutTypeMetrics = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const refreshWorkoutTypeMetrics = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      queryParams.append("_t", Date.now().toString());
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: WorkoutTypeMetrics;
-      }>(`/dashboard/${userId}/workout-type-metrics?${queryParams.toString()}`);
+        queryParams.append("_t", Date.now().toString());
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          workoutTypeMetrics: response.data,
-        }));
-      } else {
-        setData(prev => ({
+        const response = await apiRequest<{
+          success: boolean;
+          data: WorkoutTypeMetrics;
+        }>(
+          `/dashboard/${userId}/workout-type-metrics?${queryParams.toString()}`
+        );
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            workoutTypeMetrics: response.data,
+          }));
+        } else {
+          setData((prev) => ({
+            ...prev,
+            workoutTypeMetrics: {
+              distribution: [],
+              totalExercises: 0,
+              totalSets: 0,
+              dominantType: "",
+              hasData: false,
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching workout type metrics:", err);
+        setData((prev) => ({
           ...prev,
           workoutTypeMetrics: {
             distribution: [],
@@ -448,174 +503,195 @@ export const useAppData = () => {
           },
         }));
       }
-    } catch (err) {
-      console.error("Error fetching workout type metrics:", err);
-      setData(prev => ({
-        ...prev,
-        workoutTypeMetrics: {
-          distribution: [],
-          totalExercises: 0,
-          totalSets: 0,
-          dominantType: "",
-          hasData: false,
-        },
-      }));
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
-  const refreshDailyWorkoutProgress = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return;
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const refreshDailyWorkoutProgress = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return;
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: DailyWorkoutProgress[];
-      }>(`/dashboard/${userId}/daily-workout-progress?${queryParams.toString()}`);
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      if (response.success) {
-        setData(prev => ({
-          ...prev,
-          dailyWorkoutProgress: response.data,
-        }));
+        const response = await apiRequest<{
+          success: boolean;
+          data: DailyWorkoutProgress[];
+        }>(
+          `/dashboard/${userId}/daily-workout-progress?${queryParams.toString()}`
+        );
+
+        if (response.success) {
+          setData((prev) => ({
+            ...prev,
+            dailyWorkoutProgress: response.data,
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching daily workout progress:", err);
       }
-    } catch (err) {
-      console.error("Error fetching daily workout progress:", err);
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
 
   // Chart data functions
-  const fetchWeightProgression = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return [];
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
+  const fetchWeightProgression = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return [];
 
-      const response = await apiRequest<{
-        success: boolean;
-        data: {
-          date: string;
-          avgWeight: number;
-          maxWeight: number;
-          label: string;
-        }[];
-      }>(`/dashboard/${userId}/weight-progression?${queryParams.toString()}`);
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
 
-      if (response.success) {
-        return response.data;
-      }
-      return [];
-    } catch (err) {
-      console.error("Error fetching weight progression:", err);
-      return [];
-    }
-  }, [userId]);
-
-  const fetchWeightAccuracyByDate = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return [];
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
-
-      const response = await apiRequest<{
-        success: boolean;
-        data: {
-          date: string;
-          totalSets: number;
-          exactMatches: number;
-          higherWeight: number;
-          lowerWeight: number;
-          label: string;
-        }[];
-      }>(`/dashboard/${userId}/weight-accuracy-by-date?${queryParams.toString()}`);
-
-      if (response.success) {
-        return response.data;
-      }
-      return [];
-    } catch (err) {
-      console.error("Error fetching weight accuracy by date:", err);
-      return [];
-    }
-  }, [userId]);
-
-  const fetchWorkoutTypeByDate = useCallback(async (filters?: DashboardFilters) => {
-    if (!userId) return [];
-    
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters?.startDate) queryParams.append("startDate", filters.startDate);
-      if (filters?.endDate) queryParams.append("endDate", filters.endDate);
-      if (filters?.timeRange) queryParams.append("timeRange", filters.timeRange);
-
-      const response = await apiRequest<{
-        success: boolean;
-        data: {
-          date: string;
-          workoutTypes: {
-            tag: string;
+        const response = await apiRequest<{
+          success: boolean;
+          data: {
+            date: string;
+            avgWeight: number;
+            maxWeight: number;
             label: string;
-            totalSets: number;
-            totalReps: number;
-            exerciseCount: number;
           }[];
-          label: string;
-        }[];
-      }>(`/dashboard/${userId}/workout-type-by-date?${queryParams.toString()}`);
+        }>(`/dashboard/${userId}/weight-progression?${queryParams.toString()}`);
 
-      if (response.success) {
-        return response.data;
+        if (response.success) {
+          return response.data;
+        }
+        return [];
+      } catch (err) {
+        console.error("Error fetching weight progression:", err);
+        return [];
       }
-      return [];
-    } catch (err) {
-      console.error("Error fetching workout type by date:", err);
-      return [];
-    }
-  }, [userId]);
+    },
+    [userId]
+  );
+
+  const fetchWeightAccuracyByDate = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return [];
+
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const response = await apiRequest<{
+          success: boolean;
+          data: {
+            date: string;
+            totalSets: number;
+            exactMatches: number;
+            higherWeight: number;
+            lowerWeight: number;
+            label: string;
+          }[];
+        }>(
+          `/dashboard/${userId}/weight-accuracy-by-date?${queryParams.toString()}`
+        );
+
+        if (response.success) {
+          return response.data;
+        }
+        return [];
+      } catch (err) {
+        console.error("Error fetching weight accuracy by date:", err);
+        return [];
+      }
+    },
+    [userId]
+  );
+
+  const fetchWorkoutTypeByDate = useCallback(
+    async (filters?: DashboardFilters) => {
+      if (!userId) return [];
+
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.startDate)
+          queryParams.append("startDate", filters.startDate);
+        if (filters?.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters?.timeRange)
+          queryParams.append("timeRange", filters.timeRange);
+
+        const response = await apiRequest<{
+          success: boolean;
+          data: {
+            date: string;
+            workoutTypes: {
+              tag: string;
+              label: string;
+              totalSets: number;
+              totalReps: number;
+              exerciseCount: number;
+            }[];
+            label: string;
+          }[];
+        }>(
+          `/dashboard/${userId}/workout-type-by-date?${queryParams.toString()}`
+        );
+
+        if (response.success) {
+          return response.data;
+        }
+        return [];
+      } catch (err) {
+        console.error("Error fetching workout type by date:", err);
+        return [];
+      }
+    },
+    [userId]
+  );
 
   // Search functions
-  const searchByDate = useCallback(async (date: string) => {
-    if (!userId) return null;
-    
-    setLoading(prev => ({ ...prev, searchLoading: true }));
-    try {
-      const result = await searchByDateAPI(userId, date);
-      return result;
-    } catch (err) {
-      console.error("Error searching by date:", err);
-      return null;
-    } finally {
-      setLoading(prev => ({ ...prev, searchLoading: false }));
-    }
-  }, [userId]);
+  const searchByDate = useCallback(
+    async (date: string) => {
+      if (!userId) return null;
 
-  const searchExercise = useCallback(async (exerciseId: number) => {
-    if (!userId) return null;
-    
-    setLoading(prev => ({ ...prev, searchLoading: true }));
-    try {
-      const result = await searchExerciseAPI(userId, exerciseId);
-      return result;
-    } catch (err) {
-      console.error("Error searching exercise:", err);
-      return null;
-    } finally {
-      setLoading(prev => ({ ...prev, searchLoading: false }));
-    }
-  }, [userId]);
+      setLoading((prev) => ({ ...prev, searchLoading: true }));
+      try {
+        const result = await searchByDateAPI(userId, date);
+        return result;
+      } catch (err) {
+        console.error("Error searching by date:", err);
+        return null;
+      } finally {
+        setLoading((prev) => ({ ...prev, searchLoading: false }));
+      }
+    },
+    [userId]
+  );
+
+  const searchExercise = useCallback(
+    async (exerciseId: number) => {
+      if (!userId) return null;
+
+      setLoading((prev) => ({ ...prev, searchLoading: true }));
+      try {
+        const result = await searchExerciseAPI(userId, exerciseId);
+        return result;
+      } catch (err) {
+        console.error("Error searching exercise:", err);
+        return null;
+      } finally {
+        setLoading((prev) => ({ ...prev, searchLoading: false }));
+      }
+    },
+    [userId]
+  );
 
   const searchExercises = useCallback(async (query: string) => {
-    setLoading(prev => ({ ...prev, searchLoading: true }));
+    setLoading((prev) => ({ ...prev, searchLoading: true }));
     try {
       const result = await searchExercisesAPI(query);
       return result;
@@ -623,13 +699,12 @@ export const useAppData = () => {
       console.error("Error searching exercises:", err);
       return null;
     } finally {
-      setLoading(prev => ({ ...prev, searchLoading: false }));
+      setLoading((prev) => ({ ...prev, searchLoading: false }));
     }
   }, []);
 
   // Reset all data to initial state
   const reset = useCallback(() => {
-    console.log("🔄 Resetting all app data to initial state...");
     setData({
       dashboardData: null,
       weeklySummary: null,
@@ -652,70 +727,73 @@ export const useAppData = () => {
       historyLoading: false,
     });
     setError(null);
-    console.log("✅ All app data reset to initial state");
   }, []);
 
   // Refresh all data
-  const refreshAll = useCallback(async (filters?: DashboardFilters) => {
-    console.log("🔄 Refreshing all app data...");
-    
-    try {
-      await Promise.all([
-        refreshDashboard(filters),
-        refreshWorkout(),
-        refreshProfile(),
-        refreshHistory(),
-      ]);
-      
-      console.log("✅ All app data refreshed successfully");
-    } catch (err) {
-      console.error("❌ Error refreshing all data:", err);
-    }
-  }, [refreshDashboard, refreshWorkout, refreshProfile, refreshHistory]);
+  const refreshAll = useCallback(
+    async (filters?: DashboardFilters) => {
+
+      try {
+        await Promise.all([
+          refreshDashboard(filters),
+          refreshWorkout(),
+          refreshProfile(),
+          refreshHistory(),
+        ]);
+
+      } catch (err) {
+        console.error("Error refreshing all data:", err);
+      }
+    },
+    [refreshDashboard, refreshWorkout, refreshProfile, refreshHistory]
+  );
 
   // Memoized refresh functions object to prevent infinite loops
-  const refresh: RefreshFunctions = useMemo(() => ({
-    refreshDashboard,
-    refreshWorkout,
-    refreshProfile,
-    refreshHistory,
-    refreshAll,
-    reset,
-    refreshWeeklySummary,
-    refreshWorkoutConsistency,
-    refreshWeightMetrics,
-    refreshWeightAccuracy,
-    refreshGoalProgress,
-    refreshTotalVolumeMetrics,
-    refreshWorkoutTypeMetrics,
-    refreshDailyWorkoutProgress,
-    fetchWeightProgression,
-    fetchWeightAccuracyByDate,
-    fetchWorkoutTypeByDate,
-    searchByDate,
-    searchExercise,
-    searchExercises,
-  }), [
-    refreshDashboard,
-    refreshWorkout,
-    refreshProfile,
-    refreshAll,
-    reset,
-    refreshWeeklySummary,
-    refreshWorkoutConsistency,
-    refreshWeightMetrics,
-    refreshWeightAccuracy,
-    refreshGoalProgress,
-    refreshTotalVolumeMetrics,
-    refreshWorkoutTypeMetrics,
-    refreshDailyWorkoutProgress,
-    fetchWeightProgression,
-    fetchWeightAccuracyByDate,
-    fetchWorkoutTypeByDate,
-    searchByDate,
-    searchExercise,
-    searchExercises,
-  ]);
+  const refresh: RefreshFunctions = useMemo(
+    () => ({
+      refreshDashboard,
+      refreshWorkout,
+      refreshProfile,
+      refreshHistory,
+      refreshAll,
+      reset,
+      refreshWeeklySummary,
+      refreshWorkoutConsistency,
+      refreshWeightMetrics,
+      refreshWeightAccuracy,
+      refreshGoalProgress,
+      refreshTotalVolumeMetrics,
+      refreshWorkoutTypeMetrics,
+      refreshDailyWorkoutProgress,
+      fetchWeightProgression,
+      fetchWeightAccuracyByDate,
+      fetchWorkoutTypeByDate,
+      searchByDate,
+      searchExercise,
+      searchExercises,
+    }),
+    [
+      refreshDashboard,
+      refreshWorkout,
+      refreshProfile,
+      refreshAll,
+      reset,
+      refreshWeeklySummary,
+      refreshWorkoutConsistency,
+      refreshWeightMetrics,
+      refreshWeightAccuracy,
+      refreshGoalProgress,
+      refreshTotalVolumeMetrics,
+      refreshWorkoutTypeMetrics,
+      refreshDailyWorkoutProgress,
+      fetchWeightProgression,
+      fetchWeightAccuracyByDate,
+      fetchWorkoutTypeByDate,
+      searchByDate,
+      searchExercise,
+      searchExercises,
+    ]
+  );
 
   return {
     data,

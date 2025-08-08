@@ -21,9 +21,11 @@ export default function OnboardingScreen() {
     isLoading: authLoading,
     setIsGeneratingWorkout,
   } = useAuth();
-  
+
   // Get refresh functions for data refresh after workout generation
-  const { refresh: { refreshAll } } = useAppDataContext();
+  const {
+    refresh: { refreshAll },
+  } = useAppDataContext();
   const [isLoading, setIsLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
@@ -42,37 +44,11 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (!authLoading && isAuthenticated && user && !isCompletingOnboarding) {
       const needsOnboarding = user.needsOnboarding ?? true;
-      console.log("🔍 Onboarding Screen - Checking if user needs onboarding:", {
-        needsOnboarding,
-        userEmail: user.email,
-        userId: user.id,
-      });
-
       if (!needsOnboarding) {
-        console.log("✅ User doesn't need onboarding, redirecting to calendar");
         router.replace("/(tabs)/calendar");
       }
     }
   }, [authLoading, isAuthenticated, user, isCompletingOnboarding, router]);
-
-  // Debug logging for user state
-  useEffect(() => {
-    if (!authLoading) {
-      console.log("🔍 Onboarding Screen - User state:", {
-        isAuthenticated,
-        user: user?.email,
-        needsOnboarding: user?.needsOnboarding,
-        isCompletingOnboarding,
-      });
-    }
-  }, [
-    authLoading,
-    isAuthenticated,
-    user?.needsOnboarding,
-    isCompletingOnboarding,
-  ]);
-
-  // Debug logging for generating workout state is now handled globally
 
   // Fetch and apply pending email and user ID on component mount
   useEffect(() => {
@@ -107,22 +83,20 @@ export default function OnboardingScreen() {
       throw new Error("User not found");
     }
     const result = await generateWorkoutPlan(user.id);
-    
+
     if (result?.success) {
-      // Refresh all data after successful workout generation
-      console.log("✅ Workout generation successful, refreshing app data");
       const today = new Date();
       const startDate = new Date(today);
-      startDate.setDate(today.getDate() - 7); // Include some historical data
+      startDate.setDate(today.getDate() - 7);
       const endDate = new Date(today);
-      endDate.setDate(today.getDate() + 7); // Include upcoming planned workouts
+      endDate.setDate(today.getDate() + 7);
 
       await refreshAll({
         startDate: startDate.toISOString().split("T")[0],
         endDate: endDate.toISOString().split("T")[0],
       });
     }
-    
+
     return result;
   };
 
@@ -142,7 +116,7 @@ export default function OnboardingScreen() {
         userId: parseInt(pendingUserId),
         goals: formData.goals,
         limitations: formData.limitations || [],
-        environment: formData.environment!, // Assert it's defined since validation requires it
+        environment: formData.environment!,
         equipment: formData.equipment || [],
         otherEquipment: formData.otherEquipment || "",
         preferredStyles: formData.preferredStyles,
@@ -151,47 +125,23 @@ export default function OnboardingScreen() {
         fitnessLevel: formData.fitnessLevel.toString(),
         intensityLevel: formData.intensityLevel.toString(),
       };
+      setIsGeneratingWorkout(true);
+      setIsLoading(false);
 
-      console.log(
-        "📊 Onboarding data being sent:",
-        JSON.stringify(onboardingData, null, 2)
-      );
-
-      // Step 1: Set global flag BEFORE onboarding completion to prevent redirects
-      console.log("🚧 Setting generating workout flag to prevent redirects");
-      setIsGeneratingWorkout(true); // Prevent redirects globally FIRST
-      setIsLoading(false); // Stop showing form loading, show generating screen
-
-      // Step 2: Complete onboarding (this will update user state and trigger redirect logic)
-      console.log("Starting onboarding...");
       const onboardingSuccess = await completeOnboarding(onboardingData);
 
       if (!onboardingSuccess) {
         throw new Error("Failed to complete onboarding");
       }
 
-      console.log("Onboarding completed successfully");
-
-      // Add a small delay to ensure the generating screen is visible
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Step 3: Generate workout plan
-      console.log("Starting workout generation...");
       await fetchWorkoutPlan();
-      console.log("Workout generation completed");
-
-      // Step 4: Wait to show completion message
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Step 5: Now it's safe to navigate
-      console.log("Navigating to calendar...");
-      setIsGeneratingWorkout(false); // Allow redirects again
+      setIsGeneratingWorkout(false);
       setIsCompletingOnboarding(false);
       router.replace("/(tabs)/calendar");
     } catch (error) {
       console.error("Error:", error);
       setIsLoading(false);
-      setIsGeneratingWorkout(false); // Allow redirects again
+      setIsGeneratingWorkout(false);
       setIsCompletingOnboarding(false);
       Alert.alert("Error", "Something went wrong. Please try again.");
     }

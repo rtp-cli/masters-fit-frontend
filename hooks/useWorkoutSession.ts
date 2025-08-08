@@ -12,18 +12,15 @@ import {
   subscribeToWorkoutUpdates,
 } from "@/lib/workouts";
 import {
-  WorkoutSession,
   ExerciseSessionData,
   PlanDayWithBlocks,
   WorkoutBlockWithExercise,
   CreateExerciseLogParams,
-  flattenBlocksToExercises,
-  ExerciseSetLog,
 } from "@/types/api";
 import { ExerciseSet } from "@/components/SetTracker";
 import { UseWorkoutSessionReturn } from "@/types/hooks";
 import { formatDateAsLocalString } from "@/utils";
-
+import { logger } from "../lib/logger";
 export function useWorkoutSession(): UseWorkoutSessionReturn {
   const [activeWorkout, setActiveWorkout] = useState<PlanDayWithBlocks | null>(
     null
@@ -112,7 +109,6 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     try {
       setIsLoading(true);
       const response = await fetchActiveWorkout();
-      console.log("🔄 Full API response:", response);
 
       if (
         response &&
@@ -121,17 +117,14 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         response.workout.planDays.length > 0
       ) {
         const workout = response.workout;
-        console.log("📅 Workout data:", workout);
-        console.log("📋 Plan days:", workout.planDays);
 
         // Find today's plan day
         const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format
-        console.log("🗓️  Today's date:", today);
 
         // Debug all plan days
         workout.planDays.forEach((day: any, index: number) => {
           const planDate = formatDateAsLocalString(day.date);
-          console.log(`📆 Plan day ${index}:`, {
+          console.log(`Plan day ${index}:`, {
             originalDate: day.date,
             originalDateType: typeof day.date,
             formattedDate: planDate,
@@ -149,20 +142,11 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         // Find today's plan day
         const todaysPlan = workout.planDays.find((day: any) => {
           const planDate = formatDateAsLocalString(day.date);
-          console.log(
-            "🔍 Comparing plan date:",
-            planDate,
-            "with today:",
-            today,
-            "Match:",
-            planDate === today
-          );
           return planDate === today;
         });
 
         if (todaysPlan) {
-          console.log("✅ Today's plan found:", todaysPlan);
-          console.log("📊 Plan details:", {
+          console.log("Found today's plan:", {
             id: todaysPlan.id,
             name: todaysPlan.name,
             blocks: todaysPlan.blocks?.length || 0,
@@ -202,17 +186,14 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
             })
           );
 
-          console.log("💪 Initialized exercise data:", initialExerciseData);
           setExerciseData(initialExerciseData);
 
           // Check for existing logs
           await checkExistingLogs(todaysPlan, initialExerciseData);
         } else {
-          console.log("❌ No plan found for today");
           setActiveWorkout(null);
         }
       } else {
-        console.log("❌ No workout plan found");
         setActiveWorkout(null);
       }
     } catch (error) {
@@ -225,8 +206,6 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
   // Refresh function that can be called externally
   const refreshWorkout = useCallback(async () => {
-    console.log("🔄 Refreshing workout...");
-
     // Clear current state first
     setActiveWorkout(null);
     setExerciseData([]);
@@ -250,7 +229,6 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   // Subscribe to workout updates
   useEffect(() => {
     const unsubscribe = subscribeToWorkoutUpdates(() => {
-      console.log("🔄 Received workout update notification, refreshing...");
       refreshWorkout();
     });
 
@@ -320,7 +298,6 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
       // If all today's exercises are completed, show completion state but don't block loading
       if (allTodaysExercisesCompleted) {
-        console.log("All exercises for this plan day are completed");
         setIsWorkoutActive(false);
         // Mark all exercises as completed in local state
         const completedData = initialData.map((data) => ({
@@ -394,8 +371,16 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
       exerciseStartTime.current = new Date();
       setWorkoutTimer(0);
       setExerciseTimer(0);
+
+      logger.businessEvent("Workout session started", {
+        workoutId: activeWorkout.workoutId,
+        planDayId: activeWorkout.id,
+      });
     } catch (error) {
-      console.error("Error starting workout:", error);
+      logger.error("Error starting workout", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        workoutId: activeWorkout?.workoutId,
+      });
     }
   }, [activeWorkout]);
 
@@ -433,7 +418,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
         // Calculate total reps and weight for backwards compatibility
         const currentSets = currentData.sets || [];
-        
+
         const exerciseLogParams: CreateExerciseLogParams = {
           planDayExerciseId: currentData.planDayExerciseId,
           sets: currentSets,
@@ -514,7 +499,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         // Update workout log
         await updateWorkoutLog(activeWorkout.workoutId, {
           notes: notes || "",
-          totalTimeTaken: totalTime,
+          totalTimeMinutes: Math.floor(totalTime / 60),
           isComplete: true,
         });
 
@@ -523,9 +508,22 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         const totalExerciseIds = flattenedExercises.map((ex) => ex.id);
         await markWorkoutComplete(activeWorkout.workoutId, totalExerciseIds);
 
+        const completedExercises = exerciseData.filter(
+          (data) => data.isCompleted
+        ).length;
+        logger.businessEvent("Workout completed", {
+          workoutId: activeWorkout.workoutId,
+          duration: `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`,
+          exercisesCompleted: completedExercises,
+          totalExercises: flattenedExercises.length,
+        });
+
         return true;
       } catch (error) {
-        console.error("Error ending workout:", error);
+        logger.error("Error ending workout", {
+          error: error instanceof Error ? error.message : "Unknown error",
+          workoutId: activeWorkout?.workoutId,
+        });
         return false;
       }
     },

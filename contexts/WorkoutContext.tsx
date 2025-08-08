@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useState,
-  ReactNode,
-  useContext,
-  useEffect,
-} from "react";
+import React, { createContext, useState, ReactNode, useContext } from "react";
 
 // Simple context that only tracks if workout is in progress
 interface WorkoutContextType {
@@ -33,15 +27,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [isWorkoutInProgress, setIsWorkoutInProgress] = useState(false);
 
   const setWorkoutInProgress = (inProgress: boolean) => {
-    console.log(
-      "🏋️ WorkoutContext: Setting workout in progress to:",
-      inProgress
-    );
     setIsWorkoutInProgress(inProgress);
   };
 
   const abandonWorkout = () => {
-    console.log("🚪 WorkoutContext: Abandoning workout - user chose to leave");
     setIsWorkoutInProgress(false);
   };
 

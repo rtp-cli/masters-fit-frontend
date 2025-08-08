@@ -5,11 +5,7 @@ import {
   WorkoutBlockWithExercises,
   getBlockTypeDisplayName,
 } from "../types/api/workout.types";
-import {
-  formatEquipment,
-  formatExerciseDuration,
-  formatWorkoutDuration,
-} from "../utils";
+import { formatEquipment, formatWorkoutDuration } from "../utils";
 import { colors } from "../lib/theme";
 
 interface WorkoutBlockProps {
@@ -161,76 +157,79 @@ export default function WorkoutBlock({
       {/* Block Exercises */}
       {isExpanded && showDetails && (
         <View className="bg-white border-l-4 border-l-gray-200">
-          {block.exercises.map((exercise, exerciseIndex) => (
-            <View
-              key={exercise.id}
-              className={`p-4 border-b border-gray-100 ${exerciseIndex === block.exercises.length - 1 ? "border-b-0" : ""} ${isCompactVariant ? "p-3" : "p-4"}`}
-            >
-              <View className="flex-row items-start justify-between">
-                <View className="flex-1">
-                  <View className="flex-row items-center mb-1">
-                    <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-3">
-                      <Text className="text-xs font-bold text-gray-600">
-                        {exerciseIndex + 1}
-                      </Text>
-                    </View>
-                    <Text
-                      className={`font-semibold text-text-primary flex-1 ${isCompactVariant ? "text-sm" : "text-base"}`}
-                    >
-                      {exercise.exercise.name}
-                    </Text>
-                  </View>
-
-                  {/* Exercise Details */}
-                  <View className="ml-9">
-                    <Text
-                      className={`text-text-muted ${isCompactVariant ? "text-xs" : "text-sm"}`}
-                    >
-                      {formatExerciseDetails(exercise) || "Follow instructions"}
-                    </Text>
-
-                    {/* Exercise Notes */}
-                    {exercise.notes && (
-                      <Text
-                        className={`text-text-muted italic mt-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
-                      >
-                        {exercise.notes}
-                      </Text>
-                    )}
-
-                    {/* Exercise Equipment */}
-                    {exercise.exercise.equipment && (
-                      <View className="flex-row items-center mt-1">
-                        <Ionicons
-                          name="fitness"
-                          size={12}
-                          color={colors.text.muted}
-                        />
-                        <Text
-                          className={`text-text-muted ml-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
-                        >
-                          {formatEquipment(exercise.exercise.equipment)}
+          {block.exercises
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((exercise, exerciseIndex) => (
+              <View
+                key={exercise.id}
+                className={`p-4 border-b border-gray-100 ${exerciseIndex === block.exercises.length - 1 ? "border-b-0" : ""} ${isCompactVariant ? "p-3" : "p-4"}`}
+              >
+                <View className="flex-row items-start justify-between">
+                  <View className="flex-1">
+                    <View className="flex-row items-center mb-1">
+                      <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-3">
+                        <Text className="text-xs font-bold text-gray-600">
+                          {exerciseIndex + 1}
                         </Text>
                       </View>
-                    )}
-                  </View>
-                </View>
+                      <Text
+                        className={`font-semibold text-text-primary flex-1 ${isCompactVariant ? "text-sm" : "text-base"}`}
+                      >
+                        {exercise.exercise.name}
+                      </Text>
+                    </View>
 
-                {/* Exercise Status (for workout variant) */}
-                {isWorkoutVariant && (
-                  <View className="ml-2">
-                    <View
-                      className={`w-6 h-6 rounded-full ${exercise.completed ? "bg-green-500" : "bg-gray-200"} items-center justify-center`}
-                    >
-                      {exercise.completed && (
-                        <Ionicons name="checkmark" size={14} color="white" />
+                    {/* Exercise Details */}
+                    <View className="ml-9">
+                      <Text
+                        className={`text-text-muted ${isCompactVariant ? "text-xs" : "text-sm"}`}
+                      >
+                        {formatExerciseDetails(exercise) ||
+                          "Follow instructions"}
+                      </Text>
+
+                      {/* Exercise Notes */}
+                      {exercise.notes && (
+                        <Text
+                          className={`text-text-muted italic mt-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
+                        >
+                          {exercise.notes}
+                        </Text>
+                      )}
+
+                      {/* Exercise Equipment */}
+                      {exercise.exercise.equipment && (
+                        <View className="flex-row items-center mt-1">
+                          <Ionicons
+                            name="fitness"
+                            size={12}
+                            color={colors.text.muted}
+                          />
+                          <Text
+                            className={`text-text-muted ml-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
+                          >
+                            {formatEquipment(exercise.exercise.equipment)}
+                          </Text>
+                        </View>
                       )}
                     </View>
                   </View>
-                )}
+
+                  {/* Exercise Status (for workout variant) */}
+                  {isWorkoutVariant && (
+                    <View className="ml-2">
+                      <View
+                        className={`w-6 h-6 rounded-full ${exercise.completed ? "bg-green-500" : "bg-gray-200"} items-center justify-center`}
+                      >
+                        {exercise.completed && (
+                          <Ionicons name="checkmark" size={14} color="white" />
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
         </View>
       )}
     </View>

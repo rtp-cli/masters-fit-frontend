@@ -19,15 +19,9 @@ import {
   markPlanDayAsComplete,
   getPlanDayLog,
   skipExercise,
-  skipWorkoutBlock,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  calculateWorkoutDuration,
-  formatEquipment,
-  getCurrentDate,
-  formatDateAsString,
-} from "@/utils";
+import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/ExerciseLink";
 import SetTracker, { ExerciseSet } from "@/components/SetTracker";
 import { colors } from "@/lib/theme";
@@ -35,10 +29,8 @@ import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
   PlanDayWithBlocks,
-  CreateExerciseLogParams,
   getBlockTypeDisplayName,
 } from "@/types/api/workout.types";
-import { Exercise } from "@/types/api/exercise.types";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useAppDataContext } from "@/contexts/AppDataContext";
 import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
@@ -87,7 +79,8 @@ export default function WorkoutScreen() {
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [hasCompletedWorkoutDuration, setHasCompletedWorkoutDuration] = useState(false);
+  const [hasCompletedWorkoutDuration, setHasCompletedWorkoutDuration] =
+    useState(false);
   const [completedExercisesCount, setCompletedExercisesCount] = useState(0);
 
   // Timer state
@@ -195,13 +188,6 @@ export default function WorkoutScreen() {
 
   // Sync context with workout state
   useEffect(() => {
-    console.log(
-      "🔄 Syncing context - isWorkoutStarted:",
-      isWorkoutStarted,
-      "isWorkoutCompleted:",
-      isWorkoutCompleted
-    );
-
     if (isWorkoutCompleted) {
       setWorkoutInProgress(false);
     } else if (isWorkoutStarted) {
@@ -215,8 +201,6 @@ export default function WorkoutScreen() {
   // but local state thinks workout is started
   useEffect(() => {
     if (!isWorkoutInProgress && isWorkoutStarted && !isWorkoutCompleted) {
-      console.log("🚪 Workout abandoned - resetting workout state");
-      console.log("⚠️ TIMER RESET: workoutTimer was", workoutTimer, "seconds before reset");
       setIsWorkoutStarted(false);
       setIsPaused(false);
       setWorkoutTimer(0);
@@ -237,14 +221,19 @@ export default function WorkoutScreen() {
 
   // Auto-add first set when moving to a new exercise
   useEffect(() => {
-    if (isWorkoutStarted && !isWorkoutCompleted && currentExercise && currentProgress) {
+    if (
+      isWorkoutStarted &&
+      !isWorkoutCompleted &&
+      currentExercise &&
+      currentProgress
+    ) {
       // Only add first set if no sets exist for this exercise
       if (currentProgress.sets.length === 0) {
         // Use the same target values that are passed to SetTracker
         const targetSets = currentExercise.sets || 3;
         const targetReps = currentExercise.reps || 10;
         const targetWeight = currentExercise.weight || 0;
-        
+
         const firstSet = {
           roundNumber: 1,
           setNumber: 1,
@@ -259,7 +248,6 @@ export default function WorkoutScreen() {
   // Cleanup workout context on unmount
   useEffect(() => {
     return () => {
-      console.log("🧹 Component unmounting, clearing workout context");
       setWorkoutInProgress(false);
     };
   }, [setWorkoutInProgress]);
@@ -267,21 +255,18 @@ export default function WorkoutScreen() {
   // Load completed workout duration from plan day log
   const loadCompletedWorkoutDuration = async (planDayId: number) => {
     try {
-      console.log("🔍 Attempting to load duration for plan day:", planDayId);
       const planDayLog = await getPlanDayLog(planDayId);
-      console.log("📋 Plan day log response:", planDayLog);
-      
+
       if (planDayLog?.totalTimeSeconds) {
-        console.log("✅ Loaded completed workout data:", {
+        console.log("Loaded completed workout data:", {
           totalTimeSeconds: planDayLog.totalTimeSeconds,
           exercisesCompleted: planDayLog.exercisesCompleted,
-          blocksCompleted: planDayLog.blocksCompleted
+          blocksCompleted: planDayLog.blocksCompleted,
         });
         setWorkoutTimer(planDayLog.totalTimeSeconds);
         setCompletedExercisesCount(planDayLog.exercisesCompleted || 0);
         setHasCompletedWorkoutDuration(true);
       } else {
-        console.log("⚠️ No duration found in plan day log for completed workout (likely completed before duration tracking was implemented)");
         // For completed workouts without duration, show 0:00 rather than confusing display
         setWorkoutTimer(0);
         setCompletedExercisesCount(0);
@@ -312,22 +297,12 @@ export default function WorkoutScreen() {
 
       // Find today's workout using string comparison to avoid timezone issues
       const today = getCurrentDate(); // Use the same function as other parts of the app
-      console.log("🗓️ Looking for workout for today:", today);
-      console.log(
-        "📅 Available plan days:",
-        response.planDays.map((day: any) => ({
-          date: day.date,
-          normalizedDate: formatDateAsString(day.date),
-        }))
-      );
 
       const todaysWorkout = response.planDays.find((day: any) => {
         // Use the formatDateAsString function to normalize dates consistently
         const normalizedDayDate = formatDateAsString(day.date);
         return normalizedDayDate === today;
       });
-
-      console.log("🎯 Found today's workout:", todaysWorkout ? "YES" : "NO");
 
       if (!todaysWorkout) {
         setWorkout(null);
@@ -339,7 +314,7 @@ export default function WorkoutScreen() {
         setWorkout(todaysWorkout);
         setIsWorkoutCompleted(true);
         setWorkoutInProgress(false); // Make sure context knows workout is complete
-        
+
         // Load the actual workout duration from plan day log
         await loadCompletedWorkoutDuration(todaysWorkout.id);
         return;
@@ -423,7 +398,6 @@ export default function WorkoutScreen() {
   // Clear app data when user logs out (but not during initial auth loading)
   useEffect(() => {
     if (!user && !authLoading) {
-      console.log("🔄 Workout: User logged out, clearing app data");
       reset();
     }
   }, [user, authLoading, reset]);
@@ -432,6 +406,8 @@ export default function WorkoutScreen() {
     React.useCallback(() => {
       // Don't force refresh on focus, rely on cache
       loadWorkout(false);
+      // Scroll to top when tab is focused
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
     }, [])
   );
 
@@ -449,11 +425,9 @@ export default function WorkoutScreen() {
 
   // Start workout
   const startWorkout = () => {
-    console.log("🏃 Starting workout, resetting timers to 0");
     setIsWorkoutStarted(true);
     setWorkoutTimer(0);
     setExerciseTimer(0);
-    console.log("🏃 Starting workout, setting context to true");
     setWorkoutInProgress(true); // Notify context that workout started
   };
 
@@ -534,14 +508,14 @@ export default function WorkoutScreen() {
           // Calculate completion data
           const completedExerciseCount = currentExerciseIndex + 1; // +1 because we just completed this exercise
           const completedBlockCount = workout.blocks.length; // All blocks completed
-          
-          console.log("🏁 Marking workout complete with:", {
+
+          console.log("Workout completion data:", {
             workoutTimer,
             totalTimeSeconds: workoutTimer,
             exercisesCompleted: completedExerciseCount,
             blocksCompleted: completedBlockCount,
           });
-          
+
           // Mark plan day as complete with detailed timing in seconds
           await markPlanDayAsComplete(workout.id, {
             totalTimeSeconds: workoutTimer,
@@ -622,16 +596,17 @@ export default function WorkoutScreen() {
           // Calculate completion data (including skipped exercises/blocks)
           const completedExerciseCount = currentExerciseIndex; // Current index is number of completed
           const skippedExerciseCount = skippedExercises.length;
-          const totalProcessedExercises = completedExerciseCount + skippedExerciseCount;
+          const totalProcessedExercises =
+            completedExerciseCount + skippedExerciseCount;
           const completedBlockCount = workout.blocks.length; // All blocks processed
-          
-          console.log("🏁 Marking workout complete (with skips) with:", {
+
+          console.log("Workout skip completion data:", {
             workoutTimer,
             totalTimeSeconds: workoutTimer,
             exercisesCompleted: totalProcessedExercises,
             blocksCompleted: completedBlockCount,
           });
-          
+
           // Mark plan day as complete with detailed timing in seconds
           await markPlanDayAsComplete(workout.id, {
             totalTimeSeconds: workoutTimer,
@@ -814,13 +789,17 @@ export default function WorkoutScreen() {
           Workout Complete!
         </Text>
         <Text className="text-text-muted text-center mb-4 leading-6">
-          Amazing work! You completed {hasCompletedWorkoutDuration ? completedExercisesCount : currentExerciseIndex} exercises
-          {!hasCompletedWorkoutDuration && skippedExercises.length > 0 &&
+          Amazing work! You completed{" "}
+          {hasCompletedWorkoutDuration
+            ? completedExercisesCount
+            : currentExerciseIndex}{" "}
+          exercises
+          {!hasCompletedWorkoutDuration &&
+            skippedExercises.length > 0 &&
             ` (${skippedExercises.length} skipped)`}{" "}
-          {hasCompletedWorkoutDuration 
+          {hasCompletedWorkoutDuration
             ? `in ${formatTime(workoutTimer)}.`
-            : "(duration not available)."
-          }
+            : "(duration not available)."}
         </Text>
         <Text className="text-text-muted text-center mb-8 leading-6">
           Check back tomorrow for your next workout.

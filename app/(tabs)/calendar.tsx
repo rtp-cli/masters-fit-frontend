@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -41,6 +41,9 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 export default function CalendarScreen() {
   const router = useRouter();
   const { setIsGeneratingWorkout, user, isLoading: authLoading } = useAuth();
+  
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
   const {
     data: { workoutData, historyData },
     refresh: { refreshWorkout, refreshHistory, reset },
@@ -63,47 +66,34 @@ export default function CalendarScreen() {
 
   // Use workout data from the centralized store - only if it's active and current
   const workoutPlan = useMemo(() => {
-    console.log("🔍 Calendar: Evaluating workoutData", {
-      hasWorkoutData: !!workoutData,
-      workoutData: workoutData ? {
-        id: workoutData.id,
-        name: workoutData.name,
-        startDate: workoutData.startDate,
-        endDate: workoutData.endDate,
-        isActive: (workoutData as any).isActive,
-        completed: (workoutData as any).completed
-      } : null
-    });
-    
     if (!workoutData) {
-      console.log("✅ Calendar: No workoutData, returning null");
       return null;
     }
-    
+
     // Check if workout is active and within date range
     const today = new Date();
     const todayString = formatDateAsString(today);
-    const startDate = workoutData.startDate ? formatDateAsString(workoutData.startDate) : null;
-    const endDate = workoutData.endDate ? formatDateAsString(workoutData.endDate) : null;
-    
+    const startDate = workoutData.startDate
+      ? formatDateAsString(workoutData.startDate)
+      : null;
+    const endDate = workoutData.endDate
+      ? formatDateAsString(workoutData.endDate)
+      : null;
+
     // Only show workout as active if today is within the date range
     // If today is after the end date, the workout should be considered historical
-    if (startDate && endDate && todayString >= startDate && todayString <= endDate) {
-      console.log("✅ Calendar: Workout is within active date range");
+    if (
+      startDate &&
+      endDate &&
+      todayString >= startDate &&
+      todayString <= endDate
+    ) {
       return workoutData;
     }
-    
-    console.log("🚫 Calendar: Filtering out inactive/historical workout", {
-      today: todayString,
-      startDate,
-      endDate,
-      isAfterEndDate: endDate ? todayString > endDate : false,
-      isBeforeStartDate: startDate ? todayString < startDate : false
-    });
-    
+
     return null;
   }, [workoutData]);
-  
+
   const error = null; // Error handling is centralized in useAppData
 
   useEffect(() => {
@@ -121,10 +111,16 @@ export default function CalendarScreen() {
   // Clear app data when user logs out (but not during initial auth loading)
   useEffect(() => {
     if (!user && !authLoading) {
-      console.log("🔄 Calendar: User logged out, clearing app data");
       reset();
     }
   }, [user, authLoading, reset]);
+
+  // Scroll to top when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   // Set current month when workout data is available
   useEffect(() => {
@@ -144,7 +140,7 @@ export default function CalendarScreen() {
       // Show global generating modal
       setIsGeneratingWorkout(true);
       setShowRegenerationModal(false);
-      
+
       const user = await getCurrentUser();
       if (!user) {
         console.error("User not found");
@@ -171,7 +167,6 @@ export default function CalendarScreen() {
           // Refresh workout data and notify other components
           await refreshWorkout();
           notifyWorkoutUpdated();
-          console.log("✅ Daily workout regenerated, data refreshed");
         }
       } else {
         // Transform data to match backend API expectations
@@ -193,7 +188,6 @@ export default function CalendarScreen() {
           // Refresh workout data and notify other components
           await refreshWorkout();
           notifyWorkoutUpdated();
-          console.log("✅ Weekly workout regenerated, data refreshed");
         }
       }
     } catch (err) {
@@ -231,15 +225,17 @@ export default function CalendarScreen() {
     // Only show workouts that have actually ended (past their end date)
     if (historyData && Array.isArray(historyData)) {
       const today = formatDateAsString(new Date());
-      
+
       for (const historicalWorkout of historyData) {
         // Only show workouts that have ended
-        const workoutEndDate = historicalWorkout.endDate ? formatDateAsString(historicalWorkout.endDate) : null;
+        const workoutEndDate = historicalWorkout.endDate
+          ? formatDateAsString(historicalWorkout.endDate)
+          : null;
         if (!workoutEndDate || today <= workoutEndDate) {
           // Skip workouts that haven't ended yet
           continue;
         }
-        
+
         if (
           historicalWorkout.planDays &&
           Array.isArray(historicalWorkout.planDays)
@@ -292,15 +288,17 @@ export default function CalendarScreen() {
 
     if (historyData && Array.isArray(historyData)) {
       const today = formatDateAsString(new Date());
-      
+
       historyData.forEach((historicalWorkout: any) => {
         // Only show workouts that have ended
-        const workoutEndDate = historicalWorkout.endDate ? formatDateAsString(historicalWorkout.endDate) : null;
+        const workoutEndDate = historicalWorkout.endDate
+          ? formatDateAsString(historicalWorkout.endDate)
+          : null;
         if (!workoutEndDate || today <= workoutEndDate) {
           // Skip workouts that haven't ended yet
           return;
         }
-        
+
         if (
           historicalWorkout.planDays &&
           Array.isArray(historicalWorkout.planDays)
@@ -331,7 +329,7 @@ export default function CalendarScreen() {
       });
     }
 
-    // Mark today
+    // Mark today with enhanced styling
     if (!markedDates[today]) {
       markedDates[today] = {};
     }
@@ -431,14 +429,12 @@ export default function CalendarScreen() {
 
   // Handle pull to refresh
   const handleRefresh = async () => {
-    console.log("Calendar refresh triggered");
     setIsRefreshing(true);
     try {
       await Promise.all([
         refreshWorkout(),
         refreshHistory(), // Always refresh historical data too
       ]);
-      console.log("Calendar refresh completed");
     } catch (error) {
       console.error("Calendar refresh error:", error);
     } finally {
@@ -449,6 +445,7 @@ export default function CalendarScreen() {
   return (
     <View className="flex-1 pt-4 bg-background">
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -466,6 +463,21 @@ export default function CalendarScreen() {
         </View>
         {/* Calendar */}
         <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
+          {/* Go to Today Button */}
+          {selectedDate !== formatDateAsString(new Date()) && (
+            <View className="absolute top-3 right-3 z-10">
+              <TouchableOpacity
+                className="bg-brand-primary px-3 py-2 rounded-lg shadow-sm"
+                onPress={() => {
+                  const today = formatDateAsString(new Date());
+                  setSelectedDate(today);
+                  setCurrentMonth(today);
+                }}
+              >
+                <Text className="text-white text-xs font-medium">Today</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <RNCalendar
             current={currentMonth}
             onDayPress={handleDateSelect}
@@ -499,6 +511,18 @@ export default function CalendarScreen() {
               textDayFontSize: 14,
               textMonthFontSize: 16,
               textDayHeaderFontSize: 12,
+              'stylesheet.day.basic': {
+                todayText: {
+                  color: colors.brand.primary,
+                  fontWeight: 'bold',
+                },
+              },
+              'stylesheet.day.single': {
+                todayText: {
+                  color: colors.brand.primary,
+                  fontWeight: 'bold',
+                },
+              },
             }}
           />
         </View>
@@ -609,17 +633,19 @@ export default function CalendarScreen() {
                 <View className="space-y-sm">
                   {currentSelectedPlanDay.blocks &&
                   currentSelectedPlanDay.blocks.length > 0 ? (
-                    currentSelectedPlanDay.blocks.map((block, blockIndex) => (
-                      <WorkoutBlock
-                        key={block.id}
-                        block={block}
-                        blockIndex={blockIndex}
-                        isExpanded={expandedBlocks[block.id] !== false} // undefined = expanded, false = collapsed
-                        onToggleExpanded={() => toggleBlockExpansion(block.id)}
-                        showDetails={true}
-                        variant="calendar"
-                      />
-                    ))
+                    currentSelectedPlanDay.blocks
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((block, blockIndex) => (
+                        <WorkoutBlock
+                          key={block.id}
+                          block={block}
+                          blockIndex={blockIndex}
+                          isExpanded={expandedBlocks[block.id] !== false} // undefined = expanded, false = collapsed
+                          onToggleExpanded={() => toggleBlockExpansion(block.id)}
+                          showDetails={true}
+                          variant="calendar"
+                        />
+                      ))
                   ) : (
                     <View className="bg-neutral-light-2 p-6 rounded-xl items-center">
                       <Text className="text-base font-bold text-text-primary mb-xs">

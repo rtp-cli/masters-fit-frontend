@@ -49,7 +49,6 @@ function DisabledTabButton({
   const { abandonWorkout } = useWorkout();
 
   const handlePress = () => {
-    console.log("🖱️ Tab button pressed, disabled:", disabled);
     if (disabled) {
       Alert.alert(
         "Workout In Progress",
@@ -87,12 +86,7 @@ function DisabledTabButton({
 }
 
 export default function TabLayout() {
-  const statusBarHeight =
-    Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
-
   const { isWorkoutInProgress } = useWorkout();
-
-  console.log("📱 TabLayout: isWorkoutInProgress =", isWorkoutInProgress);
 
   return (
     <SafeAreaView className="flex-1 bg-background">

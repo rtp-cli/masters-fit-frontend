@@ -179,12 +179,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               className="w-full h-full"
               resizeMode="cover"
               onError={(error) => {
-                console.log(
-                  "❌ Image failed to load:",
-                  error,
-                  "trying fallback:",
-                  !useFallback
-                );
                 if (!useFallback) {
                   setUseFallback(true);
                 } else {
@@ -226,12 +220,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               className="w-full h-48"
               resizeMode="cover"
               onError={(error) => {
-                console.log(
-                  "❌ Image failed to load:",
-                  error,
-                  "trying fallback:",
-                  !useFallback
-                );
                 if (!useFallback) {
                   setUseFallback(true);
                 } else {
@@ -278,12 +266,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               className="w-full h-full"
               resizeMode="cover"
               onError={(error) => {
-                console.log(
-                  "❌ Image failed to load:",
-                  error,
-                  "trying fallback:",
-                  !useFallback
-                );
                 if (!useFallback) {
                   setUseFallback(true);
                 } else {
@@ -325,12 +307,6 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               className="w-full h-48"
               resizeMode="cover"
               onError={(error) => {
-                console.log(
-                  "❌ Image failed to load:",
-                  error,
-                  "trying fallback:",
-                  !useFallback
-                );
                 if (!useFallback) {
                   setUseFallback(true);
                 } else {

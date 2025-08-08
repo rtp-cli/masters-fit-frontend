@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,14 +6,12 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import { useRouter } from "expo-router";
-import { Profile } from "@lib/profile";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
@@ -23,7 +21,14 @@ import { SettingsSkeleton } from "../../components/skeletons/SkeletonScreens";
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const { data: { profileData }, refresh: { refreshProfile }, loading } = useAppDataContext();
+  const {
+    data: { profileData },
+    refresh: { refreshProfile },
+    loading,
+  } = useAppDataContext();
+
+  // Scroll to top ref
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -47,6 +52,13 @@ export default function SettingsScreen() {
   const handleRefresh = async () => {
     await refreshProfile();
   };
+
+  // Scroll to top when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   useEffect(() => {
     // Only fetch if we don't have profile data yet
@@ -179,9 +191,13 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 pt-6 bg-background">
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         refreshControl={
-          <RefreshControl refreshing={loading.profileLoading} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={loading.profileLoading}
+            onRefresh={handleRefresh}
+          />
         }
       >
         {/* Profile Section */}

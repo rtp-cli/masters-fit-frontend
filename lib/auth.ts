@@ -187,12 +187,10 @@ export async function getCurrentUser(): Promise<User | null> {
  * Save user data to secure storage
  */
 export async function saveUserToSecureStorage(user: User): Promise<void> {
-  console.log("💾 Saving user to storage:", user);
   try {
     await SecureStore.setItemAsync("user", JSON.stringify(user));
-    console.log("✅ User saved successfully");
   } catch (error) {
-    console.error("❌ Error saving user:", error);
+    console.error("Error saving user:", error);
   }
 }
 
@@ -221,9 +219,8 @@ export async function clearAllData(): Promise<void> {
     await Promise.all(
       STORAGE_KEYS.map((key) => SecureStore.deleteItemAsync(key))
     );
-    console.log("✅ All data cleared successfully");
   } catch (error) {
-    console.error("❌ Error clearing data:", error);
+    console.error("Error clearing data:", error);
     throw error;
   }
 }
@@ -233,12 +230,10 @@ export async function clearAllData(): Promise<void> {
  * This can help users who are stuck in an incorrect onboarding state
  */
 export async function resetAuthState(): Promise<void> {
-  console.log("🔄 Resetting authentication state...");
   try {
     await clearAllData();
-    console.log("✅ Authentication state reset successfully");
   } catch (error) {
-    console.error("❌ Error resetting auth state:", error);
+    console.error("Error resetting auth state:", error);
     throw error;
   }
 }

@@ -4,7 +4,6 @@ import { View } from "react-native";
 import { AuthProvider, useAuth } from "@contexts/AuthContext";
 import { WorkoutProvider } from "@contexts/WorkoutContext";
 import { AppDataProvider } from "@contexts/AppDataContext";
-import DebugButton from "../components/DebugButton";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
