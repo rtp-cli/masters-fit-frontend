@@ -60,6 +60,20 @@ export default function SettingsScreen() {
     }, [])
   );
 
+  // Listen for tab re-click events
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const { tabEvents } = require("../../lib/tabEvents");
+    tabEvents.on("scrollToTop:settings", handleScrollToTop);
+
+    return () => {
+      tabEvents.off("scrollToTop:settings", handleScrollToTop);
+    };
+  }, []);
+
   useEffect(() => {
     // Only fetch if we don't have profile data yet
     if (!profileData) {

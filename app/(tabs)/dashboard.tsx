@@ -238,6 +238,20 @@ export default function DashboardScreen() {
     }, [])
   );
 
+  // Listen for tab re-click events
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const { tabEvents } = require("../../lib/tabEvents");
+    tabEvents.on("scrollToTop:dashboard", handleScrollToTop);
+
+    return () => {
+      tabEvents.off("scrollToTop:dashboard", handleScrollToTop);
+    };
+  }, []);
+
   // Wide date range function for getting all data
   const calculateWideDataRange = () => {
     return {

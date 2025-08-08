@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+import { useNavigation, NavigationState } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@components/Header";
 import { colors } from "../../lib/theme";
 import { useWorkout } from "@/contexts/WorkoutContext";
+import { tabEvents } from "../../lib/tabEvents";
 
 function TabBarIcon({
   name,
@@ -36,17 +38,20 @@ function WorkoutTabIcon() {
   );
 }
 
-// Custom tab button that shows toast when workout is in progress
+// Custom tab button that shows toast when workout is in progress and handles re-clicks
 function DisabledTabButton({
   children,
   onPress,
   disabled,
+  routeName,
 }: {
   children: React.ReactNode;
   onPress?: () => void;
   disabled: boolean;
+  routeName: string;
 }) {
   const { abandonWorkout } = useWorkout();
+  const navigation = useNavigation();
 
   const handlePress = () => {
     if (disabled) {
@@ -66,7 +71,18 @@ function DisabledTabButton({
         ]
       );
     } else {
-      onPress?.();
+      // Check if we're already on this tab
+      const currentRoute = (navigation.getState() as NavigationState).routes[
+        (navigation.getState() as NavigationState).index
+      ]?.name;
+      
+      if (currentRoute === routeName) {
+        // Emit scroll-to-top event for the current tab
+        tabEvents.emit(`scrollToTop:${routeName}`);
+      } else {
+        // Navigate to the tab normally
+        onPress?.();
+      }
     }
   };
 
@@ -122,6 +138,7 @@ export default function TabLayout() {
               <DisabledTabButton
                 onPress={props.onPress}
                 disabled={isWorkoutInProgress}
+                routeName="dashboard"
               >
                 {props.children}
               </DisabledTabButton>
@@ -142,6 +159,7 @@ export default function TabLayout() {
               <DisabledTabButton
                 onPress={props.onPress}
                 disabled={isWorkoutInProgress}
+                routeName="calendar"
               >
                 {props.children}
               </DisabledTabButton>
@@ -152,7 +170,15 @@ export default function TabLayout() {
           name="workout"
           options={{
             tabBarIcon: () => <WorkoutTabIcon />,
-            // Workout tab should always be accessible - no custom button needed
+            tabBarButton: (props: any) => (
+              <DisabledTabButton
+                onPress={props.onPress}
+                disabled={false} // Workout tab is always accessible
+                routeName="workout"
+              >
+                {props.children}
+              </DisabledTabButton>
+            ),
           }}
         />
         <Tabs.Screen
@@ -169,6 +195,7 @@ export default function TabLayout() {
               <DisabledTabButton
                 onPress={props.onPress}
                 disabled={isWorkoutInProgress}
+                routeName="search"
               >
                 {props.children}
               </DisabledTabButton>
@@ -189,6 +216,7 @@ export default function TabLayout() {
               <DisabledTabButton
                 onPress={props.onPress}
                 disabled={isWorkoutInProgress}
+                routeName="settings"
               >
                 {props.children}
               </DisabledTabButton>

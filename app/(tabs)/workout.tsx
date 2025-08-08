@@ -411,6 +411,20 @@ export default function WorkoutScreen() {
     }, [])
   );
 
+  // Listen for tab re-click events
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const { tabEvents } = require("../../lib/tabEvents");
+    tabEvents.on("scrollToTop:workout", handleScrollToTop);
+
+    return () => {
+      tabEvents.off("scrollToTop:workout", handleScrollToTop);
+    };
+  }, []);
+
   // Update exercise progress
   const updateProgress = (field: keyof ExerciseProgress, value: any) => {
     setExerciseProgress((prev) => {

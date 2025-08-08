@@ -1,12 +1,14 @@
 {
   "expo": {
     "name": "MastersFit",
-    "slug": "masters-fit",
+    "slug": "mastersfit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "buildNumber": "7",
       "supportsTablet": true,
@@ -34,8 +36,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a4bfba2f-4f23-4bb5-b3c9-721842f570c4"
+        "projectId": "4eb7025d-13e0-49c7-806c-d062f246faa9"
       }
-    }
+    },
+    "owner": "conrad-labs"
   }
 }

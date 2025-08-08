@@ -41,7 +41,7 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 export default function CalendarScreen() {
   const router = useRouter();
   const { setIsGeneratingWorkout, user, isLoading: authLoading } = useAuth();
-  
+
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
   const {
@@ -63,6 +63,7 @@ export default function CalendarScreen() {
     {}
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [calendarKey, setCalendarKey] = useState(0);
 
   // Use workout data from the centralized store - only if it's active and current
   const workoutPlan = useMemo(() => {
@@ -121,6 +122,20 @@ export default function CalendarScreen() {
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
     }, [])
   );
+
+  // Listen for tab re-click events
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const { tabEvents } = require("../../lib/tabEvents");
+    tabEvents.on("scrollToTop:calendar", handleScrollToTop);
+
+    return () => {
+      tabEvents.off("scrollToTop:calendar", handleScrollToTop);
+    };
+  }, []);
 
   // Set current month when workout data is available
   useEffect(() => {
@@ -463,22 +478,8 @@ export default function CalendarScreen() {
         </View>
         {/* Calendar */}
         <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
-          {/* Go to Today Button */}
-          {selectedDate !== formatDateAsString(new Date()) && (
-            <View className="absolute top-3 right-3 z-10">
-              <TouchableOpacity
-                className="bg-brand-primary px-3 py-2 rounded-lg shadow-sm"
-                onPress={() => {
-                  const today = formatDateAsString(new Date());
-                  setSelectedDate(today);
-                  setCurrentMonth(today);
-                }}
-              >
-                <Text className="text-white text-xs font-medium">Today</Text>
-              </TouchableOpacity>
-            </View>
-          )}
           <RNCalendar
+            key={calendarKey}
             current={currentMonth}
             onDayPress={handleDateSelect}
             onMonthChange={(month: any) => {
@@ -511,21 +512,44 @@ export default function CalendarScreen() {
               textDayFontSize: 14,
               textMonthFontSize: 16,
               textDayHeaderFontSize: 12,
-              'stylesheet.day.basic': {
+              "stylesheet.day.basic": {
                 todayText: {
                   color: colors.brand.primary,
-                  fontWeight: 'bold',
+                  fontWeight: "bold",
                 },
               },
-              'stylesheet.day.single': {
+              "stylesheet.day.single": {
                 todayText: {
                   color: colors.brand.primary,
-                  fontWeight: 'bold',
+                  fontWeight: "bold",
                 },
               },
             }}
           />
         </View>
+
+        {/* Go to Today Button - Option 5: Below the calendar */}
+        {(selectedDate !== formatDateAsString(new Date()) ||
+          currentMonth.substring(0, 7) !==
+            formatDateAsString(new Date()).substring(0, 7)) && (
+          <View className="mx-lg mb-4">
+            <View className="flex justify-center items-center">
+              <TouchableOpacity
+                className="px-4 py-2 rounded-lg shadow-sm"
+                onPress={() => {
+                  const today = formatDateAsString(new Date());
+                  setSelectedDate(today);
+                  setCurrentMonth(today);
+                  setCalendarKey((prev) => prev + 1);
+                }}
+              >
+                <Text className="text-brand-primary text-md font-semibold">
+                  Today
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Regenerate Button - Only show for current workouts */}
         {workoutPlan && !isHistoricalWorkout && (
@@ -641,7 +665,9 @@ export default function CalendarScreen() {
                           block={block}
                           blockIndex={blockIndex}
                           isExpanded={expandedBlocks[block.id] !== false} // undefined = expanded, false = collapsed
-                          onToggleExpanded={() => toggleBlockExpansion(block.id)}
+                          onToggleExpanded={() =>
+                            toggleBlockExpansion(block.id)
+                          }
                           showDetails={true}
                           variant="calendar"
                         />

@@ -73,6 +73,20 @@ export default function SearchScreen() {
     }, [])
   );
 
+  // Listen for tab re-click events
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
+    const { tabEvents } = require("../../lib/tabEvents");
+    tabEvents.on("scrollToTop:search", handleScrollToTop);
+
+    return () => {
+      tabEvents.off("scrollToTop:search", handleScrollToTop);
+    };
+  }, []);
+
   // Handle date selection from DateTimePicker
   const handleDateChange = (event: any, date?: Date) => {
     // Hide picker after date selection on both platforms
