@@ -24,7 +24,9 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/ExerciseLink";
-import SetTracker, { ExerciseSet } from "@/components/SetTracker";
+import { ExerciseSet } from "@/components/SetTracker";
+import AdaptiveSetTracker from "@/components/AdaptiveSetTracker";
+import CircularTimerDisplay from "@/components/CircularTimerDisplay";
 import { colors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
@@ -120,7 +122,9 @@ export default function WorkoutScreen() {
   // Rest timer state
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
   const [isRestTimerPaused, setIsRestTimerPaused] = useState(false);
-  const [restTimerCountdown, setRestTimerCountdown] = useState(0);
+  const [restTimerCountdown, setRestTimerCountdown] = useState(
+    currentExercise?.restTime || 0
+  );
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // UI state
@@ -214,6 +218,14 @@ export default function WorkoutScreen() {
       }
     };
   }, [isRestTimerActive, isRestTimerPaused, restTimerCountdown]);
+
+  // Reset rest timer countdown when not active or exercise changes
+  useEffect(() => {
+    if (!isRestTimerActive) {
+      const restTime = currentExercise?.restTime || 0;
+      setRestTimerCountdown(restTime);
+    }
+  }, [isRestTimerActive, currentExercise?.restTime]);
 
   // Sync context with workout state
   useEffect(() => {
@@ -427,7 +439,7 @@ export default function WorkoutScreen() {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: false, // Hide the banner notification
-        shouldPlaySound: true,  // Keep the sound
+        shouldPlaySound: true, // Keep the sound
         shouldSetBadge: false,
       }),
     });
@@ -533,6 +545,37 @@ export default function WorkoutScreen() {
     }
   };
 
+  // Handle rest timer start/pause for CircularTimerDisplay
+  const handleRestTimerStartPause = () => {
+    if (restTimerCountdown === 0) return; // Don't allow start/pause when completed
+    if (isRestTimerActive) {
+      toggleRestTimerPause();
+    } else {
+      startRestTimer();
+    }
+  };
+
+  // Handle rest timer reset for CircularTimerDisplay
+  const handleRestTimerReset = () => {
+    // Reset timer to beginning and restart automatically
+    const restTime = currentExercise?.restTime || 0;
+    setRestTimerCountdown(restTime);
+    setIsRestTimerActive(true);
+    setIsRestTimerPaused(false);
+  };
+
+  // Handle rest timer cancel for CircularTimerDisplay
+  const handleRestTimerCancel = () => {
+    // Cancel timer and return to initial state (not active, full duration)
+    const restTime = currentExercise?.restTime || 0;
+    setIsRestTimerActive(false);
+    setIsRestTimerPaused(false);
+    setRestTimerCountdown(restTime);
+    if (restTimerRef.current) {
+      clearInterval(restTimerRef.current);
+    }
+  };
+
   // Complete current exercise
   const completeExercise = async () => {
     if (!currentExercise || !currentProgress) return;
@@ -543,19 +586,41 @@ export default function WorkoutScreen() {
       const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Create exercise log - use timer for duration
-      if (!currentProgress.sets || currentProgress.sets.length === 0) {
+      // Check if we have valid progress - either sets or duration
+      const hasSets = currentProgress.sets && currentProgress.sets.length > 0;
+      const hasDuration =
+        currentProgress.duration && currentProgress.duration > 0;
+      const isDurationBasedExercise =
+        currentExercise.duration &&
+        currentExercise.duration > 0 &&
+        (!currentExercise.reps || currentExercise.reps === 0);
+
+      if (!hasSets && !hasDuration && !isDurationBasedExercise) {
         Alert.alert(
-          "No Sets Logged",
-          "Please click 'Add Set' and log your weights and reps before completing this exercise.",
+          "No Progress Logged",
+          "Please log your exercise progress before completing this exercise.",
           [{ text: "OK" }]
         );
         return;
       }
 
+      // For duration-based exercises, ensure we have proper sets structure
+      let setsToLog = currentProgress.sets;
+      if (isDurationBasedExercise && (!setsToLog || setsToLog.length === 0)) {
+        // Create a default set for duration-based exercises
+        setsToLog = [
+          {
+            roundNumber: 1,
+            setNumber: 1,
+            weight: currentExercise.weight || 0,
+            reps: 0, // No reps for duration-based exercises
+          },
+        ];
+      }
+
       await createExerciseLog({
         planDayExerciseId: currentExercise.id,
-        sets: currentProgress.sets,
+        sets: setsToLog,
         durationCompleted: currentProgress.duration,
         isComplete: true,
         timeTaken: exerciseTimer, // This logs the actual time spent on exercise
@@ -1045,23 +1110,48 @@ export default function WorkoutScreen() {
                     </View>
                   ) : null}
 
-                  {/* Set Tracker Component */}
+                  {/* Adaptive Set Tracker Component */}
                   <View className="rounded-2xl p-4">
                     <View className="flex-row items-center justify-between mb-3">
                       <Text className="text-sm font-semibold text-text-primary">
-                        Exercise Sets
+                        Exercise Logging
                       </Text>
                     </View>
-                    <SetTracker
-                      targetSets={currentExercise.sets || 3}
-                      targetReps={currentExercise.reps || 10}
-                      targetWeight={currentExercise.weight || 0}
-                      targetRounds={currentBlock?.rounds || 1}
+                    <AdaptiveSetTracker
+                      exercise={currentExercise}
                       sets={currentProgress.sets}
                       onSetsChange={(sets) => updateProgress("sets", sets)}
+                      onProgressUpdate={(progress) => {
+                        updateProgress("setsCompleted", progress.setsCompleted);
+                        updateProgress("duration", progress.duration);
+                        // Note: Removed auto-completion - user now manually completes exercise
+                      }}
                       blockType={currentBlock?.blockType}
                     />
                   </View>
+
+                  {/* Rest Timer - Only show if exercise has rest time */}
+                  {currentExercise.restTime && currentExercise.restTime > 0 ? (
+                    <View className="rounded-2xl p-4 mt-2">
+                      <View className="flex-row items-center justify-between mb-3">
+                        <Text className="text-sm font-semibold text-text-primary">
+                          Rest Timer
+                        </Text>
+                      </View>
+
+                      <CircularTimerDisplay
+                        countdown={restTimerCountdown}
+                        targetDuration={currentExercise?.restTime || 0}
+                        isActive={isRestTimerActive}
+                        isPaused={isRestTimerPaused}
+                        isCompleted={restTimerCountdown === 0}
+                        startButtonText={`Start Rest`}
+                        onStartPause={handleRestTimerStartPause}
+                        onReset={handleRestTimerReset}
+                        onCancel={handleRestTimerCancel}
+                      />
+                    </View>
+                  ) : null}
 
                   {/* Notes - Compact with quick chips */}
                   <View className="rounded-2xl p-4">
@@ -1078,103 +1168,6 @@ export default function WorkoutScreen() {
                       numberOfLines={2}
                     />
                   </View>
-
-                  {/* Rest Timer - Only show if exercise has rest time */}
-                  {currentExercise.restTime && currentExercise.restTime > 0 ? (
-                    <View className="rounded-2xl p-4 mt-2">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Rest Timer
-                        </Text>
-                        <Text className="text-xs font-semibold text-text-muted">
-                          Target: {currentExercise.restTime}s
-                        </Text>
-                      </View>
-
-                      {isRestTimerActive ? (
-                        // Active countdown display with control buttons
-                        <View className="items-center space-y-3">
-                          <View className="bg-background rounded-2xl px-4 py-3 min-w-[80px] items-center">
-                            <Text
-                              className={`text-lg font-bold text-center ${
-                                isRestTimerPaused
-                                  ? "text-orange-500"
-                                  : "text-text-primary"
-                              }`}
-                            >
-                              {formatTime(restTimerCountdown)}
-                            </Text>
-                            {isRestTimerPaused && (
-                              <Text className="text-xs text-orange-500 mt-1">
-                                PAUSED
-                              </Text>
-                            )}
-                          </View>
-
-                          {/* Rest Timer Control Buttons */}
-                          <View className="flex-row gap-2">
-                            <TouchableOpacity
-                              className="bg-neutral-light-2 rounded-xl py-2 px-3 flex-row items-center justify-center"
-                              onPress={toggleRestTimerPause}
-                            >
-                              <Ionicons
-                                name={isRestTimerPaused ? "play" : "pause"}
-                                size={14}
-                                color={colors.text.primary}
-                              />
-                              <Text className="text-text-primary text-xs font-semibold ml-1">
-                                {isRestTimerPaused ? "Resume" : "Pause"}
-                              </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              className="bg-neutral-light-2 rounded-xl py-2 px-3 flex-row items-center justify-center"
-                              onPress={resetRestTimer}
-                            >
-                              <Ionicons
-                                name="refresh"
-                                size={14}
-                                color={colors.text.primary}
-                              />
-                              <Text className="text-text-primary text-xs font-semibold ml-1">
-                                Reset
-                              </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              className="bg-red-100 rounded-xl py-2 px-3 flex-row items-center justify-center"
-                              onPress={cancelRestTimer}
-                            >
-                              <Ionicons
-                                name="close"
-                                size={14}
-                                color="#ef4444"
-                              />
-                              <Text className="text-red-500 text-xs font-semibold ml-1">
-                                Cancel
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      ) : (
-                        <View className="items-center">
-                          <TouchableOpacity
-                            className="bg-primary rounded-2xl py-2 px-6 flex-row items-center justify-center"
-                            onPress={startRestTimer}
-                          >
-                            <Ionicons
-                              name="timer-outline"
-                              size={18}
-                              color={colors.text.secondary}
-                            />
-                            <Text className="text-secondary text-sm ml-2">
-                              Start {currentExercise.restTime}s Rest
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  ) : null}
                 </View>
               ) : null}
             </View>
