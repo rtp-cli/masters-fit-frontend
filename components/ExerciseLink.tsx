@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import Text from "./Text";
+import { images } from "@/assets";
 
 interface ExerciseLinkProps {
   link: string | null | undefined;
@@ -55,9 +56,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     height: number = 600
   ) => {
     // Use a single generic gym image instead of random ones
-    const genericGymImage = require("../assets/gym-generic.jpg");
-
-    return genericGymImage;
+    return images.gymGeneric;
   };
 
   // Alternative fitness image service - also uses the same generic image
@@ -67,9 +66,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     height: number = 600
   ) => {
     // Use the same generic gym image instead of Unsplash
-    const genericGymImage = require("../assets/gym-generic.jpg");
-
-    return genericGymImage;
+    return images.gymGeneric;
   };
 
   const processExerciseLink = (url: string | null | undefined): LinkInfo => {

@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../lib/theme";
 import { Image } from "react-native";
+import { images } from "@/assets";
 
 interface WarmingUpScreenProps {
   onComplete?: () => void;
@@ -38,7 +39,8 @@ export default function WarmingUpScreen({
         {/* Main Content */}
         <View className="items-center mb-12">
           <Image
-            source={require("../../assets/icon.png")}
+            key="warming-up-logo"
+            source={images.icon}
             className="w-48 h-48 mb-8 rounded-lg"
             resizeMode="contain"
           />

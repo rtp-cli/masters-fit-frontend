@@ -10,6 +10,7 @@ import * as SecureStore from "expo-secure-store";
 import Header from "@components/Header";
 import WarmingUpScreen from "@components/ui/WarmingUpScreen";
 import { useDataPreload } from "@hooks/useDataPreload";
+import { images } from "@/assets";
 
 export default function GetStarted() {
   const router = useRouter();
@@ -144,7 +145,8 @@ export default function GetStarted() {
         {/* Hero Section with Home Image */}
         <View className="flex-1 justify-center items-center">
           <Image
-            source={require("../assets/home.png")}
+            key="home-hero-image"
+            source={images.home}
             className="w-80 h-80 mb-10 rounded-lg"
             resizeMode="contain"
           />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../lib/theme";
+import { images } from "@/assets";
 
 interface GeneratingPlanScreenProps {
   onComplete?: () => void;
@@ -52,7 +53,8 @@ export default function GeneratingPlanScreen({
         <View className="items-center mb-12">
           {/* Logo */}
           <Image
-            source={require("../../assets/icon.png")}
+            key="generating-plan-logo"
+            source={images.icon}
             className="w-48 h-48 mb-8 rounded-lg"
             resizeMode="contain"
           />
