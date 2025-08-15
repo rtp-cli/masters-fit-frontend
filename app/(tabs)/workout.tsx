@@ -39,7 +39,7 @@ import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
 import { generateWorkoutPlan } from "@/lib/workouts";
 import { useAuth } from "@/contexts/AuthContext";
 import * as Haptics from "expo-haptics";
-import RNSystemSounds from "@dashdoc/react-native-system-sounds";
+import * as Notifications from "expo-notifications";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -170,17 +170,26 @@ export default function WorkoutScreen() {
       restTimerRef.current = setInterval(() => {
         setRestTimerCountdown((prev) => {
           if (prev <= 1) {
-            // Timer finished - add audio + haptic feedback
+            // Timer finished - add notification + haptic feedback
             try {
-              // Play system beep sound
-              RNSystemSounds.beep();
-              
+              // Send local notification with sound (no banner will show)
+              Notifications.scheduleNotificationAsync({
+                content: {
+                  title: "Rest Complete!",
+                  body: "Your rest period has ended. Ready for the next set?",
+                  sound: "tri-tone", // Different iOS notification sound
+                },
+                trigger: null, // Show immediately
+              });
+
               // Add haptic feedback
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
             } catch (error) {
-              console.log("Audio/haptic feedback error:", error);
+              console.log("Notification/haptic feedback error:", error);
             }
-            
+
             setIsRestTimerActive(false);
             setIsRestTimerPaused(false);
             if (restTimerRef.current) {
@@ -411,6 +420,26 @@ export default function WorkoutScreen() {
     // Refresh workout data after successful repetition
     loadWorkout(true);
   };
+
+  // Set up notification handler and request permissions
+  useEffect(() => {
+    // Configure notification handler for iOS sound support (no banner)
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: false, // Hide the banner notification
+        shouldPlaySound: true,  // Keep the sound
+        shouldSetBadge: false,
+      }),
+    });
+
+    const requestPermissions = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Notification permissions not granted");
+      }
+    };
+    requestPermissions();
+  }, []);
 
   // Load workout on mount and when tab is focused
   useEffect(() => {
