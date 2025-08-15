@@ -181,8 +181,8 @@ export default function CalendarScreen() {
         if (response) {
           // Trigger app reload to show warming up screen
           setIsPreloadingData(true);
-          // Navigate to home to trigger the warming up flow
-          router.replace("/");
+          // Navigate to dashboard to trigger the warming up flow
+          router.replace("/(tabs)/dashboard");
         }
       } else {
         // Transform data to match backend API expectations
@@ -203,8 +203,8 @@ export default function CalendarScreen() {
         if (response) {
           // Trigger app reload to show warming up screen
           setIsPreloadingData(true);
-          // Navigate to home to trigger the warming up flow
-          router.replace("/");
+          // Navigate to dashboard to trigger the warming up flow
+          router.replace("/(tabs)/dashboard");
         }
       }
     } catch (err) {

@@ -105,8 +105,8 @@ export default function WorkoutRepeatModal({
         // Trigger app reload to show warming up screen
         setIsPreloadingData(true);
 
-        // Navigate to home to trigger the warming up flow
-        router.replace("/");
+        // Navigate to dashboard to trigger the warming up flow
+        router.replace("/(tabs)/dashboard");
       } else {
         throw new Error("Failed to repeat workout");
       }

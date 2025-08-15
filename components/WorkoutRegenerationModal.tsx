@@ -225,8 +225,10 @@ export default function WorkoutRegenerationModal({
       // Update the profile first
       await updateUserProfile(profileData as any);
 
-      // Close the onboarding form and regenerate with the updated profile
+      // Close the onboarding form
       setShowOnboardingForm(false);
+      
+      // Call regenerate function (this will trigger loading state)
       onRegenerate(
         {
           customFeedback: customFeedback.trim() || undefined,
@@ -237,8 +239,9 @@ export default function WorkoutRegenerationModal({
       
       // Trigger app reload to show warming up screen
       setIsPreloadingData(true);
-      // Navigate to home to trigger the warming up flow
-      router.replace("/");
+      
+      // Close modal
+      onClose();
       
       // Refresh data after regeneration if callback provided
       if (onSuccess) {
@@ -343,6 +346,7 @@ export default function WorkoutRegenerationModal({
   };
 
   const handleRegenerateWithFeedback = async () => {
+    // Call regenerate function (this will trigger loading state)
     onRegenerate(
       { customFeedback: customFeedback.trim() || undefined },
       selectedType
@@ -350,8 +354,9 @@ export default function WorkoutRegenerationModal({
     
     // Trigger app reload to show warming up screen
     setIsPreloadingData(true);
-    // Navigate to home to trigger the warming up flow
-    router.replace("/");
+    
+    // Close modal
+    onClose();
     
     // Refresh data after regeneration if callback provided
     if (onSuccess) {
