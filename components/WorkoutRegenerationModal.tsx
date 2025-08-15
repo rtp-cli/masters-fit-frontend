@@ -15,6 +15,8 @@ import OnboardingForm, { FormData } from "./OnboardingForm";
 import GeneratingPlanScreen from "./ui/GeneratingPlanScreen";
 import { colors } from "../lib/theme";
 import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAuth } from "@contexts/AuthContext";
+import { useRouter } from "expo-router";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -165,6 +167,8 @@ export default function WorkoutRegenerationModal({
 
   // Get refresh functions for data refresh after regeneration
   const { refresh: { refreshAll } } = useAppDataContext();
+  const { setIsPreloadingData } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (visible) {
@@ -230,6 +234,11 @@ export default function WorkoutRegenerationModal({
         },
         selectedType
       );
+      
+      // Trigger app reload to show warming up screen
+      setIsPreloadingData(true);
+      // Navigate to home to trigger the warming up flow
+      router.replace("/");
       
       // Refresh data after regeneration if callback provided
       if (onSuccess) {
@@ -333,11 +342,16 @@ export default function WorkoutRegenerationModal({
     await handleUpdateProfile(completeFormData);
   };
 
-  const handleRegenerateWithFeedback = () => {
+  const handleRegenerateWithFeedback = async () => {
     onRegenerate(
       { customFeedback: customFeedback.trim() || undefined },
       selectedType
     );
+    
+    // Trigger app reload to show warming up screen
+    setIsPreloadingData(true);
+    // Navigate to home to trigger the warming up flow
+    router.replace("/");
     
     // Refresh data after regeneration if callback provided
     if (onSuccess) {
@@ -576,7 +590,6 @@ export default function WorkoutRegenerationModal({
               onChangeText={setCustomFeedback}
               multiline
               returnKeyType="done"
-              blurOnSubmit={true}
               onSubmitEditing={() => {
                 Keyboard.dismiss();
               }}

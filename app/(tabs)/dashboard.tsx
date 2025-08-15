@@ -765,11 +765,11 @@ export default function DashboardScreen() {
         0
       ) || 1)
     : todaysWorkout?.exercises
-      ? todaysWorkout.exercises.reduce((sum, exercise) => {
-          // Use completed status instead of completionRate property
-          return sum + (exercise.completed ? 100 : 0);
-        }, 0) / todaysWorkout.exercises.length
-      : 0;
+    ? todaysWorkout.exercises.reduce((sum, exercise) => {
+        // Use completed status instead of completionRate property
+        return sum + (exercise.completed ? 100 : 0);
+      }, 0) / todaysWorkout.exercises.length
+    : 0;
 
   const isWorkoutCompleted = todayCompletionRate >= 100;
 
@@ -1074,7 +1074,7 @@ export default function DashboardScreen() {
                           color={colors.text.secondary}
                         />
                         <Text className="text-secondary font-semibold text-sm ml-2">
-                          Repeat Previous Workout
+                          Repeat a Previous Workout Plan
                         </Text>
                       </TouchableOpacity>
 
@@ -1088,7 +1088,7 @@ export default function DashboardScreen() {
                           color={colors.text.primary}
                         />
                         <Text className="text-text-primary font-semibold text-sm ml-2">
-                          Generate New Workout
+                          Generate a New Workout Plan
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -1129,21 +1129,21 @@ export default function DashboardScreen() {
                                     day.status === "rest"
                                       ? FULL_HEIGHT // Rest days are full height
                                       : day.status === "upcoming" ||
-                                          day.status === "incomplete"
-                                        ? BASE_HEIGHT // Base height for incomplete/upcoming
-                                        : Math.max(
-                                            (day.completionRate / 100) *
-                                              FULL_HEIGHT,
-                                            BASE_HEIGHT
-                                          ), // Proportional to completion
+                                        day.status === "incomplete"
+                                      ? BASE_HEIGHT // Base height for incomplete/upcoming
+                                      : Math.max(
+                                          (day.completionRate / 100) *
+                                            FULL_HEIGHT,
+                                          BASE_HEIGHT
+                                        ), // Proportional to completion
                                   backgroundColor:
                                     day.status === "complete"
                                       ? colors.brand.primary // Complete - Green
                                       : day.status === "partial"
-                                        ? colors.brand.medium[2] // Partial - Primary[1]
-                                        : day.status === "rest"
-                                          ? colors.brand.secondary // Rest - Black
-                                          : colors.neutral.medium[3], // Upcoming/Incomplete - Grey
+                                      ? colors.brand.medium[2] // Partial - Primary[1]
+                                      : day.status === "rest"
+                                      ? colors.brand.secondary // Rest - Black
+                                      : colors.neutral.medium[3], // Upcoming/Incomplete - Grey
                                 }}
                               />
                             </View>
@@ -1194,8 +1194,8 @@ export default function DashboardScreen() {
                       {weightPerformanceFilter === "3M"
                         ? "Last 3 months"
                         : weightPerformanceFilter === "1M"
-                          ? "Last 1 month"
-                          : "Last 1 week"}
+                        ? "Last 1 month"
+                        : "Last 1 week"}
                       )
                     </Text>
                   </View>
@@ -1313,8 +1313,8 @@ export default function DashboardScreen() {
                       {weightPerformanceFilter === "3M"
                         ? "Last 3 months"
                         : weightPerformanceFilter === "1M"
-                          ? "Last 1 month"
-                          : "Last 1 week"}
+                        ? "Last 1 month"
+                        : "Last 1 week"}
                       )
                     </Text>
                   </View>
@@ -1377,8 +1377,8 @@ export default function DashboardScreen() {
                     {strengthFilter === "3M"
                       ? "Last 3 months"
                       : strengthFilter === "1M"
-                        ? "Last 1 month"
-                        : "Last 1 week"}
+                      ? "Last 1 month"
+                      : "Last 1 week"}
                     )
                   </Text>
                 </View>
@@ -1552,8 +1552,8 @@ export default function DashboardScreen() {
                       {workoutTypeFilter === "3M"
                         ? "Last 3 months"
                         : workoutTypeFilter === "1M"
-                          ? "Last 1 month"
-                          : "Last 1 week"}
+                        ? "Last 1 month"
+                        : "Last 1 week"}
                       )
                     </Text>
                   </View>

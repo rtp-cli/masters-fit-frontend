@@ -50,7 +50,7 @@ export default function SetTracker({
     onSetsChange(updatedSets);
   };
 
-  const addSet = () => {
+  const addSet = (useTargetValues = false) => {
     const lastSet = localSets[localSets.length - 1];
     
     let newRoundNumber = 1;
@@ -76,11 +76,15 @@ export default function SetTracker({
       }
     }
     
+    // Use previous set values if available and not forcing target values
+    const useWeight = useTargetValues || !lastSet ? (targetWeight || 0) : lastSet.weight;
+    const useReps = useTargetValues || !lastSet ? (targetReps || 0) : lastSet.reps;
+    
     const newSet: ExerciseSet = {
       roundNumber: newRoundNumber,
       setNumber: newSetNumber,
-      weight: targetWeight || 0,
-      reps: targetReps || 0,
+      weight: useWeight,
+      reps: useReps,
     };
     const updatedSets = [...localSets, newSet];
     setLocalSets(updatedSets);
@@ -98,6 +102,17 @@ export default function SetTracker({
         set.setNumber = 1;
       }
     });
+    setLocalSets(updatedSets);
+    onSetsChange(updatedSets);
+  };
+
+  const resetSetToTarget = (index: number) => {
+    const updatedSets = [...localSets];
+    updatedSets[index] = {
+      ...updatedSets[index],
+      weight: targetWeight || 0,
+      reps: targetReps || 0,
+    };
     setLocalSets(updatedSets);
     onSetsChange(updatedSets);
   };
@@ -189,16 +204,28 @@ export default function SetTracker({
                       {set.setNumber}
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    className="p-1"
-                    onPress={() => removeSet(globalIndex)}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={16}
-                      color={colors.neutral.medium[3]}
-                    />
-                  </TouchableOpacity>
+                  <View className="flex-row items-center">
+                    <TouchableOpacity
+                      className="p-1 mr-1"
+                      onPress={() => resetSetToTarget(globalIndex)}
+                    >
+                      <Ionicons
+                        name="refresh-outline"
+                        size={16}
+                        color={colors.brand.primary}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="p-1"
+                      onPress={() => removeSet(globalIndex)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={colors.neutral.medium[3]}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* Weight Section */}

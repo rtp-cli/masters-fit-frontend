@@ -40,13 +40,13 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const { setIsGeneratingWorkout, user, isLoading: authLoading } = useAuth();
+  const { setIsGeneratingWorkout, setIsPreloadingData, user, isLoading: authLoading } = useAuth();
 
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
   const {
     data: { workoutData, historyData },
-    refresh: { refreshWorkout, refreshHistory, reset },
+    refresh: { refreshWorkout, refreshHistory, refreshAll, reset },
     loading: { historyLoading, workoutLoading },
   } = useAppDataContext();
 
@@ -179,9 +179,10 @@ export default function CalendarScreen() {
           data.customFeedback || "User requested regeneration"
         );
         if (response) {
-          // Refresh workout data and notify other components
-          await refreshWorkout();
-          notifyWorkoutUpdated();
+          // Trigger app reload to show warming up screen
+          setIsPreloadingData(true);
+          // Navigate to home to trigger the warming up flow
+          router.replace("/");
         }
       } else {
         // Transform data to match backend API expectations
@@ -200,9 +201,10 @@ export default function CalendarScreen() {
 
         const response = await regenerateWorkoutPlan(user.id, apiData);
         if (response) {
-          // Refresh workout data and notify other components
-          await refreshWorkout();
-          notifyWorkoutUpdated();
+          // Trigger app reload to show warming up screen
+          setIsPreloadingData(true);
+          // Navigate to home to trigger the warming up flow
+          router.replace("/");
         }
       }
     } catch (err) {
@@ -699,6 +701,9 @@ export default function CalendarScreen() {
         onRegenerate={handleRegenerate}
         loading={false}
         regenerationType="day"
+        onSuccess={async () => {
+          // This is handled within the modal itself now
+        }}
       />
     </View>
   );

@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import {
   fetchActiveWorkout,
   createExerciseLog,
@@ -37,6 +38,8 @@ import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
 import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
 import { generateWorkoutPlan } from "@/lib/workouts";
 import { useAuth } from "@/contexts/AuthContext";
+import * as Haptics from "expo-haptics";
+import RNSystemSounds from "@dashdoc/react-native-system-sounds";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -63,7 +66,13 @@ export default function WorkoutScreen() {
   const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
 
   // Get user from auth context
-  const { user, setIsGeneratingWorkout, isLoading: authLoading } = useAuth();
+  const {
+    user,
+    setIsGeneratingWorkout,
+    setIsPreloadingData,
+    isLoading: authLoading,
+  } = useAuth();
+  const router = useRouter();
 
   // Get data refresh functions
   const {
@@ -74,6 +83,7 @@ export default function WorkoutScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [workout, setWorkout] = useState<PlanDayWithBlocks | null>(null);
+  const [hasActiveWorkoutPlan, setHasActiveWorkoutPlan] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
@@ -160,7 +170,17 @@ export default function WorkoutScreen() {
       restTimerRef.current = setInterval(() => {
         setRestTimerCountdown((prev) => {
           if (prev <= 1) {
-            // Timer finished
+            // Timer finished - add audio + haptic feedback
+            try {
+              // Play system beep sound
+              RNSystemSounds.beep();
+              
+              // Add haptic feedback
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (error) {
+              console.log("Audio/haptic feedback error:", error);
+            }
+            
             setIsRestTimerActive(false);
             setIsRestTimerPaused(false);
             if (restTimerRef.current) {
@@ -292,8 +312,12 @@ export default function WorkoutScreen() {
 
       if (!response?.planDays?.length) {
         setWorkout(null);
+        setHasActiveWorkoutPlan(false);
         return;
       }
+
+      // We have an active workout plan
+      setHasActiveWorkoutPlan(true);
 
       // Find today's workout using string comparison to avoid timezone issues
       const today = getCurrentDate(); // Use the same function as other parts of the app
@@ -368,18 +392,16 @@ export default function WorkoutScreen() {
       const result = await generateWorkoutPlan(user.id);
 
       if (result?.success) {
-        Alert.alert(
-          "Success! 🎉",
-          "Your new workout plan has been generated!",
-          [{ text: "Great!", onPress: () => loadWorkout(true) }]
-        );
+        // Trigger app reload to show warming up screen
+        setIsPreloadingData(true);
+        // Navigate to home to trigger the warming up flow
+        router.replace("/");
       } else {
         throw new Error("Failed to generate workout");
       }
     } catch (error) {
       console.error("Error generating workout:", error);
       Alert.alert("Error", "Failed to generate new workout. Please try again.");
-    } finally {
       setIsGeneratingWorkout(false);
     }
   };
@@ -709,74 +731,68 @@ export default function WorkoutScreen() {
           }}
         >
           <View className="items-center">
-            <Ionicons
-              name="fitness-outline"
-              size={64}
-              color={colors.text.muted}
-            />
-            <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
-              No Workout Today
-            </Text>
-            <Text className="text-text-muted text-center mb-8 leading-6">
-              You don't have a workout scheduled for this week.
-            </Text>
-
-            {/* Action buttons */}
-            <View className="w-full space-y-3">
-              <TouchableOpacity
-                className="bg-primary rounded-xl py-4 px-6 mb-2 flex-row items-center justify-center"
-                onPress={() => setShowRepeatModal(true)}
-              >
+            {hasActiveWorkoutPlan ? (
+              // Rest day - we have an active workout plan but no workout today
+              <>
                 <Ionicons
-                  name="repeat"
-                  size={20}
-                  color={colors.text.secondary}
+                  name="bed-outline"
+                  size={64}
+                  color={colors.brand.primary}
                 />
-                <Text className="text-secondary font-semibold text-base ml-2">
-                  Repeat Previous Workout
+                <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
+                  Rest Day
                 </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="bg-neutral-light-2 rounded-xl py-4 px-6 flex-row items-center justify-center"
-                onPress={handleGenerateNewWorkout}
-              >
+                <Text className="text-text-muted text-center mb-8 leading-6">
+                  No workout scheduled for today. Take time to rest and recover!
+                </Text>
+              </>
+            ) : (
+              // No active workout plan at all
+              <>
                 <Ionicons
-                  name="sparkles"
-                  size={20}
-                  color={colors.text.primary}
+                  name="fitness-outline"
+                  size={64}
+                  color={colors.text.muted}
                 />
-                <Text className="text-text-primary font-semibold text-base ml-2">
-                  Generate New Workout
+                <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
+                  No Workout Plan
                 </Text>
-              </TouchableOpacity>
+                <Text className="text-text-muted text-center mb-8 leading-6">
+                  You don't have an active workout plan for this week.
+                </Text>
 
-              {/* <TouchableOpacity
-                className="bg-transparent rounded-xl py-3 px-6 flex-row items-center justify-center border border-neutral-light-2"
-                onPress={onRefresh}
-                disabled={refreshing}
-              >
-                {refreshing ? (
-                  <>
-                    <ActivityIndicator size="small" color={colors.text.muted} />
-                    <Text className="text-text-muted font-medium text-sm ml-2">
-                      Refreshing...
-                    </Text>
-                  </>
-                ) : (
-                  <>
+                {/* Action buttons for no workout plan */}
+                <View className="w-full space-y-3">
+                  <TouchableOpacity
+                    className="bg-primary rounded-xl py-4 px-6 mb-2 flex-row items-center justify-center"
+                    onPress={() => setShowRepeatModal(true)}
+                  >
                     <Ionicons
-                      name="refresh"
-                      size={18}
-                      color={colors.text.muted}
+                      name="repeat"
+                      size={20}
+                      color={colors.text.secondary}
                     />
-                    <Text className="text-text-muted font-medium text-sm ml-2">
-                      Refresh
+                    <Text className="text-secondary font-semibold text-base ml-2">
+                      Repeat a Previous Workout Plan
                     </Text>
-                  </>
-                )}
-              </TouchableOpacity> */}
-            </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    className="bg-neutral-light-2 rounded-xl py-4 px-6 flex-row items-center justify-center"
+                    onPress={handleGenerateNewWorkout}
+                  >
+                    <Ionicons
+                      name="sparkles"
+                      size={20}
+                      color={colors.text.primary}
+                    />
+                    <Text className="text-text-primary font-semibold text-base ml-2">
+                      Generate a New Workout Plan
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </ScrollView>
 
@@ -1051,7 +1067,11 @@ export default function WorkoutScreen() {
                         <View className="items-center space-y-3">
                           <View className="bg-background rounded-2xl px-4 py-3 min-w-[80px] items-center">
                             <Text
-                              className={`text-lg font-bold text-center ${isRestTimerPaused ? "text-orange-500" : "text-text-primary"}`}
+                              className={`text-lg font-bold text-center ${
+                                isRestTimerPaused
+                                  ? "text-orange-500"
+                                  : "text-text-primary"
+                              }`}
                             >
                               {formatTime(restTimerCountdown)}
                             </Text>
@@ -1166,8 +1186,8 @@ export default function WorkoutScreen() {
                         isCurrent
                           ? "bg-brand-light-1 border border-brand-light-1"
                           : isCompleted || isSkipped
-                            ? "bg-brand-light-1 border border-brand-light-1"
-                            : "bg-background border border-neutral-light-2"
+                          ? "bg-brand-light-1 border border-brand-light-1"
+                          : "bg-background border border-neutral-light-2"
                       }`}
                     >
                       <View

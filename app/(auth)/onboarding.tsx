@@ -20,6 +20,7 @@ export default function OnboardingScreen() {
     isAuthenticated,
     isLoading: authLoading,
     setIsGeneratingWorkout,
+    setIsPreloadingData,
   } = useAuth();
 
   // Get refresh functions for data refresh after workout generation
@@ -137,7 +138,9 @@ export default function OnboardingScreen() {
       await fetchWorkoutPlan();
       setIsGeneratingWorkout(false);
       setIsCompletingOnboarding(false);
-      router.replace("/(tabs)/calendar");
+      // Trigger app reload to show warming up screen
+      setIsPreloadingData(true);
+      router.replace("/");
     } catch (error) {
       console.error("Error:", error);
       setIsLoading(false);

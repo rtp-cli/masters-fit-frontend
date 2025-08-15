@@ -374,7 +374,11 @@ export default function WorkoutRepeatModal({
                           {day.blocks.map((block, index) => (
                             <View
                               key={block.id}
-                              className={`p-4 border-b border-gray-100 ${index === day.blocks.length - 1 ? "border-b-0" : ""}`}
+                              className={`p-4 border-b border-gray-100 ${
+                                index === day.blocks.length - 1
+                                  ? "border-b-0"
+                                  : ""
+                              }`}
                             >
                               <View className="flex-row items-start justify-between">
                                 <View className="flex-1">
@@ -386,7 +390,9 @@ export default function WorkoutRepeatModal({
                                     </View>
                                     <Text className="font-semibold text-text-primary flex-1 text-base">
                                       {block.blockName ||
-                                        `${getBlockTypeDisplayName(block.blockType)} Block`}
+                                        `${getBlockTypeDisplayName(
+                                          block.blockType
+                                        )} Block`}
                                     </Text>
                                   </View>
 
@@ -458,7 +464,7 @@ export default function WorkoutRepeatModal({
             <Ionicons name="close" size={20} color={colors.text.muted} />
           </TouchableOpacity>
           <Text className="text-base font-semibold text-text-primary">
-            Repeat Previous Workout
+            Repeat a Previous Workout Plan
           </Text>
           <View className="w-8" />
         </View>
