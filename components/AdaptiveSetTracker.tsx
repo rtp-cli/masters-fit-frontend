@@ -255,6 +255,17 @@ export default function AdaptiveSetTracker({
     onSetsChange(updatedSets);
   };
 
+  // Reset traditional set to target values
+  const resetSetToTarget = (index: number) => {
+    const updatedSets = [...sets];
+    updatedSets[index] = {
+      ...updatedSets[index],
+      weight: exercise.weight || 0,
+      reps: exercise.reps || 0,
+    };
+    onSetsChange(updatedSets);
+  };
+
   const addSet = () => {
     const lastSet = sets[sets.length - 1];
     // Use target values for first set, previous set values for subsequent sets
