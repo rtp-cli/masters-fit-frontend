@@ -126,7 +126,7 @@ export default function OnboardingScreen() {
         fitnessLevel: formData.fitnessLevel.toString(),
         intensityLevel: formData.intensityLevel.toString(),
       };
-      setIsGeneratingWorkout(true);
+      setIsGeneratingWorkout(true, 'initial');
       setIsLoading(false);
 
       const onboardingSuccess = await completeOnboarding(onboardingData);

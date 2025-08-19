@@ -607,7 +607,7 @@ export async function regenerateDailyWorkout(
       `/workouts/${userId}/days/${planDayId}/regenerate`,
       {
         method: "POST",
-        body: JSON.stringify({ regenerationReason }),
+        body: JSON.stringify({ reason: regenerationReason }),
       }
     );
     return response;

@@ -16,6 +16,7 @@ import {
   regenerateWorkoutPlan,
   regenerateDailyWorkout,
   notifyWorkoutUpdated,
+  generateWorkoutPlan,
 } from "@lib/workouts";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
@@ -27,6 +28,7 @@ import {
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
+import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
 import WorkoutBlock from "@components/WorkoutBlock";
 import {
   calculateWorkoutDuration,
@@ -59,6 +61,7 @@ export default function CalendarScreen() {
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
   );
@@ -152,8 +155,10 @@ export default function CalendarScreen() {
     selectedType?: "week" | "day"
   ) => {
     try {
-      // Show global generating modal
-      setIsGeneratingWorkout(true);
+      const regenerateType = selectedType || "week";
+      
+      // Show global generating modal with correct type
+      setIsGeneratingWorkout(true, regenerateType === "day" ? "daily" : "weekly");
       setShowRegenerationModal(false);
 
       const user = await getCurrentUser();
@@ -161,8 +166,6 @@ export default function CalendarScreen() {
         console.error("User not found");
         return;
       }
-
-      const regenerateType = selectedType || "week";
 
       if (regenerateType === "day") {
         const currentPlanDayResult = getPlanDayForDate(selectedDate);
@@ -218,6 +221,34 @@ export default function CalendarScreen() {
   const handleOpenRegeneration = (planDay?: PlanDayWithBlocks) => {
     setSelectedPlanDay(planDay || null);
     setShowRegenerationModal(true);
+  };
+
+  const handleGenerateNewWorkout = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsGeneratingWorkout(true);
+      const result = await generateWorkoutPlan(user.id);
+      if (result?.success) {
+        // Trigger app reload to show warming up screen
+        setIsPreloadingData(true);
+        // Navigate to dashboard to trigger the warming up flow
+        router.replace("/(tabs)/dashboard");
+      } else {
+        throw new Error("Failed to generate workout");
+      }
+    } catch (error) {
+      console.error("Error generating workout:", error);
+    } finally {
+      setIsGeneratingWorkout(false);
+    }
+  };
+
+  const handleRepeatWorkoutSuccess = () => {
+    // Refresh all data after successful workout repetition
+    setIsPreloadingData(true);
+    // Navigate to dashboard to trigger the warming up flow
+    router.replace("/(tabs)/dashboard");
   };
 
   const getPlanDayForDate = (
@@ -558,7 +589,7 @@ export default function CalendarScreen() {
           <View className="px-lg my-lg">
             <TouchableOpacity
               className="bg-primary py-md rounded-xl items-center flex-row justify-center"
-              onPress={() => handleOpenRegeneration()}
+              onPress={() => handleOpenRegeneration(currentSelectedPlanDay || undefined)}
             >
               <Ionicons
                 name="settings-outline"
@@ -580,14 +611,67 @@ export default function CalendarScreen() {
                 <Text className="text-base font-bold text-text-primary mb-md">
                   {formatDate(selectedDate)}
                 </Text>
-                <View className="bg-brand-light-2 p-6 rounded-xl items-center">
-                  <Text className="text-base font-bold text-text-primary mb-xs">
-                    Rest Day
-                  </Text>
-                  <Text className="text-sm text-text-muted text-center leading-5">
-                    Take this time to recover and prepare for your next workout!
-                  </Text>
-                </View>
+                {!workoutPlan || (workoutPlan?.endDate && selectedDate > formatDateAsString(workoutPlan.endDate)) ? (
+                  // No active workout plan at all OR selected date is beyond workout plan end date
+                  <View className="items-center py-6">
+                    <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
+                      <Ionicons
+                        name="fitness-outline"
+                        size={24}
+                        color={colors.text.muted}
+                      />
+                    </View>
+                    <Text className="text-base font-semibold text-text-primary mb-2">
+                      No Active Workout
+                    </Text>
+                    <Text className="text-sm text-text-muted text-center mb-6 leading-5">
+                      You don't have a workout scheduled for this week.
+                    </Text>
+
+                    {/* Action buttons - only show for today */}
+                    {isToday() && (
+                      <View className="w-full space-y-3">
+                        <TouchableOpacity
+                          className="bg-primary rounded-xl py-3 px-6 mb-2 flex-row items-center justify-center"
+                          onPress={() => setShowRepeatModal(true)}
+                        >
+                          <Ionicons
+                            name="repeat"
+                            size={18}
+                            color={colors.text.secondary}
+                          />
+                          <Text className="text-secondary font-semibold text-sm ml-2">
+                            Repeat a Previous Workout Plan
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-row items-center justify-center"
+                          onPress={handleGenerateNewWorkout}
+                        >
+                          <Ionicons
+                            name="sparkles"
+                            size={18}
+                            color={colors.text.primary}
+                          />
+                          <Text className="text-text-primary font-semibold text-sm ml-2">
+                            Generate a New Workout Plan
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  // Active workout plan and selected date is within plan duration but no workout scheduled (rest day)
+                  <View className="bg-brand-light-2 p-6 rounded-xl items-center">
+                    <Text className="text-base font-bold text-text-primary mb-xs">
+                      Rest Day
+                    </Text>
+                    <Text className="text-sm text-text-muted text-center leading-5">
+                      Take this time to recover and prepare for your next workout!
+                    </Text>
+                  </View>
+                )}
               </View>
             ) : (
               <View className="mb-lg">
@@ -701,9 +785,20 @@ export default function CalendarScreen() {
         onRegenerate={handleRegenerate}
         loading={false}
         regenerationType="day"
-        onSuccess={async () => {
-          // This is handled within the modal itself now
+        selectedPlanDay={selectedPlanDay}
+        onSuccess={() => {
+          // Trigger app reload to show warming up screen
+          setIsPreloadingData(true);
+          // Navigate to dashboard to trigger the warming up flow
+          router.replace("/(tabs)/dashboard");
         }}
+      />
+
+      {/* Workout Repeat Modal */}
+      <WorkoutRepeatModal
+        visible={showRepeatModal}
+        onClose={() => setShowRepeatModal(false)}
+        onSuccess={handleRepeatWorkoutSuccess}
       />
     </View>
   );

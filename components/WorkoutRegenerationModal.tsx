@@ -6,17 +6,18 @@ import {
   Modal,
   ActivityIndicator,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./OnboardingForm";
-import GeneratingPlanScreen from "./ui/GeneratingPlanScreen";
 import { colors } from "../lib/theme";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
 import { useRouter } from "expo-router";
+import { generateWorkoutPlan, regenerateWorkoutPlan, regenerateDailyWorkout } from "@lib/workouts";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -146,6 +147,8 @@ interface WorkoutRegenerationModalProps {
   loading?: boolean;
   regenerationType?: "day" | "week";
   onSuccess?: () => void; // New prop for refresh callback
+  onError?: (error: string) => void; // Add error callback
+  selectedPlanDay?: { id: number } | null; // Add selectedPlanDay for daily regeneration
 }
 
 export default function WorkoutRegenerationModal({
@@ -155,6 +158,8 @@ export default function WorkoutRegenerationModal({
   loading = false,
   regenerationType = "day",
   onSuccess,
+  onError,
+  selectedPlanDay,
 }: WorkoutRegenerationModalProps) {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -167,7 +172,7 @@ export default function WorkoutRegenerationModal({
 
   // Get refresh functions for data refresh after regeneration
   const { refresh: { refreshAll } } = useAppDataContext();
-  const { setIsPreloadingData } = useAuth();
+  const { setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -212,13 +217,14 @@ export default function WorkoutRegenerationModal({
         goals: formData.goals.map((g) => g.toString()),
         limitations: formData.limitations?.map((l) => l.toString()) || [],
         fitnessLevel: formData.fitnessLevel.toString(),
-        environment: formData.environment!.toString(),
+        environment: [formData.environment!.toString()],
         equipment: formData.equipment?.map((e) => e.toString()) || [],
         otherEquipment: formData.otherEquipment || "",
         preferredStyles: formData.preferredStyles.map((s) => s.toString()),
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
-        intensityLevel: formData.intensityLevel.toString(),
+        intensityLevel: formData.intensityLevel === IntensityLevels.LOW ? 1 : 
+                        formData.intensityLevel === IntensityLevels.MODERATE ? 2 : 3,
         medicalNotes: formData.medicalNotes,
       };
 
@@ -228,24 +234,53 @@ export default function WorkoutRegenerationModal({
       // Close the onboarding form
       setShowOnboardingForm(false);
       
-      // Call regenerate function (this will trigger loading state)
-      onRegenerate(
-        {
-          customFeedback: customFeedback.trim() || undefined,
-          profileData: profileData,
-        },
-        selectedType
-      );
-      
-      // Trigger app reload to show warming up screen
-      setIsPreloadingData(true);
-      
-      // Close modal
+      // Close the modal and show generating screen
       onClose();
+      setIsGeneratingWorkout(true, selectedType === "week" ? "weekly" : "daily");
       
-      // Refresh data after regeneration if callback provided
-      if (onSuccess) {
-        onSuccess();
+      if (selectedType === "week") {
+        // Weekly regeneration: call the weekly endpoint directly with profile data
+        if (user) {
+          try {
+            const result = await regenerateWorkoutPlan(user.id, {
+              customFeedback: customFeedback.trim() || undefined,
+              profileData: profileData,
+            });
+            
+            setIsGeneratingWorkout(false);
+            if (result?.success) {
+              setIsPreloadingData(true);
+              onSuccess?.();
+            }
+          } catch (error) {
+            console.error('Error in workout regeneration:', error);
+            setIsGeneratingWorkout(false);
+            onError?.('Regeneration failed');
+          }
+        }
+      } else {
+        // Daily regeneration: call regenerateDailyWorkout directly
+        const user = await getCurrentUser();
+        if (user && selectedPlanDay) {
+          try {
+            const result = await regenerateDailyWorkout(
+              user.id,
+              selectedPlanDay.id,
+              customFeedback.trim() || "User requested regeneration with profile updates"
+            );
+            
+            setIsGeneratingWorkout(false);
+            if (result?.success) {
+              onSuccess?.();
+            } else {
+              onError?.('Daily regeneration failed');
+            }
+          } catch (error) {
+            console.error('Error in daily regeneration:', error);
+            setIsGeneratingWorkout(false);
+            onError?.('Daily regeneration failed');
+          }
+        }
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -255,71 +290,7 @@ export default function WorkoutRegenerationModal({
     }
   };
 
-  const handleSaveProfileOnly = async (formData: FormData) => {
-    try {
-      setUpdatingProfile(true);
-      const user = await getCurrentUser();
-      if (!user) {
-        console.error("User not found");
-        return;
-      }
 
-      // Convert form data to profile update format
-      const profileData = {
-        age: formData.age,
-        height: formData.height,
-        weight: formData.weight,
-        gender: formData.gender.toString(),
-        goals: formData.goals.map((g) => g.toString()),
-        limitations: formData.limitations?.map((l) => l.toString()) || [],
-        fitnessLevel: formData.fitnessLevel.toString(),
-        environment: formData.environment!.toString(),
-        equipment: formData.equipment?.map((e) => e.toString()) || [],
-        otherEquipment: formData.otherEquipment || "",
-        preferredStyles: formData.preferredStyles.map((s) => s.toString()),
-        availableDays: formData.availableDays.map((d) => d.toString()),
-        workoutDuration: formData.workoutDuration,
-        intensityLevel: formData.intensityLevel.toString(),
-        medicalNotes: formData.medicalNotes,
-      };
-
-      // Only update the profile, don't regenerate
-      await updateUserProfile(profileData as any);
-
-      // Update the current profile state and close the form
-      setCurrentProfile({ ...currentProfile, ...profileData });
-      setShowOnboardingForm(false);
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      console.error("Failed to save your profile");
-    } finally {
-      setUpdatingProfile(false);
-    }
-  };
-
-  const handleQuickSave = async () => {
-    const partialFormData = convertProfileToFormData(currentProfile);
-    const completeFormData: FormData = {
-      email: partialFormData.email || "",
-      age: partialFormData.age || 25,
-      height: partialFormData.height || 170,
-      weight: partialFormData.weight || 70,
-      gender: partialFormData.gender || Gender.MALE,
-      goals: partialFormData.goals || [],
-      limitations: partialFormData.limitations || [],
-      fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
-      environment: partialFormData.environment || WorkoutEnvironments.HOME_GYM,
-      equipment: partialFormData.equipment || [],
-      otherEquipment: partialFormData.otherEquipment || "",
-      preferredStyles: partialFormData.preferredStyles || [],
-      availableDays: partialFormData.availableDays || [],
-      workoutDuration: partialFormData.workoutDuration || 30,
-      intensityLevel:
-        partialFormData.intensityLevel || IntensityLevels.MODERATE,
-      medicalNotes: partialFormData.medicalNotes || "",
-    };
-    await handleSaveProfileOnly(completeFormData);
-  };
 
   const handleQuickSaveAndRegenerate = async () => {
     const partialFormData = convertProfileToFormData(currentProfile);
@@ -346,21 +317,47 @@ export default function WorkoutRegenerationModal({
   };
 
   const handleRegenerateWithFeedback = async () => {
-    // Call regenerate function (this will trigger loading state)
-    onRegenerate(
-      { customFeedback: customFeedback.trim() || undefined },
-      selectedType
-    );
-    
-    // Trigger app reload to show warming up screen
-    setIsPreloadingData(true);
-    
-    // Close modal
-    onClose();
-    
-    // Refresh data after regeneration if callback provided
-    if (onSuccess) {
-      onSuccess();
+    try {
+      // Close modal and show generating screen
+      onClose();
+      setIsGeneratingWorkout(true, selectedType === "week" ? "weekly" : "daily");
+      
+      if (selectedType === "week") {
+        // Weekly regeneration: call the weekly endpoint directly
+        const user = await getCurrentUser();
+        if (user) {
+          const result = await regenerateWorkoutPlan(user.id, {
+            customFeedback: customFeedback.trim() || undefined,
+          });
+          
+          setIsGeneratingWorkout(false);
+          if (result?.success) {
+            setIsPreloadingData(true);
+            onSuccess?.();
+          }
+        }
+      } else {
+        // Daily regeneration: call regenerateDailyWorkout directly
+        const user = await getCurrentUser();
+        if (user && selectedPlanDay) {
+          const result = await regenerateDailyWorkout(
+            user.id,
+            selectedPlanDay.id,
+            customFeedback.trim() || "User requested regeneration"
+          );
+          
+          setIsGeneratingWorkout(false);
+          if (result?.success) {
+            onSuccess?.();
+          } else {
+            onError?.('Daily regeneration failed');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in workout regeneration:', error);
+      setIsGeneratingWorkout(false);
+      onError?.('Regeneration failed');
     }
   };
 
@@ -428,18 +425,6 @@ export default function WorkoutRegenerationModal({
     );
   }
 
-  // Don't show internal generating screen - the global one will handle it
-  // if (loading) {
-  //   return (
-  //     <Modal
-  //       visible={visible}
-  //       animationType="slide"
-  //       presentationStyle="pageSheet"
-  //     >
-  //       <GeneratingPlanScreen />
-  //     </Modal>
-  //   );
-  // }
 
   if (showOnboardingForm && currentProfile) {
     return (
@@ -501,23 +486,24 @@ export default function WorkoutRegenerationModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-background">
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-          <TouchableOpacity
-            onPress={onClose}
-            className="w-8 h-8 items-center justify-center"
-          >
-            <Ionicons name="close" size={20} color={colors.text.muted} />
-          </TouchableOpacity>
-          <Text className="text-base font-semibold text-text-primary">
-            Edit Workout Plan
-          </Text>
-          <View className="w-8" />
-        </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View className="flex-1 bg-background">
+          {/* Header */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+            <TouchableOpacity
+              onPress={onClose}
+              className="w-8 h-8 items-center justify-center"
+            >
+              <Ionicons name="close" size={20} color={colors.text.muted} />
+            </TouchableOpacity>
+            <Text className="text-base font-semibold text-text-primary">
+              Edit Workout Plan
+            </Text>
+            <View className="w-8" />
+          </View>
 
-        {/* Content */}
-        <View className="flex-1 px-5 py-5">
+          {/* Content */}
+          <View className="flex-1 px-5 py-5">
           <Text className="text-base text-text-muted mb-6 text-center">
             Choose how you would like to generate your workout plan:
           </Text>
@@ -594,11 +580,6 @@ export default function WorkoutRegenerationModal({
               value={customFeedback}
               onChangeText={setCustomFeedback}
               multiline
-              returnKeyType="done"
-              onSubmitEditing={() => {
-                Keyboard.dismiss();
-              }}
-              enablesReturnKeyAutomatically={true}
               scrollEnabled={true}
             />
             {selectedType === "day" && (
@@ -621,30 +602,31 @@ export default function WorkoutRegenerationModal({
               </TouchableOpacity>
             )}
           </View>
-        </View>
+          </View>
 
-        {/* Action Button */}
-        <View className="px-5 pb-10 mb-5">
-          <TouchableOpacity
-            className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
-              loading ? "opacity-70" : ""
-            }`}
-            onPress={handleRegenerateWithFeedback}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <>
-                <Ionicons name="refresh" size={18} color="white" />
-                <Text className="text-white font-semibold text-sm ml-2">
-                  Regenerate Workout Flow
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {/* Action Button */}
+          <View className="px-5 pb-10 mb-5">
+            <TouchableOpacity
+              className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+                loading ? "opacity-70" : ""
+              }`}
+              onPress={handleRegenerateWithFeedback}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={18} color="white" />
+                  <Text className="text-white font-semibold text-sm ml-2">
+                    Regenerate Workout Flow
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

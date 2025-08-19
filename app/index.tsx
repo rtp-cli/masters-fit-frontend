@@ -87,7 +87,7 @@ export default function GetStarted() {
       // Check if user has completed onboarding
       const needsOnboarding = user.needsOnboarding ?? true;
 
-      if (!needsOnboarding) {
+      if (!needsOnboarding && !isPreloadingData) {
         setIsPreloadingData(true);
       } else {
         // Only redirect to onboarding if not already there

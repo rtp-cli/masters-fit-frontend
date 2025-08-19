@@ -20,6 +20,8 @@ import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
 
+type RegenerationType = 'daily' | 'weekly' | 'repeat' | 'initial';
+
 // Define the shape of our context
 interface AuthContextType {
   user: User | null;
@@ -28,9 +30,10 @@ interface AuthContextType {
   isSigningUp: boolean;
   isGeneratingWorkout: boolean;
   isPreloadingData: boolean;
+  currentRegenerationType: RegenerationType;
   setIsSigningUp: (value: boolean) => void;
   setUserData: (user: User | null) => void;
-  setIsGeneratingWorkout: (value: boolean) => void;
+  setIsGeneratingWorkout: (value: boolean, regenerationType?: RegenerationType) => void;
   setIsPreloadingData: (value: boolean) => void;
   checkEmail: (
     email: string
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [isPreloadingData, setIsPreloadingData] = useState(false);
+  const [currentRegenerationType, setCurrentRegenerationType] = useState<RegenerationType>('initial');
 
   // Initialize user from secure storage on app start
   useEffect(() => {
@@ -217,6 +221,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Update generating workout state with regeneration type
+  const handleSetIsGeneratingWorkout = (value: boolean, regenerationType: RegenerationType = 'initial') => {
+    setIsGeneratingWorkout(value);
+    if (value) {
+      setCurrentRegenerationType(regenerationType);
+    }
+  };
+
   // Create the context value object
   const value = {
     user,
@@ -225,9 +237,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSigningUp,
     isGeneratingWorkout,
     isPreloadingData,
+    currentRegenerationType,
     setIsSigningUp,
     setUserData,
-    setIsGeneratingWorkout,
+    setIsGeneratingWorkout: handleSetIsGeneratingWorkout,
     setIsPreloadingData,
     checkEmail,
     signup,
