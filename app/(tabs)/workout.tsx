@@ -42,6 +42,8 @@ import { generateWorkoutPlan } from "@/lib/workouts";
 import { useAuth } from "@/contexts/AuthContext";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
+import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
+import { AppState } from "react-native";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -126,6 +128,10 @@ export default function WorkoutScreen() {
     currentExercise?.restTime || 0
   );
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const restTimerStartTime = useRef<number | null>(null);
+  const workoutStartTime = useRef<number | null>(null);
+  const exerciseStartTime = useRef<number | null>(null);
+  const appStateRef = useRef(AppState.currentState);
 
   // UI state
   const scrollViewRef = useRef<ScrollView>(null);
@@ -148,32 +154,69 @@ export default function WorkoutScreen() {
       ? (completedAndSkippedCount / exercises.length) * 100
       : 0;
 
-  // Timer management
+  // Timer management with timestamp-based calculation
   useEffect(() => {
     if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
+      // Activate keep awake to prevent screen sleep
+      activateKeepAwake('workout-timer');
+      
+      // Initialize start times if not set
+      if (!workoutStartTime.current) {
+        workoutStartTime.current = Date.now() - (workoutTimer * 1000);
+      }
+      if (!exerciseStartTime.current) {
+        exerciseStartTime.current = Date.now() - (exerciseTimer * 1000);
+      }
+      
       timerRef.current = setInterval(() => {
-        setWorkoutTimer((prev) => prev + 1);
-        setExerciseTimer((prev) => prev + 1);
+        const now = Date.now();
+        if (workoutStartTime.current) {
+          setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
+        }
+        if (exerciseStartTime.current) {
+          setExerciseTimer(Math.floor((now - exerciseStartTime.current) / 1000));
+        }
       }, 1000);
     } else {
+      // Deactivate keep awake when timer stops
+      deactivateKeepAwake('workout-timer');
+      
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     }
 
     return () => {
+      deactivateKeepAwake('workout-timer');
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
 
-  // Rest timer management
+  // Rest timer management with timestamp-based calculation
   useEffect(() => {
     if (isRestTimerActive && !isRestTimerPaused && restTimerCountdown > 0) {
+      // Activate keep awake for rest timer
+      activateKeepAwake('rest-timer');
+      
+      // Initialize start time if not set
+      if (!restTimerStartTime.current) {
+        const targetDuration = currentExercise?.restTime || 0;
+        restTimerStartTime.current = Date.now() - ((targetDuration - restTimerCountdown) * 1000);
+      }
+      
       restTimerRef.current = setInterval(() => {
-        setRestTimerCountdown((prev) => {
-          if (prev <= 1) {
+        const now = Date.now();
+        const targetDuration = currentExercise?.restTime || 0;
+        
+        if (restTimerStartTime.current) {
+          const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
+          const remaining = Math.max(0, targetDuration - elapsed);
+          
+          setRestTimerCountdown(remaining);
+          
+          if (remaining <= 0) {
             // Timer finished - add notification + haptic feedback
             try {
               // Send local notification with sound (no banner will show)
@@ -196,36 +239,101 @@ export default function WorkoutScreen() {
 
             setIsRestTimerActive(false);
             setIsRestTimerPaused(false);
+            restTimerStartTime.current = null;
+            deactivateKeepAwake('rest-timer');
+            
             if (restTimerRef.current) {
               clearInterval(restTimerRef.current);
             }
+            
             // Show rest completion modal when rest timer finishes
             setShowRestCompleteModal(true);
-            return 0;
           }
-          return prev - 1;
-        });
+        }
       }, 1000);
     } else {
+      if (!isRestTimerActive) {
+        deactivateKeepAwake('rest-timer');
+        restTimerStartTime.current = null;
+      }
+      
       if (restTimerRef.current) {
         clearInterval(restTimerRef.current);
       }
     }
 
     return () => {
+      deactivateKeepAwake('rest-timer');
       if (restTimerRef.current) {
         clearInterval(restTimerRef.current);
       }
     };
-  }, [isRestTimerActive, isRestTimerPaused, restTimerCountdown]);
+  }, [isRestTimerActive, isRestTimerPaused, restTimerCountdown, currentExercise?.restTime]);
 
   // Reset rest timer countdown when not active or exercise changes
   useEffect(() => {
     if (!isRestTimerActive) {
       const restTime = currentExercise?.restTime || 0;
       setRestTimerCountdown(restTime);
+      restTimerStartTime.current = null;
     }
   }, [isRestTimerActive, currentExercise?.restTime]);
+
+  // Handle app state changes to manage timers during background/foreground transitions
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App came to foreground - recalculate timers based on timestamps
+        console.log('App came to foreground, recalculating timers');
+        
+        // Recalculate workout and exercise timers
+        if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
+          const now = Date.now();
+          if (workoutStartTime.current) {
+            setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
+          }
+          if (exerciseStartTime.current) {
+            setExerciseTimer(Math.floor((now - exerciseStartTime.current) / 1000));
+          }
+        }
+        
+        // Recalculate rest timer
+        if (isRestTimerActive && !isRestTimerPaused) {
+          const now = Date.now();
+          const targetDuration = currentExercise?.restTime || 0;
+          
+          if (restTimerStartTime.current) {
+            const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
+            const remaining = Math.max(0, targetDuration - elapsed);
+            setRestTimerCountdown(remaining);
+            
+            // If timer finished while in background, trigger completion
+            if (remaining <= 0) {
+              setIsRestTimerActive(false);
+              setIsRestTimerPaused(false);
+              restTimerStartTime.current = null;
+              setShowRestCompleteModal(true);
+              
+              // Add haptic feedback for completion
+              try {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (error) {
+                console.log('Haptic feedback error:', error);
+              }
+            }
+          }
+        }
+      } else if (nextAppState.match(/inactive|background/)) {
+        // App going to background - timers will continue based on timestamps
+        console.log('App going to background, timers will continue via timestamps');
+      }
+      
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [isWorkoutStarted, isPaused, isWorkoutCompleted, isRestTimerActive, isRestTimerPaused, currentExercise?.restTime]);
 
   // Sync context with workout state
   useEffect(() => {
@@ -250,6 +358,16 @@ export default function WorkoutScreen() {
       setIsRestTimerActive(false);
       setIsRestTimerPaused(false);
       setRestTimerCountdown(0);
+      
+      // Reset timestamp references
+      workoutStartTime.current = null;
+      exerciseStartTime.current = null;
+      restTimerStartTime.current = null;
+      
+      // Deactivate keep awake
+      deactivateKeepAwake('workout-timer');
+      deactivateKeepAwake('rest-timer');
+      
       // Clear any active timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -290,6 +408,16 @@ export default function WorkoutScreen() {
   useEffect(() => {
     return () => {
       setWorkoutInProgress(false);
+      // Cleanup keep awake on unmount
+      deactivateKeepAwake('workout-timer');
+      deactivateKeepAwake('rest-timer');
+      // Clear timers
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (restTimerRef.current) {
+        clearInterval(restTimerRef.current);
+      }
     };
   }, [setWorkoutInProgress]);
 
@@ -502,9 +630,12 @@ export default function WorkoutScreen() {
 
   // Start workout
   const startWorkout = () => {
+    const now = Date.now();
     setIsWorkoutStarted(true);
     setWorkoutTimer(0);
     setExerciseTimer(0);
+    workoutStartTime.current = now;
+    exerciseStartTime.current = now;
     setWorkoutInProgress(true); // Notify context that workout started
   };
 
@@ -520,11 +651,18 @@ export default function WorkoutScreen() {
       setRestTimerCountdown(restTime);
       setIsRestTimerActive(true);
       setIsRestTimerPaused(false);
+      restTimerStartTime.current = Date.now();
     }
   };
 
   // Pause/Resume rest timer
   const toggleRestTimerPause = () => {
+    if (isRestTimerPaused) {
+      // Resuming - adjust start time based on current countdown
+      const targetDuration = currentExercise?.restTime || 0;
+      const elapsed = targetDuration - restTimerCountdown;
+      restTimerStartTime.current = Date.now() - (elapsed * 1000);
+    }
     setIsRestTimerPaused(!isRestTimerPaused);
   };
 
@@ -533,6 +671,7 @@ export default function WorkoutScreen() {
     const restTime = currentExercise?.restTime || 0;
     setRestTimerCountdown(restTime);
     setIsRestTimerPaused(false);
+    restTimerStartTime.current = null;
   };
 
   // Cancel rest timer
@@ -540,6 +679,8 @@ export default function WorkoutScreen() {
     setIsRestTimerActive(false);
     setIsRestTimerPaused(false);
     setRestTimerCountdown(0);
+    restTimerStartTime.current = null;
+    deactivateKeepAwake('rest-timer');
     if (restTimerRef.current) {
       clearInterval(restTimerRef.current);
     }
@@ -562,6 +703,7 @@ export default function WorkoutScreen() {
     setRestTimerCountdown(restTime);
     setIsRestTimerActive(true);
     setIsRestTimerPaused(false);
+    restTimerStartTime.current = Date.now();
   };
 
   // Handle rest timer cancel for CircularTimerDisplay
@@ -571,6 +713,8 @@ export default function WorkoutScreen() {
     setIsRestTimerActive(false);
     setIsRestTimerPaused(false);
     setRestTimerCountdown(restTime);
+    restTimerStartTime.current = null;
+    deactivateKeepAwake('rest-timer');
     if (restTimerRef.current) {
       clearInterval(restTimerRef.current);
     }
@@ -631,6 +775,7 @@ export default function WorkoutScreen() {
       if (currentExerciseIndex < exercises.length - 1) {
         setCurrentExerciseIndex((prev) => prev + 1);
         setExerciseTimer(0);
+        exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
         scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       } else {
         // All exercises completed, so mark the plan day as complete
@@ -712,6 +857,7 @@ export default function WorkoutScreen() {
       if (currentExerciseIndex < exercises.length - 1) {
         setCurrentExerciseIndex((prev) => prev + 1);
         setExerciseTimer(0);
+        exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
         scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       } else {
         // Check if all exercises are completed or skipped

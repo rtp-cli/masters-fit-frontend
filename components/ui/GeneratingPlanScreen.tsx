@@ -89,42 +89,22 @@ const getEngagingMessage = (
   return selectedMessage;
 };
 
-// Keep track of current message to avoid too frequent changes
-let currentProgressMessage = "";
-let lastProgressRange = -1;
 
-const getMessageForProgress = (
-  progress: number,
-  regenerationType: RegenerationType
-): string => {
-  const progressRange = Math.floor(progress / 20) * 20; // Group by 20% ranges
 
-  // Only change message when we move to a new range
-  if (progressRange !== lastProgressRange) {
-    currentProgressMessage = getEngagingMessage(progress, regenerationType);
-    lastProgressRange = progressRange;
-  }
-
-  return currentProgressMessage || "Creating your workout plan...";
-};
-
-// Milestone patterns for different regeneration types
-const MILESTONE_PATTERNS: Record<RegenerationType, number[]> = {
-  weekly: [5, 85, 100], // + dynamic chunked 10-85%
-  daily: [5, 15, 75, 100],
-  repeat: [5, 20, 40, 60, 85, 100],
-  initial: [5, 85, 100],
-};
+// Actual backend progress markers for reference:
+// Weekly: 5% -> 10-85% (chunked AI) -> 95% -> 99% -> 100%
+// Daily: 15% -> 50% -> 99% -> 100%
+// Repeat: 5% -> 20% -> 40% -> 60% -> 85% -> 100%
 
 // Speed configuration for different contexts
 const SPEED_CONFIG: Record<
   RegenerationType,
   { increment: number; interval: number }
 > = {
-  daily: { increment: 0.3, interval: 250 }, // Fast - daily is quick
-  weekly: { increment: 0.15, interval: 250 }, // Slower - weekly takes longer
-  repeat: { increment: 0.25, interval: 300 }, // Medium - repeat is moderate
-  initial: { increment: 0.15, interval: 350 }, // Slower - initial onboarding
+  daily: { increment: 0.8, interval: 250 }, // 50ms slower as requested
+  weekly: { increment: 0.6, interval: 200 }, // Faster - weekly takes longer but still responsive
+  repeat: { increment: 0.7, interval: 250 }, // Medium-fast - repeat is moderate
+  initial: { increment: 0.5, interval: 300 }, // Faster - initial onboarding but still feels thoughtful
 };
 
 export default function GeneratingPlanScreen({
@@ -140,6 +120,19 @@ export default function GeneratingPlanScreen({
   const [currentMessage, setCurrentMessage] = useState(
     "Loading your fitness profile..."
   );
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  // Reset state when regeneration type changes or component mounts
+  useEffect(() => {
+    console.log(`Resetting progress state for ${regenerationType} regeneration`);
+    setProgress(0);
+    setLastReceivedProgress(0);
+    setIsAnimating(false);
+    setIsCompleted(false);
+    setHasError(false);
+    setCurrentMessage("Loading your fitness profile...");
+  }, [regenerationType]);
 
   // WebSocket progress effect
   useEffect(() => {
@@ -171,17 +164,11 @@ export default function GeneratingPlanScreen({
 
           console.log("Progress update received:", progressData);
           setLastReceivedProgress(progressData.progress);
-          setCurrentMessage(
-            getMessageForProgress(progressData.progress, regenerationType)
-          );
 
-          // If completion signal, immediately jump to 100%
+          // If completion signal, mark as completed but don't interrupt ongoing animations
           if (progressData.complete || progressData.progress === 100) {
-            console.log("Workout generation completed");
-            setProgress(100);
-            setTimeout(() => {
-              onComplete?.();
-            }, 800); // Slightly longer delay to show 100%
+            console.log("Workout generation completed - marking for completion");
+            setIsCompleted(true);
           } else if (progressData.error) {
             console.error("Workout generation failed", progressData.error);
             setHasError(true);
@@ -221,85 +208,117 @@ export default function GeneratingPlanScreen({
     };
   }, [useWebSocket, onComplete, onError]);
 
-  // Single intelligent progress manager
+  // Smooth progress animation to backend checkpoints
   useEffect(() => {
-    if (lastReceivedProgress >= 100) return; // Completed
+    if (lastReceivedProgress <= 0 || lastReceivedProgress >= 100) return;
 
-    const expectedMilestones = MILESTONE_PATTERNS[regenerationType];
-    let speedConfig = SPEED_CONFIG[regenerationType];
+    // Only animate if we need to catch up to backend progress
+    if (lastReceivedProgress > progress) {
+      console.log(
+        `Animating progress from ${progress}% to ${lastReceivedProgress}%`
+      );
 
-    // Intelligent speed adjustment based on milestone position
-    const totalMilestones = expectedMilestones.length;
-    const milestonesReceived = expectedMilestones.filter(
-      (m) => m <= lastReceivedProgress
-    ).length;
-
-    // Speed up when we're at the last milestone (before completion)
-    const isNearEnd = milestonesReceived >= totalMilestones - 1; // At last milestone
-
-    if (isNearEnd) {
-      // Speed up significantly when we're at the final milestone
-      speedConfig = {
-        increment: speedConfig.increment * 5, // 5x faster
-        interval: Math.floor(speedConfig.interval / 3), // 3x faster interval
-      };
-      console.log("Near completion, speeding up progress animation");
-    }
-
-    // Get next expected milestone
-    const nextMilestone = expectedMilestones.find(
-      (m) => m > lastReceivedProgress
-    );
-    if (!nextMilestone) return;
-
-    // Calculate target (1% before next milestone)
-    const targetBeforeNext = nextMilestone - 1;
-
-    // If we've reached the target, check if we need to jump to received milestone
-    if (progress >= targetBeforeNext && lastReceivedProgress > progress) {
-      // Quick smooth jump to received milestone
+      setIsAnimating(true);
       const startProgress = progress;
       const endProgress = lastReceivedProgress;
+      const progressDifference = endProgress - startProgress;
+      const speedConfig = SPEED_CONFIG[regenerationType];
+
+      // Calculate duration based on speed config and progress difference
+      // Each increment represents roughly 1% progress
+      const estimatedSteps = progressDifference / speedConfig.increment;
+      const totalDuration = estimatedSteps * speedConfig.interval;
+
       const startTime = Date.now();
-      const duration = isNearEnd ? 200 : 500; // Faster jump if near end
+      let animationId: number;
+      let cancelled = false;
 
-      const animateJump = () => {
+      const animateToCheckpoint = () => {
+        if (cancelled) return;
+        
         const elapsed = Date.now() - startTime;
-        const ratio = Math.min(elapsed / duration, 1);
-        const easedRatio = 1 - Math.pow(1 - ratio, 3); // easeOutCubic
+        const ratio = Math.min(elapsed / totalDuration, 1);
+        const easedRatio = 1 - Math.pow(1 - ratio, 2); // easeOutQuad for smooth animation
 
-        const newProgress =
-          startProgress + (endProgress - startProgress) * easedRatio;
+        const newProgress = startProgress + progressDifference * easedRatio;
         setProgress(newProgress);
 
         if (ratio < 1) {
-          requestAnimationFrame(animateJump);
+          animationId = requestAnimationFrame(animateToCheckpoint);
         } else {
           setProgress(endProgress);
+          setIsAnimating(false);
         }
       };
 
-      requestAnimationFrame(animateJump);
-      return;
-    }
-
-    // Continue incremental progress if below target
-    if (progress < targetBeforeNext) {
-      const interval = setInterval(() => {
-        setProgress((currentProgress) => {
-          if (currentProgress >= targetBeforeNext) {
-            return currentProgress;
-          }
-          return Math.min(
-            currentProgress + speedConfig.increment,
-            targetBeforeNext
-          );
-        });
-      }, speedConfig.interval);
-
-      return () => clearInterval(interval);
+      animationId = requestAnimationFrame(animateToCheckpoint);
+      
+      // Cleanup function to cancel animation
+      return () => {
+        cancelled = true;
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+      };
     }
   }, [lastReceivedProgress, progress, regenerationType]);
+
+  // Handle completion after animations finish - always animate to 100% when completed
+  useEffect(() => {
+    if (isCompleted && !isAnimating) {
+      console.log(`Backend signaled completion, animating from ${progress}% to 100%`);
+      
+      const startProgress = progress;
+      const startTime = Date.now();
+      const remainingProgress = 100 - startProgress;
+      
+      // Dynamic duration based on remaining progress
+      // More time for larger gaps, minimum 800ms, maximum 2500ms
+      const baseDuration = Math.max(800, Math.min(2500, remainingProgress * 30));
+      const duration = baseDuration;
+
+      let animationId: number;
+      let timeoutId: NodeJS.Timeout;
+      let cancelled = false;
+
+      const animateToCompletion = () => {
+        if (cancelled) return;
+        
+        const elapsed = Date.now() - startTime;
+        const ratio = Math.min(elapsed / duration, 1);
+        const easedRatio = 1 - Math.pow(1 - ratio, 2); // easeOutQuad for smooth finish
+
+        const newProgress = startProgress + remainingProgress * easedRatio;
+        setProgress(newProgress);
+
+        if (ratio < 1) {
+          animationId = requestAnimationFrame(animateToCompletion);
+        } else {
+          // Ensure we're at exactly 100%
+          setProgress(100);
+          // Wait additional time to let user see 100% completion
+          timeoutId = setTimeout(() => {
+            if (!cancelled) {
+              onComplete?.();
+            }
+          }, 1500); // 1.5 seconds to appreciate the completion
+        }
+      };
+
+      animationId = requestAnimationFrame(animateToCompletion);
+      
+      // Cleanup function
+      return () => {
+        cancelled = true;
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
+    }
+  }, [isCompleted, isAnimating, progress, onComplete]);
 
   // Fallback progress animation when WebSocket fails
   useEffect(() => {
@@ -312,9 +331,8 @@ export default function GeneratingPlanScreen({
 
         const interval = setInterval(() => {
           setProgress((prev) => {
-            const next = Math.min(prev + speedConfig.increment * 2, 95); // Stop at 95% without WebSocket
-            setCurrentMessage(getMessageForProgress(next, regenerationType));
-            if (next >= 95) {
+            const next = Math.min(prev + speedConfig.increment, 90); // Stop at 90% without WebSocket
+            if (next >= 90) {
               clearInterval(interval);
             }
             return next;
@@ -327,6 +345,19 @@ export default function GeneratingPlanScreen({
 
     return () => clearTimeout(timeout);
   }, [useWebSocket, socket, regenerationType]);
+
+  // Message rotation timer - change message every 5 seconds
+  useEffect(() => {
+    // Set initial message
+    setCurrentMessage(getEngagingMessage(progress, regenerationType));
+
+    const messageInterval = setInterval(() => {
+      // Get a fresh random message every 5 seconds regardless of progress
+      setCurrentMessage(getEngagingMessage(progress, regenerationType));
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(messageInterval);
+  }, [regenerationType]); // Only depend on regenerationType, not progress
 
   const getProgressBarColor = () => {
     if (hasError) return "#ef4444"; // red-500

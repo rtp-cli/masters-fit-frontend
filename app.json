@@ -6,11 +6,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "buildNumber": "7",
+      "buildNumber": "27",
       "supportsTablet": true,
       "bundleIdentifier": "com.mastersfit.app",
       "infoPlist": {
@@ -28,17 +26,13 @@
       "favicon": "./assets/icon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "expo-font"
-    ],
+    "plugins": ["expo-router", "expo-secure-store", "expo-font"],
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4eb7025d-13e0-49c7-806c-d062f246faa9"
+        "projectId": "baddaaa3-3d1e-46e5-b15a-f5b8a46ded71"
       }
     },
-    "owner": "conrad-labs"
+    "owner": "mastersfit"
   }
 }

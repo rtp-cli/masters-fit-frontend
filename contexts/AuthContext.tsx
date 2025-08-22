@@ -30,11 +30,13 @@ interface AuthContextType {
   isSigningUp: boolean;
   isGeneratingWorkout: boolean;
   isPreloadingData: boolean;
+  needsFullAppRefresh: boolean;
   currentRegenerationType: RegenerationType;
   setIsSigningUp: (value: boolean) => void;
   setUserData: (user: User | null) => void;
   setIsGeneratingWorkout: (value: boolean, regenerationType?: RegenerationType) => void;
   setIsPreloadingData: (value: boolean) => void;
+  setNeedsFullAppRefresh: (value: boolean) => void;
   checkEmail: (
     email: string
   ) => Promise<{ success: boolean; needsOnboarding?: boolean }>;
@@ -69,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [isPreloadingData, setIsPreloadingData] = useState(false);
+  const [needsFullAppRefresh, setNeedsFullAppRefresh] = useState(false);
   const [currentRegenerationType, setCurrentRegenerationType] = useState<RegenerationType>('initial');
 
   // Initialize user from secure storage on app start
@@ -226,6 +229,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGeneratingWorkout(value);
     if (value) {
       setCurrentRegenerationType(regenerationType);
+      // Mark that we need a full app refresh after generation
+      setNeedsFullAppRefresh(true);
     }
   };
 
@@ -237,11 +242,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSigningUp,
     isGeneratingWorkout,
     isPreloadingData,
+    needsFullAppRefresh,
     currentRegenerationType,
     setIsSigningUp,
     setUserData,
     setIsGeneratingWorkout: handleSetIsGeneratingWorkout,
     setIsPreloadingData,
+    setNeedsFullAppRefresh,
     checkEmail,
     signup,
     login,

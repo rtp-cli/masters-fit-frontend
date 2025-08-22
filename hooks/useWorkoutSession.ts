@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
+import { AppState } from "react-native";
 import {
   fetchActiveWorkout,
   createExerciseLog,
@@ -38,6 +40,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   const workoutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const workoutStartTime = useRef<Date | null>(null);
   const exerciseStartTime = useRef<Date | null>(null);
+  const appStateRef = useRef(AppState.currentState);
 
   // Helper function to flatten blocks into exercises for backward compatibility
   const getFlattenedExercises = useCallback(
@@ -79,22 +82,43 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     return activeWorkout.blocks[currentBlockIndex] || null;
   }, [activeWorkout, currentBlockIndex]);
 
-  // Timer management
+  // Timer management with timestamp-based calculation
   useEffect(() => {
     if (isWorkoutActive && !isPaused) {
+      // Activate keep awake to prevent screen sleep
+      activateKeepAwake('workout-session-timer');
+      
+      // Initialize start times if not set
+      if (!workoutStartTime.current) {
+        workoutStartTime.current = new Date(Date.now() - (workoutTimer * 1000));
+      }
+      if (!exerciseStartTime.current) {
+        exerciseStartTime.current = new Date(Date.now() - (exerciseTimer * 1000));
+      }
+      
       workoutTimerRef.current = setInterval(() => {
-        setWorkoutTimer((prev) => prev + 1);
+        if (workoutStartTime.current) {
+          const elapsed = Math.floor((Date.now() - workoutStartTime.current.getTime()) / 1000);
+          setWorkoutTimer(elapsed);
+        }
       }, 1000);
 
       exerciseTimerRef.current = setInterval(() => {
-        setExerciseTimer((prev) => prev + 1);
+        if (exerciseStartTime.current) {
+          const elapsed = Math.floor((Date.now() - exerciseStartTime.current.getTime()) / 1000);
+          setExerciseTimer(elapsed);
+        }
       }, 1000);
     } else {
+      // Deactivate keep awake when timer stops
+      deactivateKeepAwake('workout-session-timer');
+      
       if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
       if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     }
 
     return () => {
+      deactivateKeepAwake('workout-session-timer');
       if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
       if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     };
@@ -104,6 +128,34 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   useEffect(() => {
     loadActiveWorkout();
   }, []);
+
+  // Handle app state changes to manage timers during background/foreground transitions
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App came to foreground - recalculate timers based on timestamps
+        console.log('App came to foreground, recalculating workout session timers');
+        
+        if (isWorkoutActive && !isPaused) {
+          if (workoutStartTime.current) {
+            const elapsed = Math.floor((Date.now() - workoutStartTime.current.getTime()) / 1000);
+            setWorkoutTimer(elapsed);
+          }
+          if (exerciseStartTime.current) {
+            const elapsed = Math.floor((Date.now() - exerciseStartTime.current.getTime()) / 1000);
+            setExerciseTimer(elapsed);
+          }
+        }
+      } else if (nextAppState.match(/inactive|background/)) {
+        console.log('App going to background, workout session timers will continue via timestamps');
+      }
+      
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [isWorkoutActive, isPaused]);
 
   const loadActiveWorkout = async () => {
     try {
@@ -537,8 +589,13 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setWorkoutTimer(0);
     setIsWorkoutActive(false);
     setExerciseData([]);
+    
+    // Cleanup timers and keep awake
     if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
     if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+    deactivateKeepAwake('workout-session-timer');
+    
+    // Reset timestamps
     workoutStartTime.current = null;
     exerciseStartTime.current = null;
     setIsPaused(false);

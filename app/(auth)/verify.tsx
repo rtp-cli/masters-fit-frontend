@@ -45,6 +45,18 @@ export default function VerifyScreen() {
     if (text && index < 3) {
       inputs.current[index + 1].focus();
     }
+
+    // Auto-submit when last digit is entered
+    if (text && index === 3) {
+      const completeCode = [...newOtp];
+      completeCode[index] = text;
+      if (completeCode.every(digit => digit !== "") && !isLoading) {
+        setTimeout(() => {
+          const code = completeCode.join("");
+          handleVerifyWithCode(code);
+        }, 100);
+      }
+    }
   };
 
   const handleKeyPress = (e: any, index: number) => {
@@ -77,10 +89,9 @@ export default function VerifyScreen() {
     }
   };
 
-  const handleVerify = async () => {
+  const handleVerifyWithCode = async (code: string) => {
     if (!email) return;
 
-    const code = otp.join("");
     if (code.length !== 4) {
       Alert.alert("Error", "Please enter the complete 4-digit OTP");
       return;
@@ -159,6 +170,11 @@ export default function VerifyScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerify = async () => {
+    const code = otp.join("");
+    await handleVerifyWithCode(code);
   };
 
   const handleGoBack = () => {
