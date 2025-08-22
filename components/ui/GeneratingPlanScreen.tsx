@@ -92,9 +92,12 @@ const getEngagingMessage = (
 
 
 // Actual backend progress markers for reference:
-// Weekly: 5% -> 20-99% (n-1 chunks) -> 99-100% (final chunk + DB ops)
-// Daily: 50% -> 90% (AI request) -> 95% (AI response) -> 99% (DB save) -> 100%
+// Weekly: 10% (start) -> 11% (old workouts deactivated) -> 12% (profile loaded) -> 13% (exercises loaded) -> 15% (LLM starts) -> 15-25% (gradual timer) -> 25-90% (chunks) -> 95% (AI complete) -> 99% (DB ops) -> 100%
+// Daily: 60% (start) -> 70% (AI request starts) -> 85% (AI response) -> 95% (DB ops start) -> 99% (DB ops complete) -> 100%
 // Repeat: 5% -> 20% -> 90% (workout creation) -> 95% -> 100%
+
+// Frontend animation flow (eliminates "stuck at 0%" issue):
+// All types start at 0% then immediately animate to target: Weekly/Initial: 10%, Daily: 60%, Repeat: 5%
 
 // Speed configuration for different contexts
 const SPEED_CONFIG: Record<
@@ -113,7 +116,18 @@ export default function GeneratingPlanScreen({
   useWebSocket = true,
   regenerationType = "initial",
 }: GeneratingPlanScreenProps) {
-  const [progress, setProgress] = useState(0);
+  // Get target initial progress based on regeneration type
+  const getTargetInitialProgress = (type: RegenerationType) => {
+    switch (type) {
+      case "weekly": return 10;
+      case "daily": return 60; 
+      case "repeat": return 5;
+      case "initial": return 10;
+      default: return 10;
+    }
+  };
+  
+  const [progress, setProgress] = useState(0); // Always start at 0%
   const [lastReceivedProgress, setLastReceivedProgress] = useState(0);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -126,12 +140,47 @@ export default function GeneratingPlanScreen({
   // Reset state when regeneration type changes or component mounts
   useEffect(() => {
     console.log(`Resetting progress state for ${regenerationType} regeneration`);
-    setProgress(0);
+    setProgress(0); // Always reset to 0%
     setLastReceivedProgress(0);
     setIsAnimating(false);
     setIsCompleted(false);
     setHasError(false);
     setCurrentMessage("Loading your fitness profile...");
+  }, [regenerationType]);
+
+  // Immediately animate to target initial progress when component mounts or regeneration type changes
+  useEffect(() => {
+    const targetProgress = getTargetInitialProgress(regenerationType);
+    const speedConfig = SPEED_CONFIG[regenerationType];
+    console.log(`Animating from 0% to ${targetProgress}% for ${regenerationType} regeneration`);
+    
+    let intervalId: NodeJS.Timeout;
+    let cancelled = false;
+    let currentProgress = 0;
+    
+    // Start animation after a brief delay to let the component render
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return;
+      
+      intervalId = setInterval(() => {
+        if (cancelled) return;
+        
+        currentProgress = Math.min(currentProgress + speedConfig.increment, targetProgress);
+        setProgress(currentProgress);
+        
+        if (currentProgress >= targetProgress) {
+          clearInterval(intervalId);
+        }
+      }, speedConfig.interval);
+    }, 100);
+    
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [regenerationType]);
 
   // WebSocket progress effect
