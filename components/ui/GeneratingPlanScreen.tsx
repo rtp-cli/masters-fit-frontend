@@ -89,8 +89,6 @@ const getEngagingMessage = (
   return selectedMessage;
 };
 
-
-
 // Actual backend progress markers for reference:
 // Weekly: 10% (start) -> 11% (old workouts deactivated) -> 12% (profile loaded) -> 13% (exercises loaded) -> 15% (LLM starts) -> 15-25% (gradual timer) -> 25-90% (chunks) -> 95% (AI complete) -> 99% (DB ops) -> 100%
 // Daily: 60% (start) -> 70% (AI request starts) -> 85% (AI response) -> 95% (DB ops start) -> 99% (DB ops complete) -> 100%
@@ -119,14 +117,19 @@ export default function GeneratingPlanScreen({
   // Get target initial progress based on regeneration type
   const getTargetInitialProgress = (type: RegenerationType) => {
     switch (type) {
-      case "weekly": return 10;
-      case "daily": return 60; 
-      case "repeat": return 5;
-      case "initial": return 10;
-      default: return 10;
+      case "weekly":
+        return 10;
+      case "daily":
+        return 80;
+      case "repeat":
+        return 5;
+      case "initial":
+        return 10;
+      default:
+        return 10;
     }
   };
-  
+
   const [progress, setProgress] = useState(0); // Always start at 0%
   const [lastReceivedProgress, setLastReceivedProgress] = useState(0);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -139,7 +142,9 @@ export default function GeneratingPlanScreen({
 
   // Reset state when regeneration type changes or component mounts
   useEffect(() => {
-    console.log(`Resetting progress state for ${regenerationType} regeneration`);
+    console.log(
+      `Resetting progress state for ${regenerationType} regeneration`
+    );
     setProgress(0); // Always reset to 0%
     setLastReceivedProgress(0);
     setIsAnimating(false);
@@ -152,28 +157,33 @@ export default function GeneratingPlanScreen({
   useEffect(() => {
     const targetProgress = getTargetInitialProgress(regenerationType);
     const speedConfig = SPEED_CONFIG[regenerationType];
-    console.log(`Animating from 0% to ${targetProgress}% for ${regenerationType} regeneration`);
-    
+    console.log(
+      `Animating from 0% to ${targetProgress}% for ${regenerationType} regeneration`
+    );
+
     let intervalId: NodeJS.Timeout;
     let cancelled = false;
     let currentProgress = 0;
-    
+
     // Start animation after a brief delay to let the component render
     const timeoutId = setTimeout(() => {
       if (cancelled) return;
-      
+
       intervalId = setInterval(() => {
         if (cancelled) return;
-        
-        currentProgress = Math.min(currentProgress + speedConfig.increment, targetProgress);
+
+        currentProgress = Math.min(
+          currentProgress + speedConfig.increment,
+          targetProgress
+        );
         setProgress(currentProgress);
-        
+
         if (currentProgress >= targetProgress) {
           clearInterval(intervalId);
         }
       }, speedConfig.interval);
     }, 100);
-    
+
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
@@ -216,7 +226,9 @@ export default function GeneratingPlanScreen({
 
           // If completion signal, mark as completed but don't interrupt ongoing animations
           if (progressData.complete || progressData.progress === 100) {
-            console.log("Workout generation completed - marking for completion");
+            console.log(
+              "Workout generation completed - marking for completion"
+            );
             setIsCompleted(true);
           } else if (progressData.error) {
             console.error("Workout generation failed", progressData.error);
@@ -284,7 +296,7 @@ export default function GeneratingPlanScreen({
 
       const animateToCheckpoint = () => {
         if (cancelled) return;
-        
+
         const elapsed = Date.now() - startTime;
         const ratio = Math.min(elapsed / totalDuration, 1);
         const easedRatio = 1 - Math.pow(1 - ratio, 2); // easeOutQuad for smooth animation
@@ -301,7 +313,7 @@ export default function GeneratingPlanScreen({
       };
 
       animationId = requestAnimationFrame(animateToCheckpoint);
-      
+
       // Cleanup function to cancel animation
       return () => {
         cancelled = true;
@@ -315,15 +327,20 @@ export default function GeneratingPlanScreen({
   // Handle completion after animations finish - always animate to 100% when completed
   useEffect(() => {
     if (isCompleted && !isAnimating) {
-      console.log(`Backend signaled completion, animating from ${progress}% to 100%`);
-      
+      console.log(
+        `Backend signaled completion, animating from ${progress}% to 100%`
+      );
+
       const startProgress = progress;
       const startTime = Date.now();
       const remainingProgress = 100 - startProgress;
-      
+
       // Dynamic duration based on remaining progress
       // More time for larger gaps, minimum 800ms, maximum 2500ms
-      const baseDuration = Math.max(800, Math.min(2500, remainingProgress * 30));
+      const baseDuration = Math.max(
+        800,
+        Math.min(2500, remainingProgress * 30)
+      );
       const duration = baseDuration;
 
       let animationId: number;
@@ -332,7 +349,7 @@ export default function GeneratingPlanScreen({
 
       const animateToCompletion = () => {
         if (cancelled) return;
-        
+
         const elapsed = Date.now() - startTime;
         const ratio = Math.min(elapsed / duration, 1);
         const easedRatio = 1 - Math.pow(1 - ratio, 2); // easeOutQuad for smooth finish
@@ -355,7 +372,7 @@ export default function GeneratingPlanScreen({
       };
 
       animationId = requestAnimationFrame(animateToCompletion);
-      
+
       // Cleanup function
       return () => {
         cancelled = true;
