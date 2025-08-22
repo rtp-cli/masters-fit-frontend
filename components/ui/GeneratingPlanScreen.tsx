@@ -92,16 +92,16 @@ const getEngagingMessage = (
 
 
 // Actual backend progress markers for reference:
-// Weekly: 5% -> 20-90% (chunked AI) -> 95% -> 99% -> 100%
-// Daily: 15% -> 50% -> 99% -> 100%
-// Repeat: 5% -> 20% -> 40% -> 60% -> 85% -> 100%
+// Weekly: 5% -> 20-99% (n-1 chunks) -> 99-100% (final chunk + DB ops)
+// Daily: 50% -> 90% (AI request) -> 95% (AI response) -> 99% (DB save) -> 100%
+// Repeat: 5% -> 20% -> 90% (workout creation) -> 95% -> 100%
 
 // Speed configuration for different contexts
 const SPEED_CONFIG: Record<
   RegenerationType,
   { increment: number; interval: number }
 > = {
-  daily: { increment: 0.8, interval: 250 }, // 50ms slower as requested
+  daily: { increment: 1.6, interval: 125 }, // 2x faster to keep up with fast backend
   weekly: { increment: 0.6, interval: 200 }, // Faster - weekly takes longer but still responsive
   repeat: { increment: 0.7, interval: 250 }, // Medium-fast - repeat is moderate
   initial: { increment: 0.5, interval: 300 }, // Faster - initial onboarding but still feels thoughtful

@@ -81,7 +81,7 @@ export default function WorkoutRepeatModal({
 
     try {
       setRepeating(true);
-      setIsGeneratingWorkout(true);
+      setIsGeneratingWorkout(true, 'repeat');
       onClose(); // Close modal immediately to show global generating screen
 
       const user = await getCurrentUser();
