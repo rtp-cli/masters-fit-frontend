@@ -92,7 +92,7 @@ const getEngagingMessage = (
 
 
 // Actual backend progress markers for reference:
-// Weekly: 5% -> 10-85% (chunked AI) -> 95% -> 99% -> 100%
+// Weekly: 5% -> 20-90% (chunked AI) -> 95% -> 99% -> 100%
 // Daily: 15% -> 50% -> 99% -> 100%
 // Repeat: 5% -> 20% -> 40% -> 60% -> 85% -> 100%
 
