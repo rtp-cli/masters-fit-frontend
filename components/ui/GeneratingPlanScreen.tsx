@@ -25,31 +25,43 @@ interface GeneratingPlanScreenProps {
 
 // Engaging messages by category
 const engagingMessages = {
-  "Fitness Wit & Puns": [
-    "Working out the details... literally",
-    "Reps and representatives are being calculated",
-    "Flexing my computational muscles",
-    "Stretching the possibilities",
-    "No pain, no computational gain",
+  "AI Humor": [
+    "Crunching numbers faster than your last PR… 🤖",
+    "My neural networks are doing burpees right now",
+    "Loading… My circuits are basically doing planks",
+    "My RAM is running interval training right now",
+    "My code just hit a new personal record",
+    "Even my error messages are getting stronger",
+    "Processing at the speed of a well-caffeinated trainer",
   ],
   "Personalization & Goals": [
-    "Getting to know your fitness goals...",
-    "Mapping out what works with your real schedule...",
-    "Checking what equipment you've got to work with...",
-    "Finding moves that play nice with your joints...",
-    "Timing your recovery like a pro...",
-    "Making every minute count for maximum impact...",
+    "Analyzing your goals and fitness level…",
+    "Factoring in your real-world schedule constraints…",
+    "Cross-referencing your equipment availability…",
+    "Cross-referencing joint-friendly movement patterns…",
+    "Calculating optimal recovery between sessions…",
+    "Optimizing for maximum results in minimal time…",
   ],
-  "Recovery & Mobility": [
-    "Planning your warm-ups and cool-downs...",
-    "Respecting your body's recovery wisdom...",
-    "Building in mobility and flexibility focus...",
+  "Age & Wisdom (40+ mindset)": [
+    "Experience beats youth every time—let’s prove it",
+    "Your decades of wisdom are my secret weapon",
+    "Building on four decades of accumulated wisdom",
+    "Efficiency is the ultimate 40+ superpower",
+    "Quality over quantity—the 40+ advantage loading…",
+    "Your body’s history is writing tomorrow’s strength",
   ],
-  Finalization: [
-    "Putting the final touches on your perfect plan...",
-    "Almost ready to unleash your personalized program...",
-    "Just need 30 more seconds to make this perfect...",
+  "Training Philosophy": [
+    "Smart training beats hard training every time",
+    "Teaching algorithms what ‘work smarter’ means",
+    "Building sustainable progressions for the long game",
+    "Maximizing gains while respecting recovery needs",
   ],
+  "Recovery, Warm-Up & Mobility": [
+    "Ensuring proper warm-up and cool-down sequences…",
+    "Calibrating for your body’s recovery wisdom…",
+    "Incorporating mobility and flexibility focus…",
+  ],
+  Finalization: ["Adding the finishing touches… Almost there!"],
 };
 
 // Smart message mapping by progress range and regeneration type
@@ -58,15 +70,17 @@ const getProgressMessageCategories = (
   regenerationType: RegenerationType
 ): string[] => {
   if (progress >= 95) return ["Finalization"];
-  if (progress >= 80) return ["Recovery & Mobility", "Finalization"];
-  if (progress >= 60) return ["Personalization & Goals", "Recovery & Mobility"];
-  if (progress >= 40) return ["Fitness Wit & Puns", "Personalization & Goals"];
-  if (progress >= 20) return ["Fitness Wit & Puns", "Personalization & Goals"];
+  if (progress >= 80)
+    return ["Training Philosophy", "Recovery, Warm-Up & Mobility"];
+  if (progress >= 60)
+    return ["Personalization & Goals", "Age & Wisdom (40+ mindset)"];
+  if (progress >= 40) return ["AI Humor", "Training Philosophy"];
+  if (progress >= 20) return ["AI Humor", "Personalization & Goals"];
 
   // Different starting messages based on type
   if (regenerationType === "initial")
-    return ["Personalization & Goals", "Recovery & Mobility"];
-  return ["Fitness Wit & Puns", "Personalization & Goals"];
+    return ["Personalization & Goals", "Age & Wisdom (40+ mindset)"];
+  return ["AI Humor", "Personalization & Goals"];
 };
 
 // Get engaging message with randomization and context awareness
