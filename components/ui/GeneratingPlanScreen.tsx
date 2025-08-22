@@ -102,7 +102,7 @@ const SPEED_CONFIG: Record<
   RegenerationType,
   { increment: number; interval: number }
 > = {
-  daily: { increment: 1.6, interval: 125 }, // 2x faster to keep up with fast backend
+  daily: { increment: 0.8, interval: 125 }, // 2x faster to keep up with fast backend
   weekly: { increment: 0.6, interval: 200 }, // Faster - weekly takes longer but still responsive
   repeat: { increment: 0.7, interval: 250 }, // Medium-fast - repeat is moderate
   initial: { increment: 0.5, interval: 300 }, // Faster - initial onboarding but still feels thoughtful
@@ -120,7 +120,7 @@ export default function GeneratingPlanScreen({
       case "weekly":
         return 10;
       case "daily":
-        return 80;
+        return 95;
       case "repeat":
         return 5;
       case "initial":
