@@ -412,6 +412,11 @@ export default function CalendarScreen() {
     return selectedDate === today;
   };
 
+  const isPastDate = () => {
+    const today = formatDateAsString(new Date());
+    return selectedDate < today;
+  };
+
   const toggleBlockExpansion = (blockId: number) => {
     setExpandedBlocks((prev) => ({
       ...prev,
@@ -585,7 +590,7 @@ export default function CalendarScreen() {
         )}
 
         {/* Regenerate Button - Only show for current workouts */}
-        {workoutPlan && !isHistoricalWorkout && (
+        {workoutPlan && !isHistoricalWorkout && !isPastDate() && (
           <View className="px-lg my-lg">
             <TouchableOpacity
               className="bg-primary py-md rounded-xl items-center flex-row justify-center"
@@ -784,8 +789,10 @@ export default function CalendarScreen() {
         }}
         onRegenerate={handleRegenerate}
         loading={false}
-        regenerationType="day"
+        regenerationType={selectedPlanDay ? "day" : "week"}
         selectedPlanDay={selectedPlanDay}
+        isRestDay={!selectedPlanDay && !!workoutPlan && workoutPlan.endDate && selectedDate <= formatDateAsString(workoutPlan.endDate)}
+        noActiveWorkoutDay={!workoutPlan || (workoutPlan?.endDate && selectedDate > formatDateAsString(workoutPlan.endDate))}
         onSuccess={() => {
           // Trigger app reload to show warming up screen
           setIsPreloadingData(true);

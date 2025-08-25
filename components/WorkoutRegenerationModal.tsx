@@ -149,6 +149,8 @@ interface WorkoutRegenerationModalProps {
   onSuccess?: () => void; // New prop for refresh callback
   onError?: (error: string) => void; // Add error callback
   selectedPlanDay?: { id: number } | null; // Add selectedPlanDay for daily regeneration
+  isRestDay?: boolean; // Add isRestDay prop to indicate rest day modal
+  noActiveWorkoutDay?: boolean; // Add noActiveWorkoutDay prop for days outside workout plan
 }
 
 export default function WorkoutRegenerationModal({
@@ -160,6 +162,8 @@ export default function WorkoutRegenerationModal({
   onSuccess,
   onError,
   selectedPlanDay,
+  isRestDay = false,
+  noActiveWorkoutDay = false,
 }: WorkoutRegenerationModalProps) {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -180,9 +184,10 @@ export default function WorkoutRegenerationModal({
       loadUserProfile();
       setCustomFeedback("");
       setShowOnboardingForm(false);
-      setSelectedType(regenerationType);
+      // For rest days and no active workout days, always default to "week" tab
+      setSelectedType(isRestDay || noActiveWorkoutDay ? "week" : regenerationType);
     }
-  }, [visible, regenerationType]);
+  }, [visible, regenerationType, isRestDay, noActiveWorkoutDay]);
 
   const loadUserProfile = async () => {
     try {
@@ -504,16 +509,36 @@ export default function WorkoutRegenerationModal({
 
           {/* Content */}
           <View className="flex-1 px-5 py-5">
-          <Text className="text-base text-text-muted mb-6 text-center">
-            Choose how you would like to generate your workout plan:
-          </Text>
+          {isRestDay ? (
+            <View className="mb-6">
+              <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                Today is a Rest Day
+              </Text>
+              <Text className="text-sm text-text-muted mb-4 text-center">
+                Rest days don't have individual workouts to regenerate. You can regenerate your entire weekly plan or update your fitness preferences.
+              </Text>
+            </View>
+          ) : noActiveWorkoutDay ? (
+            <View className="mb-6">
+              <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                No Workout Generated
+              </Text>
+              <Text className="text-sm text-text-muted mb-4 text-center">
+                Workouts for this period haven't been generated yet. To create workouts for this period, complete your current week and generate the next week's workout plan.
+              </Text>
+            </View>
+          ) : (
+            <Text className="text-base text-text-muted mb-6 text-center">
+              Choose how you would like to generate your workout plan:
+            </Text>
+          )}
 
           {/* Week/Day Toggle - Fixed shadow issue */}
           <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
             <TouchableOpacity
               className={`flex-1 py-3 rounded-sm items-center ${
                 selectedType === "day" ? "bg-white" : "bg-transparent"
-              }`}
+              } ${(isRestDay || noActiveWorkoutDay) ? "opacity-50" : ""}`}
               style={
                 selectedType === "day"
                   ? {
@@ -525,7 +550,8 @@ export default function WorkoutRegenerationModal({
                     }
                   : undefined
               }
-              onPress={() => setSelectedType("day")}
+              onPress={() => !(isRestDay || noActiveWorkoutDay) && setSelectedType("day")}
+              disabled={isRestDay || noActiveWorkoutDay}
             >
               <Text
                 className={`font-medium text-sm ${
@@ -561,13 +587,25 @@ export default function WorkoutRegenerationModal({
               </Text>
             </TouchableOpacity>
           </View>
+          
+          {(isRestDay || noActiveWorkoutDay) && (
+            <Text className="text-xs text-text-muted mb-4 text-center">
+              {isRestDay
+                ? "Day regeneration is not available for rest days"
+                : "Day regeneration is not available for days outside your workout plan"
+              }
+            </Text>
+          )}
 
           {/* Feedback Input */}
           <View className="flex-1">
             <Text className="text-sm text-text-muted mb-4">
-              Tell us why you want to regenerate this{" "}
-              {selectedType === "day" ? "day's" : "week's"} workout plan, and
-              what you would like to change:
+              {isRestDay
+                ? "Tell us what you'd like to change about your weekly workout plan:"
+                : noActiveWorkoutDay
+                ? "Tell us what you'd like to include in your next week's workout plan:"
+                : `Tell us why you want to regenerate this ${selectedType === "day" ? "day's" : "week's"} workout plan, and what you would like to change:`
+              }
             </Text>
             <TextInput
               className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
@@ -582,7 +620,7 @@ export default function WorkoutRegenerationModal({
               multiline
               scrollEnabled={true}
             />
-            {selectedType === "day" && (
+            {selectedType === "day" && !isRestDay && !noActiveWorkoutDay && (
               <Text className="text-xs text-text-muted mt-3">
                 Only this day's workout will be changed. All other days will
                 remain the same.
