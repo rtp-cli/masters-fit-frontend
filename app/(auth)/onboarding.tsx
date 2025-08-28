@@ -4,13 +4,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../../contexts/AuthContext";
 import { getCurrentUser, getPendingEmail, getPendingUserId } from "@lib/auth";
+import { apiRequest } from "@lib/api";
 import { useRouter } from "expo-router";
-import { generateWorkoutPlan, fetchActiveWorkout } from "@lib/workouts";
+import { generateWorkoutPlanAsync } from "@lib/workouts";
 import OnboardingForm, { FormData } from "../../components/OnboardingForm";
 import * as SecureStore from "expo-secure-store";
 import { colors } from "../../lib/theme";
 import Header from "@components/Header";
-import { useAppDataContext } from "@contexts/AppDataContext";
+import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -19,19 +20,15 @@ export default function OnboardingScreen() {
     user,
     isAuthenticated,
     isLoading: authLoading,
-    setIsGeneratingWorkout,
-    setIsPreloadingData,
   } = useAuth();
 
-  // Get refresh functions for data refresh after workout generation
-  const {
-    refresh: { refreshAll },
-  } = useAppDataContext();
+  
+  // Get background job functions
+  const { addJob } = useBackgroundJobs();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  // Local generating workout state removed - using global state from AuthContext
-  const [error, setError] = useState<string | null>(null);
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
 
   // Redirect unauthenticated users
@@ -78,27 +75,52 @@ export default function OnboardingScreen() {
     loadPendingData();
   }, []);
 
-  const fetchWorkoutPlan = async () => {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("User not found");
+  const startWorkoutGeneration = async () => {
+    try {
+      console.log("[Onboarding] Starting workout generation...");
+      
+      const user = await getCurrentUser();
+      if (!user) {
+        console.error("[Onboarding] No current user found");
+        throw new Error("User not found");
+      }
+      
+      console.log(`[Onboarding] Calling generateWorkoutPlanAsync for user ID: ${user.id}`);
+      console.log("[Onboarding] User data:", JSON.stringify(user, null, 2));
+      
+      // Fetch fresh profile data to ensure we have the complete profile
+      console.log("[Onboarding] Fetching fresh profile data...");
+      const profileResponse = await apiRequest(`/profile/${user.id}`);
+      console.log("[Onboarding] Profile response:", JSON.stringify(profileResponse, null, 2));
+      
+      // Start async workout generation - the backend will use the profile from database
+      const result = await generateWorkoutPlanAsync(user.id);
+      
+      console.log("[Onboarding] generateWorkoutPlanAsync result:", JSON.stringify(result, null, 2));
+
+      if (result?.success && result.jobId) {
+        console.log(`[Onboarding] Workout generation job created with ID: ${result.jobId}`);
+        
+        // Add job to background context for tracking
+        console.log("[Onboarding] Adding job to background context...");
+        await addJob(result.jobId, 'generation');
+        
+        // Navigate to main app - the FAB will handle the rest of the flow
+        console.log("[Onboarding] Navigating to main app...");
+        router.replace("/");
+        
+        return { success: true };
+      } else {
+        console.error("[Onboarding] Workout generation failed - no success or jobId");
+        console.error("[Onboarding] Result was:", JSON.stringify(result, null, 2));
+        throw new Error("Failed to start workout generation");
+      }
+    } catch (error) {
+      console.error("[Onboarding] startWorkoutGeneration error:", error);
+      console.error("[Onboarding] Error message:", error.message);
+      console.error("[Onboarding] Error stack:", error.stack);
+      throw error; // Re-throw to be caught by the main handler
     }
-    const result = await generateWorkoutPlan(user.id);
-
-    if (result?.success) {
-      const today = new Date();
-      const startDate = new Date(today);
-      startDate.setDate(today.getDate() - 7);
-      const endDate = new Date(today);
-      endDate.setDate(today.getDate() + 7);
-
-      await refreshAll({
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-      });
-    }
-
-    return result;
   };
 
   // Submit onboarding data
@@ -111,42 +133,69 @@ export default function OnboardingScreen() {
         throw new Error("User ID not found");
       }
 
-      // Convert form data to match OnboardingData type
-      const onboardingData = {
-        ...formData,
-        userId: parseInt(pendingUserId),
-        goals: formData.goals,
-        limitations: formData.limitations || [],
-        environment: formData.environment!,
-        equipment: formData.equipment || [],
-        otherEquipment: formData.otherEquipment || "",
-        preferredStyles: formData.preferredStyles,
-        availableDays: formData.availableDays,
-        gender: formData.gender.toString(),
-        fitnessLevel: formData.fitnessLevel.toString(),
-        intensityLevel: formData.intensityLevel.toString(),
-      };
-      setIsGeneratingWorkout(true, 'initial');
-      setIsLoading(false);
+      console.log("[Onboarding] Starting profile creation...");
+      console.log("[Onboarding] Raw form data:", JSON.stringify(formData, null, 2));
 
-      const onboardingSuccess = await completeOnboarding(onboardingData);
+      // Convert form data to match backend profile update format
+      const profileData = {
+        name: user?.name || "User", // Get name from user context or default
+        age: formData.age,
+        height: formData.height,
+        weight: formData.weight,
+        gender: formData.gender.toString(),
+        goals: formData.goals.map(goal => goal.toString()),
+        limitations: formData.limitations?.map(limitation => limitation.toString()) || [],
+        fitnessLevel: formData.fitnessLevel.toString(),
+        environment: formData.environment?.toString() || "",
+        equipment: formData.equipment?.map(eq => eq.toString()) || [],
+        otherEquipment: formData.otherEquipment || "",
+        preferredStyles: formData.preferredStyles.map(style => style.toString()),
+        availableDays: formData.availableDays.map(day => day.toString()),
+        workoutDuration: formData.workoutDuration, // Add missing required field
+        intensityLevel: formData.intensityLevel.toString(),
+        medicalNotes: formData.medicalNotes || "",
+      };
+
+      console.log("[Onboarding] Converted profile data:", JSON.stringify(profileData, null, 2));
+      console.log("[Onboarding] Data types check:");
+      console.log("- name:", typeof profileData.name, profileData.name);
+      console.log("- age:", typeof profileData.age, profileData.age);
+      console.log("- goals:", typeof profileData.goals, profileData.goals);
+      console.log("- environment:", typeof profileData.environment, profileData.environment);
+      console.log("- workoutDuration:", typeof profileData.workoutDuration, profileData.workoutDuration);
+
+      // Step 1: Complete onboarding (update profile)
+      const onboardingSuccess = await completeOnboarding(profileData, parseInt(pendingUserId));
 
       if (!onboardingSuccess) {
         throw new Error("Failed to complete onboarding");
       }
 
-      await fetchWorkoutPlan();
-      setIsGeneratingWorkout(false);
-      setIsCompletingOnboarding(false);
-      // Trigger app reload to show warming up screen
-      setIsPreloadingData(true);
-      router.replace("/");
-    } catch (error) {
-      console.error("Error:", error);
+      console.log("[Onboarding] Profile created successfully, starting workout generation...");
+      
+      // Step 2: Start workout generation
+      await startWorkoutGeneration();
+      
+      // Cleanup
       setIsLoading(false);
-      setIsGeneratingWorkout(false);
       setIsCompletingOnboarding(false);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      
+    } catch (error) {
+      console.error("[Onboarding] Error:", error);
+      setIsLoading(false);
+      setIsCompletingOnboarding(false);
+      
+      // Show specific error message
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const isProfileError = errorMessage.includes("onboarding") || errorMessage.includes("profile");
+      
+      Alert.alert(
+        isProfileError ? "Profile Creation Failed" : "Workout Generation Failed", 
+        isProfileError 
+          ? "Unable to create your profile. Please check your information and try again."
+          : "Your profile was created, but we couldn't start generating your workout. Please try again from the settings.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -182,7 +231,7 @@ export default function OnboardingScreen() {
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        submitButtonText="Generate Plan"
+        submitButtonText={isLoading ? "Creating Profile..." : "Generate Plan"}
       />
     </SafeAreaView>
   );

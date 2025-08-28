@@ -38,8 +38,10 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { useAppDataContext } from "@/contexts/AppDataContext";
 import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
 import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
-import { generateWorkoutPlan } from "@/lib/workouts";
+import { generateWorkoutPlanAsync, invalidateActiveWorkoutCache } from "@/lib/workouts";
+import { registerForPushNotifications } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -78,9 +80,12 @@ export default function WorkoutScreen() {
   } = useAuth();
   const router = useRouter();
 
+  // Background job tracking
+  const { activeJobs, isGenerating, addJob } = useBackgroundJobs();
+
   // Get data refresh functions
   const {
-    refresh: { refreshDashboard, reset },
+    refresh: { refreshDashboard, reset, refreshAll },
   } = useAppDataContext();
 
   // Core state
@@ -536,22 +541,44 @@ export default function WorkoutScreen() {
   const handleGenerateNewWorkout = async () => {
     if (!user?.id) return;
 
-    try {
-      setIsGeneratingWorkout(true);
-      const result = await generateWorkoutPlan(user.id);
+    // Simple prevention using the isGenerating flag
+    if (isGenerating) {
+      Alert.alert(
+        "Generation in Progress",
+        "A workout is already being generated. Please wait for it to complete.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
 
-      if (result?.success) {
-        // Trigger app reload to show warming up screen
-        setIsPreloadingData(true);
-        // Navigate to home to trigger the warming up flow
+    try {
+      // Register for push notifications
+      await registerForPushNotifications();
+      
+      const result = await generateWorkoutPlanAsync(user.id);
+
+      if (result?.success && result.jobId) {
+        // Register the job with background context for FAB tracking
+        await addJob(result.jobId, 'generation');
+        
+        // Job started successfully - FAB will show progress
+        // Data refresh will happen when generation completes
+        // Navigate to dashboard to show the FAB
         router.replace("/");
       } else {
-        throw new Error("Failed to generate workout");
+        // Only show error alerts for actual failures
+        Alert.alert(
+          "Generation Failed", 
+          "Unable to start workout generation. Please check your connection and try again.",
+          [{ text: "OK" }]
+        );
       }
     } catch (error) {
-      console.error("Error generating workout:", error);
-      Alert.alert("Error", "Failed to generate new workout. Please try again.");
-      setIsGeneratingWorkout(false);
+      Alert.alert(
+        "Generation Error", 
+        "An error occurred while starting workout generation. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 

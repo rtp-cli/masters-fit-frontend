@@ -736,3 +736,226 @@ export async function fetchPreviousWorkouts(
     return [];
   }
 }
+
+/**
+ * Generate workout plan asynchronously (returns job ID immediately)
+ */
+export async function generateWorkoutPlanAsync(
+  userId: number,
+  params?: {
+    customFeedback?: string;
+    timezone?: string;
+    profileData?: {
+      age?: number;
+      height?: number;
+      weight?: number;
+      gender?: string;
+      goals?: string[];
+      limitations?: string[];
+      fitnessLevel?: string;
+      environment?: string[];
+      equipment?: string[];
+      workoutStyles?: string[];
+      availableDays?: string[];
+      workoutDuration?: number;
+      intensityLevel?: number;
+      medicalNotes?: string;
+    };
+  }
+): Promise<{ success: boolean; jobId: number; message: string } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      jobId: number;
+      message: string;
+    }>(`/workouts/${userId}/generate-async`, {
+      method: "POST",
+      body: JSON.stringify(params || {}),
+    });
+
+    if (response?.success) {
+      return response;
+    } else {
+      throw new Error("Failed to start async workout generation");
+    }
+  } catch (error) {
+    console.error("Error starting async workout generation:", error);
+    return null;
+  }
+}
+
+/**
+ * Get job status by job ID
+ */
+export async function getJobStatus(jobId: number): Promise<{
+  success: boolean;
+  job: {
+    id: number;
+    status: string;
+    progress: number;
+    error?: string;
+    workoutId?: number;
+    createdAt: string;
+    completedAt?: string;
+  };
+} | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      job: {
+        id: number;
+        status: string;
+        progress: number;
+        error?: string;
+        workoutId?: number;
+        createdAt: string;
+        completedAt?: string;
+      };
+    }>(`/workouts/jobs/${jobId}/status`);
+
+    return response;
+  } catch (error) {
+    console.error("Error fetching job status:", error);
+    return null;
+  }
+}
+
+/**
+ * Get user's job history
+ */
+export async function getUserJobs(userId: number): Promise<{
+  success: boolean;
+  jobs: Array<{
+    id: number;
+    status: string;
+    progress: number;
+    error?: string;
+    workoutId?: number;
+    createdAt: string;
+    completedAt?: string;
+  }>;
+} | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      jobs: Array<{
+        id: number;
+        status: string;
+        progress: number;
+        error?: string;
+        workoutId?: number;
+        createdAt: string;
+        completedAt?: string;
+      }>;
+    }>(`/workouts/${userId}/jobs`);
+
+    return response;
+  } catch (error) {
+    console.error("Error fetching user jobs:", error);
+    return null;
+  }
+}
+
+/**
+ * Register push notification token for user
+ */
+export async function registerPushToken(
+  userId: number,
+  pushToken: string
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      message: string;
+    }>(`/workouts/${userId}/register-push-token`, {
+      method: "POST",
+      body: JSON.stringify({ pushToken }),
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Error registering push token:", error);
+    return null;
+  }
+}
+
+/**
+ * Regenerate workout plan asynchronously (returns job ID immediately)
+ */
+export async function regenerateWorkoutPlanAsync(
+  userId: number,
+  params?: {
+    customFeedback?: string;
+    profileData?: {
+      age?: number;
+      height?: number;
+      weight?: number;
+      gender?: string;
+      goals?: string[];
+      limitations?: string[];
+      fitnessLevel?: string;
+      environment?: string[];
+      equipment?: string[];
+      workoutStyles?: string[];
+      availableDays?: string[];
+      workoutDuration?: number;
+      intensityLevel?: number;
+      medicalNotes?: string;
+    };
+  }
+): Promise<{ success: boolean; jobId: number; message: string } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      jobId: number;
+      message: string;
+    }>(`/workouts/${userId}/regenerate-async`, {
+      method: "POST",
+      body: JSON.stringify(params || {}),
+    });
+
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to start async workout regeneration");
+    }
+  } catch (error) {
+    console.error("Error starting async workout regeneration:", error);
+    return null;
+  }
+}
+
+/**
+ * Regenerate daily workout asynchronously (returns job ID immediately)
+ */
+export async function regenerateDailyWorkoutAsync(
+  userId: number,
+  planDayId: number,
+  params: {
+    reason: string;
+    styles?: string[];
+    limitations?: string[];
+  }
+): Promise<{ success: boolean; jobId: number; message: string } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      jobId: number;
+      message: string;
+    }>(`/workouts/${userId}/days/${planDayId}/regenerate-async`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to start async daily workout regeneration");
+    }
+  } catch (error) {
+    console.error("Error starting async daily workout regeneration:", error);
+    return null;
+  }
+}

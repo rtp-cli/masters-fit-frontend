@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
@@ -16,8 +17,11 @@ import OnboardingForm, { FormData } from "./OnboardingForm";
 import { colors } from "../lib/theme";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
-import { useRouter } from "expo-router";
-import { generateWorkoutPlan, regenerateWorkoutPlan, regenerateDailyWorkout } from "@lib/workouts";
+import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import {
+  regenerateWorkoutPlanAsync,
+  regenerateDailyWorkoutAsync,
+} from "@lib/workouts";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -175,9 +179,13 @@ export default function WorkoutRegenerationModal({
   );
 
   // Get refresh functions for data refresh after regeneration
-  const { refresh: { refreshAll } } = useAppDataContext();
-  const { setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
-  const router = useRouter();
+  const {
+    refresh: { refreshAll },
+  } = useAppDataContext();
+  const { setIsGeneratingWorkout } = useAuth();
+  
+  // Background job tracking
+  const { addJob } = useBackgroundJobs();
 
   useEffect(() => {
     if (visible) {
@@ -185,7 +193,9 @@ export default function WorkoutRegenerationModal({
       setCustomFeedback("");
       setShowOnboardingForm(false);
       // For rest days and no active workout days, always default to "week" tab
-      setSelectedType(isRestDay || noActiveWorkoutDay ? "week" : regenerationType);
+      setSelectedType(
+        isRestDay || noActiveWorkoutDay ? "week" : regenerationType
+      );
     }
   }, [visible, regenerationType, isRestDay, noActiveWorkoutDay]);
 
@@ -228,8 +238,12 @@ export default function WorkoutRegenerationModal({
         preferredStyles: formData.preferredStyles.map((s) => s.toString()),
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
-        intensityLevel: formData.intensityLevel === IntensityLevels.LOW ? 1 : 
-                        formData.intensityLevel === IntensityLevels.MODERATE ? 2 : 3,
+        intensityLevel:
+          formData.intensityLevel === IntensityLevels.LOW
+            ? 1
+            : formData.intensityLevel === IntensityLevels.MODERATE
+            ? 2
+            : 3,
         medicalNotes: formData.medicalNotes,
       };
 
@@ -238,29 +252,53 @@ export default function WorkoutRegenerationModal({
 
       // Close the onboarding form
       setShowOnboardingForm(false);
-      
+
       // Close the modal and show generating screen
       onClose();
-      setIsGeneratingWorkout(true, selectedType === "week" ? "weekly" : "daily");
-      
+      setIsGeneratingWorkout(
+        true,
+        selectedType === "week" ? "weekly" : "daily"
+      );
+
       if (selectedType === "week") {
         // Weekly regeneration: call the weekly endpoint directly with profile data
         if (user) {
           try {
-            const result = await regenerateWorkoutPlan(user.id, {
+            const result = await regenerateWorkoutPlanAsync(user.id, {
               customFeedback: customFeedback.trim() || undefined,
               profileData: profileData,
             });
-            
-            setIsGeneratingWorkout(false);
+
             if (result?.success) {
-              setIsPreloadingData(true);
-              onSuccess?.();
+              // Show alert that regeneration started
+              Alert.alert(
+                "Workout Regeneration Started! 💪",
+                "Your workout is being regenerated in the background. You can close the app and we'll notify you when it's ready!",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      setIsGeneratingWorkout(false);
+                      onSuccess?.();
+                    },
+                  },
+                ]
+              );
+            } else {
+              setIsGeneratingWorkout(false);
+              Alert.alert(
+                "Regeneration Failed",
+                "Unable to start workout regeneration. Please check your connection and try again.",
+                [{ text: "OK" }]
+              );
             }
           } catch (error) {
-            console.error('Error in workout regeneration:', error);
             setIsGeneratingWorkout(false);
-            onError?.('Regeneration failed');
+            Alert.alert(
+              "Regeneration Error",
+              "An error occurred while starting workout regeneration. Please try again.",
+              [{ text: "OK" }]
+            );
           }
         }
       } else {
@@ -268,22 +306,36 @@ export default function WorkoutRegenerationModal({
         const user = await getCurrentUser();
         if (user && selectedPlanDay) {
           try {
-            const result = await regenerateDailyWorkout(
+            const result = await regenerateDailyWorkoutAsync(
               user.id,
               selectedPlanDay.id,
-              customFeedback.trim() || "User requested regeneration with profile updates"
+              {
+                reason:
+                  customFeedback.trim() ||
+                  "User requested regeneration with profile updates",
+              }
             );
-            
-            setIsGeneratingWorkout(false);
-            if (result?.success) {
+
+            if (result?.success && result.jobId) {
+              // Add job to background tracking
+              await addJob(result.jobId, 'daily-regeneration');
+              
+              // Close modal and let FAB handle progress
+              onClose();
               onSuccess?.();
             } else {
-              onError?.('Daily regeneration failed');
+              Alert.alert(
+                "Daily Regeneration Failed",
+                "Unable to start daily workout regeneration. Please check your connection and try again.",
+                [{ text: "OK" }]
+              );
             }
           } catch (error) {
-            console.error('Error in daily regeneration:', error);
-            setIsGeneratingWorkout(false);
-            onError?.('Daily regeneration failed');
+            Alert.alert(
+              "Daily Regeneration Error",
+              "An error occurred while starting daily workout regeneration. Please try again.",
+              [{ text: "OK" }]
+            );
           }
         }
       }
@@ -294,8 +346,6 @@ export default function WorkoutRegenerationModal({
       setUpdatingProfile(false);
     }
   };
-
-
 
   const handleQuickSaveAndRegenerate = async () => {
     const partialFormData = convertProfileToFormData(currentProfile);
@@ -323,46 +373,60 @@ export default function WorkoutRegenerationModal({
 
   const handleRegenerateWithFeedback = async () => {
     try {
-      // Close modal and show generating screen
+      // Close modal immediately - no generating screen
       onClose();
-      setIsGeneratingWorkout(true, selectedType === "week" ? "weekly" : "daily");
-      
+
       if (selectedType === "week") {
         // Weekly regeneration: call the weekly endpoint directly
         const user = await getCurrentUser();
         if (user) {
-          const result = await regenerateWorkoutPlan(user.id, {
+          const result = await regenerateWorkoutPlanAsync(user.id, {
             customFeedback: customFeedback.trim() || undefined,
           });
-          
-          setIsGeneratingWorkout(false);
-          if (result?.success) {
-            setIsPreloadingData(true);
+
+          if (result?.success && result.jobId) {
+            // Add job to background tracking
+            await addJob(result.jobId, 'regeneration');
+            
+            // Success callback
             onSuccess?.();
+          } else {
+            onError?.("Regeneration failed to start");
           }
         }
       } else {
         // Daily regeneration: call regenerateDailyWorkout directly
         const user = await getCurrentUser();
         if (user && selectedPlanDay) {
-          const result = await regenerateDailyWorkout(
+          const result = await regenerateDailyWorkoutAsync(
             user.id,
             selectedPlanDay.id,
-            customFeedback.trim() || "User requested regeneration"
+            {
+              reason: customFeedback.trim() || "User requested regeneration",
+            }
           );
-          
-          setIsGeneratingWorkout(false);
-          if (result?.success) {
+
+          if (result?.success && result.jobId) {
+            // Add job to background tracking
+            await addJob(result.jobId, 'daily-regeneration');
+            
+            // Success callback
             onSuccess?.();
           } else {
-            onError?.('Daily regeneration failed');
+            Alert.alert(
+              "Daily Regeneration Failed",
+              "Unable to start daily workout regeneration. Please check your connection and try again.",
+              [{ text: "OK" }]
+            );
           }
         }
       }
     } catch (error) {
-      console.error('Error in workout regeneration:', error);
-      setIsGeneratingWorkout(false);
-      onError?.('Regeneration failed');
+      Alert.alert(
+        "Regeneration Error",
+        "An error occurred while starting regeneration. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -375,8 +439,8 @@ export default function WorkoutRegenerationModal({
           profile.intensityLevel === 1
             ? IntensityLevels.LOW
             : profile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+            ? IntensityLevels.MODERATE
+            : IntensityLevels.HIGH;
       } else {
         intensityLevel = profile.intensityLevel as IntensityLevels;
       }
@@ -429,7 +493,6 @@ export default function WorkoutRegenerationModal({
       </Modal>
     );
   }
-
 
   if (showOnboardingForm && currentProfile) {
     return (
@@ -509,137 +572,147 @@ export default function WorkoutRegenerationModal({
 
           {/* Content */}
           <View className="flex-1 px-5 py-5">
-          {isRestDay ? (
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                Today is a Rest Day
-              </Text>
-              <Text className="text-sm text-text-muted mb-4 text-center">
-                Rest days don't have individual workouts to regenerate. You can regenerate your entire weekly plan or update your fitness preferences.
-              </Text>
-            </View>
-          ) : noActiveWorkoutDay ? (
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                No Workout Generated
-              </Text>
-              <Text className="text-sm text-text-muted mb-4 text-center">
-                Workouts for this period haven't been generated yet. To create workouts for this period, complete your current week and generate the next week's workout plan.
-              </Text>
-            </View>
-          ) : (
-            <Text className="text-base text-text-muted mb-6 text-center">
-              Choose how you would like to generate your workout plan:
-            </Text>
-          )}
-
-          {/* Week/Day Toggle - Fixed shadow issue */}
-          <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
-            <TouchableOpacity
-              className={`flex-1 py-3 rounded-sm items-center ${
-                selectedType === "day" ? "bg-white" : "bg-transparent"
-              } ${(isRestDay || noActiveWorkoutDay) ? "opacity-50" : ""}`}
-              style={
-                selectedType === "day"
-                  ? {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 2,
-                      elevation: 2,
-                    }
-                  : undefined
-              }
-              onPress={() => !(isRestDay || noActiveWorkoutDay) && setSelectedType("day")}
-              disabled={isRestDay || noActiveWorkoutDay}
-            >
-              <Text
-                className={`font-medium text-sm ${
-                  selectedType === "day" ? "text-secondary" : "text-text-muted"
-                }`}
-              >
-                Day
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 py-3 rounded-sm items-center ${
-                selectedType === "week" ? "bg-white" : "bg-transparent"
-              }`}
-              style={
-                selectedType === "week"
-                  ? {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 2,
-                      elevation: 2,
-                    }
-                  : undefined
-              }
-              onPress={() => setSelectedType("week")}
-            >
-              <Text
-                className={`font-medium text-sm ${
-                  selectedType === "week" ? "text-secondary" : "text-text-muted"
-                }`}
-              >
-                Week
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {(isRestDay || noActiveWorkoutDay) && (
-            <Text className="text-xs text-text-muted mb-4 text-center">
-              {isRestDay
-                ? "Day regeneration is not available for rest days"
-                : "Day regeneration is not available for days outside your workout plan"
-              }
-            </Text>
-          )}
-
-          {/* Feedback Input */}
-          <View className="flex-1">
-            <Text className="text-sm text-text-muted mb-4">
-              {isRestDay
-                ? "Tell us what you'd like to change about your weekly workout plan:"
-                : noActiveWorkoutDay
-                ? "Tell us what you'd like to include in your next week's workout plan:"
-                : `Tell us why you want to regenerate this ${selectedType === "day" ? "day's" : "week's"} workout plan, and what you would like to change:`
-              }
-            </Text>
-            <TextInput
-              className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
-              style={{
-                minHeight: 120,
-                textAlignVertical: "top",
-              }}
-              placeholder="Add notes about your workout here..."
-              placeholderTextColor={colors.text.muted}
-              value={customFeedback}
-              onChangeText={setCustomFeedback}
-              multiline
-              scrollEnabled={true}
-            />
-            {selectedType === "day" && !isRestDay && !noActiveWorkoutDay && (
-              <Text className="text-xs text-text-muted mt-3">
-                Only this day's workout will be changed. All other days will
-                remain the same.
+            {isRestDay ? (
+              <View className="mb-6">
+                <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                  Today is a Rest Day
+                </Text>
+                <Text className="text-sm text-text-muted mb-4 text-center">
+                  Rest days don't have individual workouts to regenerate. You
+                  can regenerate your entire weekly plan or update your fitness
+                  preferences.
+                </Text>
+              </View>
+            ) : noActiveWorkoutDay ? (
+              <View className="mb-6">
+                <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                  No Workout Generated
+                </Text>
+                <Text className="text-sm text-text-muted mb-4 text-center">
+                  Workouts for this period haven't been generated yet. To create
+                  workouts for this period, complete your current week and
+                  generate the next week's workout plan.
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-base text-text-muted mb-6 text-center">
+                Choose how you would like to generate your workout plan:
               </Text>
             )}
 
-            {/* Update Preferences Link */}
-            {selectedType === "week" && (
+            {/* Week/Day Toggle - Fixed shadow issue */}
+            <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
               <TouchableOpacity
-                className="mt-4 py-2"
-                onPress={() => setShowOnboardingForm(true)}
-                disabled={loading}
+                className={`flex-1 py-3 rounded-sm items-center ${
+                  selectedType === "day" ? "bg-white" : "bg-transparent"
+                } ${isRestDay || noActiveWorkoutDay ? "opacity-50" : ""}`}
+                style={
+                  selectedType === "day"
+                    ? {
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      }
+                    : undefined
+                }
+                onPress={() =>
+                  !(isRestDay || noActiveWorkoutDay) && setSelectedType("day")
+                }
+                disabled={isRestDay || noActiveWorkoutDay}
               >
-                <Text className="text-sm text-primary font-medium text-center">
-                  Need to update your fitness preferences? Tap here
+                <Text
+                  className={`font-medium text-sm ${
+                    selectedType === "day"
+                      ? "text-secondary"
+                      : "text-text-muted"
+                  }`}
+                >
+                  Day
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-3 rounded-sm items-center ${
+                  selectedType === "week" ? "bg-white" : "bg-transparent"
+                }`}
+                style={
+                  selectedType === "week"
+                    ? {
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      }
+                    : undefined
+                }
+                onPress={() => setSelectedType("week")}
+              >
+                <Text
+                  className={`font-medium text-sm ${
+                    selectedType === "week"
+                      ? "text-secondary"
+                      : "text-text-muted"
+                  }`}
+                >
+                  Week
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {(isRestDay || noActiveWorkoutDay) && (
+              <Text className="text-xs text-text-muted mb-4 text-center">
+                {isRestDay
+                  ? "Day regeneration is not available for rest days"
+                  : "Day regeneration is not available for days outside your workout plan"}
+              </Text>
             )}
-          </View>
+
+            {/* Feedback Input */}
+            <View className="flex-1">
+              <Text className="text-sm text-text-muted mb-4">
+                {isRestDay
+                  ? "Tell us what you'd like to change about your weekly workout plan:"
+                  : noActiveWorkoutDay
+                  ? "Tell us what you'd like to include in your next week's workout plan:"
+                  : `Tell us why you want to regenerate this ${
+                      selectedType === "day" ? "day's" : "week's"
+                    } workout plan, and what you would like to change:`}
+              </Text>
+              <TextInput
+                className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
+                style={{
+                  minHeight: 120,
+                  textAlignVertical: "top",
+                }}
+                placeholder="Add notes about your workout here..."
+                placeholderTextColor={colors.text.muted}
+                value={customFeedback}
+                onChangeText={setCustomFeedback}
+                multiline
+                scrollEnabled={true}
+              />
+              {selectedType === "day" && !isRestDay && !noActiveWorkoutDay && (
+                <Text className="text-xs text-text-muted mt-3">
+                  Only this day's workout will be changed. All other days will
+                  remain the same.
+                </Text>
+              )}
+
+              {/* Update Preferences Link */}
+              {selectedType === "week" && (
+                <TouchableOpacity
+                  className="mt-4 py-2"
+                  onPress={() => setShowOnboardingForm(true)}
+                  disabled={loading}
+                >
+                  <Text className="text-sm text-primary font-medium text-center">
+                    Need to update your fitness preferences? Tap here
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Action Button */}

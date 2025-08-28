@@ -37,6 +37,7 @@ interface AuthContextType {
   setIsGeneratingWorkout: (value: boolean, regenerationType?: RegenerationType) => void;
   setIsPreloadingData: (value: boolean) => void;
   setNeedsFullAppRefresh: (value: boolean) => void;
+  triggerWorkoutReady: () => void;
   checkEmail: (
     email: string
   ) => Promise<{ success: boolean; needsOnboarding?: boolean }>;
@@ -154,36 +155,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Complete the onboarding process
   const completeOnboarding = async (
-    userData: OnboardingData
+    profileData: any,
+    userId?: number
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const pendingUserId = await getPendingUserId();
-      if (!pendingUserId) {
+      // Use provided userId, pending storage, or current user ID
+      const userIdToUse = userId || (await getPendingUserId()) || user?.id;
+      if (!userIdToUse) {
         throw new Error("User ID not found");
       }
       const result = await apiCompleteOnboarding({
-        ...userData,
-        userId: parseInt(pendingUserId),
+        ...profileData,
+        userId: typeof userIdToUse === 'string' ? parseInt(userIdToUse) : userIdToUse,
       });
-      if (result.success && result.user) {
-        // Ensure needsOnboarding is set to false
-        const updatedUser = {
-          ...result.user,
-          needsOnboarding: false,
-        };
-        setUser(updatedUser);
-        await saveUserToSecureStorage(updatedUser);
-        await SecureStore.deleteItemAsync("pendingEmail");
-        await SecureStore.deleteItemAsync("pendingUserId");
+      if (result.success && result.profile) {
+        // Get current user and update with needsOnboarding: false
+        const currentUser = user || await getCurrentUser();
+        if (currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            needsOnboarding: false,
+          };
+          setUser(updatedUser);
+          await saveUserToSecureStorage(updatedUser);
+          await SecureStore.deleteItemAsync("pendingEmail");
+          await SecureStore.deleteItemAsync("pendingUserId");
 
-        logger.businessEvent("Onboarding completed", {
-          userId: updatedUser.id,
-          fitnessLevel: userData.fitnessLevel,
-          goals: userData.goals?.length || 0,
-        });
+          logger.businessEvent("Onboarding completed", {
+            userId: updatedUser.id,
+            fitnessLevel: profileData.fitnessLevel,
+            goals: profileData.goals?.length || 0,
+          });
 
-        return true;
+          return true;
+        }
       }
       throw new Error("Onboarding API call failed");
     } catch (error) {
@@ -234,6 +240,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Trigger workout ready flow (called when async job completes)
+  const triggerWorkoutReady = () => {
+    // Invalidate workout cache
+    invalidateActiveWorkoutCache();
+    // Trigger preloading data which will show warming up screen
+    setIsPreloadingData(true);
+    // This will trigger the full app refresh flow in _layout.tsx
+    setNeedsFullAppRefresh(true);
+  };
+
   // Create the context value object
   const value = {
     user,
@@ -249,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGeneratingWorkout: handleSetIsGeneratingWorkout,
     setIsPreloadingData,
     setNeedsFullAppRefresh,
+    triggerWorkoutReady,
     checkEmail,
     signup,
     login,

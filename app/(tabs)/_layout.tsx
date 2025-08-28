@@ -10,6 +10,7 @@ import {
 import { useNavigation, NavigationState } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@components/Header";
+import FloatingActionButton from "@components/FloatingActionButton";
 import { colors } from "../../lib/theme";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { tabEvents } from "../../lib/tabEvents";
@@ -107,7 +108,8 @@ export default function TabLayout() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <Header />
-      <Tabs
+      <View className="flex-1">
+        <Tabs
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: colors.text.primary,
@@ -224,6 +226,10 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </SafeAreaView>
+      
+      {/* Floating Action Button for background jobs */}
+      <FloatingActionButton />
+    </View>
+  </SafeAreaView>
   );
 }

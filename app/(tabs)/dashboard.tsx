@@ -27,7 +27,9 @@ import {
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
-import { generateWorkoutPlan } from "@lib/workouts";
+import { generateWorkoutPlanAsync, invalidateActiveWorkoutCache } from "@lib/workouts";
+import { registerForPushNotifications } from "@/lib/notifications";
+import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import {
   formatDate,
   formatNumber,
@@ -73,6 +75,11 @@ export default function DashboardScreen() {
     setIsPreloadingData,
     setIsGeneratingWorkout,
   } = useAuth();
+
+  // Background jobs hook
+  const { addJob, activeJobs, reloadJobs, isGenerating } = useBackgroundJobs();
+
+  // Modal states
 
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
@@ -231,11 +238,13 @@ export default function DashboardScreen() {
     }
   }, [user, authLoading, hasLoadedInitialData, reset]);
 
-  // Scroll to top when tab is focused
+  // Scroll to top when tab is focused and reload jobs
   useFocusEffect(
     useCallback(() => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+      // Reload jobs to ensure we have the latest state
+      reloadJobs();
+    }, [reloadJobs])
   );
 
   // Listen for tab re-click events
@@ -679,25 +688,42 @@ export default function DashboardScreen() {
   const handleGenerateNewWorkout = async () => {
     if (!user?.id) return;
 
+    // Simple prevention using the isGenerating flag
+    if (isGenerating) {
+      Alert.alert(
+        "Generation in Progress",
+        "A workout is already being generated. Please wait for it to complete.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     try {
-      setIsGeneratingWorkout(true);
+      // Register for push notifications
+      await registerForPushNotifications();
 
-      const result = await generateWorkoutPlan(user.id);
+      // Start async generation
+      const result = await generateWorkoutPlanAsync(user.id);
 
-      if (result?.success) {
-        // Trigger app reload to show warming up screen
-        setIsPreloadingData(true);
-
-        // Navigate to home to trigger the warming up flow
-        router.replace("/");
+      if (result?.success && result.jobId) {
+        // Add job to background tracking
+        await addJob(result.jobId, 'generation');
+        
+        // Job started successfully - FAB will show progress
+        // Data refresh will happen when generation completes
       } else {
-        throw new Error("Failed to generate workout");
+        Alert.alert(
+          "Generation Failed", 
+          "Unable to start workout generation. Please check your connection and try again.",
+          [{ text: "OK" }]
+        );
       }
     } catch (error) {
-      console.error("Error generating workout:", error);
-      Alert.alert("Error", "Failed to generate new workout. Please try again.");
-    } finally {
-      setIsGeneratingWorkout(false);
+      Alert.alert(
+        "Generation Error", 
+        "An error occurred while starting workout generation. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -705,6 +731,7 @@ export default function DashboardScreen() {
     // Refresh all data after successful workout repetition
     handleRefresh();
   };
+
 
   if (error) {
     Alert.alert("Error", error);
@@ -1818,6 +1845,7 @@ export default function DashboardScreen() {
                   </View>
                 </View>
               )}
+
           </>
         )}
       </ScrollView>
@@ -1828,6 +1856,7 @@ export default function DashboardScreen() {
         onClose={() => setShowRepeatModal(false)}
         onSuccess={handleRepeatWorkoutSuccess}
       />
+
     </View>
   );
 }

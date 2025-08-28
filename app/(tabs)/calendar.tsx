@@ -13,11 +13,13 @@ import { Calendar as RNCalendar, DateData } from "react-native-calendars";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import {
-  regenerateWorkoutPlan,
-  regenerateDailyWorkout,
+  regenerateWorkoutPlanAsync,
+  regenerateDailyWorkoutAsync,
   notifyWorkoutUpdated,
-  generateWorkoutPlan,
+  generateWorkoutPlanAsync,
+  invalidateActiveWorkoutCache,
 } from "@lib/workouts";
+import { registerForPushNotifications } from "@/lib/notifications";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
 import {
@@ -29,6 +31,7 @@ import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
+import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import WorkoutBlock from "@components/WorkoutBlock";
 import {
   calculateWorkoutDuration,
@@ -43,6 +46,9 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 export default function CalendarScreen() {
   const router = useRouter();
   const { setIsGeneratingWorkout, setIsPreloadingData, user, isLoading: authLoading } = useAuth();
+  
+  // Background jobs hook
+  const { addJob, activeJobs, isGenerating } = useBackgroundJobs();
 
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
@@ -61,6 +67,8 @@ export default function CalendarScreen() {
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
+  
+  // Generation modal states
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
@@ -176,16 +184,26 @@ export default function CalendarScreen() {
           return;
         }
 
-        const response = await regenerateDailyWorkout(
+        const response = await regenerateDailyWorkoutAsync(
           user.id,
           dayToRegenerate.id,
-          data.customFeedback || "User requested regeneration"
+          {
+            reason: data.customFeedback || "User requested regeneration"
+          }
         );
-        if (response) {
-          // Trigger app reload to show warming up screen
-          setIsPreloadingData(true);
-          // Navigate to dashboard to trigger the warming up flow
+        if (response?.success && response.jobId) {
+          // Add job to background tracking
+          await addJob(response.jobId, 'daily-regeneration');
+          
+          // Job started successfully - FAB will show progress
           router.replace("/(tabs)/dashboard");
+        } else {
+          setIsGeneratingWorkout(false);
+          Alert.alert(
+            "Daily Regeneration Failed",
+            "Unable to start daily workout regeneration. Please check your connection and try again.",
+            [{ text: "OK" }]
+          );
         }
       } else {
         // Transform data to match backend API expectations
@@ -202,19 +220,29 @@ export default function CalendarScreen() {
             : undefined,
         };
 
-        const response = await regenerateWorkoutPlan(user.id, apiData);
-        if (response) {
-          // Trigger app reload to show warming up screen
-          setIsPreloadingData(true);
-          // Navigate to dashboard to trigger the warming up flow
+        const response = await regenerateWorkoutPlanAsync(user.id, apiData);
+        if (response?.success && response.jobId) {
+          // Add job to background tracking
+          await addJob(response.jobId, 'regeneration');
+          
+          // Job started successfully - FAB will show progress
           router.replace("/(tabs)/dashboard");
+        } else {
+          setIsGeneratingWorkout(false);
+          Alert.alert(
+            "Regeneration Failed",
+            "Unable to start workout regeneration. Please check your connection and try again.",
+            [{ text: "OK" }]
+          );
         }
       }
     } catch (err) {
-      console.error("Failed to regenerate workout:", err);
-    } finally {
-      // Hide global generating modal
       setIsGeneratingWorkout(false);
+      Alert.alert(
+        "Regeneration Error",
+        "An error occurred while starting regeneration. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -226,21 +254,41 @@ export default function CalendarScreen() {
   const handleGenerateNewWorkout = async () => {
     if (!user?.id) return;
 
+    // Simple prevention using the isGenerating flag
+    if (isGenerating) {
+      Alert.alert(
+        "Generation in Progress",
+        "A workout is already being generated. Please wait for it to complete.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     try {
-      setIsGeneratingWorkout(true);
-      const result = await generateWorkoutPlan(user.id);
-      if (result?.success) {
-        // Trigger app reload to show warming up screen
-        setIsPreloadingData(true);
-        // Navigate to dashboard to trigger the warming up flow
+      // Register for push notifications
+      await registerForPushNotifications();
+      
+      const result = await generateWorkoutPlanAsync(user.id);
+      if (result?.success && result.jobId) {
+        // Add job to background tracking
+        await addJob(result.jobId, 'generation');
+        
+        // Job started successfully - FAB will show progress
+        // Data refresh will happen when generation completes
         router.replace("/(tabs)/dashboard");
       } else {
-        throw new Error("Failed to generate workout");
+        Alert.alert(
+          "Generation Failed", 
+          "Unable to start workout generation. Please check your connection and try again.",
+          [{ text: "OK" }]
+        );
       }
     } catch (error) {
-      console.error("Error generating workout:", error);
-    } finally {
-      setIsGeneratingWorkout(false);
+      Alert.alert(
+        "Generation Error", 
+        "An error occurred while starting workout generation. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -794,10 +842,9 @@ export default function CalendarScreen() {
         isRestDay={!selectedPlanDay && !!workoutPlan && workoutPlan.endDate && selectedDate <= formatDateAsString(workoutPlan.endDate)}
         noActiveWorkoutDay={!workoutPlan || (workoutPlan?.endDate && selectedDate > formatDateAsString(workoutPlan.endDate))}
         onSuccess={() => {
-          // Trigger app reload to show warming up screen
-          setIsPreloadingData(true);
-          // Navigate to dashboard to trigger the warming up flow
-          router.replace("/(tabs)/dashboard");
+          // Invalidate cache immediately so user doesn't see stale data
+          invalidateActiveWorkoutCache();
+          // This will show "no active workout" which is more accurate during regeneration
         }}
       />
 
