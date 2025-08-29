@@ -6,6 +6,7 @@ import {
   Animated,
   Modal,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
@@ -13,11 +14,15 @@ import { colors } from "@/lib/theme";
 import { images } from "@/assets";
 
 export default function FloatingActionButton() {
-  const { activeJobs, hasActiveJobs: contextHasActiveJobs } =
-    useBackgroundJobs();
+  const {
+    activeJobs,
+    hasActiveJobs: contextHasActiveJobs,
+    cancelJob,
+  } = useBackgroundJobs();
   const [showModal, setShowModal] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(0));
-  const [hasAutoShownForGeneration, setHasAutoShownForGeneration] = useState(false);
+  const [hasAutoShownForGeneration, setHasAutoShownForGeneration] =
+    useState(false);
 
   // Check if there are any active background jobs (generation, regeneration, daily-regeneration)
   const backgroundJobs = activeJobs.filter(
@@ -43,23 +48,49 @@ export default function FloatingActionButton() {
     const newGenerationJobs = backgroundJobs.filter(
       (job) => job.type === "generation" && job.status === "pending"
     );
-    
+
     // Auto-show modal if we have a new generation job and haven't auto-shown yet
-    if (newGenerationJobs.length > 0 && !hasAutoShownForGeneration && !showModal) {
+    if (
+      newGenerationJobs.length > 0 &&
+      !hasAutoShownForGeneration &&
+      !showModal
+    ) {
       console.log("[FAB] Auto-showing modal for new generation job");
       setHasAutoShownForGeneration(true);
-      
+
       // Slight delay to ensure smooth navigation transition
       setTimeout(() => {
         setShowModal(true);
       }, 500);
     }
-    
+
     // Reset flag when no active jobs (for future generations)
     if (backgroundJobs.length === 0) {
       setHasAutoShownForGeneration(false);
     }
   }, [backgroundJobs, hasAutoShownForGeneration, showModal]);
+
+  // Handle job cancellation with confirmation
+  const handleCancelJob = (jobId: number) => {
+    Alert.alert(
+      "Cancel Generation",
+      "Are you sure you want to cancel the workout generation? This will stop the process and you'll need to start again.",
+      [
+        {
+          text: "Keep Generating",
+          style: "cancel",
+        },
+        {
+          text: "Cancel Generation",
+          style: "destructive",
+          onPress: async () => {
+            await cancelJob(jobId);
+            setShowModal(false);
+          },
+        },
+      ]
+    );
+  };
 
   // Animation for FAB appearance
   useEffect(() => {
@@ -132,7 +163,11 @@ export default function FloatingActionButton() {
             </View>
 
             <Text className="text-xl font-bold text-text-primary mb-2 text-center">
-              {currentJob.type === "generation"
+              {currentJob.status === "cancelled"
+                ? "Generation Cancelled"
+                : currentJob.status === "timeout"
+                ? "Generation Timed Out"
+                : currentJob.type === "generation"
                 ? "Generating Workout"
                 : currentJob.type === "regeneration"
                 ? "Regenerating Workout Plan"
@@ -140,12 +175,19 @@ export default function FloatingActionButton() {
             </Text>
 
             <Text className="text-base text-text-secondary text-center mb-6 leading-6">
-              {currentJob.type === "generation"
+              {currentJob.status === "cancelled"
+                ? "The workout generation was cancelled. You can start a new generation anytime."
+                : currentJob.status === "timeout"
+                ? "The workout generation took too long and was stopped. Please try starting a new generation."
+                : currentJob.type === "generation"
                 ? "Your new workout is being generated in the background."
                 : currentJob.type === "regeneration"
                 ? "Your workout plan is being regenerated in the background."
                 : "Your daily workout is being regenerated in the background."}{" "}
-              You can close this and continue using the app!
+              {currentJob.status !== "cancelled" &&
+              currentJob.status !== "timeout"
+                ? "You can close this and continue using the app!"
+                : ""}
             </Text>
 
             {/* Job Details */}
@@ -157,14 +199,31 @@ export default function FloatingActionButton() {
               </View>
             )}
 
-            <TouchableOpacity
-              className="bg-primary rounded-xl py-3 px-6"
-              onPress={() => setShowModal(false)}
-            >
-              <Text className="text-white font-semibold text-center">
-                Continue Using App
-              </Text>
-            </TouchableOpacity>
+            {/* Action Buttons */}
+            <View className="space-y-3">
+              <TouchableOpacity
+                className="bg-primary rounded-xl py-3 px-6"
+                onPress={() => setShowModal(false)}
+              >
+                <Text className="text-white font-semibold text-center">
+                  Continue Using App
+                </Text>
+              </TouchableOpacity>
+
+              {/* Cancel Button - only show for active jobs */}
+              {currentJob &&
+                (currentJob.status === "pending" ||
+                  currentJob.status === "processing") && (
+                  <TouchableOpacity
+                    className="bg-red-500 rounded-xl mt-2 py-3 px-6 border border-red-200"
+                    onPress={() => handleCancelJob(currentJob.id)}
+                  >
+                    <Text className="text-white font-semibold text-center">
+                      Cancel Generation
+                    </Text>
+                  </TouchableOpacity>
+                )}
+            </View>
           </View>
         </View>
       </Modal>

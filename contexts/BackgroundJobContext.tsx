@@ -6,7 +6,7 @@ import { useAuth } from '@contexts/AuthContext';
 export interface BackgroundJob {
   id: number;
   type: 'generation' | 'regeneration' | 'daily-regeneration';
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'timeout';
   progress: number;
   createdAt: string;
   completedAt?: string;
@@ -26,6 +26,7 @@ interface BackgroundJobContextType {
   isLoading: boolean;
   addJob: (jobId: number, type: BackgroundJob['type']) => Promise<BackgroundJob>;
   removeJob: (jobId: number) => Promise<void>;
+  cancelJob: (jobId: number) => Promise<void>;
   updateJob: (jobId: number, updates: Partial<BackgroundJob>) => Promise<void>;
   reloadJobs: () => Promise<void>;
   pollJobStatus: () => Promise<void>;
@@ -65,7 +66,9 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
   );
 
   const completedJobs = jobs.filter(job => job.status === 'completed');
-  const failedJobs = jobs.filter(job => job.status === 'failed');
+  const failedJobs = jobs.filter(job => 
+    job.status === 'failed' || job.status === 'cancelled' || job.status === 'timeout'
+  );
 
   // Load jobs from storage on mount
   useEffect(() => {
@@ -88,11 +91,12 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
       const storedJobs = await AsyncStorage.getItem(STORAGE_KEY);
       if (storedJobs) {
         const parsedJobs = JSON.parse(storedJobs) as BackgroundJob[];
-        // Only keep jobs from last 24 hours and not completed
+        // Only keep jobs from last 24 hours and not finished (completed, cancelled, timeout)
         const recentJobs = parsedJobs.filter(job => {
           const jobDate = new Date(job.createdAt);
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          return jobDate > oneDayAgo && job.status !== 'completed';
+          const finishedStatuses = ['completed', 'cancelled', 'timeout'];
+          return jobDate > oneDayAgo && !finishedStatuses.includes(job.status);
         });
         setJobs(recentJobs);
         
@@ -133,7 +137,27 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
       return updatedJobs;
     });
 
-    console.log(`[BackgroundJobContext] Added ${type} job #${jobId}`);
+    // Set up automatic timeout for the job
+    const timeoutDuration = getTimeoutForJobType(type);
+    setTimeout(() => {
+      // Check if job is still active and timeout it
+      setJobs(currentJobs => {
+        const jobToTimeout = currentJobs.find(j => j.id === jobId);
+        if (jobToTimeout && (jobToTimeout.status === 'pending' || jobToTimeout.status === 'processing')) {
+          console.log(`[BackgroundJobContext] Job #${jobId} timed out after ${timeoutDuration / 1000}s`);
+          const updatedJobs = currentJobs.map(j =>
+            j.id === jobId 
+              ? { ...j, status: 'timeout' as const, error: 'Job timed out', completedAt: new Date().toISOString() }
+              : j
+          );
+          saveJobsToStorage(updatedJobs);
+          return updatedJobs;
+        }
+        return currentJobs;
+      });
+    }, timeoutDuration);
+
+    console.log(`[BackgroundJobContext] Added ${type} job #${jobId} with ${timeoutDuration / 1000}s timeout`);
     return newJob;
   }, []);
 
@@ -144,6 +168,29 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
       return updatedJobs;
     });
   }, []);
+
+  const cancelJob = useCallback(async (jobId: number) => {
+    console.log(`[BackgroundJobContext] Cancelling job #${jobId}`);
+    
+    // Update job status to cancelled
+    await updateJob(jobId, { 
+      status: 'cancelled', 
+      error: 'Cancelled by user',
+      completedAt: new Date().toISOString()
+    });
+    
+    // TODO: Make API call to backend to cancel the job on server side
+    // try {
+    //   await apiRequest(`/jobs/${jobId}/cancel`, { method: 'POST' });
+    // } catch (error) {
+    //   console.error(`[BackgroundJobContext] Failed to cancel job #${jobId} on server:`, error);
+    // }
+    
+    // Remove the cancelled job after a short delay
+    setTimeout(() => {
+      removeJob(jobId);
+    }, 2000);
+  }, [updateJob, removeJob]);
 
   const updateJob = useCallback(async (jobId: number, updates: Partial<BackgroundJob>) => {
     setJobs(prevJobs => {
@@ -272,6 +319,15 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
     }
   };
 
+  const getTimeoutForJobType = (type: BackgroundJob['type']): number => {
+    switch (type) {
+      case 'generation': return 10 * 60 * 1000; // 10 minutes
+      case 'regeneration': return 5 * 60 * 1000; // 5 minutes  
+      case 'daily-regeneration': return 3 * 60 * 1000; // 3 minutes
+      default: return 10 * 60 * 1000; // 10 minutes
+    }
+  };
+
   const calculateRemainingTime = (
     type: BackgroundJob['type'],
     progress: number,
@@ -300,6 +356,7 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
     isLoading,
     addJob,
     removeJob,
+    cancelJob,
     updateJob,
     reloadJobs,
     pollJobStatus,
