@@ -44,18 +44,6 @@ export default function FloatingActionButton() {
   const backgroundJobs = [...activeBackgroundJobs, ...failedBackgroundJobs];
   const hasActiveJobs = backgroundJobs.length > 0 || contextHasActiveJobs;
 
-  // Debug logging for FAB
-  useEffect(() => {
-    console.log(
-      `[FAB] Total background jobs: ${backgroundJobs.length} (${activeBackgroundJobs.length} active, ${failedBackgroundJobs.length} failed)`
-    );
-    backgroundJobs.forEach((job) => {
-      console.log(
-        `[FAB] Job #${job.id}: ${job.type} - ${job.status} - ${job.progress}%`
-      );
-    });
-  }, [backgroundJobs, activeBackgroundJobs, failedBackgroundJobs]);
-
   // Auto-show modal for new generation jobs (first-time experience) and failed jobs
   useEffect(() => {
     // Don't run auto-show logic if modal is already open
@@ -74,10 +62,6 @@ export default function FloatingActionButton() {
     // Priority 1: Auto-show modal if we have a new generation job and haven't auto-shown it yet
     if (newGenerationJobs.length > 0) {
       const newJob = newGenerationJobs[0];
-      console.log(
-        `[FAB] Auto-showing modal for new generation job #${newJob.id}`
-      );
-
       // Mark this job as auto-shown immediately to prevent double-trigger
       autoShownJobIdsRef.current.add(newJob.id);
 
@@ -92,7 +76,6 @@ export default function FloatingActionButton() {
     // Priority 2: Auto-show modal for failed jobs to notify user (only if no generation jobs)
     else if (newFailedJobs.length > 0) {
       const newJob = newFailedJobs[0];
-      console.log(`[FAB] Auto-showing modal for failed job #${newJob.id}`);
 
       // Mark this job as auto-shown to prevent re-triggering
       autoShownJobIdsRef.current.add(newJob.id);
@@ -214,7 +197,7 @@ export default function FloatingActionButton() {
             >
               <Image
                 source={images.icon}
-                className="w-12 h-12"
+                className="w-12 h-12 rounded-full"
                 resizeMode="contain"
               />
             </View>

@@ -27,6 +27,8 @@ import ExerciseLink from "@/components/ExerciseLink";
 import { ExerciseSet } from "@/components/SetTracker";
 import AdaptiveSetTracker from "@/components/AdaptiveSetTracker";
 import CircularTimerDisplay from "@/components/CircularTimerDisplay";
+import CircuitTracker from "@/components/CircuitTracker";
+import CircuitTimer from "@/components/CircuitTimer";
 import { colors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
@@ -34,11 +36,25 @@ import {
   PlanDayWithBlocks,
   getBlockTypeDisplayName,
 } from "@/types/api/workout.types";
+import {
+  CircuitSessionData,
+  CircuitSessionConfig,
+} from "@/types/api/circuit.types";
+import { isCircuitBlock, getLoggingInterface } from "@/utils/circuitUtils";
+import { useCircuitSession } from "@/hooks/useCircuitSession";
+import {
+  logCircuitSession,
+  logCircuitRound,
+  markBlockExercisesComplete,
+} from "@/lib/circuits";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useAppDataContext } from "@/contexts/AppDataContext";
 import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
 import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
-import { generateWorkoutPlanAsync, invalidateActiveWorkoutCache } from "@/lib/workouts";
+import {
+  generateWorkoutPlanAsync,
+  invalidateActiveWorkoutCache,
+} from "@/lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
@@ -66,6 +82,104 @@ const formatTime = (seconds: number): string => {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
+
+// Circuit Logging Interface Component
+function CircuitLoggingInterface({
+  block,
+  workout,
+  isWorkoutStarted,
+  circuitSession,
+}: {
+  block: WorkoutBlockWithExercises;
+  workout: PlanDayWithBlocks;
+  isWorkoutStarted: boolean;
+  circuitSession: ReturnType<typeof useCircuitSession> | null;
+}) {
+  if (!circuitSession) {
+    return null; // Don't render if no circuit session
+  }
+
+  const {
+    sessionData,
+    currentRoundData,
+    metrics,
+    actions,
+    isLoading,
+    canCompleteRound,
+    canCompleteCircuit,
+    updateTimerState,
+  } = circuitSession;
+
+  const handleRoundComplete = async (roundData: any) => {
+    try {
+      await logCircuitRound(workout.workoutId, block.id, roundData);
+    } catch (error) {
+      Alert.alert("Error", "Failed to log round. Please try again.");
+    }
+  };
+
+  const handleCircuitComplete = async (sessionData: CircuitSessionData) => {
+    try {
+      // Log the circuit session; advancement is handled by bottom "Complete Circuit"
+      await logCircuitSession(workout.workoutId, sessionData);
+
+      Alert.alert(
+        "Circuit Complete!",
+        `Great work! You completed ${metrics.roundsCompleted} rounds with a score of ${metrics.score}.`
+      );
+    } catch (error) {
+      console.error("Error completing circuit:", error);
+      Alert.alert("Error", "Failed to complete circuit. Please try again.");
+    }
+  };
+
+  // Show timer only if there's a time cap (force boolean to avoid rendering 0)
+  const shouldShowTimer = Boolean(
+    block.timeCapMinutes && block.timeCapMinutes > 0
+  );
+
+  return (
+    <View className="space-y-6">
+      {/* Circuit Timer - Only show when there's a time cap */}
+      {shouldShowTimer && (
+        <View className="bg-card rounded-2xl p-6 border shadow-sm border-neutral-light-2">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-sm font-semibold text-text-primary">
+              Circuit Timer
+            </Text>
+            <Text className="text-xs text-text-muted">
+              {block.timeCapMinutes} minute time cap
+            </Text>
+          </View>
+          <CircuitTimer
+            blockType={block.blockType || "circuit"}
+            timeCapMinutes={block.timeCapMinutes}
+            rounds={block.rounds}
+            timerState={sessionData.timer}
+            onTimerUpdate={updateTimerState}
+            disabled={!isWorkoutStarted}
+          />
+        </View>
+      )}
+
+      {/* Circuit Tracker */}
+      <View className="bg-card rounded-2xl p-6 border shadow-sm border-neutral-light-2">
+        <CircuitTracker
+          block={block}
+          sessionData={sessionData}
+          onSessionUpdate={(updatedSessionData) => {
+            // Update session data through the hook's actions
+            // This is handled internally by the useCircuitSession hook
+          }}
+          onRoundComplete={handleRoundComplete}
+          onCircuitComplete={handleCircuitComplete}
+          isActive={isWorkoutStarted}
+          circuitActions={actions}
+        />
+      </View>
+    </View>
+  );
+}
 
 export default function WorkoutScreen() {
   // Get workout context for tab disabling
@@ -129,9 +243,7 @@ export default function WorkoutScreen() {
   // Rest timer state
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
   const [isRestTimerPaused, setIsRestTimerPaused] = useState(false);
-  const [restTimerCountdown, setRestTimerCountdown] = useState(
-    currentExercise?.restTime || 0
-  );
+  const [restTimerCountdown, setRestTimerCountdown] = useState(0);
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
   const restTimerStartTime = useRef<number | null>(null);
   const workoutStartTime = useRef<number | null>(null);
@@ -163,36 +275,38 @@ export default function WorkoutScreen() {
   useEffect(() => {
     if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
       // Activate keep awake to prevent screen sleep
-      activateKeepAwake('workout-timer');
-      
+      activateKeepAwake("workout-timer");
+
       // Initialize start times if not set
       if (!workoutStartTime.current) {
-        workoutStartTime.current = Date.now() - (workoutTimer * 1000);
+        workoutStartTime.current = Date.now() - workoutTimer * 1000;
       }
       if (!exerciseStartTime.current) {
-        exerciseStartTime.current = Date.now() - (exerciseTimer * 1000);
+        exerciseStartTime.current = Date.now() - exerciseTimer * 1000;
       }
-      
+
       timerRef.current = setInterval(() => {
         const now = Date.now();
         if (workoutStartTime.current) {
           setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
         }
         if (exerciseStartTime.current) {
-          setExerciseTimer(Math.floor((now - exerciseStartTime.current) / 1000));
+          setExerciseTimer(
+            Math.floor((now - exerciseStartTime.current) / 1000)
+          );
         }
       }, 1000);
     } else {
       // Deactivate keep awake when timer stops
-      deactivateKeepAwake('workout-timer');
-      
+      deactivateKeepAwake("workout-timer");
+
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     }
 
     return () => {
-      deactivateKeepAwake('workout-timer');
+      deactivateKeepAwake("workout-timer");
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -203,24 +317,25 @@ export default function WorkoutScreen() {
   useEffect(() => {
     if (isRestTimerActive && !isRestTimerPaused && restTimerCountdown > 0) {
       // Activate keep awake for rest timer
-      activateKeepAwake('rest-timer');
-      
+      activateKeepAwake("rest-timer");
+
       // Initialize start time if not set
       if (!restTimerStartTime.current) {
         const targetDuration = currentExercise?.restTime || 0;
-        restTimerStartTime.current = Date.now() - ((targetDuration - restTimerCountdown) * 1000);
+        restTimerStartTime.current =
+          Date.now() - (targetDuration - restTimerCountdown) * 1000;
       }
-      
+
       restTimerRef.current = setInterval(() => {
         const now = Date.now();
         const targetDuration = currentExercise?.restTime || 0;
-        
+
         if (restTimerStartTime.current) {
           const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
           const remaining = Math.max(0, targetDuration - elapsed);
-          
+
           setRestTimerCountdown(remaining);
-          
+
           if (remaining <= 0) {
             // Timer finished - add notification + haptic feedback
             try {
@@ -245,12 +360,12 @@ export default function WorkoutScreen() {
             setIsRestTimerActive(false);
             setIsRestTimerPaused(false);
             restTimerStartTime.current = null;
-            deactivateKeepAwake('rest-timer');
-            
+            deactivateKeepAwake("rest-timer");
+
             if (restTimerRef.current) {
               clearInterval(restTimerRef.current);
             }
-            
+
             // Show rest completion modal when rest timer finishes
             setShowRestCompleteModal(true);
           }
@@ -258,22 +373,27 @@ export default function WorkoutScreen() {
       }, 1000);
     } else {
       if (!isRestTimerActive) {
-        deactivateKeepAwake('rest-timer');
+        deactivateKeepAwake("rest-timer");
         restTimerStartTime.current = null;
       }
-      
+
       if (restTimerRef.current) {
         clearInterval(restTimerRef.current);
       }
     }
 
     return () => {
-      deactivateKeepAwake('rest-timer');
+      deactivateKeepAwake("rest-timer");
       if (restTimerRef.current) {
         clearInterval(restTimerRef.current);
       }
     };
-  }, [isRestTimerActive, isRestTimerPaused, restTimerCountdown, currentExercise?.restTime]);
+  }, [
+    isRestTimerActive,
+    isRestTimerPaused,
+    restTimerCountdown,
+    currentExercise?.restTime,
+  ]);
 
   // Reset rest timer countdown when not active or exercise changes
   useEffect(() => {
@@ -286,59 +406,82 @@ export default function WorkoutScreen() {
 
   // Handle app state changes to manage timers during background/foreground transitions
   useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+    const handleAppStateChange = (nextAppState: any) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
         // App came to foreground - recalculate timers based on timestamps
-        console.log('App came to foreground, recalculating timers');
-        
+        console.log("App came to foreground, recalculating timers");
+
         // Recalculate workout and exercise timers
         if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
           const now = Date.now();
           if (workoutStartTime.current) {
-            setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
+            setWorkoutTimer(
+              Math.floor((now - workoutStartTime.current) / 1000)
+            );
           }
           if (exerciseStartTime.current) {
-            setExerciseTimer(Math.floor((now - exerciseStartTime.current) / 1000));
+            setExerciseTimer(
+              Math.floor((now - exerciseStartTime.current) / 1000)
+            );
           }
         }
-        
+
         // Recalculate rest timer
         if (isRestTimerActive && !isRestTimerPaused) {
           const now = Date.now();
           const targetDuration = currentExercise?.restTime || 0;
-          
+
           if (restTimerStartTime.current) {
-            const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
+            const elapsed = Math.floor(
+              (now - restTimerStartTime.current) / 1000
+            );
             const remaining = Math.max(0, targetDuration - elapsed);
             setRestTimerCountdown(remaining);
-            
+
             // If timer finished while in background, trigger completion
             if (remaining <= 0) {
               setIsRestTimerActive(false);
               setIsRestTimerPaused(false);
               restTimerStartTime.current = null;
               setShowRestCompleteModal(true);
-              
+
               // Add haptic feedback for completion
               try {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success
+                );
               } catch (error) {
-                console.log('Haptic feedback error:', error);
+                console.log("Haptic feedback error:", error);
               }
             }
           }
         }
       } else if (nextAppState.match(/inactive|background/)) {
         // App going to background - timers will continue based on timestamps
-        console.log('App going to background, timers will continue via timestamps');
+        console.log(
+          "App going to background, timers will continue via timestamps"
+        );
       }
-      
+
       appStateRef.current = nextAppState;
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
     return () => subscription?.remove();
-  }, [isWorkoutStarted, isPaused, isWorkoutCompleted, isRestTimerActive, isRestTimerPaused, currentExercise?.restTime]);
+  }, [
+    isWorkoutStarted,
+    isPaused,
+    isWorkoutCompleted,
+    isRestTimerActive,
+    isRestTimerPaused,
+    currentExercise?.restTime,
+  ]);
 
   // Sync context with workout state
   useEffect(() => {
@@ -363,16 +506,16 @@ export default function WorkoutScreen() {
       setIsRestTimerActive(false);
       setIsRestTimerPaused(false);
       setRestTimerCountdown(0);
-      
+
       // Reset timestamp references
       workoutStartTime.current = null;
       exerciseStartTime.current = null;
       restTimerStartTime.current = null;
-      
+
       // Deactivate keep awake
-      deactivateKeepAwake('workout-timer');
-      deactivateKeepAwake('rest-timer');
-      
+      deactivateKeepAwake("workout-timer");
+      deactivateKeepAwake("rest-timer");
+
       // Clear any active timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -414,8 +557,8 @@ export default function WorkoutScreen() {
     return () => {
       setWorkoutInProgress(false);
       // Cleanup keep awake on unmount
-      deactivateKeepAwake('workout-timer');
-      deactivateKeepAwake('rest-timer');
+      deactivateKeepAwake("workout-timer");
+      deactivateKeepAwake("rest-timer");
       // Clear timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -554,13 +697,13 @@ export default function WorkoutScreen() {
     try {
       // Register for push notifications
       await registerForPushNotifications();
-      
+
       const result = await generateWorkoutPlanAsync(user.id);
 
       if (result?.success && result.jobId) {
         // Register the job with background context for FAB tracking
-        await addJob(result.jobId, 'generation');
-        
+        await addJob(result.jobId, "generation");
+
         // Job started successfully - FAB will show progress
         // Data refresh will happen when generation completes
         // Navigate to dashboard to show the FAB
@@ -568,14 +711,14 @@ export default function WorkoutScreen() {
       } else {
         // Only show error alerts for actual failures
         Alert.alert(
-          "Generation Failed", 
+          "Generation Failed",
           "Unable to start workout generation. Please check your connection and try again.",
           [{ text: "OK" }]
         );
       }
     } catch (error) {
       Alert.alert(
-        "Generation Error", 
+        "Generation Error",
         "An error occurred while starting workout generation. Please try again.",
         [{ text: "OK" }]
       );
@@ -592,11 +735,14 @@ export default function WorkoutScreen() {
   useEffect(() => {
     // Configure notification handler for iOS sound support (no banner)
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: false, // Hide the banner notification
-        shouldPlaySound: true, // Keep the sound
-        shouldSetBadge: false,
-      }),
+      handleNotification: async () =>
+        ({
+          shouldShowAlert: false, // Hide the banner notification
+          shouldShowBanner: false,
+          shouldShowList: false,
+          shouldPlaySound: true, // Keep the sound
+          shouldSetBadge: false,
+        } as any),
     });
 
     const requestPermissions = async () => {
@@ -688,7 +834,7 @@ export default function WorkoutScreen() {
       // Resuming - adjust start time based on current countdown
       const targetDuration = currentExercise?.restTime || 0;
       const elapsed = targetDuration - restTimerCountdown;
-      restTimerStartTime.current = Date.now() - (elapsed * 1000);
+      restTimerStartTime.current = Date.now() - elapsed * 1000;
     }
     setIsRestTimerPaused(!isRestTimerPaused);
   };
@@ -707,7 +853,7 @@ export default function WorkoutScreen() {
     setIsRestTimerPaused(false);
     setRestTimerCountdown(0);
     restTimerStartTime.current = null;
-    deactivateKeepAwake('rest-timer');
+    deactivateKeepAwake("rest-timer");
     if (restTimerRef.current) {
       clearInterval(restTimerRef.current);
     }
@@ -741,7 +887,7 @@ export default function WorkoutScreen() {
     setIsRestTimerPaused(false);
     setRestTimerCountdown(restTime);
     restTimerStartTime.current = null;
-    deactivateKeepAwake('rest-timer');
+    deactivateKeepAwake("rest-timer");
     if (restTimerRef.current) {
       clearInterval(restTimerRef.current);
     }
@@ -757,6 +903,93 @@ export default function WorkoutScreen() {
       const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Handle circuit completion differently
+      if (isCurrentBlockCircuit && currentBlock) {
+        // Finalize session state
+        if (circuitSession?.actions.completeCircuit) {
+          await circuitSession.actions.completeCircuit();
+        }
+
+        const session = circuitSession?.sessionData;
+        if (workout?.workoutId && session) {
+          // Log each round that has any reps or is marked completed
+          for (const round of session.rounds) {
+            const hasReps = round.exercises?.some(
+              (ex: any) => (ex.actualReps || 0) > 0
+            );
+            if (hasReps || round.isCompleted) {
+              await logCircuitRound(workout.workoutId, currentBlock.id, round);
+            }
+          }
+
+          // Ensure all exercises in the block are marked complete in workout log
+          await markBlockExercisesComplete(workout.workoutId, currentBlock);
+        }
+
+        // Update local progress and advance
+        const circuitExerciseIds = currentBlock.exercises.map((ex) => ex.id);
+        const exerciseIndices = circuitExerciseIds
+          .map((exerciseId) =>
+            exercises.findIndex((ex) => ex.id === exerciseId)
+          )
+          .filter((index) => index !== -1);
+
+        const updatedProgress = [...exerciseProgress];
+        const roundsCompleted = (
+          circuitSession?.sessionData.rounds || []
+        ).filter((r) => r.isCompleted).length;
+        exerciseIndices.forEach((index) => {
+          updatedProgress[index] = {
+            ...updatedProgress[index],
+            setsCompleted: currentBlock.exercises[index]?.sets || 1,
+            repsCompleted: 0,
+            roundsCompleted: roundsCompleted,
+          };
+        });
+        setExerciseProgress(updatedProgress);
+
+        const maxCircuitIndex = Math.max(...exerciseIndices);
+        const nextExerciseIndex = maxCircuitIndex + 1;
+
+        if (nextExerciseIndex < exercises.length) {
+          setCurrentExerciseIndex(nextExerciseIndex);
+          setExerciseTimer(0);
+          exerciseStartTime.current = Date.now();
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        } else {
+          // All exercises completed, complete the workout day
+          if (workout?.id) {
+            const completedExerciseCount = exercises.length;
+            const completedBlockCount = workout.blocks.length;
+
+            await markPlanDayAsComplete(workout.id, {
+              totalTimeSeconds: workoutTimer,
+              exercisesCompleted: completedExerciseCount,
+              blocksCompleted: completedBlockCount,
+            });
+
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+            const endDate = new Date(today);
+            endDate.setDate(today.getDate() + 7);
+
+            await refreshDashboard({
+              startDate: startDate.toISOString().split("T")[0],
+              endDate: endDate.toISOString().split("T")[0],
+            });
+          }
+
+          setCurrentExerciseIndex(exercises.length);
+          setIsWorkoutCompleted(true);
+          setWorkoutInProgress(false);
+        }
+
+        setShowCompleteModal(false);
+        return;
+      }
+
+      // Regular exercise completion logic for non-circuits
       // Check if we have valid progress - either sets or duration
       const hasSets = currentProgress.sets && currentProgress.sets.length > 0;
       const hasDuration =
@@ -850,8 +1083,18 @@ export default function WorkoutScreen() {
 
       setShowCompleteModal(false);
     } catch (err) {
-      console.error("Error completing exercise:", err);
-      Alert.alert("Error", "Failed to complete exercise. Please try again.");
+      console.error(
+        isCurrentBlockCircuit
+          ? "Error completing circuit:"
+          : "Error completing exercise:",
+        err
+      );
+      Alert.alert(
+        "Error",
+        isCurrentBlockCircuit
+          ? "Failed to complete circuit. Please try again."
+          : "Failed to complete exercise. Please try again."
+      );
     } finally {
       setIsCompletingExercise(false);
     }
@@ -947,6 +1190,32 @@ export default function WorkoutScreen() {
   };
 
   const currentBlock = getCurrentBlock();
+  const loggingInterface = getLoggingInterface(currentBlock || undefined);
+  const isCurrentBlockCircuit = currentBlock
+    ? isCircuitBlock(currentBlock.blockType)
+    : false;
+
+  // Circuit session management - Always call hook but initialize properly
+  const dummyBlock: WorkoutBlockWithExercises = {
+    id: 0,
+    blockType: "circuit",
+    blockName: "dummy",
+    rounds: 1,
+    exercises: [],
+    created_at: new Date(),
+    updated_at: new Date(),
+  };
+
+  // Always use real current block, fallback to dummy only if no block exists
+  const circuitConfig: CircuitSessionConfig = {
+    block: currentBlock || dummyBlock,
+    autoStartTimer: false,
+    allowPartialRounds: true,
+  };
+
+  const circuitSession = useCircuitSession(circuitConfig);
+  const circuitActions =
+    isCurrentBlockCircuit && currentBlock ? circuitSession.actions : null;
 
   // Render loading state
   if (loading) {
@@ -1121,8 +1390,8 @@ export default function WorkoutScreen() {
           />
         }
       >
-        {/* Hero Exercise Media */}
-        {currentExercise ? (
+        {/* Hero Exercise Media - Only show for traditional workouts */}
+        {currentExercise && !isCurrentBlockCircuit ? (
           <ExerciseLink
             link={currentExercise.exercise.link}
             exerciseName={currentExercise.exercise.name}
@@ -1171,7 +1440,7 @@ export default function WorkoutScreen() {
                     </Text>
                     <View className="flex-row items-center gap-2">
                       <View className="items-end">
-                        {currentBlock.rounds && (
+                        {currentBlock.rounds && !isCurrentBlockCircuit && (
                           <Text className="text-sm font-semibold text-text-primary">
                             {currentBlock.rounds === 1
                               ? "1 Round"
@@ -1191,8 +1460,8 @@ export default function WorkoutScreen() {
             </View>
           ) : null}
 
-          {/* Current Exercise */}
-          {currentExercise ? (
+          {/* Current Exercise - Only show for traditional workouts */}
+          {currentExercise && !isCurrentBlockCircuit ? (
             <View className="bg-card rounded-2xl mb-6 p-6 border shadow-sm font-bold border-neutral-light-2">
               <Text className="text-xl font-bold mb-4 text-text-primary">
                 {currentExercise.exercise.name}
@@ -1283,7 +1552,7 @@ export default function WorkoutScreen() {
                     </View>
                   ) : null}
 
-                  {/* Adaptive Set Tracker Component */}
+                  {/* Traditional Exercise Logging Interface */}
                   <View className="rounded-2xl p-4">
                     <View className="flex-row items-center justify-between mb-3">
                       <Text className="text-sm font-semibold text-text-primary">
@@ -1343,6 +1612,21 @@ export default function WorkoutScreen() {
                   </View>
                 </View>
               ) : null}
+            </View>
+          ) : null}
+
+          {/* Circuit Logging Interface - Show for circuit workouts */}
+          {isCurrentBlockCircuit && currentBlock && isWorkoutStarted ? (
+            <View className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2 mb-6">
+              <Text className="text-lg font-bold text-text-primary mb-4">
+                Circuit Workout - {currentBlock.blockName}
+              </Text>
+              <CircuitLoggingInterface
+                block={currentBlock}
+                workout={workout}
+                isWorkoutStarted={isWorkoutStarted}
+                circuitSession={circuitSession}
+              />
             </View>
           ) : null}
 
@@ -1467,17 +1751,24 @@ export default function WorkoutScreen() {
           </TouchableOpacity>
         ) : (
           <View className="flex-row gap-2">
-            <TouchableOpacity
-              className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
-              onPress={() => setShowSkipModal(true)}
-            >
-              <Ionicons
-                name="play-skip-forward-outline"
-                size={20}
-                color={colors.text.primary}
-              />
-              <Text className="text-text-primary font-semibold ml-2">Skip</Text>
-            </TouchableOpacity>
+            {/* Only show skip button for warmup/cooldown blocks, not for circuits */}
+            {!isCurrentBlockCircuit &&
+              (currentBlock?.blockType === "warmup" ||
+                currentBlock?.blockType === "cooldown") && (
+                <TouchableOpacity
+                  className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+                  onPress={() => setShowSkipModal(true)}
+                >
+                  <Ionicons
+                    name="play-skip-forward-outline"
+                    size={20}
+                    color={colors.text.primary}
+                  />
+                  <Text className="text-text-primary font-semibold ml-2">
+                    Skip
+                  </Text>
+                </TouchableOpacity>
+              )}
 
             <TouchableOpacity
               className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
@@ -1494,7 +1785,13 @@ export default function WorkoutScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+              className={`bg-primary rounded-2xl py-4 flex-row items-center justify-center ${
+                !isCurrentBlockCircuit &&
+                (currentBlock?.blockType === "warmup" ||
+                  currentBlock?.blockType === "cooldown")
+                  ? "flex-1"
+                  : "flex-1"
+              }`}
               onPress={() => setShowCompleteModal(true)}
             >
               <Ionicons
@@ -1503,7 +1800,7 @@ export default function WorkoutScreen() {
                 color={colors.text.secondary}
               />
               <Text className="text-secondary font-semibold ml-2">
-                Complete
+                {isCurrentBlockCircuit ? "Complete Circuit" : "Complete"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1515,11 +1812,14 @@ export default function WorkoutScreen() {
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
-              Complete Exercise
+              {isCurrentBlockCircuit ? "Complete Circuit" : "Complete Exercise"}
             </Text>
             <Text className="text-base text-text-secondary text-center mb-6 leading-6">
-              Mark "{currentExercise?.exercise.name}" as complete? Your progress
-              will be saved.
+              {isCurrentBlockCircuit
+                ? `Complete "${
+                    currentBlock?.blockName || "Circuit Block"
+                  }"? All rounds and exercises will be logged.`
+                : `Mark "${currentExercise?.exercise.name}" as complete? Your progress will be saved.`}
             </Text>
 
             <View className="flex-row gap-3">
@@ -1672,7 +1972,9 @@ export default function WorkoutScreen() {
                 }}
               >
                 <Text className="text-text-primary font-semibold text-center">
-                  Complete Exercise
+                  {isCurrentBlockCircuit
+                    ? "Complete Circuit"
+                    : "Complete Exercise"}
                 </Text>
               </TouchableOpacity>
             </View>

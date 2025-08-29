@@ -1,12 +1,26 @@
-import React, { createContext, useContext, useCallback, useRef, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getJobStatus, invalidateActiveWorkoutCache } from '@lib/workouts';
-import { useAuth } from '@contexts/AuthContext';
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useRef,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getJobStatus, invalidateActiveWorkoutCache } from "@lib/workouts";
+import { useAuth } from "@contexts/AuthContext";
 
 export interface BackgroundJob {
   id: number;
-  type: 'generation' | 'regeneration' | 'daily-regeneration';
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'timeout';
+  type: "generation" | "regeneration" | "daily-regeneration";
+  status:
+    | "pending"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "cancelled"
+    | "timeout";
   progress: number;
   createdAt: string;
   completedAt?: string;
@@ -24,7 +38,10 @@ interface BackgroundJobContextType {
   hasActiveJobs: boolean;
   isGenerating: boolean; // True if any generation job is active
   isLoading: boolean;
-  addJob: (jobId: number, type: BackgroundJob['type']) => Promise<BackgroundJob>;
+  addJob: (
+    jobId: number,
+    type: BackgroundJob["type"]
+  ) => Promise<BackgroundJob>;
   removeJob: (jobId: number) => Promise<void>;
   cancelJob: (jobId: number) => Promise<void>;
   updateJob: (jobId: number, updates: Partial<BackgroundJob>) => Promise<void>;
@@ -35,16 +52,20 @@ interface BackgroundJobContextType {
   isJobCompletionProcessed: (jobId: number) => boolean; // Check if job completion was already processed
 }
 
-const BackgroundJobContext = createContext<BackgroundJobContextType | undefined>(undefined);
+const BackgroundJobContext = createContext<
+  BackgroundJobContextType | undefined
+>(undefined);
 
-const STORAGE_KEY = 'background_jobs';
+const STORAGE_KEY = "background_jobs";
 const POLL_INTERVAL = 5000; // 5 seconds
 
 interface BackgroundJobProviderProps {
   children: ReactNode;
 }
 
-export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) {
+export function BackgroundJobProvider({
+  children,
+}: BackgroundJobProviderProps) {
   const [jobs, setJobs] = useState<BackgroundJob[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -52,22 +73,26 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
   const { user, triggerWorkoutReady } = useAuth();
 
   // Computed values
-  const activeJobs = jobs.filter(job => 
-    job.status === 'pending' || job.status === 'processing'
-  );
-  
-  const hasActiveJobs = activeJobs.length > 0;
-  
-  // Key flag: true if any generation/regeneration job is active
-  const isGenerating = activeJobs.some(job => 
-    job.type === 'generation' || 
-    job.type === 'regeneration' || 
-    job.type === 'daily-regeneration'
+  const activeJobs = jobs.filter(
+    (job) => job.status === "pending" || job.status === "processing"
   );
 
-  const completedJobs = jobs.filter(job => job.status === 'completed');
-  const failedJobs = jobs.filter(job => 
-    job.status === 'failed' || job.status === 'cancelled' || job.status === 'timeout'
+  const hasActiveJobs = activeJobs.length > 0;
+
+  // Key flag: true if any generation/regeneration job is active
+  const isGenerating = activeJobs.some(
+    (job) =>
+      job.type === "generation" ||
+      job.type === "regeneration" ||
+      job.type === "daily-regeneration"
+  );
+
+  const completedJobs = jobs.filter((job) => job.status === "completed");
+  const failedJobs = jobs.filter(
+    (job) =>
+      job.status === "failed" ||
+      job.status === "cancelled" ||
+      job.status === "timeout"
   );
 
   // Load jobs from storage on mount
@@ -88,37 +113,22 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
 
   const loadJobsFromStorage = async () => {
     try {
-      console.log('[BackgroundJobContext] Loading jobs from AsyncStorage...');
       const storedJobs = await AsyncStorage.getItem(STORAGE_KEY);
-      
+
       if (storedJobs) {
-        console.log('[BackgroundJobContext] Raw stored data found, parsing...');
         const parsedJobs = JSON.parse(storedJobs) as BackgroundJob[];
-        console.log(`[BackgroundJobContext] Parsed ${parsedJobs.length} jobs from storage:`, 
-          parsedJobs.map(j => `#${j.id}(${j.status}-${j.progress}%)`).join(', '));
-        
         // Only keep jobs from last 24 hours and not finished (completed, cancelled, timeout)
-        const recentJobs = parsedJobs.filter(job => {
+        const recentJobs = parsedJobs.filter((job) => {
           const jobDate = new Date(job.createdAt);
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          const finishedStatuses = ['completed', 'cancelled', 'timeout'];
+          const finishedStatuses = ["completed", "cancelled", "timeout"];
           return jobDate > oneDayAgo && !finishedStatuses.includes(job.status);
         });
-        
-        console.log(`[BackgroundJobContext] After filtering: ${recentJobs.length} jobs:`, 
-          recentJobs.map(j => `#${j.id}(${j.status}-${j.progress}%)`).join(', '));
-        
+
         setJobs(recentJobs);
-        
-        // Log loaded jobs
-        if (recentJobs.length > 0) {
-          console.log(`[BackgroundJobContext] Loaded ${recentJobs.length} active jobs, polling will start automatically`);
-        }
-      } else {
-        console.log('[BackgroundJobContext] No stored jobs found');
       }
     } catch (error) {
-      console.error('[BackgroundJobContext] Error loading jobs:', error);
+      console.error("[BackgroundJobContext] Error loading jobs:", error);
     }
   };
 
@@ -127,105 +137,107 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
       const serialized = JSON.stringify(jobsToSave);
       await AsyncStorage.setItem(STORAGE_KEY, serialized);
     } catch (error) {
-      console.error('[BackgroundJobContext] Error saving jobs to storage:', error);
+      console.error(
+        "[BackgroundJobContext] Error saving jobs to storage:",
+        error
+      );
     }
   };
 
-  const addJob = useCallback(async (
-    jobId: number,
-    type: BackgroundJob['type']
-  ) => {
-    const newJob: BackgroundJob = {
-      id: jobId,
-      type,
-      status: 'pending',
-      progress: 0,
-      createdAt: new Date().toISOString(),
-      estimatedTimeRemaining: getEstimatedTime(type),
-    };
+  const addJob = useCallback(
+    async (jobId: number, type: BackgroundJob["type"]) => {
+      const newJob: BackgroundJob = {
+        id: jobId,
+        type,
+        status: "pending",
+        progress: 0,
+        createdAt: new Date().toISOString(),
+        estimatedTimeRemaining: getEstimatedTime(type),
+      };
 
-    setJobs(prevJobs => {
-      const updatedJobs = [...prevJobs, newJob];
-      saveJobsToStorage(updatedJobs);
-      return updatedJobs;
-    });
-
-    // Set up automatic timeout for the job
-    const timeoutDuration = getTimeoutForJobType(type);
-    setTimeout(() => {
-      // Check if job is still active and timeout it
-      setJobs(currentJobs => {
-        const jobToTimeout = currentJobs.find(j => j.id === jobId);
-        if (jobToTimeout && (jobToTimeout.status === 'pending' || jobToTimeout.status === 'processing')) {
-          console.log(`[BackgroundJobContext] Job #${jobId} timed out after ${timeoutDuration / 1000}s`);
-          const updatedJobs = currentJobs.map(j =>
-            j.id === jobId 
-              ? { ...j, status: 'timeout' as const, error: 'Job timed out', completedAt: new Date().toISOString() }
-              : j
-          );
-          saveJobsToStorage(updatedJobs);
-          return updatedJobs;
-        }
-        return currentJobs;
+      setJobs((prevJobs) => {
+        const updatedJobs = [...prevJobs, newJob];
+        saveJobsToStorage(updatedJobs);
+        return updatedJobs;
       });
-    }, timeoutDuration);
 
-    console.log(`[BackgroundJobContext] Added ${type} job #${jobId} with ${timeoutDuration / 1000}s timeout`);
-    return newJob;
-  }, []);
+      // Set up automatic timeout for the job
+      const timeoutDuration = getTimeoutForJobType(type);
+      setTimeout(() => {
+        // Check if job is still active and timeout it
+        setJobs((currentJobs) => {
+          const jobToTimeout = currentJobs.find((j) => j.id === jobId);
+          if (
+            jobToTimeout &&
+            (jobToTimeout.status === "pending" ||
+              jobToTimeout.status === "processing")
+          ) {
+            const updatedJobs = currentJobs.map((j) =>
+              j.id === jobId
+                ? {
+                    ...j,
+                    status: "timeout" as const,
+                    error: "Job timed out",
+                    completedAt: new Date().toISOString(),
+                  }
+                : j
+            );
+            saveJobsToStorage(updatedJobs);
+            return updatedJobs;
+          }
+          return currentJobs;
+        });
+      }, timeoutDuration);
+
+      return newJob;
+    },
+    []
+  );
 
   const removeJob = useCallback(async (jobId: number) => {
-    setJobs(prevJobs => {
-      const updatedJobs = prevJobs.filter(job => job.id !== jobId);
+    setJobs((prevJobs) => {
+      const updatedJobs = prevJobs.filter((job) => job.id !== jobId);
       saveJobsToStorage(updatedJobs);
       return updatedJobs;
     });
   }, []);
 
-  const cancelJob = useCallback(async (jobId: number) => {
-    console.log(`[BackgroundJobContext] Cancelling job #${jobId}`);
-    
-    // Update job status to cancelled
-    await updateJob(jobId, { 
-      status: 'cancelled', 
-      error: 'Cancelled by user',
-      completedAt: new Date().toISOString()
-    });
-    
-    // TODO: Make API call to backend to cancel the job on server side
-    // try {
-    //   await apiRequest(`/jobs/${jobId}/cancel`, { method: 'POST' });
-    // } catch (error) {
-    //   console.error(`[BackgroundJobContext] Failed to cancel job #${jobId} on server:`, error);
-    // }
-    
-    // Remove the cancelled job after a short delay
-    setTimeout(() => {
-      removeJob(jobId);
-    }, 2000);
-  }, [updateJob, removeJob]);
+  const updateJob = useCallback(
+    async (jobId: number, updates: Partial<BackgroundJob>) => {
+      setJobs((prevJobs) => {
+        const jobToUpdate = prevJobs.find((j) => j.id === jobId);
+        if (!jobToUpdate) {
+          console.error(
+            `[BackgroundJobContext] Job #${jobId} not found for update!`
+          );
+          return prevJobs;
+        }
 
-  const updateJob = useCallback(async (jobId: number, updates: Partial<BackgroundJob>) => {
-    setJobs(prevJobs => {
-      const jobToUpdate = prevJobs.find(j => j.id === jobId);
-      if (!jobToUpdate) {
-        console.error(`[BackgroundJobContext] Job #${jobId} not found for update!`);
-        return prevJobs;
-      }
-      
-      // Log meaningful status changes
-      if (updates.status && updates.status !== jobToUpdate.status) {
-        console.log(`[BackgroundJobContext] Job #${jobId} status: ${jobToUpdate.status} → ${updates.status}`);
-      }
-      
-      const updatedJobs = prevJobs.map(job =>
-        job.id === jobId ? { ...job, ...updates } : job
-      );
-      
-      saveJobsToStorage(updatedJobs);
-      return updatedJobs;
-    });
-  }, []);
+        const updatedJobs = prevJobs.map((job) =>
+          job.id === jobId ? { ...job, ...updates } : job
+        );
+
+        saveJobsToStorage(updatedJobs);
+        return updatedJobs;
+      });
+    },
+    []
+  );
+
+  const cancelJob = useCallback(
+    async (jobId: number) => {
+      // Update job status to cancelled
+      await updateJob(jobId, {
+        status: "cancelled",
+        error: "Cancelled by user",
+        completedAt: new Date().toISOString(),
+      });
+      setTimeout(() => {
+        removeJob(jobId);
+      }, 2000);
+    },
+    [updateJob, removeJob]
+  );
 
   const reloadJobs = useCallback(async () => {
     await loadJobsFromStorage();
@@ -233,37 +245,31 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
 
   const pollJobStatus = useCallback(async () => {
     // Get fresh jobs from state to avoid stale closure
-    const currentJobs = jobs.filter(job => 
-      job.status === 'pending' || job.status === 'processing'
+    const currentJobs = jobs.filter(
+      (job) => job.status === "pending" || job.status === "processing"
       // Note: Don't poll jobs that are already completed, failed, cancelled, or timeout on frontend
       // as those are final states we've already processed
     );
 
     if (currentJobs.length === 0) return;
-    
 
     setIsLoading(true);
 
     try {
-      const statusPromises = currentJobs.map(job => 
-        getJobStatus(job.id).then(response => ({ job, response }))
+      const statusPromises = currentJobs.map((job) =>
+        getJobStatus(job.id).then((response) => ({ job, response }))
       );
 
       const results = await Promise.allSettled(statusPromises);
 
       for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.response?.success) {
+        if (result.status === "fulfilled" && result.value.response?.success) {
           const { job, response } = result.value;
           const jobStatus = response.job;
 
-          // Log meaningful status changes
-          if (jobStatus.status !== job.status) {
-            console.log(`[BackgroundJobContext] Job #${job.id} status: ${job.status} → ${jobStatus.status}`);
-          }
-
           // Update job with latest status
           await updateJob(job.id, {
-            status: jobStatus.status as BackgroundJob['status'],
+            status: jobStatus.status as BackgroundJob["status"],
             progress: jobStatus.progress,
             completedAt: jobStatus.completedAt,
             error: jobStatus.error,
@@ -276,23 +282,15 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
           });
 
           // If job completed, handle completion
-          if (jobStatus.status === 'completed' && !job.completedAt) {
-            console.log(`[BackgroundJobContext] Job #${job.id} completed!`);
+          if (jobStatus.status === "completed" && !job.completedAt) {
             onJobCompleted(job.id, jobStatus.workoutId);
           }
-
-        } else if (result.status === 'fulfilled') {
-          // API call succeeded but response wasn't successful
-          console.log(`[BackgroundJobContext] Job status check failed:`, result.value);
-        } else {
-          // Promise was rejected
-          console.error(`[BackgroundJobContext] Job status check rejected:`, result.reason);
         }
       }
     } catch (error) {
       // Only log actual errors, not routine polling issues
-      if (error?.message !== 'Job not found') {
-        console.error('[BackgroundJobContext] Polling error:', error);
+      if (error?.message !== "Job not found") {
+        console.error("[BackgroundJobContext] Polling error:", error);
       }
     } finally {
       setIsLoading(false);
@@ -314,31 +312,34 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
     }
   }, []);
 
-  const onJobCompleted = useCallback((jobId: number, workoutId?: number) => {
-    // Check if we've already processed this completion to avoid double processing
-    if (processedCompletionsRef.current.has(jobId)) {
-      console.log(`[BackgroundJobContext] Job ${jobId} completion already processed, skipping`);
-      return;
-    }
+  const onJobCompleted = useCallback(
+    (jobId: number, workoutId?: number) => {
+      // Check if we've already processed this completion to avoid double processing
+      if (processedCompletionsRef.current.has(jobId)) {
+        console.log(
+          `[BackgroundJobContext] Job ${jobId} completion already processed, skipping`
+        );
+        return;
+      }
 
-    console.log(`[BackgroundJobContext] Job ${jobId} completed with workout ${workoutId}`);
-    
-    // Mark this completion as processed
-    processedCompletionsRef.current.add(jobId);
-    
-    // Invalidate cache to ensure fresh data
-    invalidateActiveWorkoutCache();
-    
-    // Trigger the proper workout ready flow (shows warming up screen)
-    triggerWorkoutReady();
-    
-    // Remove the completed job after a short delay to show completion
-    setTimeout(() => {
-      removeJob(jobId);
-      // Clean up the processed completion tracking after removal
-      processedCompletionsRef.current.delete(jobId);
-    }, 2000);
-  }, [triggerWorkoutReady, removeJob]);
+      // Mark this completion as processed
+      processedCompletionsRef.current.add(jobId);
+
+      // Invalidate cache to ensure fresh data
+      invalidateActiveWorkoutCache();
+
+      // Trigger the proper workout ready flow (shows warming up screen)
+      triggerWorkoutReady();
+
+      // Remove the completed job after a short delay to show completion
+      setTimeout(() => {
+        removeJob(jobId);
+        // Clean up the processed completion tracking after removal
+        processedCompletionsRef.current.delete(jobId);
+      }, 2000);
+    },
+    [triggerWorkoutReady, removeJob]
+  );
 
   // Function to check if job completion has been processed
   const isJobCompletionProcessed = useCallback((jobId: number): boolean => {
@@ -346,26 +347,34 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
   }, []);
 
   // Helper functions
-  const getEstimatedTime = (type: BackgroundJob['type']): number => {
+  const getEstimatedTime = (type: BackgroundJob["type"]): number => {
     switch (type) {
-      case 'generation': return 120; // 2 minutes
-      case 'regeneration': return 90; // 1.5 minutes  
-      case 'daily-regeneration': return 60; // 1 minute
-      default: return 120;
+      case "generation":
+        return 120; // 2 minutes
+      case "regeneration":
+        return 90; // 1.5 minutes
+      case "daily-regeneration":
+        return 60; // 1 minute
+      default:
+        return 120;
     }
   };
 
-  const getTimeoutForJobType = (type: BackgroundJob['type']): number => {
+  const getTimeoutForJobType = (type: BackgroundJob["type"]): number => {
     switch (type) {
-      case 'generation': return 10 * 60 * 1000; // 10 minutes
-      case 'regeneration': return 5 * 60 * 1000; // 5 minutes  
-      case 'daily-regeneration': return 3 * 60 * 1000; // 3 minutes
-      default: return 10 * 60 * 1000; // 10 minutes
+      case "generation":
+        return 10 * 60 * 1000; // 10 minutes
+      case "regeneration":
+        return 5 * 60 * 1000; // 5 minutes
+      case "daily-regeneration":
+        return 3 * 60 * 1000; // 3 minutes
+      default:
+        return 10 * 60 * 1000; // 10 minutes
     }
   };
 
   const calculateRemainingTime = (
-    type: BackgroundJob['type'],
+    type: BackgroundJob["type"],
     progress: number,
     createdAt: string
   ): number => {
@@ -373,7 +382,7 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
 
     const elapsed = (Date.now() - new Date(createdAt).getTime()) / 1000;
     const estimated = getEstimatedTime(type);
-    
+
     if (progress > 0) {
       const timePerPercent = elapsed / progress;
       return Math.max(0, Math.round((100 - progress) * timePerPercent));
@@ -411,7 +420,9 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
 export function useBackgroundJobs() {
   const context = useContext(BackgroundJobContext);
   if (context === undefined) {
-    throw new Error('useBackgroundJobs must be used within a BackgroundJobProvider');
+    throw new Error(
+      "useBackgroundJobs must be used within a BackgroundJobProvider"
+    );
   }
   return context;
 }
