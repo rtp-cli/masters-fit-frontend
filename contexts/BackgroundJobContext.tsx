@@ -84,13 +84,19 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
     }
 
     return () => stopPolling();
-  }, [activeJobs.length]);
+  }, [activeJobs.length, startPolling, stopPolling]);
 
   const loadJobsFromStorage = async () => {
     try {
+      console.log('[BackgroundJobContext] Loading jobs from AsyncStorage...');
       const storedJobs = await AsyncStorage.getItem(STORAGE_KEY);
+      
       if (storedJobs) {
+        console.log('[BackgroundJobContext] Raw stored data found, parsing...');
         const parsedJobs = JSON.parse(storedJobs) as BackgroundJob[];
+        console.log(`[BackgroundJobContext] Parsed ${parsedJobs.length} jobs from storage:`, 
+          parsedJobs.map(j => `#${j.id}(${j.status}-${j.progress}%)`).join(', '));
+        
         // Only keep jobs from last 24 hours and not finished (completed, cancelled, timeout)
         const recentJobs = parsedJobs.filter(job => {
           const jobDate = new Date(job.createdAt);
@@ -98,12 +104,18 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
           const finishedStatuses = ['completed', 'cancelled', 'timeout'];
           return jobDate > oneDayAgo && !finishedStatuses.includes(job.status);
         });
+        
+        console.log(`[BackgroundJobContext] After filtering: ${recentJobs.length} jobs:`, 
+          recentJobs.map(j => `#${j.id}(${j.status}-${j.progress}%)`).join(', '));
+        
         setJobs(recentJobs);
         
         // Log loaded jobs
         if (recentJobs.length > 0) {
           console.log(`[BackgroundJobContext] Loaded ${recentJobs.length} active jobs, polling will start automatically`);
         }
+      } else {
+        console.log('[BackgroundJobContext] No stored jobs found');
       }
     } catch (error) {
       console.error('[BackgroundJobContext] Error loading jobs:', error);
@@ -112,7 +124,8 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
 
   const saveJobsToStorage = async (jobsToSave: BackgroundJob[]) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(jobsToSave));
+      const serialized = JSON.stringify(jobsToSave);
+      await AsyncStorage.setItem(STORAGE_KEY, serialized);
     } catch (error) {
       console.error('[BackgroundJobContext] Error saving jobs to storage:', error);
     }
@@ -194,9 +207,21 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
 
   const updateJob = useCallback(async (jobId: number, updates: Partial<BackgroundJob>) => {
     setJobs(prevJobs => {
+      const jobToUpdate = prevJobs.find(j => j.id === jobId);
+      if (!jobToUpdate) {
+        console.error(`[BackgroundJobContext] Job #${jobId} not found for update!`);
+        return prevJobs;
+      }
+      
+      // Log meaningful status changes
+      if (updates.status && updates.status !== jobToUpdate.status) {
+        console.log(`[BackgroundJobContext] Job #${jobId} status: ${jobToUpdate.status} → ${updates.status}`);
+      }
+      
       const updatedJobs = prevJobs.map(job =>
         job.id === jobId ? { ...job, ...updates } : job
       );
+      
       saveJobsToStorage(updatedJobs);
       return updatedJobs;
     });
@@ -207,16 +232,20 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
   }, []);
 
   const pollJobStatus = useCallback(async () => {
-    const currentActiveJobs = jobs.filter(job => 
+    // Get fresh jobs from state to avoid stale closure
+    const currentJobs = jobs.filter(job => 
       job.status === 'pending' || job.status === 'processing'
+      // Note: Don't poll jobs that are already completed, failed, cancelled, or timeout on frontend
+      // as those are final states we've already processed
     );
 
-    if (currentActiveJobs.length === 0) return;
+    if (currentJobs.length === 0) return;
+    
 
     setIsLoading(true);
 
     try {
-      const statusPromises = currentActiveJobs.map(job => 
+      const statusPromises = currentJobs.map(job => 
         getJobStatus(job.id).then(response => ({ job, response }))
       );
 
@@ -227,7 +256,7 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
           const { job, response } = result.value;
           const jobStatus = response.job;
 
-          // Only log meaningful status changes
+          // Log meaningful status changes
           if (jobStatus.status !== job.status) {
             console.log(`[BackgroundJobContext] Job #${job.id} status: ${job.status} → ${jobStatus.status}`);
           }
@@ -251,6 +280,13 @@ export function BackgroundJobProvider({ children }: BackgroundJobProviderProps) 
             console.log(`[BackgroundJobContext] Job #${job.id} completed!`);
             onJobCompleted(job.id, jobStatus.workoutId);
           }
+
+        } else if (result.status === 'fulfilled') {
+          // API call succeeded but response wasn't successful
+          console.log(`[BackgroundJobContext] Job status check failed:`, result.value);
+        } else {
+          // Promise was rejected
+          console.error(`[BackgroundJobContext] Job status check rejected:`, result.reason);
         }
       }
     } catch (error) {

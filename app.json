@@ -11,6 +11,9 @@
       "buildNumber": "27",
       "supportsTablet": true,
       "bundleIdentifier": "com.mastersfit.app",
+      "entitlements": {
+        "com.apple.developer.usernotifications": true
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
