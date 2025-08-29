@@ -44,6 +44,12 @@ export default function CircuitTracker({
   const [showRoundRest, setShowRoundRest] = useState(false);
   const exerciseRestTimerRef = useRef<NodeJS.Timeout | null>(null);
   const roundRestTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Tabata exercise work timer state
+  const [exerciseWorkActive, setExerciseWorkActive] = useState(false);
+  const [exerciseWorkPaused, setExerciseWorkPaused] = useState(false);
+  const [exerciseWorkCountdown, setExerciseWorkCountdown] = useState(0);
+  const [showExerciseWork, setShowExerciseWork] = useState(false);
+  const exerciseWorkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get current exercise
   const currentExercise = currentRoundData?.exercises[currentExerciseIndex];
@@ -75,6 +81,10 @@ export default function CircuitTracker({
     setCurrentExerciseIndex(0);
     setShowExerciseRest(false);
     setShowRoundRest(false);
+    setShowExerciseWork(false);
+    setExerciseWorkActive(false);
+    setExerciseWorkPaused(false);
+    setExerciseWorkCountdown(0);
   }, [sessionData.currentRound]);
 
   // Get rest timer duration based on exercise or default
@@ -84,6 +94,14 @@ export default function CircuitTracker({
 
   const getRoundRestDuration = () => {
     return 90; // Standard 90s rest between rounds
+  };
+
+  // Tabata: work duration per exercise (seconds)
+  const getExerciseWorkDuration = () => {
+    if (block.blockType === "tabata") {
+      return currentBlockExercise?.duration || 20; // default 20s for Tabata work
+    }
+    return currentBlockExercise?.duration || 0;
   };
 
   // Calculate metrics
@@ -338,6 +356,57 @@ export default function CircuitTracker({
     };
   }, [roundRestActive, roundRestPaused, roundRestCountdown]);
 
+  // Exercise work timer effects (Tabata)
+  useEffect(() => {
+    if (
+      exerciseWorkActive &&
+      !exerciseWorkPaused &&
+      exerciseWorkCountdown > 0
+    ) {
+      exerciseWorkTimerRef.current = setTimeout(() => {
+        setExerciseWorkCountdown((prev) => {
+          const newValue = prev - 1;
+          if (newValue <= 0) {
+            setExerciseWorkActive(false);
+            setExerciseWorkPaused(false);
+            setShowExerciseWork(false);
+
+            try {
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
+              Notifications.scheduleNotificationAsync({
+                content: {
+                  title: "Work Interval Complete!",
+                  body: "Great effort on that interval",
+                  sound: "tri-tone",
+                },
+                trigger: null,
+              });
+            } catch (error) {
+              console.log("Notification error:", error);
+            }
+
+            return 0;
+          }
+          return newValue;
+        });
+      }, 1000);
+    } else {
+      if (exerciseWorkTimerRef.current) {
+        clearTimeout(exerciseWorkTimerRef.current);
+        exerciseWorkTimerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (exerciseWorkTimerRef.current) {
+        clearTimeout(exerciseWorkTimerRef.current);
+        exerciseWorkTimerRef.current = null;
+      }
+    };
+  }, [exerciseWorkActive, exerciseWorkPaused, exerciseWorkCountdown]);
+
   // Rest timer control functions
   const startExerciseRest = () => {
     const duration = getExerciseRestDuration();
@@ -409,56 +478,16 @@ export default function CircuitTracker({
 
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-      {/* Round Progress Indicators */}
+      {/* Round Progress */}
       {sessionData.targetRounds && sessionData.targetRounds > 1 && (
         <View className="mb-6">
-          <Text className="text-sm font-semibold text-text-primary mb-3">
-            Round Progress
-          </Text>
-          <View className="flex-row justify-center gap-2">
-            {Array.from(
-              {
-                length: Math.max(
-                  sessionData.targetRounds,
-                  sessionData.currentRound
-                ),
-              },
-              (_, i) => {
-                const roundNum = i + 1;
-                const roundData = sessionData.rounds[i];
-                const isCompleted = roundData?.isCompleted || false;
-                const isCurrent = roundNum === sessionData.currentRound;
-
-                return (
-                  <View
-                    key={roundNum}
-                    className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
-                      isCompleted
-                        ? "border-primary bg-primary"
-                        : isCurrent
-                        ? "border-brand-primary bg-brand-primary"
-                        : "border-neutral-medium-1 bg-background"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={colors.text.secondary}
-                      />
-                    ) : (
-                      <Text
-                        className={`text-xs font-semibold ${
-                          isCurrent ? "text-white" : "text-text-muted"
-                        }`}
-                      >
-                        {roundNum}
-                      </Text>
-                    )}
-                  </View>
-                );
-              }
-            )}
+          <View className="items-center">
+            <Text className="text-lg font-bold text-text-primary">
+              Round {sessionData.currentRound}/{sessionData.targetRounds}
+            </Text>
+            <Text className="text-sm text-text-muted mt-1">
+              {sessionData.rounds.filter((r) => r.isCompleted).length} completed
+            </Text>
           </View>
         </View>
       )}
@@ -615,6 +644,80 @@ export default function CircuitTracker({
                 </View>
               </View>
 
+              {/* Exercise Work Timer (Tabata) */}
+              {block.blockType === "tabata" && showExerciseWork && (
+                <View className="mt-6">
+                  <View className="flex-row items-center justify-between mb-3">
+                    <Text className="text-sm font-semibold text-text-primary flex-row items-center">
+                      Work Timer
+                    </Text>
+                  </View>
+                  <CircularTimerDisplay
+                    countdown={exerciseWorkCountdown}
+                    targetDuration={getExerciseWorkDuration()}
+                    isActive={exerciseWorkActive}
+                    isPaused={exerciseWorkPaused}
+                    isCompleted={exerciseWorkCountdown === 0}
+                    startButtonText="Start Work"
+                    onStartPause={() => {
+                      if (exerciseWorkCountdown === 0) {
+                        const duration = getExerciseWorkDuration();
+                        setExerciseWorkCountdown(duration);
+                        setExerciseWorkActive(true);
+                        setExerciseWorkPaused(false);
+                      } else {
+                        setExerciseWorkPaused(!exerciseWorkPaused);
+                      }
+                    }}
+                    onReset={() => {
+                      const duration = getExerciseWorkDuration();
+                      setExerciseWorkCountdown(duration);
+                      setExerciseWorkActive(true);
+                      setExerciseWorkPaused(false);
+                    }}
+                    onCancel={() => {
+                      setExerciseWorkActive(false);
+                      setExerciseWorkPaused(false);
+                      const duration = getExerciseWorkDuration();
+                      setExerciseWorkCountdown(duration);
+                      setShowExerciseWork(false);
+                    }}
+                  />
+                </View>
+              )}
+
+              {/* Start Exercise Work Button (Tabata) */}
+              {block.blockType === "tabata" && !showExerciseWork && (
+                <View className="mt-4">
+                  <TouchableOpacity
+                    className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
+                    style={{
+                      borderColor: colors.brand.primary,
+                      backgroundColor: colors.brand.primary + "10",
+                    }}
+                    onPress={() => {
+                      const duration = getExerciseWorkDuration();
+                      setExerciseWorkCountdown(duration);
+                      setExerciseWorkActive(true);
+                      setExerciseWorkPaused(false);
+                      setShowExerciseWork(true);
+                    }}
+                  >
+                    <Ionicons
+                      name="timer-outline"
+                      size={20}
+                      color={colors.brand.primary}
+                    />
+                    <Text
+                      className="text-sm font-semibold ml-2"
+                      style={{ color: colors.brand.primary }}
+                    >
+                      Start Work ({getExerciseWorkDuration()}s)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {/* Exercise Rest Timer */}
               {showExerciseRest && (
                 <View className="mt-6">
@@ -734,6 +837,39 @@ export default function CircuitTracker({
         </View>
       )}
 
+      {/* EMOM manual finish button below navigation */}
+      {isActive && !isCurrentRoundCompleted && block.blockType === "emom" && (
+        <View className="mb-6">
+          <TouchableOpacity
+            className={`py-4 rounded-xl items-center ${
+              canCompleteRound ? "bg-brand-primary" : "bg-neutral-light-2"
+            }`}
+            onPress={handleCompleteRound}
+            disabled={!canCompleteRound}
+          >
+            <Text
+              className={`text-lg font-semibold ${
+                canCompleteRound ? "text-white" : "text-text-muted"
+              }`}
+            >
+              {getRoundCompleteButtonText(
+                "for_time",
+                sessionData.currentRound,
+                sessionData.targetRounds
+              )}
+            </Text>
+          </TouchableOpacity>
+
+          {!canCompleteRound && (
+            <View className="flex-row items-center">
+              <Text className="text-xs text-text-muted text-center mt-2">
+                Log reps for at least one exercise to complete the round
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Active Round Rest Timer */}
       {showRoundRest && (
         <View className="mb-6">
@@ -815,38 +951,45 @@ export default function CircuitTracker({
         </View>
       )}
 
-      {/* Complete Round Button */}
-      {isActive && !isCurrentRoundCompleted && !sessionData.isCompleted && (
-        <View className="mb-6">
-          <TouchableOpacity
-            className={`py-4 rounded-xl items-center ${
-              canCompleteRound ? "bg-brand-primary" : "bg-neutral-light-2"
-            }`}
-            onPress={handleCompleteRound}
-            disabled={!canCompleteRound}
-          >
-            <Text
-              className={`text-lg font-semibold ${
-                canCompleteRound ? "text-white" : "text-text-muted"
+      {/* Complete Round Button - Hidden for EMOM (auto-completes) */}
+      {isActive &&
+        !isCurrentRoundCompleted &&
+        !sessionData.isCompleted &&
+        getRoundCompleteButtonText(
+          block.blockType || "circuit",
+          sessionData.currentRound,
+          sessionData.targetRounds
+        ) && (
+          <View className="mb-6">
+            <TouchableOpacity
+              className={`py-4 rounded-xl items-center ${
+                canCompleteRound ? "bg-brand-primary" : "bg-neutral-light-2"
               }`}
+              onPress={handleCompleteRound}
+              disabled={!canCompleteRound}
             >
-              {getRoundCompleteButtonText(
-                block.blockType || "circuit",
-                sessionData.currentRound,
-                sessionData.targetRounds
-              )}
-            </Text>
-          </TouchableOpacity>
-
-          {!canCompleteRound && (
-            <View className="flex-row items-center">
-              <Text className="text-xs text-text-muted text-center mt-2">
-                Log reps for at least one exercise to complete the round
+              <Text
+                className={`text-lg font-semibold ${
+                  canCompleteRound ? "text-white" : "text-text-muted"
+                }`}
+              >
+                {getRoundCompleteButtonText(
+                  block.blockType || "circuit",
+                  sessionData.currentRound,
+                  sessionData.targetRounds
+                )}
               </Text>
-            </View>
-          )}
-        </View>
-      )}
+            </TouchableOpacity>
+
+            {!canCompleteRound && (
+              <View className="flex-row items-center">
+                <Text className="text-xs text-text-muted text-center mt-2">
+                  Log reps for at least one exercise to complete the round
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
       {/* Round Notes */}
       {isActive && currentRoundData && !isCurrentRoundCompleted && (

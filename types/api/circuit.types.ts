@@ -200,7 +200,7 @@ export interface CircuitTimerProps {
   onTimerUpdate: (state: CircuitTimerState) => void;
   /** Callback for timer events (start, pause, complete) */
   onTimerEvent?: (
-    event: "start" | "pause" | "resume" | "complete" | "reset"
+    event: "start" | "pause" | "resume" | "complete" | "reset" | "completeRound"
   ) => void;
   /** Whether timer is disabled */
   disabled?: boolean;

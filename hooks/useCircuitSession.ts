@@ -37,13 +37,23 @@ export function useCircuitSession(
     // Create first round
     const firstRound = createRound(1, block.exercises);
 
+    // Calculate target rounds based on block type
+    const getTargetRounds = () => {
+      if (block.blockType === "emom" && block.timeCapMinutes) {
+        return block.timeCapMinutes;
+      } else if (block.blockType === "tabata") {
+        return 8; // Tabata always has 8 intervals
+      }
+      return block.rounds;
+    };
+
     return {
       blockId: block.id,
       blockType: block.blockType || "circuit",
       blockName: block.blockName,
       rounds: [firstRound],
       currentRound: 1,
-      targetRounds: block.rounds,
+      targetRounds: getTargetRounds(),
       timeCapMinutes: block.timeCapMinutes,
       timer: initialTimer,
       isCompleted: false,
@@ -249,7 +259,83 @@ export function useCircuitSession(
 
           let newCurrentRound = prev.currentRound;
 
-          if (shouldAdvanceRound && prev.blockType !== "for_time") {
+          // Handle different block types for round advancement
+          if (prev.blockType === "amrap") {
+            // AMRAP: Always create a new round with fresh exercises for continuous rounds
+            newCurrentRound = prev.currentRound + 1;
+            const freshExercises = block.exercises.map(
+              (exercise): CircuitExerciseLog => ({
+                exerciseId: exercise.exerciseId || exercise.id,
+                planDayExerciseId: exercise.id,
+                targetReps: exercise.reps || 0,
+                actualReps: 0,
+                weight: exercise.weight,
+                completed: false,
+                notes: "",
+              })
+            );
+
+            const nextRound = {
+              roundNumber: newCurrentRound,
+              exercises: freshExercises,
+              isCompleted: false,
+              notes: "",
+            };
+
+            updatedRounds.push(nextRound);
+          } else if (prev.blockType === "tabata") {
+            // Tabata: Create a new interval with fresh exercises for next 20s work period
+            newCurrentRound = prev.currentRound + 1;
+            const freshExercises = block.exercises.map(
+              (exercise): CircuitExerciseLog => ({
+                exerciseId: exercise.exerciseId || exercise.id,
+                planDayExerciseId: exercise.id,
+                targetReps: exercise.reps || 0,
+                actualReps: 0,
+                weight: exercise.weight,
+                completed: false,
+                notes: "",
+              })
+            );
+
+            const nextInterval = {
+              roundNumber: newCurrentRound,
+              exercises: freshExercises,
+              isCompleted: false,
+              notes: "",
+            };
+
+            updatedRounds.push(nextInterval);
+          } else if (prev.blockType === "emom") {
+            // For EMOM, reset the current round exercises for next minute
+            const currentRoundIndex = prev.currentRound - 1;
+            if (updatedRounds[currentRoundIndex]) {
+              // Reset exercises for next minute while keeping the completed round data
+              const resetExercises = block.exercises.map(
+                (exercise): CircuitExerciseLog => ({
+                  exerciseId: exercise.exerciseId || exercise.id,
+                  planDayExerciseId: exercise.id,
+                  targetReps: exercise.reps || 0,
+                  actualReps: 0,
+                  weight: exercise.weight,
+                  completed: false,
+                  notes: "",
+                })
+              );
+
+              // Create a new round for the next minute with fresh exercises
+              const nextMinuteRound = {
+                roundNumber: prev.currentRound + 1,
+                exercises: resetExercises,
+                isCompleted: false,
+                notes: "",
+              };
+
+              updatedRounds.push(nextMinuteRound);
+              newCurrentRound = prev.currentRound + 1;
+            }
+          } else if (shouldAdvanceRound) {
+            // Advance to next round for remaining circuit types (including for_time)
             newCurrentRound = prev.currentRound + 1;
 
             // Create next round if it doesn't exist
@@ -475,14 +561,31 @@ export function useCircuitSession(
       }
     }
 
-    // Auto-complete Tabata (8 rounds)
-    if (
-      blockType === "tabata" &&
-      timer.currentInterval &&
-      timer.currentInterval > 8
-    ) {
-      completeCircuit("Tabata protocol completed");
-      return;
+    // Auto-complete EMOM on target minutes
+    if (blockType === "emom" && targetRounds) {
+      const completedMinutes = sessionData.rounds.filter(
+        (r) => r.isCompleted
+      ).length;
+      if (completedMinutes >= targetRounds) {
+        completeCircuit("Target minutes completed");
+        return;
+      }
+    }
+
+    // Auto-complete Tabata (8 intervals)
+    if (blockType === "tabata") {
+      const completedIntervals = sessionData.rounds.filter(
+        (r) => r.isCompleted
+      ).length;
+
+      // Check both timer intervals and completed rounds
+      if (
+        (timer.currentInterval && timer.currentInterval > 8) ||
+        completedIntervals >= 8
+      ) {
+        completeCircuit("Tabata protocol completed");
+        return;
+      }
     }
   }, [sessionData, completeCircuit]);
 

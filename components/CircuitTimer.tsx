@@ -4,7 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { colors } from "@/lib/theme";
-import { CircuitTimerProps, CircuitTimerState } from "@/types/api/circuit.types";
+import {
+  CircuitTimerProps,
+  CircuitTimerState,
+} from "@/types/api/circuit.types";
 import { getCircuitTimerConfig } from "@/utils/circuitUtils";
 
 export default function CircuitTimer({
@@ -17,27 +20,46 @@ export default function CircuitTimer({
   disabled = false,
 }: CircuitTimerProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastProcessedMinuteRef = useRef<number>(0);
   const timerConfig = getCircuitTimerConfig(blockType);
 
   // Calculate display time based on timer type
   const getDisplayTime = () => {
     const { currentTime, currentInterval, isWorkPhase } = timerState;
-    
-    if (timerConfig.type === 'intervals' && blockType === 'tabata') {
+
+    if (timerConfig.type === "intervals" && blockType === "tabata") {
       // Tabata: show interval time
-      const intervalTime = isWorkPhase ? timerConfig.workInterval : timerConfig.restInterval;
-      const elapsedInInterval = currentTime % (timerConfig.workInterval + timerConfig.restInterval);
-      
+      const intervalTime = isWorkPhase
+        ? timerConfig.workInterval
+        : timerConfig.restInterval;
+      const elapsedInInterval =
+        currentTime % (timerConfig.workInterval + timerConfig.restInterval);
+
       if (isWorkPhase) {
         return Math.max(0, timerConfig.workInterval - elapsedInInterval);
       } else {
-        return Math.max(0, timerConfig.restInterval - (elapsedInInterval - timerConfig.workInterval));
+        return Math.max(
+          0,
+          timerConfig.restInterval -
+            (elapsedInInterval - timerConfig.workInterval)
+        );
       }
-    } else if (timerConfig.type === 'countDown' && blockType === 'emom') {
+    } else if (timerConfig.type === "countDown" && blockType === "emom") {
       // EMOM: show countdown within current minute
       const secondsInMinute = currentTime % 60;
       return Math.max(0, 60 - secondsInMinute);
-    } else if (timerConfig.type === 'countUp' && timeCapMinutes) {
+    } else if (
+      timerConfig.type === "countDown" &&
+      blockType === "for_time" &&
+      timeCapMinutes
+    ) {
+      // For Time with time cap: show countdown from time cap
+      const timeCapSeconds = timeCapMinutes * 60;
+      return Math.max(0, timeCapSeconds - currentTime);
+    } else if (blockType === "for_time" && !timeCapMinutes) {
+      // For Time without time cap: show elapsed time
+      return currentTime;
+    } else if (timerConfig.type === "countUp" && timeCapMinutes) {
       // AMRAP with time cap: show remaining time
       const timeCapSeconds = timeCapMinutes * 60;
       return Math.max(0, timeCapSeconds - currentTime);
@@ -48,21 +70,27 @@ export default function CircuitTimer({
   };
 
   const getTimerLabel = () => {
-    if (timerConfig.type === 'intervals' && blockType === 'tabata') {
-      return timerState.isWorkPhase ? 'WORK' : 'REST';
-    } else if (blockType === 'emom') {
-      return 'Next Minute';
-    } else if (blockType === 'amrap' && timeCapMinutes) {
-      return 'Time Remaining';
+    if (timerConfig.type === "intervals" && blockType === "tabata") {
+      return timerState.isWorkPhase ? "WORK" : "REST";
+    } else if (blockType === "emom") {
+      return "Next Minute";
+    } else if (blockType === "for_time" && timeCapMinutes) {
+      return "Time Remaining";
+    } else if (blockType === "for_time" && !timeCapMinutes) {
+      return "Time Elapsed";
+    } else if (blockType === "amrap" && timeCapMinutes) {
+      return "Time Remaining";
     } else {
-      return 'Time Elapsed';
+      return "Time Elapsed";
     }
   };
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   // Timer logic
@@ -71,9 +99,11 @@ export default function CircuitTimer({
       timerRef.current = setInterval(() => {
         const now = Date.now();
         let newCurrentTime = timerState.currentTime;
-        
+
         if (timerState.startTime) {
-          const elapsed = Math.floor((now - timerState.startTime.getTime()) / 1000);
+          const elapsed = Math.floor(
+            (now - timerState.startTime.getTime()) / 1000
+          );
           newCurrentTime = elapsed - timerState.totalPausedTime;
         } else {
           newCurrentTime = timerState.currentTime + 1;
@@ -85,15 +115,20 @@ export default function CircuitTimer({
         };
 
         // Handle specific timer behaviors
-        if (blockType === 'tabata') {
+        if (blockType === "tabata") {
           handleTabataLogic(newCurrentTime, newState);
-        } else if (blockType === 'emom') {
+        } else if (blockType === "emom") {
           handleEmomLogic(newCurrentTime, newState);
-        } else if (blockType === 'amrap' && timeCapMinutes) {
+        } else if (blockType === "amrap" && timeCapMinutes) {
           handleAmrapLogic(newCurrentTime, newState);
+        } else if (blockType === "for_time" && timeCapMinutes) {
+          handleForTimeLogic(newCurrentTime, newState);
         }
 
-        onTimerUpdate(newState);
+        // Ensure state consistency - don't update if timer was stopped during logic
+        if (newState.isActive) {
+          onTimerUpdate(newState);
+        }
       }, 1000);
     } else {
       if (timerRef.current) {
@@ -108,55 +143,53 @@ export default function CircuitTimer({
         timerRef.current = null;
       }
     };
-  }, [timerState.isActive, timerState.isPaused, blockType, timeCapMinutes]);
+  }, [
+    timerState.isActive,
+    timerState.isPaused,
+    timerState.currentInterval,
+    blockType,
+    timeCapMinutes,
+    rounds,
+  ]);
 
   // Tabata interval logic
-  const handleTabataLogic = (currentTime: number, newState: CircuitTimerState) => {
-    const totalIntervalTime = timerConfig.workInterval + timerConfig.restInterval; // 30 seconds
+  const handleTabataLogic = (
+    currentTime: number,
+    newState: CircuitTimerState
+  ) => {
+    const totalIntervalTime =
+      timerConfig.workInterval + timerConfig.restInterval; // 30 seconds
     const elapsedInInterval = currentTime % totalIntervalTime;
     const currentInterval = Math.floor(currentTime / totalIntervalTime) + 1;
     const isWorkPhase = elapsedInInterval < timerConfig.workInterval;
 
     // Update interval state
-    if (currentInterval !== timerState.currentInterval || isWorkPhase !== timerState.isWorkPhase) {
+    if (
+      currentInterval !== timerState.currentInterval ||
+      isWorkPhase !== timerState.isWorkPhase
+    ) {
       newState.currentInterval = currentInterval;
       newState.isWorkPhase = isWorkPhase;
 
-      // Provide feedback for transitions
+      // Provide haptic feedback only for transitions (no sound)
       try {
         if (elapsedInInterval === 0) {
           // Starting work phase
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          Notifications.scheduleNotificationAsync({
-            content: {
-              title: "WORK!",
-              body: `Round ${currentInterval} - 20 seconds`,
-              sound: "tri-tone",
-            },
-            trigger: null,
-          });
         } else if (elapsedInInterval === timerConfig.workInterval) {
           // Starting rest phase
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Notifications.scheduleNotificationAsync({
-            content: {
-              title: "REST",
-              body: "10 seconds recovery",
-              sound: "submarine",
-            },
-            trigger: null,
-          });
         }
       } catch (error) {
-        console.log("Notification/haptic feedback error:", error);
+        console.log("Haptic feedback error:", error);
       }
     }
 
     // Check if Tabata is complete (8 rounds)
     if (currentInterval > 8) {
       newState.isActive = false;
-      onTimerEvent?.('complete');
-      
+      onTimerEvent?.("complete");
+
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Notifications.scheduleNotificationAsync({
@@ -174,21 +207,60 @@ export default function CircuitTimer({
   };
 
   // EMOM logic
-  const handleEmomLogic = (currentTime: number, newState: CircuitTimerState) => {
+  const handleEmomLogic = (
+    currentTime: number,
+    newState: CircuitTimerState
+  ) => {
     const currentMinute = Math.floor(currentTime / 60) + 1;
     const secondsInMinute = currentTime % 60;
 
+    // Update current interval if minute changed
     if (currentMinute !== timerState.currentInterval) {
       newState.currentInterval = currentMinute;
-      
-      // New minute notification
+
+      // Auto-complete the previous minute's round (only after the first minute)
+      if (currentMinute > 1) {
+        // Reset timer to start of new minute (keep total elapsed time tracking)
+        newState.currentTime = (currentMinute - 1) * 60;
+        newState.startTime = new Date(Date.now() - newState.currentTime * 1000);
+        newState.totalPausedTime = 0; // Reset paused time for clean minute
+
+        // Guard against duplicate processing for the same minute (for haptics/notifications only)
+        if (lastProcessedMinuteRef.current !== currentMinute) {
+          lastProcessedMinuteRef.current = currentMinute;
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: `Minute ${currentMinute}`,
+                body: "New minute started!",
+                sound: "tri-tone",
+              },
+              trigger: null,
+            });
+          } catch (error) {
+            console.log("Notification/haptic feedback error:", error);
+          }
+        }
+      }
+    } else if (!newState.currentInterval && currentMinute === 1) {
+      // Initialize currentInterval if it's not set and we're in the first minute
+      newState.currentInterval = 1;
+    }
+
+    // Check if EMOM is complete
+    if (rounds && currentMinute > rounds) {
+      newState.isActive = false;
+      newState.currentTime = rounds * 60; // Ensure time doesn't exceed target
+      onTimerEvent?.("complete");
+
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Notifications.scheduleNotificationAsync({
           content: {
-            title: `Minute ${currentMinute}`,
-            body: "Start your reps!",
-            sound: "tri-tone",
+            title: "EMOM Complete!",
+            body: `${rounds} minutes finished - great work!`,
+            sound: "chime",
           },
           trigger: null,
         });
@@ -196,22 +268,52 @@ export default function CircuitTimer({
         console.log("Notification/haptic feedback error:", error);
       }
     }
+  };
 
-    // Check if EMOM is complete
-    if (rounds && currentMinute > rounds) {
-      newState.isActive = false;
-      onTimerEvent?.('complete');
-      
+  // AMRAP with time cap logic
+  const handleAmrapLogic = (
+    currentTime: number,
+    newState: CircuitTimerState
+  ) => {
+    const timeCapSeconds = (timeCapMinutes || 0) * 60;
+    const remainingTime = timeCapSeconds - currentTime;
+
+    // Warning at 1 minute remaining (haptic only)
+    if (remainingTime === 60 && currentTime > 0) {
       try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       } catch (error) {
         console.log("Haptic feedback error:", error);
       }
     }
+
+    // Time cap reached
+    if (remainingTime <= 0) {
+      newState.isActive = false;
+      newState.currentTime = timeCapSeconds;
+      onTimerEvent?.("complete");
+
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Time Cap Reached!",
+            body: "AMRAP complete - great work!",
+            sound: "chime",
+          },
+          trigger: null,
+        });
+      } catch (error) {
+        console.log("Notification/haptic feedback error:", error);
+      }
+    }
   };
 
-  // AMRAP with time cap logic
-  const handleAmrapLogic = (currentTime: number, newState: CircuitTimerState) => {
+  // For Time logic - warn about time cap but don't auto-complete
+  const handleForTimeLogic = (
+    currentTime: number,
+    newState: CircuitTimerState
+  ) => {
     const timeCapSeconds = (timeCapMinutes || 0) * 60;
     const remainingTime = timeCapSeconds - currentTime;
 
@@ -222,29 +324,25 @@ export default function CircuitTimer({
         Notifications.scheduleNotificationAsync({
           content: {
             title: "1 Minute Remaining!",
-            body: "Keep pushing!",
+            body: "Time cap approaching - keep pushing!",
             sound: "submarine",
           },
           trigger: null,
         });
       } catch (error) {
-        console.log("Notification error:", error);
+        console.log("Notification/haptic feedback error:", error);
       }
     }
 
-    // Time cap reached
-    if (remainingTime <= 0) {
-      newState.isActive = false;
-      newState.currentTime = timeCapSeconds;
-      onTimerEvent?.('complete');
-      
+    // Time cap reached - warn but don't stop (For Time continues until rounds are done)
+    if (remainingTime <= 0 && currentTime === timeCapSeconds) {
       try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Notifications.scheduleNotificationAsync({
           content: {
             title: "Time Cap Reached!",
-            body: "AMRAP complete - great work!",
-            sound: "chime",
+            body: "Finish your current round when possible",
+            sound: "tri-tone",
           },
           trigger: null,
         });
@@ -266,15 +364,21 @@ export default function CircuitTimer({
         isPaused: false,
         startTime: timerState.startTime || new Date(),
       };
-      
-      // Initialize for Tabata
-      if (blockType === 'tabata') {
+
+      // Initialize for specific block types
+      if (blockType === "tabata") {
         newState.currentInterval = 1;
         newState.isWorkPhase = true;
+      } else if (blockType === "emom") {
+        newState.currentInterval = 1;
+        // Ensure we don't have stale startTime that could cause time calculation issues
+        if (!newState.startTime) {
+          newState.startTime = new Date();
+        }
       }
-      
+
       onTimerUpdate(newState);
-      onTimerEvent?.('start');
+      onTimerEvent?.("start");
     } else {
       // Toggle pause/resume
       const isPausing = !timerState.isPaused;
@@ -285,14 +389,16 @@ export default function CircuitTimer({
 
       if (isPausing) {
         newState.pausedAt = new Date();
-        onTimerEvent?.('pause');
+        onTimerEvent?.("pause");
       } else {
         if (timerState.pausedAt) {
-          const pauseDuration = Math.floor((Date.now() - timerState.pausedAt.getTime()) / 1000);
+          const pauseDuration = Math.floor(
+            (Date.now() - timerState.pausedAt.getTime()) / 1000
+          );
           newState.totalPausedTime = timerState.totalPausedTime + pauseDuration;
         }
         newState.pausedAt = undefined;
-        onTimerEvent?.('resume');
+        onTimerEvent?.("resume");
       }
 
       onTimerUpdate(newState);
@@ -301,7 +407,7 @@ export default function CircuitTimer({
 
   const handleReset = () => {
     if (disabled) return;
-    
+
     Alert.alert(
       "Reset Timer",
       "Are you sure you want to reset the timer? This will clear your current progress.",
@@ -322,7 +428,7 @@ export default function CircuitTimer({
               isWorkPhase: undefined,
             };
             onTimerUpdate(newState);
-            onTimerEvent?.('reset');
+            onTimerEvent?.("reset");
           },
         },
       ]
@@ -333,6 +439,38 @@ export default function CircuitTimer({
   const timerLabel = getTimerLabel();
   const isRunning = timerState.isActive && !timerState.isPaused;
 
+  const progress = (() => {
+    if (timerConfig.type === "intervals" && blockType === "tabata") {
+      // Tabata: progress within current work/rest interval
+      const intervalTime = timerState.isWorkPhase
+        ? timerConfig.workInterval
+        : timerConfig.restInterval;
+      return ((intervalTime - displayTime) / intervalTime) * 100;
+    } else if (timerConfig.type === "countDown" && blockType === "emom") {
+      // EMOM: progress within current minute (60 seconds)
+      return ((60 - displayTime) / 60) * 100;
+    } else if (
+      timerConfig.type === "countDown" &&
+      blockType === "for_time" &&
+      timeCapMinutes
+    ) {
+      // For Time: progress toward time cap while counting down
+      const timeCapSeconds = timeCapMinutes * 60;
+      return (
+        ((timeCapSeconds - Math.max(0, displayTime)) / timeCapSeconds) * 100
+      );
+    } else if (
+      timerConfig.type === "countUp" &&
+      blockType === "amrap" &&
+      timeCapMinutes
+    ) {
+      // AMRAP: progress toward time cap
+      const timeCapSeconds = timeCapMinutes * 60;
+      return (timerState.currentTime / timeCapSeconds) * 100;
+    }
+    return 0;
+  })();
+
   return (
     <View className="items-center">
       {/* Timer Display */}
@@ -340,126 +478,151 @@ export default function CircuitTimer({
         <Text className="text-sm font-semibold text-text-muted mb-2">
           {timerLabel}
         </Text>
-        
-        <View
-          className={`w-32 h-32 rounded-full items-center justify-center border-4 ${
-            isRunning
-              ? 'border-brand-primary bg-brand-light-1'
-              : timerState.isActive
-              ? 'border-orange-400 bg-orange-50'
-              : 'border-neutral-medium-1 bg-background'
-          }`}
-        >
-          <Text
-            className={`text-2xl font-bold ${
-              isRunning
-                ? 'text-brand-primary'
+
+        <View className="relative items-center justify-center mb-2">
+          {/* Progress Circle Background */}
+          <View
+            className="w-24 h-24 rounded-full border-3"
+            style={{ borderColor: colors.neutral.light[2] }}
+          />
+
+          {/* Progress Circle Foreground */}
+          <View
+            className="absolute w-24 h-24 rounded-full"
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 48,
+              borderWidth: 3,
+              borderColor: "transparent",
+              borderTopColor: isRunning
+                ? colors.brand.primary
                 : timerState.isActive
-                ? 'text-orange-600'
-                : 'text-text-primary'
+                ? colors.brand.primary
+                : colors.neutral.medium[2],
+              transform: [
+                {
+                  rotate: `${-90 + progress * 3.6}deg`,
+                },
+              ],
+            }}
+          />
+
+          {/* Timer Text */}
+          <View className="absolute items-center justify-center">
+            <Text
+              className="text-lg font-bold"
+              style={{
+                color: isRunning
+                  ? colors.text.primary
+                  : timerState.isActive
+                  ? colors.text.primary
+                  : colors.text.muted,
+              }}
+            >
+              {formatTime(displayTime)}
+            </Text>
+            {timerState.isActive && (
+              <Text
+                className="text-xs mt-1"
+                style={{ color: colors.text.muted }}
+              >
+                {timerState.isPaused ? "PAUSED" : "ACTIVE"}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        {/* Phase indicator for Tabata */}
+        {blockType === "tabata" && timerState.isActive && (
+          <Text
+            className={`text-xs font-semibold ${
+              timerState.isWorkPhase ? "text-red-600" : "text-blue-600"
             }`}
           >
-            {formatTime(displayTime)}
+            {timerState.isWorkPhase ? "WORK" : "REST"}
           </Text>
-          
-          {/* Phase indicator for Tabata */}
-          {blockType === 'tabata' && timerState.isActive && (
-            <Text
-              className={`text-xs font-semibold mt-1 ${
-                timerState.isWorkPhase ? 'text-red-600' : 'text-blue-600'
-              }`}
-            >
-              {timerState.isWorkPhase ? 'WORK' : 'REST'}
-            </Text>
-          )}
-          
-          {/* Interval indicator */}
-          {timerState.currentInterval && (
-            <Text className="text-xs text-text-muted mt-1">
-              {blockType === 'tabata' 
-                ? `Round ${timerState.currentInterval}/8`
-                : blockType === 'emom'
-                ? `Minute ${timerState.currentInterval}${rounds ? `/${rounds}` : ''}`
-                : `Interval ${timerState.currentInterval}`
-              }
-            </Text>
-          )}
-        </View>
+        )}
+
+        {/* Interval indicator */}
+        {timerState.currentInterval && (
+          <Text className="text-xs text-text-muted mt-1">
+            {blockType === "tabata"
+              ? `Round ${timerState.currentInterval}/8`
+              : blockType === "emom"
+              ? `Minute ${timerState.currentInterval}${
+                  rounds ? `/${rounds}` : ""
+                }`
+              : `Interval ${timerState.currentInterval}`}
+          </Text>
+        )}
       </View>
 
       {/* Control Buttons */}
-      <View className="flex-row gap-4">
+      {timerState.isActive ? (
+        <View className="flex-row gap-2 w-full">
+          <TouchableOpacity
+            className="flex-1 rounded-xl py-2 px-3 flex-row items-center justify-center"
+            onPress={handleStartPause}
+            disabled={disabled}
+          >
+            <Ionicons
+              name={timerState.isPaused ? "play" : "pause"}
+              size={14}
+              color={disabled ? colors.text.muted : colors.text.primary}
+            />
+            <Text
+              className={`text-xs font-semibold ml-1 ${
+                disabled ? "text-text-muted" : "text-text-primary"
+              }`}
+            >
+              {timerState.isPaused ? "Resume" : "Pause"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-1 rounded-xl py-2 px-3 flex-row items-center justify-center"
+            onPress={handleReset}
+            disabled={disabled}
+          >
+            <Ionicons
+              name="refresh"
+              size={14}
+              color={disabled ? colors.text.muted : colors.text.primary}
+            />
+            <Text
+              className={`text-xs font-semibold ml-1 ${
+                disabled ? "text-text-muted" : "text-text-primary"
+              }`}
+            >
+              Reset
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
         <TouchableOpacity
-          className={`flex-row items-center py-3 px-6 rounded-xl ${
-            disabled
-              ? 'bg-neutral-light-2'
-              : isRunning
-              ? 'bg-orange-500'
-              : 'bg-brand-primary'
-          }`}
+          className="w-full flex-row items-center justify-center py-3 px-6 rounded-lg border"
+          style={{
+            borderColor: colors.brand.primary,
+            backgroundColor: colors.brand.primary + "10",
+          }}
           onPress={handleStartPause}
           disabled={disabled}
         >
           <Ionicons
-            name={
-              !timerState.isActive
-                ? 'play'
-                : timerState.isPaused
-                ? 'play'
-                : 'pause'
-            }
+            name="timer-outline"
             size={20}
-            color={disabled ? colors.text.muted : 'white'}
+            color={disabled ? colors.text.muted : colors.brand.primary}
           />
           <Text
             className={`text-sm font-semibold ml-2 ${
-              disabled ? 'text-text-muted' : 'text-white'
+              disabled ? "text-text-muted" : ""
             }`}
+            style={disabled ? {} : { color: colors.brand.primary }}
           >
-            {!timerState.isActive
-              ? 'Start'
-              : timerState.isPaused
-              ? 'Resume'
-              : 'Pause'}
+            Start
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          className={`flex-row items-center py-3 px-6 rounded-xl border ${
-            disabled
-              ? 'border-neutral-medium-1 bg-neutral-light-1'
-              : 'border-neutral-medium-2 bg-background'
-          }`}
-          onPress={handleReset}
-          disabled={disabled}
-        >
-          <Ionicons
-            name="refresh"
-            size={20}
-            color={disabled ? colors.text.muted : colors.text.secondary}
-          />
-          <Text
-            className={`text-sm font-semibold ml-2 ${
-              disabled ? 'text-text-muted' : 'text-text-secondary'
-            }`}
-          >
-            Reset
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Additional Info */}
-      {timerState.isActive && (
-        <View className="mt-4 items-center">
-          <Text className="text-xs text-text-muted">
-            Total Elapsed: {formatTime(timerState.currentTime)}
-          </Text>
-          {timerState.totalPausedTime > 0 && (
-            <Text className="text-xs text-text-muted">
-              Paused Time: {formatTime(timerState.totalPausedTime)}
-            </Text>
-          )}
-        </View>
       )}
     </View>
   );

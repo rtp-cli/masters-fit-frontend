@@ -133,9 +133,10 @@ function CircuitLoggingInterface({
     }
   };
 
-  // Show timer only if there's a time cap (force boolean to avoid rendering 0)
+  // Show timer for time-based circuits (AMRAP, EMOM with time cap, or For Time)
   const shouldShowTimer = Boolean(
-    block.timeCapMinutes && block.timeCapMinutes > 0
+    (block.timeCapMinutes && block.timeCapMinutes > 0) ||
+    (block.blockType === "for_time")
   );
 
   return (
@@ -148,7 +149,12 @@ function CircuitLoggingInterface({
               Circuit Timer
             </Text>
             <Text className="text-xs text-text-muted">
-              {block.timeCapMinutes} minute time cap
+              {block.timeCapMinutes 
+                ? `${block.timeCapMinutes} minute time cap` 
+                : block.blockType === "for_time" 
+                  ? "Complete as fast as possible"
+                  : "Elapsed time"
+              }
             </Text>
           </View>
           <CircuitTimer
@@ -157,6 +163,15 @@ function CircuitLoggingInterface({
             rounds={block.rounds}
             timerState={sessionData.timer}
             onTimerUpdate={updateTimerState}
+            onTimerEvent={async (event) => {
+              if (event === 'completeRound' && actions?.completeRound) {
+                try {
+                  await actions.completeRound('Auto-completed: minute ended');
+                } catch (error) {
+                  console.error('Error auto-completing EMOM round:', error);
+                }
+              }
+            }}
             disabled={!isWorkoutStarted}
           />
         </View>

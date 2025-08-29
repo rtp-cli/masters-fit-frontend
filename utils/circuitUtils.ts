@@ -79,8 +79,8 @@ export function getCircuitTimerConfig(blockType: string) {
       restInterval: 0,
     },
     for_time: {
-      type: 'countUp' as const,
-      hasTimeLimit: false,
+      type: 'countDown' as const,
+      hasTimeLimit: true,
       showRounds: true,
       autoAdvanceRounds: false,
       workInterval: 0,
@@ -163,12 +163,12 @@ export function getRoundCompleteButtonText(
   blockType: string, 
   currentRound: number, 
   totalRounds?: number
-): string {
+): string | null {
   switch (blockType) {
     case 'amrap':
       return 'Complete Round';
     case 'emom':
-      return 'Finish Minute';
+      return null; // EMOM rounds auto-complete, no manual button needed
     case 'for_time':
       return totalRounds && currentRound >= totalRounds ? 'Finish Workout' : 'Complete Round';
     case 'tabata':
