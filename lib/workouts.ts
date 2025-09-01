@@ -18,18 +18,32 @@ let activeWorkoutCache: {
 } | null = null;
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_LISTENERS = 50; // Prevent unbounded listener growth
 
 // Simple event system for workout data updates
 const workoutUpdateListeners: Array<() => void> = [];
 
 export const subscribeToWorkoutUpdates = (listener: () => void) => {
+  // Prevent unbounded growth - remove oldest listeners if at max capacity
+  if (workoutUpdateListeners.length >= MAX_LISTENERS) {
+    console.warn(`[workouts.ts] Listener array at max capacity (${MAX_LISTENERS}), removing oldest listeners`);
+    // Remove the first half to make room
+    workoutUpdateListeners.splice(0, Math.floor(MAX_LISTENERS / 2));
+  }
+  
   workoutUpdateListeners.push(listener);
+  
   return () => {
     const index = workoutUpdateListeners.indexOf(listener);
     if (index > -1) {
       workoutUpdateListeners.splice(index, 1);
     }
   };
+};
+
+// Cleanup function to remove all listeners (useful for testing or cleanup)
+export const clearAllWorkoutListeners = () => {
+  workoutUpdateListeners.length = 0;
 };
 
 export const notifyWorkoutUpdated = () => {

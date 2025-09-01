@@ -407,6 +407,25 @@ export default function CircuitTracker({
     };
   }, [exerciseWorkActive, exerciseWorkPaused, exerciseWorkCountdown]);
 
+  // Master cleanup effect - ensures all timers are cleared on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all timer references on unmount
+      if (exerciseRestTimerRef.current) {
+        clearTimeout(exerciseRestTimerRef.current);
+        exerciseRestTimerRef.current = null;
+      }
+      if (roundRestTimerRef.current) {
+        clearTimeout(roundRestTimerRef.current);
+        roundRestTimerRef.current = null;
+      }
+      if (exerciseWorkTimerRef.current) {
+        clearTimeout(exerciseWorkTimerRef.current);
+        exerciseWorkTimerRef.current = null;
+      }
+    };
+  }, []); // Empty dependency array - only run on mount/unmount
+
   // Rest timer control functions
   const startExerciseRest = () => {
     const duration = getExerciseRestDuration();

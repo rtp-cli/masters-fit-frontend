@@ -58,6 +58,7 @@ const BackgroundJobContext = createContext<
 
 const STORAGE_KEY = "background_jobs";
 const POLL_INTERVAL = 5000; // 5 seconds
+const MAX_PROCESSED_COMPLETIONS = 100; // Limit processed completions tracking
 
 interface BackgroundJobProviderProps {
   children: ReactNode;
@@ -100,6 +101,16 @@ export function BackgroundJobProvider({
     loadJobsFromStorage();
   }, []);
 
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   // Start/stop polling based on active jobs
   useEffect(() => {
     if (activeJobs.length > 0) {
@@ -108,8 +119,9 @@ export function BackgroundJobProvider({
       stopPolling();
     }
 
+    // Always cleanup on unmount or when effect re-runs
     return () => stopPolling();
-  }, [activeJobs.length, startPolling, stopPolling]);
+  }, [activeJobs.length]); // Removed startPolling/stopPolling from deps to prevent unnecessary re-runs
 
   const loadJobsFromStorage = async () => {
     try {
@@ -312,6 +324,19 @@ export function BackgroundJobProvider({
     }
   }, []);
 
+  // Helper function to manage bounded processed completions set
+  const addProcessedCompletion = useCallback((jobId: number) => {
+    // If we're at max capacity, remove the oldest entries
+    if (processedCompletionsRef.current.size >= MAX_PROCESSED_COMPLETIONS) {
+      // Convert Set to Array, take only the recent half, convert back to Set
+      const completionsArray = Array.from(processedCompletionsRef.current);
+      const recentCompletions = completionsArray.slice(-Math.floor(MAX_PROCESSED_COMPLETIONS / 2));
+      processedCompletionsRef.current = new Set(recentCompletions);
+    }
+    
+    processedCompletionsRef.current.add(jobId);
+  }, []);
+
   const onJobCompleted = useCallback(
     (jobId: number, workoutId?: number) => {
       // Check if we've already processed this completion to avoid double processing
@@ -322,8 +347,8 @@ export function BackgroundJobProvider({
         return;
       }
 
-      // Mark this completion as processed
-      processedCompletionsRef.current.add(jobId);
+      // Mark this completion as processed with bounds checking
+      addProcessedCompletion(jobId);
 
       // Invalidate cache to ensure fresh data
       invalidateActiveWorkoutCache();
@@ -338,7 +363,7 @@ export function BackgroundJobProvider({
         processedCompletionsRef.current.delete(jobId);
       }, 2000);
     },
-    [triggerWorkoutReady, removeJob]
+    [triggerWorkoutReady, removeJob, addProcessedCompletion]
   );
 
   // Function to check if job completion has been processed
