@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -23,11 +17,12 @@ import {
   TotalVolumeMetrics,
   WeightAccuracyMetrics,
   WorkoutTypeMetrics,
+  TodayWorkout,
 } from "@/types/api";
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
-import { generateWorkoutPlanAsync, invalidateActiveWorkoutCache } from "@lib/workouts";
+import { generateWorkoutPlanAsync } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import {
@@ -43,6 +38,11 @@ import { fetchActiveWorkout } from "@lib/workouts";
 import { PlanDayWithExercises } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
+import { PlanDayWithBlocks } from "@/types/api";
+import {
+  WorkoutBlockWithExercises,
+  WorkoutBlockWithExercise,
+} from "@/types/api";
 
 // Goal name mappings
 const goalNames: Record<string, string> = {
@@ -68,31 +68,16 @@ const DONUT_COLORS = [
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const {
-    user,
-    isAuthenticated,
-    isLoading: authLoading,
-    setIsPreloadingData,
-    setIsGeneratingWorkout,
-  } = useAuth();
-
-  // Background jobs hook
-  const { addJob, activeJobs, reloadJobs, isGenerating } = useBackgroundJobs();
-
-  // Modal states
-
-  // Scroll to top ref
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
   const scrollViewRef = useRef<ScrollView>(null);
-
-  // Today's schedule state
-  const [todaysWorkout, setTodaysWorkout] =
-    useState<PlanDayWithExercises | null>(null);
+  const [todaysWorkout, setTodaysWorkout] = useState<TodayWorkout | null>(null);
   const [workoutInfo, setWorkoutInfo] = useState<{
     name: string;
     description: string;
     startDate?: string;
     endDate?: string;
-    planDays?: PlanDayWithExercises[];
+    planDays?: PlanDayWithBlocks[];
   } | null>(null);
   const [loadingToday, setLoadingToday] = useState(false);
 
@@ -182,16 +167,16 @@ export default function DashboardScreen() {
       if (workoutPlan) {
         // Store workout info (name and description are at workout level)
         setWorkoutInfo({
-          name: workoutPlan.name,
-          description: workoutPlan.description,
-          startDate: workoutPlan.startDate,
-          endDate: workoutPlan.endDate,
+          name: workoutPlan.name || "Workout Plan",
+          description: workoutPlan.description || "A plan for your workouts.",
+          startDate: workoutPlan.startDate?.toString(),
+          endDate: workoutPlan.endDate?.toString(),
           planDays: workoutPlan.planDays,
         });
 
         const today = getCurrentDate();
         const todaysPlanDay = workoutPlan.planDays?.find(
-          (day: PlanDayWithExercises) => {
+          (day: PlanDayWithBlocks) => {
             const planDate = formatDateAsString(day.date);
             return planDate === today;
           }
@@ -707,20 +692,20 @@ export default function DashboardScreen() {
 
       if (result?.success && result.jobId) {
         // Add job to background tracking
-        await addJob(result.jobId, 'generation');
-        
+        await addJob(result.jobId, "generation");
+
         // Job started successfully - FAB will show progress
         // Data refresh will happen when generation completes
       } else {
         Alert.alert(
-          "Generation Failed", 
+          "Generation Failed",
           "Unable to start workout generation. Please check your connection and try again.",
           [{ text: "OK" }]
         );
       }
     } catch (error) {
       Alert.alert(
-        "Generation Error", 
+        "Generation Error",
         "An error occurred while starting workout generation. Please try again.",
         [{ text: "OK" }]
       );
@@ -731,7 +716,6 @@ export default function DashboardScreen() {
     // Refresh all data after successful workout repetition
     handleRefresh();
   };
-
 
   if (error) {
     Alert.alert("Error", error);
@@ -753,18 +737,16 @@ export default function DashboardScreen() {
   }
 
   // Helper function to calculate duration for both legacy and new workout structures
-  const calculateTotalDuration = (
-    workout: PlanDayWithExercises | null
-  ): number => {
+  const calculateTotalDuration = (workout: TodayWorkout | null): number => {
     if (!workout) return 0;
 
-    // Check if this is the new structure with blocks
-    if ((workout as any).blocks) {
-      return calculatePlanDayDuration(workout as any);
+    // Type guard to check for the new structure with blocks
+    if ("blocks" in workout && workout.blocks) {
+      return calculatePlanDayDuration(workout as PlanDayWithBlocks);
     }
 
     // Legacy structure with exercises directly
-    if (workout.exercises) {
+    if ("exercises" in workout && workout.exercises) {
       const durationSeconds = calculateWorkoutDuration(workout.exercises);
       return Math.round(durationSeconds / 60); // Convert to minutes
     }
@@ -776,27 +758,45 @@ export default function DashboardScreen() {
   const totalDurationMinutes = calculateTotalDuration(todaysWorkout);
 
   // Calculate workout completion rate for today
-  const todayCompletionRate = (todaysWorkout as any)?.blocks
-    ? (todaysWorkout as any).blocks.reduce((total: number, block: any) => {
-        const blockExercises = block.exercises || [];
-        const blockCompletion = blockExercises.reduce(
-          (sum: number, exercise: any) => {
-            return sum + (exercise.completed ? 100 : 0);
-          },
-          0
-        );
-        return total + blockCompletion;
-      }, 0) /
-      ((todaysWorkout as any).blocks.reduce(
-        (total: number, block: any) => total + (block.exercises?.length || 0),
+  const todayCompletionRate = (() => {
+    if (!todaysWorkout) return 0;
+
+    if ("blocks" in todaysWorkout && todaysWorkout.blocks) {
+      const totalExercises = todaysWorkout.blocks.reduce(
+        (total: number, block: WorkoutBlockWithExercises) =>
+          total + (block.exercises?.length || 0),
         0
-      ) || 1)
-    : todaysWorkout?.exercises
-    ? todaysWorkout.exercises.reduce((sum, exercise) => {
-        // Use completed status instead of completionRate property
-        return sum + (exercise.completed ? 100 : 0);
-      }, 0) / todaysWorkout.exercises.length
-    : 0;
+      );
+      if (totalExercises === 0) return 0;
+
+      const completedExercises = todaysWorkout.blocks.reduce(
+        (total: number, block: WorkoutBlockWithExercises) => {
+          return (
+            total +
+            (block.exercises?.reduce(
+              (sum: number, exercise: WorkoutBlockWithExercise) =>
+                sum + (exercise.completed ? 1 : 0),
+              0
+            ) || 0)
+          );
+        },
+        0
+      );
+
+      return (completedExercises / totalExercises) * 100;
+    }
+
+    if ("exercises" in todaysWorkout && todaysWorkout.exercises) {
+      if (todaysWorkout.exercises.length === 0) return 0;
+      const completedCount = todaysWorkout.exercises.reduce(
+        (sum, exercise) => sum + (exercise.completed ? 1 : 0),
+        0
+      );
+      return (completedCount / todaysWorkout.exercises.length) * 100;
+    }
+
+    return 0;
+  })();
 
   const isWorkoutCompleted = todayCompletionRate >= 100;
 
@@ -1012,13 +1012,20 @@ export default function DashboardScreen() {
                           {todaysWorkout
                             ? workoutInfo?.description ||
                               `${
-                                (todaysWorkout as any)?.blocks
-                                  ? (todaysWorkout as any).blocks.reduce(
-                                      (total: number, block: any) =>
+                                "blocks" in todaysWorkout &&
+                                todaysWorkout.blocks
+                                  ? todaysWorkout.blocks.reduce(
+                                      (
+                                        total: number,
+                                        block: WorkoutBlockWithExercises
+                                      ) =>
                                         total + (block.exercises?.length || 0),
                                       0
                                     )
-                                  : todaysWorkout.exercises?.length || 0
+                                  : "exercises" in todaysWorkout &&
+                                    todaysWorkout.exercises
+                                  ? todaysWorkout.exercises.length
+                                  : 0
                               } exercises planned`
                             : "Rest day - Recovery is just as important as training"}
                         </Text>
@@ -1845,7 +1852,6 @@ export default function DashboardScreen() {
                   </View>
                 </View>
               )}
-
           </>
         )}
       </ScrollView>
@@ -1856,7 +1862,6 @@ export default function DashboardScreen() {
         onClose={() => setShowRepeatModal(false)}
         onSuccess={handleRepeatWorkoutSuccess}
       />
-
     </View>
   );
 }

@@ -18,6 +18,7 @@ import {
   PlanDayWithBlocks,
   WorkoutBlockWithExercise,
   CreateExerciseLogParams,
+  PlanDayWithExercisesLegacy,
 } from "@/types/api";
 import { ExerciseSet } from "@/components/SetTracker";
 import { UseWorkoutSessionReturn } from "@/types/hooks";
@@ -86,39 +87,43 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   useEffect(() => {
     if (isWorkoutActive && !isPaused) {
       // Activate keep awake to prevent screen sleep
-      activateKeepAwake('workout-session-timer');
-      
+      activateKeepAwake("workout-session-timer");
+
       // Initialize start times if not set
       if (!workoutStartTime.current) {
-        workoutStartTime.current = new Date(Date.now() - (workoutTimer * 1000));
+        workoutStartTime.current = new Date(Date.now() - workoutTimer * 1000);
       }
       if (!exerciseStartTime.current) {
-        exerciseStartTime.current = new Date(Date.now() - (exerciseTimer * 1000));
+        exerciseStartTime.current = new Date(Date.now() - exerciseTimer * 1000);
       }
-      
+
       workoutTimerRef.current = setInterval(() => {
         if (workoutStartTime.current) {
-          const elapsed = Math.floor((Date.now() - workoutStartTime.current.getTime()) / 1000);
+          const elapsed = Math.floor(
+            (Date.now() - workoutStartTime.current.getTime()) / 1000
+          );
           setWorkoutTimer(elapsed);
         }
       }, 1000);
 
       exerciseTimerRef.current = setInterval(() => {
         if (exerciseStartTime.current) {
-          const elapsed = Math.floor((Date.now() - exerciseStartTime.current.getTime()) / 1000);
+          const elapsed = Math.floor(
+            (Date.now() - exerciseStartTime.current.getTime()) / 1000
+          );
           setExerciseTimer(elapsed);
         }
       }, 1000);
     } else {
       // Deactivate keep awake when timer stops
-      deactivateKeepAwake('workout-session-timer');
-      
+      deactivateKeepAwake("workout-session-timer");
+
       if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
       if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     }
 
     return () => {
-      deactivateKeepAwake('workout-session-timer');
+      deactivateKeepAwake("workout-session-timer");
       if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
       if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     };
@@ -132,28 +137,42 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   // Handle app state changes to manage timers during background/foreground transitions
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
         // App came to foreground - recalculate timers based on timestamps
-        console.log('App came to foreground, recalculating workout session timers');
-        
+        console.log(
+          "App came to foreground, recalculating workout session timers"
+        );
+
         if (isWorkoutActive && !isPaused) {
           if (workoutStartTime.current) {
-            const elapsed = Math.floor((Date.now() - workoutStartTime.current.getTime()) / 1000);
+            const elapsed = Math.floor(
+              (Date.now() - workoutStartTime.current.getTime()) / 1000
+            );
             setWorkoutTimer(elapsed);
           }
           if (exerciseStartTime.current) {
-            const elapsed = Math.floor((Date.now() - exerciseStartTime.current.getTime()) / 1000);
+            const elapsed = Math.floor(
+              (Date.now() - exerciseStartTime.current.getTime()) / 1000
+            );
             setExerciseTimer(elapsed);
           }
         }
       } else if (nextAppState.match(/inactive|background/)) {
-        console.log('App going to background, workout session timers will continue via timestamps');
+        console.log(
+          "App going to background, workout session timers will continue via timestamps"
+        );
       }
-      
+
       appStateRef.current = nextAppState;
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
     return () => subscription?.remove();
   }, [isWorkoutActive, isPaused]);
 
@@ -174,7 +193,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format
 
         // Debug all plan days
-        workout.planDays.forEach((day: any, index: number) => {
+        workout.planDays.forEach((day: PlanDayWithBlocks, index: number) => {
           const planDate = formatDateAsLocalString(day.date);
           console.log(`Plan day ${index}:`, {
             originalDate: day.date,
@@ -184,7 +203,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
             blocks: day.blocks?.length || 0,
             exercises:
               day.blocks?.reduce(
-                (total: number, block: any) =>
+                (total: number, block: WorkoutBlockWithExercise) =>
                   total + (block.exercises?.length || 0),
                 0
               ) || 0,
@@ -192,7 +211,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         });
 
         // Find today's plan day
-        const todaysPlan = workout.planDays.find((day: any) => {
+        const todaysPlan = workout.planDays.find((day: PlanDayWithBlocks) => {
           const planDate = formatDateAsLocalString(day.date);
           return planDate === today;
         });
@@ -204,7 +223,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
             blocks: todaysPlan.blocks?.length || 0,
             totalExercises:
               todaysPlan.blocks?.reduce(
-                (total: number, block: any) =>
+                (total: number, block: WorkoutBlockWithExercise) =>
                   total + (block.exercises?.length || 0),
                 0
               ) || 0,
@@ -309,7 +328,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   }, [currentExerciseIndex, activeWorkout, currentBlockIndex]);
 
   const checkExistingLogs = async (
-    planDay: any, // Workout with exercises for backward compatibility
+    planDay: PlanDayWithBlocks,
     initialData: ExerciseSessionData[]
   ) => {
     try {
@@ -338,13 +357,15 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         : [];
       const todaysCompletedExercises = completedExerciseIds.filter(
         (exerciseId: number) =>
-          exercisesArray.some((ex: any) => ex.id === exerciseId)
+          exercisesArray.some(
+            (ex: WorkoutBlockWithExercise) => ex.id === exerciseId
+          )
       );
 
       // Check if ALL exercises for this specific plan day are completed
       const allTodaysExercisesCompleted =
         exercisesArray.length > 0 &&
-        exercisesArray.every((ex: any) =>
+        exercisesArray.every((ex: WorkoutBlockWithExercise) =>
           todaysCompletedExercises.includes(ex.id)
         );
 
@@ -394,8 +415,8 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
       // Set current exercise index to the next incomplete exercise
       const nextIncompleteIndex = exercisesArray.findIndex(
-        (_: any, idx: number) =>
-          !completedExerciseIds.includes(exercisesArray[idx].id)
+        (exercise: WorkoutBlockWithExercise, idx: number) =>
+          !completedExerciseIds.includes(exercise.id)
       );
 
       if (nextIncompleteIndex !== -1) {
@@ -437,7 +458,10 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   }, [activeWorkout]);
 
   const updateExerciseData = useCallback(
-    (field: keyof ExerciseSessionData, value: any) => {
+    <K extends keyof ExerciseSessionData>(
+      field: K,
+      value: ExerciseSessionData[K]
+    ) => {
       setExerciseData((prev) =>
         prev.map((data, index) =>
           index === currentExerciseIndex ? { ...data, [field]: value } : data
@@ -589,12 +613,12 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setWorkoutTimer(0);
     setIsWorkoutActive(false);
     setExerciseData([]);
-    
+
     // Cleanup timers and keep awake
     if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
     if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
-    deactivateKeepAwake('workout-session-timer');
-    
+    deactivateKeepAwake("workout-session-timer");
+
     // Reset timestamps
     workoutStartTime.current = null;
     exerciseStartTime.current = null;
@@ -624,15 +648,15 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
   // Create backward compatible activeWorkout with exercises property
   const activeWorkoutWithExercises = activeWorkout
-    ? {
+    ? ({
         ...activeWorkout,
         exercises: flattenedExercises,
-      }
+      } as PlanDayWithExercisesLegacy)
     : null;
 
   return {
     // State
-    activeWorkout: activeWorkoutWithExercises as any, // Type assertion for backward compatibility
+    activeWorkout: activeWorkoutWithExercises,
     currentExerciseIndex,
     currentBlockIndex,
     exerciseTimer,
@@ -654,7 +678,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     togglePause,
 
     // Computed values
-    currentExercise: currentExercise as any, // Type assertion for backward compatibility
+    currentExercise,
     currentData,
     completedCount,
     totalExercises,

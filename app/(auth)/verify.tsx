@@ -6,7 +6,8 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
-  Image,
+  NativeSyntheticEvent,
+  TextInputKeyPressEventData,
 } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
@@ -50,7 +51,7 @@ export default function VerifyScreen() {
     if (text && index === 3) {
       const completeCode = [...newOtp];
       completeCode[index] = text;
-      if (completeCode.every(digit => digit !== "") && !isLoading) {
+      if (completeCode.every((digit) => digit !== "") && !isLoading) {
         setTimeout(() => {
           const code = completeCode.join("");
           handleVerifyWithCode(code);
@@ -59,7 +60,10 @@ export default function VerifyScreen() {
     }
   };
 
-  const handleKeyPress = (e: any, index: number) => {
+  const handleKeyPress = (
+    e: NativeSyntheticEvent<TextInputKeyPressEventData>,
+    index: number
+  ) => {
     // Move to previous input on backspace
     if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
       inputs.current[index - 1].focus();

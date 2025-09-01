@@ -43,7 +43,11 @@ export default function SetTracker({
     setLocalSets(sets);
   }, [sets]);
 
-  const updateSet = (index: number, field: keyof ExerciseSet, value: any) => {
+  const updateSet = <K extends keyof ExerciseSet>(
+    index: number,
+    field: K,
+    value: ExerciseSet[K]
+  ) => {
     const updatedSets = [...localSets];
     updatedSets[index] = { ...updatedSets[index], [field]: value };
     setLocalSets(updatedSets);
@@ -52,19 +56,19 @@ export default function SetTracker({
 
   const addSet = (useTargetValues = false) => {
     const lastSet = localSets[localSets.length - 1];
-    
+
     let newRoundNumber = 1;
     let newSetNumber = 1;
-    
+
     if (lastSet) {
       // Calculate how many sets should be in each round
       const setsPerRound = Math.ceil(targetSets / targetRounds);
-      
+
       // Count sets in the current round
       const currentRoundSets = localSets.filter(
-        set => set.roundNumber === lastSet.roundNumber
+        (set) => set.roundNumber === lastSet.roundNumber
       ).length;
-      
+
       if (currentRoundSets >= setsPerRound && targetRounds > 1) {
         // Move to next round
         newRoundNumber = lastSet.roundNumber + 1;
@@ -75,11 +79,13 @@ export default function SetTracker({
         newSetNumber = lastSet.setNumber + 1;
       }
     }
-    
+
     // Use previous set values if available and not forcing target values
-    const useWeight = useTargetValues || !lastSet ? (targetWeight || 0) : lastSet.weight;
-    const useReps = useTargetValues || !lastSet ? (targetReps || 0) : lastSet.reps;
-    
+    const useWeight =
+      useTargetValues || !lastSet ? targetWeight || 0 : lastSet.weight;
+    const useReps =
+      useTargetValues || !lastSet ? targetReps || 0 : lastSet.reps;
+
     const newSet: ExerciseSet = {
       roundNumber: newRoundNumber,
       setNumber: newSetNumber,
@@ -124,16 +130,13 @@ export default function SetTracker({
     return targetRounds > 1 ? `Round ${roundNumber}` : "";
   };
 
-  const groupedSets = localSets.reduce(
-    (acc, set) => {
-      if (!acc[set.roundNumber]) {
-        acc[set.roundNumber] = [];
-      }
-      acc[set.roundNumber].push(set);
-      return acc;
-    },
-    {} as Record<number, ExerciseSet[]>
-  );
+  const groupedSets = localSets.reduce((acc, set) => {
+    if (!acc[set.roundNumber]) {
+      acc[set.roundNumber] = [];
+    }
+    acc[set.roundNumber].push(set);
+    return acc;
+  }, {} as Record<number, ExerciseSet[]>);
 
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -176,7 +179,7 @@ export default function SetTracker({
               style={{ color: colors.text.secondary }}
               className="text-sm font-semibold mb-2"
             >
-              {getRoundLabel(parseInt(roundNumber))}
+              {getRoundLabel(parseInt(roundNumber, 10) || 0)}
             </Text>
           )}
 

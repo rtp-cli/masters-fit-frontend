@@ -7,7 +7,7 @@ import {
   Alert,
   Linking,
   Dimensions,
-  Text as RNText,
+  ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
@@ -17,7 +17,7 @@ import { images } from "@/assets";
 interface ExerciseLinkProps {
   link: string | null | undefined;
   exerciseName?: string;
-  style?: any;
+  style?: ViewStyle;
   showFullVideo?: boolean;
   variant?: "default" | "hero";
 }
@@ -485,11 +485,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
           {/* Play button overlay */}
           <View className="absolute inset-0 bg-black/20 items-center justify-center">
             <View className="bg-red-600 rounded-full w-20 h-20 items-center justify-center">
-              <Ionicons
-                name="play"
-                size={32}
-                color="white"
-              />
+              <Ionicons name="play" size={32} color="white" />
             </View>
           </View>
         </TouchableOpacity>
@@ -514,11 +510,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
           {/* Play button overlay */}
           <View className="absolute inset-0 bg-black/20 items-center justify-center">
             <View className="bg-red-600 rounded-full w-16 h-16 items-center justify-center">
-              <Ionicons
-                name="play"
-                size={24}
-                color="white"
-              />
+              <Ionicons name="play" size={24} color="white" />
             </View>
           </View>
         </TouchableOpacity>

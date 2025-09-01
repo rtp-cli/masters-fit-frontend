@@ -36,7 +36,7 @@ interface AppDataState {
   dailyWorkoutProgress: DailyWorkoutProgress[];
   workoutData: WorkoutWithDetails | null;
   profileData: Profile | null;
-  historyData: any[] | null; // Historical workout data
+  historyData: WorkoutWithDetails[] | null; // Historical workout data
 }
 
 // Loading states
@@ -732,7 +732,6 @@ export const useAppData = () => {
   // Refresh all data
   const refreshAll = useCallback(
     async (filters?: DashboardFilters) => {
-
       try {
         await Promise.all([
           refreshDashboard(filters),
@@ -740,7 +739,6 @@ export const useAppData = () => {
           refreshProfile(),
           refreshHistory(),
         ]);
-
       } catch (err) {
         console.error("Error refreshing all data:", err);
       }

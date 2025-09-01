@@ -148,8 +148,14 @@ export default function AdaptiveSetTracker({
         timerRef.current = null;
       }
     };
-  }, [isTimerActive, isTimerPaused, countdown, isCompleted, currentSetIndex, exercise.sets]);
-
+  }, [
+    isTimerActive,
+    isTimerPaused,
+    countdown,
+    isCompleted,
+    currentSetIndex,
+    exercise.sets,
+  ]);
 
   // Handle timer completion (log duration but don't advance)
   const handleTimerCompletion = () => {
@@ -168,7 +174,7 @@ export default function AdaptiveSetTracker({
     const totalDuration = updatedSets
       .filter((set) => set.isCompleted)
       .reduce((sum, set) => sum + (set.durationCompleted || 0), 0);
-    
+
     onProgressUpdate?.({
       setsCompleted: completedSets,
       duration: totalDuration, // Send total duration, not individual set duration
@@ -176,10 +182,9 @@ export default function AdaptiveSetTracker({
     });
   };
 
-
   const handleStartPause = () => {
     if (isCompleted) return; // Don't allow start/pause when completed
-    
+
     if (!isTimerActive) {
       // Starting timer for first time
       setIsTimerActive(true);
@@ -207,7 +212,11 @@ export default function AdaptiveSetTracker({
   };
 
   // Update duration set function
-  const updateDurationSet = (index: number, field: keyof DurationSet, value: any) => {
+  const updateDurationSet = <K extends keyof DurationSet>(
+    index: number,
+    field: K,
+    value: DurationSet[K]
+  ) => {
     const updatedSets = [...durationSets];
     updatedSets[index] = { ...updatedSets[index], [field]: value };
     setDurationSets(updatedSets);
@@ -218,8 +227,8 @@ export default function AdaptiveSetTracker({
   const addDurationSet = () => {
     const lastSet = durationSets[durationSets.length - 1];
     // Use target values for first set, previous set values for subsequent sets
-    const useWeight = !lastSet ? (exercise.weight || 0) : lastSet.weight;
-    
+    const useWeight = !lastSet ? exercise.weight || 0 : lastSet.weight;
+
     const newSet: DurationSet = {
       roundNumber: 1,
       setNumber: (lastSet?.setNumber || 0) + 1,
@@ -241,7 +250,7 @@ export default function AdaptiveSetTracker({
     });
     setDurationSets(updatedSets);
     onSetsChange(updatedSets);
-    
+
     // Adjust current set index if needed
     if (currentSetIndex >= updatedSets.length) {
       setCurrentSetIndex(Math.max(0, updatedSets.length - 1));
@@ -249,7 +258,11 @@ export default function AdaptiveSetTracker({
   };
 
   // Traditional set tracker functions (adapted from SetTracker)
-  const updateSet = (index: number, field: keyof ExerciseSet, value: any) => {
+  const updateSet = <K extends keyof ExerciseSet>(
+    index: number,
+    field: K,
+    value: ExerciseSet[K]
+  ) => {
     const updatedSets = [...sets];
     updatedSets[index] = { ...updatedSets[index], [field]: value };
     onSetsChange(updatedSets);
@@ -269,9 +282,9 @@ export default function AdaptiveSetTracker({
   const addSet = () => {
     const lastSet = sets[sets.length - 1];
     // Use target values for first set, previous set values for subsequent sets
-    const useWeight = !lastSet ? (exercise.weight || 0) : lastSet.weight;
-    const useReps = !lastSet ? (exercise.reps || 0) : lastSet.reps;
-    
+    const useWeight = !lastSet ? exercise.weight || 0 : lastSet.weight;
+    const useReps = !lastSet ? exercise.reps || 0 : lastSet.reps;
+
     const newSet: ExerciseSet = {
       roundNumber: 1,
       setNumber: (lastSet?.setNumber || 0) + 1,
@@ -502,7 +515,11 @@ export default function AdaptiveSetTracker({
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
                   onPress={() =>
-                    updateDurationSet(index, "weight", Math.max(0, set.weight - 5))
+                    updateDurationSet(
+                      index,
+                      "weight",
+                      Math.max(0, set.weight - 5)
+                    )
                   }
                 >
                   <Text className="text-xs font-semibold text-text-primary">
@@ -560,17 +577,11 @@ export default function AdaptiveSetTracker({
                   />
                 </View>
               ) : index === currentSetIndex ? (
-                <Text
-                  className="text-xs"
-                  style={{ color: colors.text.muted }}
-                >
+                <Text className="text-xs" style={{ color: colors.text.muted }}>
                   Current set
                 </Text>
               ) : (
-                <Text
-                  className="text-xs"
-                  style={{ color: colors.text.muted }}
-                >
+                <Text className="text-xs" style={{ color: colors.text.muted }}>
                   Pending
                 </Text>
               )}
@@ -623,7 +634,6 @@ export default function AdaptiveSetTracker({
             />
           </View>
         )}
-
       </View>
     );
   };

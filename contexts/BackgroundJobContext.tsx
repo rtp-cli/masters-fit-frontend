@@ -60,6 +60,39 @@ const STORAGE_KEY = "background_jobs";
 const POLL_INTERVAL = 5000; // 5 seconds
 const MAX_PROCESSED_COMPLETIONS = 100; // Limit processed completions tracking
 
+// Type guard to check if an object is a valid BackgroundJob
+function isBackgroundJob(obj: any): obj is BackgroundJob {
+  return (
+    obj &&
+    typeof obj.id === "number" &&
+    typeof obj.type === "string" &&
+    ["generation", "regeneration", "daily-regeneration"].includes(obj.type) &&
+    typeof obj.status === "string" &&
+    [
+      "pending",
+      "processing",
+      "completed",
+      "failed",
+      "cancelled",
+      "timeout",
+    ].includes(obj.status) &&
+    typeof obj.progress === "number" &&
+    typeof obj.createdAt === "string"
+  );
+}
+
+// Type guard for BackgroundJob['status']
+function isValidJobStatus(status: any): status is BackgroundJob["status"] {
+  return [
+    "pending",
+    "processing",
+    "completed",
+    "failed",
+    "cancelled",
+    "timeout",
+  ].includes(status);
+}
+
 interface BackgroundJobProviderProps {
   children: ReactNode;
 }
@@ -128,16 +161,25 @@ export function BackgroundJobProvider({
       const storedJobs = await AsyncStorage.getItem(STORAGE_KEY);
 
       if (storedJobs) {
-        const parsedJobs = JSON.parse(storedJobs) as BackgroundJob[];
-        // Only keep jobs from last 24 hours and not finished (completed, cancelled, timeout)
-        const recentJobs = parsedJobs.filter((job) => {
-          const jobDate = new Date(job.createdAt);
-          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          const finishedStatuses = ["completed", "cancelled", "timeout"];
-          return jobDate > oneDayAgo && !finishedStatuses.includes(job.status);
-        });
+        const parsedJobs = JSON.parse(storedJobs);
+        if (Array.isArray(parsedJobs) && parsedJobs.every(isBackgroundJob)) {
+          // Only keep jobs from last 24 hours and not finished (completed, cancelled, timeout)
+          const recentJobs = parsedJobs.filter((job) => {
+            const jobDate = new Date(job.createdAt);
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const finishedStatuses = ["completed", "cancelled", "timeout"];
+            return (
+              jobDate > oneDayAgo && !finishedStatuses.includes(job.status)
+            );
+          });
 
-        setJobs(recentJobs);
+          setJobs(recentJobs);
+        } else {
+          console.warn(
+            "[BackgroundJobContext] Invalid job data in storage, discarding."
+          );
+          await AsyncStorage.removeItem(STORAGE_KEY);
+        }
       }
     } catch (error) {
       console.error("[BackgroundJobContext] Error loading jobs:", error);
@@ -279,9 +321,14 @@ export function BackgroundJobProvider({
           const { job, response } = result.value;
           const jobStatus = response.job;
 
+          // Validate the status from the API
+          const newStatus = isValidJobStatus(jobStatus.status)
+            ? jobStatus.status
+            : job.status;
+
           // Update job with latest status
           await updateJob(job.id, {
-            status: jobStatus.status as BackgroundJob["status"],
+            status: newStatus,
             progress: jobStatus.progress,
             completedAt: jobStatus.completedAt,
             error: jobStatus.error,
@@ -330,10 +377,12 @@ export function BackgroundJobProvider({
     if (processedCompletionsRef.current.size >= MAX_PROCESSED_COMPLETIONS) {
       // Convert Set to Array, take only the recent half, convert back to Set
       const completionsArray = Array.from(processedCompletionsRef.current);
-      const recentCompletions = completionsArray.slice(-Math.floor(MAX_PROCESSED_COMPLETIONS / 2));
+      const recentCompletions = completionsArray.slice(
+        -Math.floor(MAX_PROCESSED_COMPLETIONS / 2)
+      );
       processedCompletionsRef.current = new Set(recentCompletions);
     }
-    
+
     processedCompletionsRef.current.add(jobId);
   }, []);
 

@@ -20,7 +20,7 @@ import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
 
-type RegenerationType = 'daily' | 'weekly' | 'repeat' | 'initial';
+type RegenerationType = "daily" | "weekly" | "repeat" | "initial";
 
 // Define the shape of our context
 interface AuthContextType {
@@ -34,7 +34,10 @@ interface AuthContextType {
   currentRegenerationType: RegenerationType;
   setIsSigningUp: (value: boolean) => void;
   setUserData: (user: User | null) => void;
-  setIsGeneratingWorkout: (value: boolean, regenerationType?: RegenerationType) => void;
+  setIsGeneratingWorkout: (
+    value: boolean,
+    regenerationType?: RegenerationType
+  ) => void;
   setIsPreloadingData: (value: boolean) => void;
   setNeedsFullAppRefresh: (value: boolean) => void;
   triggerWorkoutReady: () => void;
@@ -73,7 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [isPreloadingData, setIsPreloadingData] = useState(false);
   const [needsFullAppRefresh, setNeedsFullAppRefresh] = useState(false);
-  const [currentRegenerationType, setCurrentRegenerationType] = useState<RegenerationType>('initial');
+  const [currentRegenerationType, setCurrentRegenerationType] =
+    useState<RegenerationType>("initial");
 
   // Initialize user from secure storage on app start
   useEffect(() => {
@@ -155,23 +159,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Complete the onboarding process
   const completeOnboarding = async (
-    profileData: any,
-    userId?: number
+    userData: OnboardingData
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Use provided userId, pending storage, or current user ID
-      const userIdToUse = userId || (await getPendingUserId()) || user?.id;
+      // Use userId from userData, or fallback to pending storage or current user ID
+      const userIdToUse =
+        userData.userId || (await getPendingUserId()) || user?.id;
       if (!userIdToUse) {
         throw new Error("User ID not found");
       }
       const result = await apiCompleteOnboarding({
-        ...profileData,
-        userId: typeof userIdToUse === 'string' ? parseInt(userIdToUse) : userIdToUse,
+        ...userData,
+        userId:
+          typeof userIdToUse === "string" ? parseInt(userIdToUse) : userIdToUse,
       });
       if (result.success && result.profile) {
         // Get current user and update with needsOnboarding: false
-        const currentUser = user || await getCurrentUser();
+        const currentUser = user || (await getCurrentUser());
         if (currentUser) {
           const updatedUser = {
             ...currentUser,
@@ -184,8 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           logger.businessEvent("Onboarding completed", {
             userId: updatedUser.id,
-            fitnessLevel: profileData.fitnessLevel,
-            goals: profileData.goals?.length || 0,
+            fitnessLevel: userData.fitnessLevel,
+            goals: userData.goals?.length || 0,
           });
 
           return true;
@@ -231,7 +236,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Update generating workout state with regeneration type
-  const handleSetIsGeneratingWorkout = (value: boolean, regenerationType: RegenerationType = 'initial') => {
+  const handleSetIsGeneratingWorkout = (
+    value: boolean,
+    regenerationType: RegenerationType = "initial"
+  ) => {
     setIsGeneratingWorkout(value);
     if (value) {
       setCurrentRegenerationType(regenerationType);

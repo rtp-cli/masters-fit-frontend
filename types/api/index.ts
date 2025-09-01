@@ -6,6 +6,13 @@ export * from "./search.types";
 export * from "./dashboard.types";
 export * from "./profile.types";
 export * from "./circuit.types";
-export { ExerciseSetLog } from "./logs.types";
+export * from "./common.types";
+export {
+  ExerciseSetLog,
+  PlanDayLog,
+  WorkoutLog,
+  ExerciseLog,
+  CompletedExercisesResponse,
+} from "./logs.types";
 // Note: logs.types.ts ExerciseLog conflicts with workout.types.ts ExerciseLog
 // Using workout.types.ts version for now

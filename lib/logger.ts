@@ -4,14 +4,14 @@
  */
 
 export enum LogLevel {
-  ERROR = 'error',
-  WARN = 'warn',
-  INFO = 'info',
-  DEBUG = 'debug'
+  ERROR = "error",
+  WARN = "warn",
+  INFO = "info",
+  DEBUG = "debug",
 }
 
 interface LogContext {
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined | null;
 }
 
 interface LogEntry {
@@ -23,7 +23,7 @@ interface LogEntry {
 }
 
 class Logger {
-  private isDevelopment = __DEV__ || process.env.NODE_ENV === 'development';
+  private isDevelopment = __DEV__ || process.env.NODE_ENV === "development";
   private component?: string;
 
   constructor(component?: string) {
@@ -36,31 +36,31 @@ class Logger {
       message,
       context: this.sanitizeContext(context),
       timestamp: new Date().toISOString(),
-      component: this.component
+      component: this.component,
     };
 
     // Format for console output
-    const formattedMessage = this.component 
-      ? `[${this.component}] ${message}` 
+    const formattedMessage = this.component
+      ? `[${this.component}] ${message}`
       : message;
 
     switch (level) {
       case LogLevel.ERROR:
-        console.error(formattedMessage, context || '');
+        console.error(formattedMessage, context || "");
         break;
       case LogLevel.WARN:
-        console.warn(formattedMessage, context || '');
+        console.warn(formattedMessage, context || "");
         break;
       case LogLevel.INFO:
         // Only log info in development or if explicitly enabled
         if (this.isDevelopment || this.shouldLogInfo()) {
-          console.info(formattedMessage, context || '');
+          console.info(formattedMessage, context || "");
         }
         break;
       case LogLevel.DEBUG:
         // Only log debug in development
         if (this.isDevelopment) {
-          console.log(formattedMessage, context || '');
+          console.log(formattedMessage, context || "");
         }
         break;
     }
@@ -74,17 +74,24 @@ class Logger {
 
     // Remove sensitive data from context
     const sanitized = { ...context };
-    const sensitiveKeys = ['password', 'token', 'email', 'phone', 'ssn', 'credit'];
-    
-    Object.keys(sanitized).forEach(key => {
+    const sensitiveKeys = [
+      "password",
+      "token",
+      "email",
+      "phone",
+      "ssn",
+      "credit",
+    ];
+
+    Object.keys(sanitized).forEach((key) => {
       const lowerKey = key.toLowerCase();
-      if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
-        sanitized[key] = '[REDACTED]';
+      if (sensitiveKeys.some((sensitive) => lowerKey.includes(sensitive))) {
+        sanitized[key] = "[REDACTED]";
       }
-      
+
       // Truncate very long values
-      if (typeof sanitized[key] === 'string' && sanitized[key].length > 200) {
-        sanitized[key] = sanitized[key].substring(0, 200) + '...';
+      if (typeof sanitized[key] === "string" && sanitized[key].length > 200) {
+        sanitized[key] = sanitized[key].substring(0, 200) + "...";
       }
     });
 
@@ -93,7 +100,7 @@ class Logger {
 
   private shouldLogInfo(): boolean {
     // Could be controlled by environment variable or feature flag
-    return process.env.EXPO_PUBLIC_LOG_LEVEL === 'info';
+    return process.env.EXPO_PUBLIC_LOG_LEVEL === "info";
   }
 
   error(message: string, context?: LogContext) {
@@ -113,34 +120,43 @@ class Logger {
   }
 
   // Specialized logging methods for common use cases
-  apiRequest(endpoint: string, method: string = 'GET', duration?: number) {
+  apiRequest(endpoint: string, method: string = "GET", duration?: number) {
     const context: LogContext = { endpoint, method };
     if (duration !== undefined) {
       context.duration = `${duration}ms`;
       if (duration > 5000) {
-        this.warn('Slow API request detected', context);
+        this.warn("Slow API request detected", context);
       } else {
-        this.debug('API request completed', context);
+        this.debug("API request completed", context);
       }
     } else {
-      this.debug('API request started', context);
+      this.debug("API request started", context);
     }
   }
 
-  apiError(endpoint: string, error: any, method: string = 'GET') {
-    this.error('API request failed', {
+  apiError(endpoint: string, error: unknown, method: string = "GET") {
+    const errorContext: LogContext = {
       endpoint,
       method,
-      error: error?.message || 'Unknown error',
-      status: error?.status || error?.code
-    });
+    };
+
+    if (error instanceof Error) {
+      errorContext.error = error.message;
+      errorContext.stack = error.stack;
+    } else if (typeof error === "string") {
+      errorContext.error = error;
+    } else {
+      errorContext.error = "Unknown error";
+    }
+
+    this.error("API request failed", errorContext);
   }
 
   userAction(action: string, context?: LogContext) {
     this.info(`User action: ${action}`, context);
   }
 
-  performanceMetric(metric: string, value: number, unit: string = 'ms') {
+  performanceMetric(metric: string, value: number, unit: string = "ms") {
     this.info(`Performance: ${metric}`, { value, unit });
   }
 

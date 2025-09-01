@@ -217,12 +217,18 @@ export function truncateText(text: string, maxLength: number): string {
 /**
  * Convert a hex color to rgba
  */
-export function hexToRgba(hex: string, alpha: number = 1): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+export const hexToRgba = (hex: string, alpha: number = 1): string => {
+  if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+    return "rgba(0,0,0,0)";
+  }
+
+  let c = hex.substring(1).split("");
+  if (c.length === 3) {
+    c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+  }
+  const cint = c.map((char) => parseInt(char + char, 16));
+  return `rgba(${cint[0]}, ${cint[1]}, ${cint[2]}, ${alpha})`;
+};
 
 /**
  * Format a date for display in calendar (timezone-independent)

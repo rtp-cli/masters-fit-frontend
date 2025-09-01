@@ -11,7 +11,9 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { useAuth } from "@contexts/AuthContext";
 import ExerciseLink from "@components/ExerciseLink";
 import ExerciseLinkModal from "@components/ExerciseLinkModal";
@@ -21,12 +23,18 @@ import {
   ExerciseDetails,
   ExerciseUserStats,
 } from "@lib/search";
+import {
+  DateSearchWorkoutBlock,
+  DateSearchExercise,
+} from "@/types/api/search.types";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { updateExerciseLink } from "@lib/exercises";
 
-import { colors } from "../../lib/theme";
+import { colors } from "@/lib/theme";
 
 type SearchType = "date" | "exercise" | "general";
+
+type PlanDayForCompletion = DateSearchWorkout["planDay"];
 
 export default function SearchScreen() {
   const { user } = useAuth();
@@ -88,7 +96,7 @@ export default function SearchScreen() {
   }, []);
 
   // Handle date selection from DateTimePicker
-  const handleDateChange = (event: any, date?: Date) => {
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
     // Hide picker after date selection on both platforms
     setShowDatePicker(false);
 
@@ -393,16 +401,16 @@ export default function SearchScreen() {
   };
 
   // Calculate completion rate for workout based on completed exercises
-  const calculateWorkoutCompletionRate = (planDay: any) => {
+  const calculateWorkoutCompletionRate = (planDay: PlanDayForCompletion) => {
     if (!planDay) return 0;
 
     // Handle block-based structure
     if (planDay.blocks && planDay.blocks.length > 0) {
       const allExercises = planDay.blocks.flatMap(
-        (block: any) => block.exercises || []
+        (block) => block.exercises || []
       );
       const completedCount = allExercises.filter(
-        (exercise: any) => exercise.completed
+        (exercise) => exercise.completed
       ).length;
       return allExercises.length > 0
         ? Math.round((completedCount / allExercises.length) * 100)
@@ -412,7 +420,7 @@ export default function SearchScreen() {
     // Handle legacy structure with direct exercises
     if (planDay.exercises && planDay.exercises.length > 0) {
       const completedCount = planDay.exercises.filter(
-        (exercise: any) => exercise.completed
+        (exercise) => exercise.completed
       ).length;
       return planDay.exercises.length > 0
         ? Math.round((completedCount / planDay.exercises.length) * 100)
@@ -988,7 +996,7 @@ export default function SearchScreen() {
                       if (planDay.blocks && planDay.blocks.length > 0) {
                         // New structure with blocks
                         return planDay.blocks.reduce(
-                          (total: number, block: any) =>
+                          (total: number, block: { exercises?: any[] }) =>
                             total + (block.exercises?.length || 0),
                           0
                         );
@@ -1004,7 +1012,7 @@ export default function SearchScreen() {
                   {/* Handle block structure */}
                   {dateResult.planDay.blocks
                     ? dateResult.planDay.blocks.map(
-                        (block: any, blockIndex: number) => (
+                        (block: DateSearchWorkoutBlock, blockIndex: number) => (
                           <View key={block.id || blockIndex} className="mb-4">
                             {/* Block Header */}
                             <View className="bg-neutral-light-1 rounded-lg p-3 mb-3">
@@ -1034,7 +1042,10 @@ export default function SearchScreen() {
 
                             {/* Exercises in this block */}
                             {block.exercises?.map(
-                              (exercise: any, exerciseIndex: number) => (
+                              (
+                                exercise: DateSearchExercise,
+                                exerciseIndex: number
+                              ) => (
                                 <TouchableOpacity
                                   key={exercise.id || exerciseIndex}
                                   className="bg-white rounded-xl p-4 mb-3 border border-neutral-light-2"
@@ -1058,8 +1069,10 @@ export default function SearchScreen() {
                                           equipment: Array.isArray(
                                             exercise.exercise.equipment
                                           )
-                                            ? exercise.exercise.equipment
-                                            : [],
+                                            ? exercise.exercise.equipment.join(
+                                                ", "
+                                              )
+                                            : "",
                                           difficulty: safeString(
                                             exercise.exercise.difficulty ||
                                               "Unknown"
@@ -1091,16 +1104,16 @@ export default function SearchScreen() {
                                           exercise?.completed === true
                                             ? "bg-brand-primary"
                                             : exercise?.completed === false
-                                              ? "bg-red-700"
-                                              : "bg-yellow-700"
+                                            ? "bg-red-700"
+                                            : "bg-yellow-700"
                                         }`}
                                       >
                                         <Text className="text-xs font-semibold text-white">
                                           {exercise?.completed === true
                                             ? "Done"
                                             : exercise?.completed === false
-                                              ? "Not Done"
-                                              : "Pending"}
+                                            ? "Not Done"
+                                            : "Pending"}
                                         </Text>
                                       </View>
                                       <Ionicons
@@ -1187,7 +1200,7 @@ export default function SearchScreen() {
                       )
                     : // Handle legacy structure with direct exercises
                       dateResult.planDay.exercises?.map(
-                        (exercise: any, index: number) => (
+                        (exercise: DateSearchExercise, index: number) => (
                           <TouchableOpacity
                             key={index}
                             className="bg-white rounded-xl p-4 mb-3 border border-neutral-light-2"
@@ -1211,8 +1224,8 @@ export default function SearchScreen() {
                                     equipment: Array.isArray(
                                       exercise.exercise.equipment
                                     )
-                                      ? exercise.exercise.equipment
-                                      : [],
+                                      ? exercise.exercise.equipment.join(", ")
+                                      : "",
                                     difficulty: safeString(
                                       exercise.exercise.difficulty || "Unknown"
                                     ),
@@ -1244,16 +1257,16 @@ export default function SearchScreen() {
                                     exercise?.completed === true
                                       ? "bg-brand-primary"
                                       : exercise?.completed === false
-                                        ? "bg-red-700"
-                                        : "bg-yellow-700"
+                                      ? "bg-red-700"
+                                      : "bg-yellow-700"
                                   }`}
                                 >
                                   <Text className="text-xs font-semibold text-white">
                                     {exercise?.completed === true
                                       ? "Done"
                                       : exercise?.completed === false
-                                        ? "Not Done"
-                                        : "Pending"}
+                                      ? "Not Done"
+                                      : "Pending"}
                                   </Text>
                                 </View>
                                 <Ionicons
@@ -1341,7 +1354,7 @@ export default function SearchScreen() {
             <Text className="text-lg font-semibold text-text-primary mb-4 p-4">
               Exercise Results ({safeString(generalResults.length)})
             </Text>
-            {generalResults.map((exercise: any, index: number) => (
+            {generalResults.map((exercise: Exercise, index: number) => (
               <TouchableOpacity
                 key={`general-exercise-${exercise?.id || index}`}
                 className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center"
@@ -1355,8 +1368,8 @@ export default function SearchScreen() {
                         ? exercise.muscleGroups
                         : [],
                       equipment: Array.isArray(exercise?.equipment)
-                        ? exercise.equipment
-                        : [],
+                        ? exercise.equipment.join(", ")
+                        : "",
                       difficulty: safeString(exercise?.difficulty || "Unknown"),
                       instructions: safeString(exercise?.instructions || ""),
                       createdAt: new Date(),

@@ -9,6 +9,15 @@ import {
   CreateWorkoutLogParams,
   ExerciseLog,
   PlanDayWithBlocks,
+  WorkoutLog,
+  AsyncJobResponse,
+  PlanDayLog,
+  ApiResponse,
+  WorkoutResponse,
+  CompletedExercisesResponse,
+  WorkoutsResponse,
+  WorkoutWithDetails,
+  ActiveWorkoutResponse,
 } from "@/types/api";
 
 // Simple cache for active workout
@@ -26,13 +35,15 @@ const workoutUpdateListeners: Array<() => void> = [];
 export const subscribeToWorkoutUpdates = (listener: () => void) => {
   // Prevent unbounded growth - remove oldest listeners if at max capacity
   if (workoutUpdateListeners.length >= MAX_LISTENERS) {
-    console.warn(`[workouts.ts] Listener array at max capacity (${MAX_LISTENERS}), removing oldest listeners`);
+    console.warn(
+      `[workouts.ts] Listener array at max capacity (${MAX_LISTENERS}), removing oldest listeners`
+    );
     // Remove the first half to make room
     workoutUpdateListeners.splice(0, Math.floor(MAX_LISTENERS / 2));
   }
-  
+
   workoutUpdateListeners.push(listener);
-  
+
   return () => {
     const index = workoutUpdateListeners.indexOf(listener);
     if (index > -1) {
@@ -203,11 +214,16 @@ export function getWorkoutsForWeek(
 /**
  * Generate a workout plan for the current user
  */
-export async function generateWorkoutPlan(userId: number): Promise<any | null> {
+export async function generateWorkoutPlan(
+  userId: number
+): Promise<WorkoutResponse | null> {
   try {
-    const response = await apiRequest<any>(`/workouts/${userId}/generate`, {
-      method: "POST",
-    });
+    const response = await apiRequest<WorkoutResponse>(
+      `/workouts/${userId}/generate`,
+      {
+        method: "POST",
+      }
+    );
 
     if (response?.success) {
       // Invalidate cache to force fresh data fetch
@@ -246,12 +262,15 @@ export async function regenerateWorkoutPlan(
       medicalNotes?: string;
     };
   }
-): Promise<any | null> {
+): Promise<AsyncJobResponse | null> {
   try {
-    const response = await apiRequest<any>(`/workouts/${userId}/regenerate`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const response = await apiRequest<AsyncJobResponse>(
+      `/workouts/${userId}/regenerate`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
 
     if (response?.success) {
       // Invalidate cache to force fresh data fetch
@@ -269,35 +288,28 @@ export async function regenerateWorkoutPlan(
 /**
  * Get plan day log for a completed plan day
  */
-export async function getPlanDayLog(planDayId: number): Promise<{
-  totalTimeSeconds?: number;
-  exercisesCompleted?: number;
-  blocksCompleted?: number;
-  notes?: string;
-} | null> {
+export async function getPlanDayLog(
+  planDayId: number
+): Promise<PlanDayLog | null> {
   try {
     // First try to get the latest plan day log
-    const response = await apiRequest<any>(
+    const response = await apiRequest<{ success: boolean; log: PlanDayLog }>(
       `/logs/plan-day/plan-day/${planDayId}/latest`
     );
-    return response?.log || null;
-  } catch (error) {
-    console.error(`Error fetching plan day log for ${planDayId}:`, error);
+    if (response?.log) {
+      return response.log;
+    }
 
     // If that fails, try getting all logs for the plan day and take the first one
-    try {
-      const allLogsResponse = await apiRequest<any>(
-        `/logs/plan-day/plan-day/${planDayId}`
-      );
-      const logs = allLogsResponse?.logs || [];
-      return logs.length > 0 ? logs[0] : null;
-    } catch (secondError) {
-      console.error(
-        `Error fetching all plan day logs for ${planDayId}:`,
-        secondError
-      );
-      return null;
-    }
+    const allLogsResponse = await apiRequest<{
+      success: boolean;
+      logs: PlanDayLog[];
+    }>(`/logs/plan-day/plan-day/${planDayId}`);
+    const logs = allLogsResponse?.logs || [];
+    return logs.length > 0 ? logs[0] : null;
+  } catch (error) {
+    console.error(`Error fetching plan day log for ${planDayId}:`, error);
+    return null;
   }
 }
 
@@ -312,9 +324,9 @@ export async function markPlanDayAsComplete(
     blocksCompleted?: number;
     notes?: string;
   }
-): Promise<any | null> {
+): Promise<ApiResponse | null> {
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<ApiResponse>(
       `/logs/workout/day/${planDayId}/complete`,
       {
         method: "POST",
@@ -336,7 +348,7 @@ export async function markPlanDayAsComplete(
  */
 export async function fetchActiveWorkout(
   forceRefresh = false
-): Promise<any | null> {
+): Promise<WorkoutWithDetails | null> {
   const now = Date.now();
 
   if (
@@ -352,7 +364,7 @@ export async function fetchActiveWorkout(
     if (!user) {
       return null;
     }
-    const response = await apiRequest<any>(
+    const response = await apiRequest<ActiveWorkoutResponse>(
       `/workouts/${user.id}/active-workout`
     );
 
@@ -440,13 +452,16 @@ export async function createExerciseLog(
  */
 export async function createWorkoutLog(
   params: CreateWorkoutLogParams
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const workoutLog = await apiRequest("/logs/workout", {
-      method: "POST",
-      body: JSON.stringify(params),
-    });
-    return workoutLog;
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
+      "/logs/workout",
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      }
+    );
+    return response.log;
   } catch (error) {
     console.error("Error creating workout log:", error);
     return null;
@@ -458,11 +473,12 @@ export async function createWorkoutLog(
  */
 export async function getExerciseLogs(
   planDayExerciseId: number
-): Promise<any[]> {
+): Promise<ExerciseLog[]> {
   try {
-    const response = await apiRequest<any>(
-      `/logs/exercise/${planDayExerciseId}`
-    );
+    const response = await apiRequest<{
+      success: boolean;
+      logs: ExerciseLog[];
+    }>(`/logs/exercise/${planDayExerciseId}`);
     return response.logs || [];
   } catch (error) {
     console.error("Error fetching exercise logs:", error);
@@ -473,9 +489,11 @@ export async function getExerciseLogs(
 /**
  * Get workout logs for a specific workout
  */
-export async function getWorkoutLogs(workoutId: number): Promise<any[]> {
+export async function getWorkoutLogs(workoutId: number): Promise<WorkoutLog[]> {
   try {
-    const response = await apiRequest<any>(`/logs/workout/${workoutId}/all`);
+    const response = await apiRequest<{ success: boolean; logs: WorkoutLog[] }>(
+      `/logs/workout/${workoutId}/all`
+    );
     return response.logs || [];
   } catch (error) {
     console.error("Error fetching workout logs:", error);
@@ -488,11 +506,12 @@ export async function getWorkoutLogs(workoutId: number): Promise<any[]> {
  */
 export async function getExistingWorkoutLog(
   workoutId: number
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const response = await apiRequest<any>(
-      `/logs/workout/${workoutId}/existing`
-    );
+    const response = await apiRequest<{
+      success: boolean;
+      log: WorkoutLog | null;
+    }>(`/logs/workout/${workoutId}/existing`);
     return response.log || null;
   } catch (error) {
     console.error("Error fetching existing workout log:", error);
@@ -505,9 +524,11 @@ export async function getExistingWorkoutLog(
  */
 export async function getOrCreateWorkoutLog(
   workoutId: number
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const response = await apiRequest<any>(`/logs/workout/${workoutId}`);
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
+      `/logs/workout/${workoutId}`
+    );
     return response.log || null;
   } catch (error) {
     console.error("Error getting/creating workout log:", error);
@@ -526,12 +547,15 @@ export async function updateWorkoutLog(
     completedExercises?: number[];
     notes?: string;
   }
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const response = await apiRequest<any>(`/logs/workout/${workoutId}`, {
-      method: "PUT",
-      body: JSON.stringify(params),
-    });
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
+      `/logs/workout/${workoutId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(params),
+      }
+    );
     return response.log || null;
   } catch (error) {
     console.error("Error updating workout log:", error);
@@ -547,7 +571,7 @@ export async function getCompletedExercises(workoutId: number): Promise<{
   count: number;
 }> {
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<CompletedExercisesResponse>(
       `/logs/workout/${workoutId}/completed`
     );
     return {
@@ -569,10 +593,10 @@ export async function getCompletedExercises(workoutId: number): Promise<{
 export async function markExerciseCompleted(
   workoutId: number,
   planDayExerciseId: number
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   invalidateActiveWorkoutCache();
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
       `/logs/workout/${workoutId}/exercise/${planDayExerciseId}`,
       {
         method: "POST",
@@ -591,9 +615,9 @@ export async function markExerciseCompleted(
 export async function markWorkoutComplete(
   workoutId: number,
   totalExerciseIds: number[]
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
       `/logs/workout/${workoutId}/complete`,
       {
         method: "POST",
@@ -614,16 +638,16 @@ export async function regenerateDailyWorkout(
   userId: number,
   planDayId: number,
   regenerationReason: string
-): Promise<{ success: boolean; planDay: any } | null> {
+): Promise<{ success: boolean; planDay: PlanDayWithBlocks } | null> {
   invalidateActiveWorkoutCache();
   try {
-    const response = await apiRequest<{ success: boolean; planDay: any }>(
-      `/workouts/${userId}/days/${planDayId}/regenerate`,
-      {
-        method: "POST",
-        body: JSON.stringify({ reason: regenerationReason }),
-      }
-    );
+    const response = await apiRequest<{
+      success: boolean;
+      planDay: PlanDayWithBlocks;
+    }>(`/workouts/${userId}/days/${planDayId}/regenerate`, {
+      method: "POST",
+      body: JSON.stringify({ reason: regenerationReason }),
+    });
     return response;
   } catch (error) {
     console.error("Error regenerating daily workout:", error);
@@ -637,16 +661,16 @@ export async function regenerateDailyWorkout(
 export async function skipExercise(
   workoutId: number,
   planDayExerciseId: number
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
       `/logs/workout/${workoutId}/exercise/${planDayExerciseId}/skip`,
       {
         method: "POST",
       }
     );
     invalidateActiveWorkoutCache();
-    return response;
+    return response.log || null;
   } catch (error) {
     console.error("Error skipping exercise:", error);
     return null;
@@ -659,16 +683,16 @@ export async function skipExercise(
 export async function skipWorkoutBlock(
   workoutId: number,
   workoutBlockId: number
-): Promise<any | null> {
+): Promise<WorkoutLog | null> {
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<{ success: boolean; log: WorkoutLog }>(
       `/logs/workout/${workoutId}/block/${workoutBlockId}/skip`,
       {
         method: "POST",
       }
     );
     invalidateActiveWorkoutCache();
-    return response;
+    return response.log || null;
   } catch (error) {
     console.error("Error skipping workout block:", error);
     return null;
@@ -682,9 +706,9 @@ export async function repeatPreviousWeekWorkout(
   userId: number,
   originalWorkoutId: number,
   newStartDate: string
-): Promise<any | null> {
+): Promise<WorkoutResponse | null> {
   try {
-    const response = await apiRequest<any>(
+    const response = await apiRequest<WorkoutResponse>(
       `/workouts/${userId}/repeat-week/${originalWorkoutId}`,
       {
         method: "POST",
@@ -710,12 +734,11 @@ export async function repeatPreviousWeekWorkout(
  */
 export async function fetchWorkoutHistory(
   userId: number
-): Promise<any[] | null> {
+): Promise<WorkoutWithDetails[] | null> {
   try {
-    const response = await apiRequest<{
-      success: boolean;
-      workouts: any[];
-    }>(`/workouts/${userId}/history`);
+    const response = await apiRequest<WorkoutsResponse>(
+      `/workouts/${userId}/history`
+    );
 
     if (response?.success) {
       return response.workouts || [];
@@ -733,12 +756,11 @@ export async function fetchWorkoutHistory(
  */
 export async function fetchPreviousWorkouts(
   userId: number
-): Promise<any[] | null> {
+): Promise<WorkoutWithDetails[] | null> {
   try {
-    const response = await apiRequest<{
-      success: boolean;
-      workouts: any[];
-    }>(`/workouts/${userId}/previous-workouts`);
+    const response = await apiRequest<WorkoutsResponse>(
+      `/workouts/${userId}/previous-workouts`
+    );
 
     if (response?.success) {
       return response.workouts || [];
@@ -776,16 +798,19 @@ export async function generateWorkoutPlanAsync(
       medicalNotes?: string;
     };
   }
-): Promise<{ success: boolean; jobId: number; message: string } | null> {
+): Promise<AsyncJobResponse | null> {
+  if (!userId) {
+    console.error("User ID is required for generating a workout plan");
+    return null;
+  }
   try {
-    const response = await apiRequest<{
-      success: boolean;
-      jobId: number;
-      message: string;
-    }>(`/workouts/${userId}/generate-async`, {
-      method: "POST",
-      body: JSON.stringify(params || {}),
-    });
+    const response = await apiRequest<AsyncJobResponse>(
+      `/workouts/${userId}/generate-async`,
+      {
+        method: "POST",
+        body: JSON.stringify(params || {}),
+      }
+    );
 
     if (response?.success) {
       return response;

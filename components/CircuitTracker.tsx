@@ -15,8 +15,13 @@ import {
   CircuitTrackerProps,
   CircuitExerciseLog,
   CircuitRound,
+  UseCircuitSessionReturn,
 } from "@/types/api/circuit.types";
+import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { getRoundCompleteButtonText } from "@/utils/circuitUtils";
+
+// Type alias for circuit actions
+type CircuitActions = UseCircuitSessionReturn["actions"];
 
 export default function CircuitTracker({
   block,
@@ -26,7 +31,7 @@ export default function CircuitTracker({
   onCircuitComplete,
   isActive,
   circuitActions, // Add circuit actions from the hook
-}: CircuitTrackerProps & { circuitActions?: any }) {
+}: CircuitTrackerProps & { circuitActions?: CircuitActions }) {
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];
   const isCurrentRoundCompleted = currentRoundData?.isCompleted || false;
 
@@ -241,7 +246,7 @@ export default function CircuitTracker({
   // Create a new round with all exercises
   const createNewRound = (
     roundNumber: number,
-    exercises: any[]
+    exercises: WorkoutBlockWithExercise[]
   ): CircuitRound => ({
     roundNumber,
     exercises: exercises.map(

@@ -246,7 +246,11 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
 
           {link && linkType === "unknown" && (
             <View className="flex-row items-center mb-md">
-              <Ionicons name="warning" size={16} color={colors.brand.secondary} />
+              <Ionicons
+                name="warning"
+                size={16}
+                color={colors.brand.secondary}
+              />
               <Text variant="bodySmall" color={colors.brand.primary}>
                 Please enter a valid YouTube video URL
               </Text>

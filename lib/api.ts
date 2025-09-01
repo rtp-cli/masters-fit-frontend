@@ -8,9 +8,19 @@ import { logger } from "./logger";
  */
 export async function getAuthToken(): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync("token");
+    const token = await SecureStore.getItemAsync("token");
+    if (typeof token === "string" || token === null) {
+      return token;
+    } else {
+      logger.error("Unexpected token type retrieved from SecureStore", {
+        token,
+      });
+      return null;
+    }
   } catch (error) {
-    logger.error("Error retrieving authentication token", { error: error });
+    logger.error("Error retrieving authentication token", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -49,7 +59,10 @@ export async function apiRequest<T>(
     // Handle HTTP errors
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(`[API] ${response.status} Error Response:`, JSON.stringify(errorData, null, 2));
+      console.error(
+        `[API] ${response.status} Error Response:`,
+        JSON.stringify(errorData, null, 2)
+      );
       logger.apiError(
         endpoint,
         {
@@ -162,18 +175,32 @@ export async function completeOnboardingAPI(
 ): Promise<{ success: boolean; user?: User }> {
   try {
     const endpoint = `/profile/user/${userData.userId}`;
-    console.log("[API] Sending onboarding data to", endpoint, ":", JSON.stringify(userData, null, 2));
-    const result = await apiRequest<{ success: boolean; user?: User }>(endpoint, {
-      method: "PUT",
-      body: JSON.stringify(userData),
-    });
-    console.log("[API] Onboarding API response:", JSON.stringify(result, null, 2));
+    console.log(
+      "[API] Sending onboarding data to",
+      endpoint,
+      ":",
+      JSON.stringify(userData, null, 2)
+    );
+    const result = await apiRequest<{ success: boolean; user?: User }>(
+      endpoint,
+      {
+        method: "PUT",
+        body: JSON.stringify(userData),
+      }
+    );
+    console.log(
+      "[API] Onboarding API response:",
+      JSON.stringify(result, null, 2)
+    );
     return result;
   } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
     console.error("[API] Onboarding error details:", error);
-    console.error("[API] Error message:", error.message);
-    console.error("[API] Error stack:", error.stack);
-    
+    console.error("[API] Error message:", errorMessage);
+    if (errorStack) console.error("[API] Error stack:", errorStack);
+
     // Try to extract more detailed error information
     if (error instanceof Error) {
       try {
@@ -181,13 +208,15 @@ export async function completeOnboardingAPI(
         const errorMatch = error.message.match(/HTTP error (\d+)/);
         if (errorMatch) {
           console.error(`[API] HTTP Status Code: ${errorMatch[1]}`);
-          console.error("[API] This suggests a validation error. Check data format against backend schema.");
+          console.error(
+            "[API] This suggests a validation error. Check data format against backend schema."
+          );
         }
       } catch (parseError) {
         console.error("[API] Could not parse error details:", parseError);
       }
     }
-    
+
     return { success: false };
   }
 }

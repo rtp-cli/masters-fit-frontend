@@ -1,4 +1,5 @@
 import { Exercise } from "./exercise.types";
+import { ApiResponse } from "./common.types";
 
 export interface Workout {
   id: number;
@@ -264,12 +265,31 @@ export interface PlanDayWithExercise extends PlanDayExercise {
 export interface PlanDayWithExercises
   extends Omit<PlanDay, "created_at" | "updated_at"> {
   exercises: PlanDayWithExercise[];
+  isComplete: boolean;
   created_at: Date;
   updated_at: Date;
 }
 
+export type TodayWorkout = PlanDayWithBlocks | PlanDayWithExercises;
+
 export interface WorkoutWithDetails extends WorkoutDetailed {
   planDays: PlanDayWithBlocks[];
+}
+
+export interface WorkoutResponse extends ApiResponse {
+  workout: WorkoutWithDetails;
+}
+
+export interface WorkoutsResponse extends ApiResponse {
+  workouts: WorkoutWithDetails[];
+}
+
+export interface ActiveWorkoutResponse extends ApiResponse {
+  workout: WorkoutWithDetails | null;
+}
+
+export interface PlanDayWithExercisesLegacy extends PlanDayWithBlocks {
+  exercises: WorkoutBlockWithExercise[];
 }
 
 // Helper function to flatten blocks into exercises for backward compatibility
@@ -341,4 +361,15 @@ export interface PreviousWorkout {
       exerciseCount: number;
     }[];
   }[];
+}
+
+export interface WorkoutBlockExerciseResponse {
+  success: boolean;
+  workoutBlockExercise: WorkoutBlockExercise;
+}
+
+export interface AsyncJobResponse {
+  success: boolean;
+  jobId: number;
+  message: string;
 }

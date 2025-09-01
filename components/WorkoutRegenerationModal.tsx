@@ -22,6 +22,7 @@ import {
   regenerateWorkoutPlanAsync,
   regenerateDailyWorkoutAsync,
 } from "@lib/workouts";
+import { UserProfile } from "@/types/api";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -169,7 +170,9 @@ export default function WorkoutRegenerationModal({
   isRestDay = false,
   noActiveWorkoutDay = false,
 }: WorkoutRegenerationModalProps) {
-  const [currentProfile, setCurrentProfile] = useState<any>(null);
+  const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(
+    null
+  );
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [showOnboardingForm, setShowOnboardingForm] = useState(false);
   const [customFeedback, setCustomFeedback] = useState("");
@@ -183,7 +186,7 @@ export default function WorkoutRegenerationModal({
     refresh: { refreshAll },
   } = useAppDataContext();
   const { setIsGeneratingWorkout } = useAuth();
-  
+
   // Background job tracking
   const { addJob } = useBackgroundJobs();
 
@@ -318,8 +321,8 @@ export default function WorkoutRegenerationModal({
 
             if (result?.success && result.jobId) {
               // Add job to background tracking
-              await addJob(result.jobId, 'daily-regeneration');
-              
+              await addJob(result.jobId, "daily-regeneration");
+
               // Close modal and let FAB handle progress
               onClose();
               onSuccess?.();
@@ -386,8 +389,8 @@ export default function WorkoutRegenerationModal({
 
           if (result?.success && result.jobId) {
             // Add job to background tracking
-            await addJob(result.jobId, 'regeneration');
-            
+            await addJob(result.jobId, "regeneration");
+
             // Success callback
             onSuccess?.();
           } else {
@@ -408,8 +411,8 @@ export default function WorkoutRegenerationModal({
 
           if (result?.success && result.jobId) {
             // Add job to background tracking
-            await addJob(result.jobId, 'daily-regeneration');
-            
+            await addJob(result.jobId, "daily-regeneration");
+
             // Success callback
             onSuccess?.();
           } else {
@@ -430,7 +433,9 @@ export default function WorkoutRegenerationModal({
     }
   };
 
-  const convertProfileToFormData = (profile: any): Partial<FormData> => {
+  const convertProfileToFormData = (
+    profile: UserProfile
+  ): Partial<FormData> => {
     // Handle intensity level conversion
     let intensityLevel = IntensityLevels.MODERATE;
     if (profile.intensityLevel) {

@@ -8,7 +8,10 @@ import {
   UseCircuitSessionReturn,
   CircuitSessionConfig,
 } from "@/types/api/circuit.types";
-import { WorkoutBlockWithExercises } from "@/types/api/workout.types";
+import {
+  WorkoutBlockWithExercises,
+  WorkoutBlockWithExercise,
+} from "@/types/api/workout.types";
 import { calculateCircuitScore } from "@/utils/circuitUtils";
 import { logger } from "@/lib/logger";
 
@@ -69,7 +72,10 @@ export function useCircuitSession(
   }, [block.id]);
 
   // Create a new round with all exercises
-  function createRound(roundNumber: number, exercises: any[]): CircuitRound {
+  function createRound(
+    roundNumber: number,
+    exercises: WorkoutBlockWithExercise[]
+  ): CircuitRound {
     return {
       roundNumber,
       exercises: exercises.map(

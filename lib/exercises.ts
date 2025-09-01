@@ -180,11 +180,14 @@ export const updateExerciseLink = async (
         error: response.error || "Failed to update link",
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to update exercise link:", error);
     return {
       success: false,
-      error: error.message || "Failed to update exercise link",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update exercise link",
     };
   }
 };

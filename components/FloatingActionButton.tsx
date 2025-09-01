@@ -11,8 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import { colors } from "@/lib/theme";
 import { images } from "@/assets";
-import ShimmerPlaceholder from "react-native-shimmer-placeholder";
-import { LinearGradient } from "expo-linear-gradient";
 
 export default function FloatingActionButton() {
   const {

@@ -15,6 +15,8 @@ import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@components/OnboardingForm";
 import { colors } from "../lib/theme";
 
+// TODO: move this to components and use constants from separate file
+
 // Import enums directly from OnboardingForm since they're defined there
 enum Gender {
   MALE = "male",
@@ -156,8 +158,8 @@ export default function ProfileEditScreen() {
           profile.intensityLevel === 1
             ? IntensityLevels.LOW
             : profile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+            ? IntensityLevels.MODERATE
+            : IntensityLevels.HIGH;
       } else {
         // Handle string values
         switch (profile.intensityLevel.toLowerCase()) {

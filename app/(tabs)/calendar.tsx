@@ -4,18 +4,15 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   regenerateWorkoutPlanAsync,
   regenerateDailyWorkoutAsync,
-  notifyWorkoutUpdated,
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
 } from "@lib/workouts";
@@ -23,10 +20,11 @@ import { registerForPushNotifications } from "@/lib/notifications";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
 import {
-  WorkoutWithDetails,
   PlanDayWithBlocks,
-  flattenBlocksToExercises,
+  WorkoutWithDetails,
+  WorkoutBlockWithExercises,
 } from "../types";
+import { RegenerationData } from "@/types/calendar.types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
@@ -34,10 +32,8 @@ import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import WorkoutBlock from "@components/WorkoutBlock";
 import {
-  calculateWorkoutDuration,
   calculatePlanDayDuration,
   formatWorkoutDuration,
-  formatExerciseDuration,
   formatDateAsString,
 } from "../../utils";
 import { colors } from "../../lib/theme";
@@ -45,8 +41,13 @@ import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const { setIsGeneratingWorkout, setIsPreloadingData, user, isLoading: authLoading } = useAuth();
-  
+  const {
+    setIsGeneratingWorkout,
+    setIsPreloadingData,
+    user,
+    isLoading: authLoading,
+  } = useAuth();
+
   // Background jobs hook
   const { addJob, activeJobs, isGenerating } = useBackgroundJobs();
 
@@ -67,7 +68,7 @@ export default function CalendarScreen() {
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
-  
+
   // Generation modal states
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
@@ -159,14 +160,17 @@ export default function CalendarScreen() {
   }, [workoutPlan]);
 
   const handleRegenerate = async (
-    data: any, // Using any to avoid type conflicts for now
+    data: RegenerationData,
     selectedType?: "week" | "day"
   ) => {
     try {
       const regenerateType = selectedType || "week";
-      
+
       // Show global generating modal with correct type
-      setIsGeneratingWorkout(true, regenerateType === "day" ? "daily" : "weekly");
+      setIsGeneratingWorkout(
+        true,
+        regenerateType === "day" ? "daily" : "weekly"
+      );
       setShowRegenerationModal(false);
 
       const user = await getCurrentUser();
@@ -188,13 +192,13 @@ export default function CalendarScreen() {
           user.id,
           dayToRegenerate.id,
           {
-            reason: data.customFeedback || "User requested regeneration"
+            reason: data.customFeedback || "User requested regeneration",
           }
         );
         if (response?.success && response.jobId) {
           // Add job to background tracking
-          await addJob(response.jobId, 'daily-regeneration');
-          
+          await addJob(response.jobId, "daily-regeneration");
+
           // Job started successfully - FAB will show progress
           router.replace("/(tabs)/dashboard");
         } else {
@@ -223,8 +227,8 @@ export default function CalendarScreen() {
         const response = await regenerateWorkoutPlanAsync(user.id, apiData);
         if (response?.success && response.jobId) {
           // Add job to background tracking
-          await addJob(response.jobId, 'regeneration');
-          
+          await addJob(response.jobId, "regeneration");
+
           // Job started successfully - FAB will show progress
           router.replace("/(tabs)/dashboard");
         } else {
@@ -267,25 +271,21 @@ export default function CalendarScreen() {
     try {
       // Register for push notifications
       await registerForPushNotifications();
-      
+
       const result = await generateWorkoutPlanAsync(user.id);
       if (result?.success && result.jobId) {
-        // Add job to background tracking
-        await addJob(result.jobId, 'generation');
-        
-        // Job started successfully - FAB will show progress
-        // Data refresh will happen when generation completes
+        await addJob(result.jobId, "generation");
         router.replace("/(tabs)/dashboard");
       } else {
         Alert.alert(
-          "Generation Failed", 
+          "Generation Failed",
           "Unable to start workout generation. Please check your connection and try again.",
           [{ text: "OK" }]
         );
       }
     } catch (error) {
       Alert.alert(
-        "Generation Error", 
+        "Generation Error",
         "An error occurred while starting workout generation. Please try again.",
         [{ text: "OK" }]
       );
@@ -350,7 +350,7 @@ export default function CalendarScreen() {
     return null;
   };
 
-  const getMarkedDates = () => {
+  const getMarkedDates = (): any => {
     const markedDates: any = {};
     const today = formatDateAsString(new Date());
 
@@ -385,7 +385,7 @@ export default function CalendarScreen() {
     if (historyData && Array.isArray(historyData)) {
       const today = formatDateAsString(new Date());
 
-      historyData.forEach((historicalWorkout: any) => {
+      historyData.forEach((historicalWorkout: WorkoutWithDetails) => {
         // Only show workouts that have ended
         const workoutEndDate = historicalWorkout.endDate
           ? formatDateAsString(historicalWorkout.endDate)
@@ -399,7 +399,7 @@ export default function CalendarScreen() {
           historicalWorkout.planDays &&
           Array.isArray(historicalWorkout.planDays)
         ) {
-          historicalWorkout.planDays.forEach((planDay: any) => {
+          historicalWorkout.planDays.forEach((planDay: PlanDayWithBlocks) => {
             const dateStr = formatDateAsString(planDay.date);
 
             // Only mark historical dates that aren't already in current plan
@@ -449,9 +449,6 @@ export default function CalendarScreen() {
 
   const handleDateSelect = (day: DateData) => {
     setSelectedDate(day.dateString);
-
-    // Reset expanded blocks when selecting a new date
-    // This ensures blocks start expanded for the new date
     setExpandedBlocks({});
   };
 
@@ -468,19 +465,14 @@ export default function CalendarScreen() {
   const toggleBlockExpansion = (blockId: number) => {
     setExpandedBlocks((prev) => ({
       ...prev,
-      [blockId]: prev[blockId] === false ? undefined : false, // Toggle between undefined (expanded) and false (collapsed)
+      [blockId]: prev[blockId] === false ? undefined : false,
     }));
   };
 
-  const getTotalExerciseCount = (blocks: any[]) => {
+  const getTotalExerciseCount = (blocks: WorkoutBlockWithExercises[]) => {
     return blocks.reduce((total, block) => {
       return total + (block.exercises?.length || 0);
     }, 0);
-  };
-
-  const calculateTotalWorkoutDuration = (planDay: any) => {
-    // Use the new utility function that prioritizes blockDurationMinutes
-    return calculatePlanDayDuration(planDay);
   };
 
   if (workoutLoading) {
@@ -568,7 +560,7 @@ export default function CalendarScreen() {
             key={calendarKey}
             current={currentMonth}
             onDayPress={handleDateSelect}
-            onMonthChange={(month: any) => {
+            onMonthChange={(month: DateData) => {
               // Update the current month when user manually navigates
               if (month && month.dateString) {
                 setCurrentMonth(month.dateString);
@@ -642,7 +634,9 @@ export default function CalendarScreen() {
           <View className="px-lg my-lg">
             <TouchableOpacity
               className="bg-primary py-md rounded-xl items-center flex-row justify-center"
-              onPress={() => handleOpenRegeneration(currentSelectedPlanDay || undefined)}
+              onPress={() =>
+                handleOpenRegeneration(currentSelectedPlanDay || undefined)
+              }
             >
               <Ionicons
                 name="settings-outline"
@@ -664,7 +658,9 @@ export default function CalendarScreen() {
                 <Text className="text-base font-bold text-text-primary mb-md">
                   {formatDate(selectedDate)}
                 </Text>
-                {!workoutPlan || (workoutPlan?.endDate && selectedDate > formatDateAsString(workoutPlan.endDate)) ? (
+                {!workoutPlan ||
+                (workoutPlan?.endDate &&
+                  selectedDate > formatDateAsString(workoutPlan.endDate)) ? (
                   // No active workout plan at all OR selected date is beyond workout plan end date
                   <View className="items-center py-6">
                     <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
@@ -721,7 +717,8 @@ export default function CalendarScreen() {
                       Rest Day
                     </Text>
                     <Text className="text-sm text-text-muted text-center leading-5">
-                      Take this time to recover and prepare for your next workout!
+                      Take this time to recover and prepare for your next
+                      workout!
                     </Text>
                   </View>
                 )}
@@ -746,9 +743,7 @@ export default function CalendarScreen() {
                         <Text className="text-xs text-text-muted mx-2">•</Text>
                         <Text className="text-xs text-text-muted">
                           {formatWorkoutDuration(
-                            calculateTotalWorkoutDuration(
-                              currentSelectedPlanDay
-                            )
+                            calculatePlanDayDuration(currentSelectedPlanDay)
                           )}
                         </Text>
                         {currentSelectedPlanDay.isComplete && (
@@ -839,12 +834,19 @@ export default function CalendarScreen() {
         loading={false}
         regenerationType={selectedPlanDay ? "day" : "week"}
         selectedPlanDay={selectedPlanDay}
-        isRestDay={!selectedPlanDay && !!workoutPlan && workoutPlan.endDate && selectedDate <= formatDateAsString(workoutPlan.endDate)}
-        noActiveWorkoutDay={!workoutPlan || (workoutPlan?.endDate && selectedDate > formatDateAsString(workoutPlan.endDate))}
+        isRestDay={
+          !selectedPlanDay &&
+          !!workoutPlan &&
+          workoutPlan.endDate &&
+          selectedDate <= formatDateAsString(workoutPlan.endDate)
+        }
+        noActiveWorkoutDay={
+          !workoutPlan ||
+          (workoutPlan?.endDate &&
+            selectedDate > formatDateAsString(workoutPlan.endDate))
+        }
         onSuccess={() => {
-          // Invalidate cache immediately so user doesn't see stale data
           invalidateActiveWorkoutCache();
-          // This will show "no active workout" which is more accurate during regeneration
         }}
       />
 

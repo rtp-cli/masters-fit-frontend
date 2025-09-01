@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   TextInput,
   RefreshControl,
+  AppStateStatus,
+  ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -39,6 +41,8 @@ import {
 import {
   CircuitSessionData,
   CircuitSessionConfig,
+  CircuitRound,
+  CircuitExerciseLog as CircuitExercise,
 } from "@/types/api/circuit.types";
 import { isCircuitBlock, getLoggingInterface } from "@/utils/circuitUtils";
 import { useCircuitSession } from "@/hooks/useCircuitSession";
@@ -110,7 +114,7 @@ function CircuitLoggingInterface({
     updateTimerState,
   } = circuitSession;
 
-  const handleRoundComplete = async (roundData: any) => {
+  const handleRoundComplete = async (roundData: CircuitRound) => {
     try {
       await logCircuitRound(workout.workoutId, block.id, roundData);
     } catch (error) {
@@ -136,7 +140,7 @@ function CircuitLoggingInterface({
   // Show timer for time-based circuits (AMRAP, EMOM with time cap, or For Time)
   const shouldShowTimer = Boolean(
     (block.timeCapMinutes && block.timeCapMinutes > 0) ||
-    (block.blockType === "for_time")
+      block.blockType === "for_time"
   );
 
   return (
@@ -149,12 +153,11 @@ function CircuitLoggingInterface({
               Circuit Timer
             </Text>
             <Text className="text-xs text-text-muted">
-              {block.timeCapMinutes 
-                ? `${block.timeCapMinutes} minute time cap` 
-                : block.blockType === "for_time" 
-                  ? "Complete as fast as possible"
-                  : "Elapsed time"
-              }
+              {block.timeCapMinutes
+                ? `${block.timeCapMinutes} minute time cap`
+                : block.blockType === "for_time"
+                ? "Complete as fast as possible"
+                : "Elapsed time"}
             </Text>
           </View>
           <CircuitTimer
@@ -164,11 +167,11 @@ function CircuitLoggingInterface({
             timerState={sessionData.timer}
             onTimerUpdate={updateTimerState}
             onTimerEvent={async (event) => {
-              if (event === 'completeRound' && actions?.completeRound) {
+              if (event === "completeRound" && actions?.completeRound) {
                 try {
-                  await actions.completeRound('Auto-completed: minute ended');
+                  await actions.completeRound("Auto-completed: minute ended");
                 } catch (error) {
-                  console.error('Error auto-completing EMOM round:', error);
+                  console.error("Error auto-completing EMOM round:", error);
                 }
               }
             }}
@@ -201,16 +204,11 @@ export default function WorkoutScreen() {
   const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
 
   // Get user from auth context
-  const {
-    user,
-    setIsGeneratingWorkout,
-    setIsPreloadingData,
-    isLoading: authLoading,
-  } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
   // Background job tracking
-  const { activeJobs, isGenerating, addJob } = useBackgroundJobs();
+  const { isGenerating, addJob } = useBackgroundJobs();
 
   // Get data refresh functions
   const {
@@ -421,7 +419,7 @@ export default function WorkoutScreen() {
 
   // Handle app state changes to manage timers during background/foreground transitions
   useEffect(() => {
-    const handleAppStateChange = (nextAppState: any) => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (
         appStateRef.current.match(/inactive|background/) &&
         nextAppState === "active"
@@ -589,13 +587,13 @@ export default function WorkoutScreen() {
     try {
       const planDayLog = await getPlanDayLog(planDayId);
 
-      if (planDayLog?.totalTimeSeconds) {
+      if (planDayLog?.totalTimeMinutes) {
         console.log("Loaded completed workout data:", {
-          totalTimeSeconds: planDayLog.totalTimeSeconds,
+          totalTimeMinutes: planDayLog.totalTimeMinutes,
           exercisesCompleted: planDayLog.exercisesCompleted,
           blocksCompleted: planDayLog.blocksCompleted,
         });
-        setWorkoutTimer(planDayLog.totalTimeSeconds);
+        setWorkoutTimer(planDayLog.totalTimeMinutes * 60);
         setCompletedExercisesCount(planDayLog.exercisesCompleted || 0);
         setHasCompletedWorkoutDuration(true);
       } else {
@@ -634,7 +632,7 @@ export default function WorkoutScreen() {
       // Find today's workout using string comparison to avoid timezone issues
       const today = getCurrentDate(); // Use the same function as other parts of the app
 
-      const todaysWorkout = response.planDays.find((day: any) => {
+      const todaysWorkout = response.planDays.find((day: PlanDayWithBlocks) => {
         // Use the formatDateAsString function to normalize dates consistently
         const normalizedDayDate = formatDateAsString(day.date);
         return normalizedDayDate === today;
@@ -805,7 +803,10 @@ export default function WorkoutScreen() {
   }, []);
 
   // Update exercise progress
-  const updateProgress = (field: keyof ExerciseProgress, value: any) => {
+  const updateProgress = <K extends keyof ExerciseProgress>(
+    field: K,
+    value: ExerciseProgress[K]
+  ) => {
     setExerciseProgress((prev) => {
       const updated = [...prev];
       updated[currentExerciseIndex] = {
@@ -930,7 +931,7 @@ export default function WorkoutScreen() {
           // Log each round that has any reps or is marked completed
           for (const round of session.rounds) {
             const hasReps = round.exercises?.some(
-              (ex: any) => (ex.actualReps || 0) > 0
+              (ex: CircuitExercise) => (ex.actualReps || 0) > 0
             );
             if (hasReps || round.isCompleted) {
               await logCircuitRound(workout.workoutId, currentBlock.id, round);
@@ -1421,7 +1422,7 @@ export default function WorkoutScreen() {
             <View className="w-full h-2 mb-4 bg-neutral-light-2 rounded-full overflow-hidden">
               <View
                 className="h-full bg-primary rounded-full"
-                style={{ width: `${progressPercent.toFixed(0)}%` } as any}
+                style={{ width: `${progressPercent.toFixed(0)}%` } as ViewStyle}
               />
             </View>
             <View className="flex-row items-start mb-2">

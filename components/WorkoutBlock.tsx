@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   WorkoutBlockWithExercises,
   getBlockTypeDisplayName,
+  WorkoutBlockWithExercise,
 } from "../types/api/workout.types";
 import { formatEquipment, formatWorkoutDuration } from "../utils";
 import { colors } from "../lib/theme";
@@ -67,7 +68,7 @@ export default function WorkoutBlock({
     return parts.join(" • ");
   };
 
-  const formatExerciseDetails = (exercise: any) => {
+  const formatExerciseDetails = (exercise: WorkoutBlockWithExercise) => {
     const details = [];
 
     // Handle different exercise types
@@ -112,7 +113,9 @@ export default function WorkoutBlock({
 
   return (
     <View
-      className={`rounded-xl mb-4 overflow-hidden ${isCompactVariant ? "mb-2" : "mb-4"}`}
+      className={`rounded-xl mb-4 overflow-hidden ${
+        isCompactVariant ? "mb-2" : "mb-4"
+      }`}
     >
       {/* Block Header */}
       <TouchableOpacity
@@ -131,13 +134,17 @@ export default function WorkoutBlock({
           <View className="flex-1">
             <View className="flex-row items-center">
               <Text
-                className={`font-bold text-text-primary ${isCompactVariant ? "text-sm" : "text-base"}`}
+                className={`font-bold text-text-primary ${
+                  isCompactVariant ? "text-sm" : "text-base"
+                }`}
               >
                 {block.blockName || blockTypeName}
               </Text>
             </View>
             <Text
-              className={`text-text-secondary mt-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
+              className={`text-text-secondary mt-1 ${
+                isCompactVariant ? "text-xs" : "text-sm"
+              }`}
             >
               {getBlockDescription(block)}
             </Text>
@@ -162,7 +169,11 @@ export default function WorkoutBlock({
             .map((exercise, exerciseIndex) => (
               <View
                 key={exercise.id}
-                className={`p-4 border-b border-gray-100 ${exerciseIndex === block.exercises.length - 1 ? "border-b-0" : ""} ${isCompactVariant ? "p-3" : "p-4"}`}
+                className={`p-4 border-b border-gray-100 ${
+                  exerciseIndex === block.exercises.length - 1
+                    ? "border-b-0"
+                    : ""
+                } ${isCompactVariant ? "p-3" : "p-4"}`}
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
@@ -173,7 +184,9 @@ export default function WorkoutBlock({
                         </Text>
                       </View>
                       <Text
-                        className={`font-semibold text-text-primary flex-1 ${isCompactVariant ? "text-sm" : "text-base"}`}
+                        className={`font-semibold text-text-primary flex-1 ${
+                          isCompactVariant ? "text-sm" : "text-base"
+                        }`}
                       >
                         {exercise.exercise.name}
                       </Text>
@@ -182,7 +195,9 @@ export default function WorkoutBlock({
                     {/* Exercise Details */}
                     <View className="ml-9">
                       <Text
-                        className={`text-text-muted ${isCompactVariant ? "text-xs" : "text-sm"}`}
+                        className={`text-text-muted ${
+                          isCompactVariant ? "text-xs" : "text-sm"
+                        }`}
                       >
                         {formatExerciseDetails(exercise) ||
                           "Follow instructions"}
@@ -191,7 +206,9 @@ export default function WorkoutBlock({
                       {/* Exercise Notes */}
                       {exercise.notes && (
                         <Text
-                          className={`text-text-muted italic mt-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
+                          className={`text-text-muted italic mt-1 ${
+                            isCompactVariant ? "text-xs" : "text-sm"
+                          }`}
                         >
                           {exercise.notes}
                         </Text>
@@ -206,7 +223,9 @@ export default function WorkoutBlock({
                             color={colors.text.muted}
                           />
                           <Text
-                            className={`text-text-muted ml-1 ${isCompactVariant ? "text-xs" : "text-sm"}`}
+                            className={`text-text-muted ml-1 ${
+                              isCompactVariant ? "text-xs" : "text-sm"
+                            }`}
                           >
                             {formatEquipment(exercise.exercise.equipment)}
                           </Text>
@@ -219,7 +238,9 @@ export default function WorkoutBlock({
                   {isWorkoutVariant && (
                     <View className="ml-2">
                       <View
-                        className={`w-6 h-6 rounded-full ${exercise.completed ? "bg-green-500" : "bg-gray-200"} items-center justify-center`}
+                        className={`w-6 h-6 rounded-full ${
+                          exercise.completed ? "bg-green-500" : "bg-gray-200"
+                        } items-center justify-center`}
                       >
                         {exercise.completed && (
                           <Ionicons name="checkmark" size={14} color="white" />

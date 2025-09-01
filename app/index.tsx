@@ -1,14 +1,14 @@
-import { View, Text, TouchableOpacity, Dimensions, Image } from "react-native";
-import { colors } from "../lib/theme";
+import { View, Text, TouchableOpacity, Image } from "react-native";
+import { colors } from "@/lib/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, usePathname } from "expo-router";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
-import Header from "@components/Header";
-import WarmingUpScreen from "@components/ui/WarmingUpScreen";
+import Header from "@/components/Header";
+import WarmingUpScreen from "@/components/ui/WarmingUpScreen";
 import { useDataPreload } from "@hooks/useDataPreload";
 import { images } from "@/assets";
 

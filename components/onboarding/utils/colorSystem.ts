@@ -1,4 +1,5 @@
 import { colors } from "@/lib/theme";
+// TODO: These utils should be in a separate utils folder at the components level not inside the components folder
 
 // Define a consistent color palette that rotates
 export const COLOR_PALETTE = [

@@ -17,6 +17,7 @@ type ButtonVariant =
   | "destructive";
 type ButtonSize = "sm" | "md" | "lg";
 
+// TODO: should be using this component for buttons wherever we have added buttons
 interface ButtonProps extends TouchableOpacityProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
