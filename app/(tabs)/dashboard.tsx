@@ -35,9 +35,9 @@ import {
   formatDateAsString,
 } from "../../utils";
 import { fetchActiveWorkout } from "@lib/workouts";
-import { PlanDayWithExercises } from "../types";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
+import { DONUT_COLORS } from "@/constants";
 import { PlanDayWithBlocks } from "@/types/api";
 import {
   WorkoutBlockWithExercises,
@@ -55,16 +55,6 @@ const goalNames: Record<string, string> = {
   balance: "Balance",
   recovery: "Recovery",
 };
-
-// Dynamic color palette for donut chart (green gradient from light to dark)
-const DONUT_COLORS = [
-  colors.brand.dark[0],
-  colors.brand.dark[1],
-  colors.brand.dark[2],
-  colors.brand.dark[3],
-  colors.brand.dark[4],
-  colors.brand.dark[5],
-];
 
 export default function DashboardScreen() {
   const router = useRouter();

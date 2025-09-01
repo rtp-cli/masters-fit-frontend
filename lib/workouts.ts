@@ -1,6 +1,7 @@
 import { apiRequest } from "./api";
 import { getCurrentUser } from "./auth";
 import { formatDateAsString, getTodayString } from "../utils";
+import { TIMEOUTS, LIMITS } from "@/constants";
 import {
   Workout,
   CreateWorkoutParams,
@@ -26,20 +27,18 @@ let activeWorkoutCache: {
   workout: PlanDayWithBlocks | null;
 } | null = null;
 
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_LISTENERS = 50; // Prevent unbounded listener growth
 
 // Simple event system for workout data updates
 const workoutUpdateListeners: Array<() => void> = [];
 
 export const subscribeToWorkoutUpdates = (listener: () => void) => {
   // Prevent unbounded growth - remove oldest listeners if at max capacity
-  if (workoutUpdateListeners.length >= MAX_LISTENERS) {
+  if (workoutUpdateListeners.length >= LIMITS.MAX_LISTENERS) {
     console.warn(
-      `[workouts.ts] Listener array at max capacity (${MAX_LISTENERS}), removing oldest listeners`
+      `[workouts.ts] Listener array at max capacity (${LIMITS.MAX_LISTENERS}), removing oldest listeners`
     );
     // Remove the first half to make room
-    workoutUpdateListeners.splice(0, Math.floor(MAX_LISTENERS / 2));
+    workoutUpdateListeners.splice(0, Math.floor(LIMITS.MAX_LISTENERS / 2));
   }
 
   workoutUpdateListeners.push(listener);
@@ -354,7 +353,7 @@ export async function fetchActiveWorkout(
   if (
     !forceRefresh &&
     activeWorkoutCache &&
-    now - activeWorkoutCache.timestamp < CACHE_DURATION_MS
+    now - activeWorkoutCache.timestamp < TIMEOUTS.CACHE_DURATION_MS
   ) {
     return activeWorkoutCache.workout;
   }

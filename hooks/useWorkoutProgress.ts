@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getCurrentUser } from '@/lib/auth';
+import { API_BASE_URL } from "@/constants";
 
 interface ProgressEvent {
   progress: number; // 0-100
@@ -14,8 +15,6 @@ interface UseWorkoutProgressReturn {
   error: string | null;
   isConnected: boolean;
 }
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 
 export function useWorkoutProgress(): UseWorkoutProgressReturn {
   const [progress, setProgress] = useState<number>(0);

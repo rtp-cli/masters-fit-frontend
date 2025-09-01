@@ -10,6 +10,7 @@ import React, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getJobStatus, invalidateActiveWorkoutCache } from "@lib/workouts";
 import { useAuth } from "@contexts/AuthContext";
+import { TIMEOUTS, LIMITS } from "@/constants";
 
 export interface BackgroundJob {
   id: number;
@@ -57,8 +58,6 @@ const BackgroundJobContext = createContext<
 >(undefined);
 
 const STORAGE_KEY = "background_jobs";
-const POLL_INTERVAL = 5000; // 5 seconds
-const MAX_PROCESSED_COMPLETIONS = 100; // Limit processed completions tracking
 
 // Type guard to check if an object is a valid BackgroundJob
 function isBackgroundJob(obj: any): obj is BackgroundJob {
@@ -361,7 +360,7 @@ export function BackgroundJobProvider({
 
     // Poll immediately, then every 5 seconds
     pollJobStatus();
-    pollIntervalRef.current = setInterval(pollJobStatus, POLL_INTERVAL);
+    pollIntervalRef.current = setInterval(pollJobStatus, TIMEOUTS.POLL_INTERVAL);
   }, [pollJobStatus]);
 
   const stopPolling = useCallback(() => {
@@ -374,11 +373,11 @@ export function BackgroundJobProvider({
   // Helper function to manage bounded processed completions set
   const addProcessedCompletion = useCallback((jobId: number) => {
     // If we're at max capacity, remove the oldest entries
-    if (processedCompletionsRef.current.size >= MAX_PROCESSED_COMPLETIONS) {
+    if (processedCompletionsRef.current.size >= LIMITS.MAX_PROCESSED_COMPLETIONS) {
       // Convert Set to Array, take only the recent half, convert back to Set
       const completionsArray = Array.from(processedCompletionsRef.current);
       const recentCompletions = completionsArray.slice(
-        -Math.floor(MAX_PROCESSED_COMPLETIONS / 2)
+        -Math.floor(LIMITS.MAX_PROCESSED_COMPLETIONS / 2)
       );
       processedCompletionsRef.current = new Set(recentCompletions);
     }
