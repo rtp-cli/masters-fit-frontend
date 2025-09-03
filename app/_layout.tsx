@@ -21,6 +21,7 @@ import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import {
   registerForPushNotifications,
   addNotificationResponseListener,
+  setupNotificationCategories,
 } from "@/lib/notifications";
 import "../global.css";
 
@@ -82,11 +83,15 @@ function AppContent() {
     if (user?.id) {
       const initializeAsyncFeatures = async () => {
         try {
+          // Setup notification categories first
+          await setupNotificationCategories();
+          console.log("Notification categories set up");
+
           // Register for push notifications
           await registerForPushNotifications();
           console.log("Push notifications registered");
         } catch (error) {
-          console.error("Error registering push notifications:", error);
+          console.error("Error initializing notifications:", error);
         }
       };
 
