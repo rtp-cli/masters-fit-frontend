@@ -15,6 +15,12 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#ffffff",
+      "sounds": ["default"],
+      "iosDisplayInForeground": true
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -26,7 +32,7 @@
       "favicon": "./assets/icon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-font"],
+    "plugins": ["expo-router", "expo-secure-store", "expo-font", "expo-notifications"],
     "extra": {
       "router": {},
       "eas": {

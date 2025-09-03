@@ -54,7 +54,9 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     // Get the token
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const token = (await Notifications.getExpoPushTokenAsync({
+      projectId: "baddaaa3-3d1e-46e5-b15a-f5b8a46ded71",
+    })).data;
 
     console.log("Expo push token:", token);
 
@@ -113,7 +115,7 @@ export async function scheduleLocalNotification(
     },
     trigger: {
       seconds: Number(seconds),
-    },
+    } as Notifications.TimeIntervalTriggerInput,
   });
 }
 
