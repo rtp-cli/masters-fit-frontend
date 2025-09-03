@@ -182,6 +182,9 @@ export interface CircuitTrackerProps {
   onCircuitComplete: (sessionData: CircuitSessionData) => void;
   /** Whether the session is active */
   isActive: boolean;
+  updateTimerState: (state: CircuitTimerState) => void;
+  /** Whether to show the timer */
+  shouldShowTimer: boolean;
 }
 
 /**

@@ -253,6 +253,14 @@ export default function WorkoutRegenerationModal({
       // Update the profile first
       await updateUserProfile(profileData as any);
 
+      // Get fresh user after profile update in case auth changed
+      const freshUser = await getCurrentUser();
+      if (!freshUser) {
+        console.error("User session lost after profile update");
+        setUpdatingProfile(false);
+        return;
+      }
+
       // Close the onboarding form
       setShowOnboardingForm(false);
 
@@ -265,44 +273,25 @@ export default function WorkoutRegenerationModal({
 
       if (selectedType === "week") {
         // Weekly regeneration: call the weekly endpoint directly with profile data
-        if (user) {
-          try {
-            const result = await regenerateWorkoutPlanAsync(user.id, {
-              customFeedback: customFeedback.trim() || undefined,
-              profileData: profileData,
-            });
+        try {
+          const result = await regenerateWorkoutPlanAsync(freshUser.id, {
+            customFeedback: customFeedback.trim() || undefined,
+            profileData: profileData,
+          });
 
-            if (result?.success) {
-              // Show alert that regeneration started
-              Alert.alert(
-                "Workout Regeneration Started! 💪",
-                "Your workout is being regenerated in the background. You can close the app and we'll notify you when it's ready!",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      setIsGeneratingWorkout(false);
-                      onSuccess?.();
-                    },
-                  },
-                ]
-              );
-            } else {
-              setIsGeneratingWorkout(false);
-              Alert.alert(
-                "Regeneration Failed",
-                "Unable to start workout regeneration. Please check your connection and try again.",
-                [{ text: "OK" }]
-              );
-            }
-          } catch (error) {
+          if (result?.success && result.jobId) {
+            // Add job to background tracking
+            await addJob(result.jobId, "regeneration");
+            
+            // Success callback
+            onSuccess?.();
+          } else {
             setIsGeneratingWorkout(false);
-            Alert.alert(
-              "Regeneration Error",
-              "An error occurred while starting workout regeneration. Please try again.",
-              [{ text: "OK" }]
-            );
+            onError?.("Regeneration failed to start");
           }
+        } catch (error) {
+          setIsGeneratingWorkout(false);
+          onError?.("An error occurred while starting regeneration");
         }
       } else {
         // Daily regeneration: call regenerateDailyWorkout directly

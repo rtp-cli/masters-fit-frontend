@@ -262,20 +262,20 @@ export default function FloatingActionButton() {
 
                 <Text className="text-base text-text-secondary text-center mb-6 leading-6">
                   {currentJob.status === "cancelled"
-                    ? "The workout generation was cancelled. You can start a new generation anytime."
+                    ? "The workout generation was cancelled. You can start a new generation at any time."
                     : currentJob.status === "timeout"
-                    ? "The workout generation took too long and was stopped. Please try starting a new generation."
+                    ? "The workout generation took too long and was stopped. Please check your internet connection or try again later."
                     : currentJob.status === "failed"
-                    ? "The workout generation failed after multiple attempts. Please try again later or check your internet connection."
+                    ? "The workout generation failed after multiple attempts. Please check your internet connection or try again later."
                     : currentJob.type === "generation"
-                    ? "Your new workout is being generated in the background."
+                    ? "Your personalized, AI powered workout plan is on the way."
                     : currentJob.type === "regeneration"
-                    ? "Your workout plan is being regenerated in the background."
-                    : "Your daily workout is being regenerated in the background."}{" "}
+                    ? "Your personalized, AI powered workout plan is on the way."
+                    : "Your personalized, AI powered daily workout is on the way."}{" "}
                   {currentJob.status !== "cancelled" &&
                   currentJob.status !== "timeout" &&
                   currentJob.status !== "failed"
-                    ? "You can close this and continue using the app!"
+                    ? "Feel free to continue using the app —— we'll let you know as soon as it's ready!"
                     : ""}
                 </Text>
               </>

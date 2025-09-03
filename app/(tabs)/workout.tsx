@@ -26,6 +26,7 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/ExerciseLink";
+import ExerciseVideoCarousel from "@/components/ExerciseVideoCarousel";
 import { ExerciseSet } from "@/components/SetTracker";
 import AdaptiveSetTracker from "@/components/AdaptiveSetTracker";
 import CircularTimerDisplay from "@/components/CircularTimerDisplay";
@@ -126,11 +127,6 @@ function CircuitLoggingInterface({
     try {
       // Log the circuit session; advancement is handled by bottom "Complete Circuit"
       await logCircuitSession(workout.workoutId, sessionData);
-
-      Alert.alert(
-        "Circuit Complete!",
-        `Great work! You completed ${metrics.roundsCompleted} rounds with a score of ${metrics.score}.`
-      );
     } catch (error) {
       console.error("Error completing circuit:", error);
       Alert.alert("Error", "Failed to complete circuit. Please try again.");
@@ -145,41 +141,6 @@ function CircuitLoggingInterface({
 
   return (
     <View className="space-y-6">
-      {/* Circuit Timer - Only show when there's a time cap */}
-      {shouldShowTimer && (
-        <View className="bg-card rounded-2xl p-6 border shadow-sm border-neutral-light-2">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-sm font-semibold text-text-primary">
-              Circuit Timer
-            </Text>
-            <Text className="text-xs text-text-muted">
-              {block.timeCapMinutes
-                ? `${block.timeCapMinutes} minute time cap`
-                : block.blockType === "for_time"
-                ? "Complete as fast as possible"
-                : "Elapsed time"}
-            </Text>
-          </View>
-          <CircuitTimer
-            blockType={block.blockType || "circuit"}
-            timeCapMinutes={block.timeCapMinutes}
-            rounds={block.rounds}
-            timerState={sessionData.timer}
-            onTimerUpdate={updateTimerState}
-            onTimerEvent={async (event) => {
-              if (event === "completeRound" && actions?.completeRound) {
-                try {
-                  await actions.completeRound("Auto-completed: minute ended");
-                } catch (error) {
-                  console.error("Error auto-completing EMOM round:", error);
-                }
-              }
-            }}
-            disabled={!isWorkoutStarted}
-          />
-        </View>
-      )}
-
       {/* Circuit Tracker */}
       <View className="bg-card rounded-2xl p-6 border shadow-sm border-neutral-light-2">
         <CircuitTracker
@@ -193,7 +154,10 @@ function CircuitLoggingInterface({
           onCircuitComplete={handleCircuitComplete}
           isActive={isWorkoutStarted}
           circuitActions={actions}
+          updateTimerState={updateTimerState}
+          shouldShowTimer={shouldShowTimer}
         />
+        {/* Circuit Timer - Only show when there's a time cap */}
       </View>
     </View>
   );
@@ -265,6 +229,45 @@ export default function WorkoutScreen() {
 
   // UI state
   const scrollViewRef = useRef<ScrollView>(null);
+  const exerciseHeadingRef = useRef<View>(null);
+  const circuitHeadingRef = useRef<View>(null);
+
+  // Helper function to scroll to exercise heading
+  const scrollToExerciseHeading = (exerciseIndex: number) => {
+    const nextExercise = exercises[exerciseIndex];
+    const nextBlock = workout?.blocks?.find((block) =>
+      block.exercises.some((ex) => ex.id === nextExercise?.id)
+    );
+    const isNextCircuit =
+      nextBlock &&
+      (nextBlock.blockType === "circuit" ||
+        nextBlock.blockType === "amrap" ||
+        nextBlock.blockType === "emom" ||
+        nextBlock.blockType === "tabata" ||
+        nextBlock.blockType === "for_time");
+
+    if (isNextCircuit && circuitHeadingRef.current && scrollViewRef.current) {
+      circuitHeadingRef.current.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) =>
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(0, y - 20),
+            animated: true,
+          }),
+        () => console.log("Failed to measure circuit heading")
+      );
+    } else if (exerciseHeadingRef.current && scrollViewRef.current) {
+      exerciseHeadingRef.current.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) =>
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(0, y - 20),
+            animated: true,
+          }),
+        () => console.log("Failed to measure exercise heading")
+      );
+    }
+  };
 
   // Get flattened exercises from blocks
   const getFlattenedExercises = (): WorkoutBlockWithExercise[] => {
@@ -826,6 +829,11 @@ export default function WorkoutScreen() {
     workoutStartTime.current = now;
     exerciseStartTime.current = now;
     setWorkoutInProgress(true); // Notify context that workout started
+
+    // Scroll to first exercise heading after starting
+    setTimeout(() => {
+      scrollToExerciseHeading(0);
+    }, 100);
   };
 
   // Toggle pause
@@ -971,7 +979,7 @@ export default function WorkoutScreen() {
           setCurrentExerciseIndex(nextExerciseIndex);
           setExerciseTimer(0);
           exerciseStartTime.current = Date.now();
-          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          scrollToExerciseHeading(nextExerciseIndex);
         } else {
           // All exercises completed, complete the workout day
           if (workout?.id) {
@@ -1052,7 +1060,7 @@ export default function WorkoutScreen() {
         setCurrentExerciseIndex((prev) => prev + 1);
         setExerciseTimer(0);
         exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        scrollToExerciseHeading(currentExerciseIndex + 1);
       } else {
         // All exercises completed, so mark the plan day as complete
         if (workout?.id) {
@@ -1144,7 +1152,7 @@ export default function WorkoutScreen() {
         setCurrentExerciseIndex((prev) => prev + 1);
         setExerciseTimer(0);
         exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        scrollToExerciseHeading(currentExerciseIndex + 1);
       } else {
         // Check if all exercises are completed or skipped
         const allProcessed = exercises.every(
@@ -1406,12 +1414,17 @@ export default function WorkoutScreen() {
           />
         }
       >
-        {/* Hero Exercise Media - Only show for traditional workouts */}
+        {/* Hero Exercise Media - Contextual based on workout type */}
         {currentExercise && !isCurrentBlockCircuit ? (
           <ExerciseLink
             link={currentExercise.exercise.link}
             exerciseName={currentExercise.exercise.name}
             variant="hero"
+          />
+        ) : isCurrentBlockCircuit && currentBlock ? (
+          <ExerciseVideoCarousel
+            exercises={currentBlock.exercises}
+            blockName=""
           />
         ) : null}
 
@@ -1478,10 +1491,35 @@ export default function WorkoutScreen() {
 
           {/* Current Exercise - Only show for traditional workouts */}
           {currentExercise && !isCurrentBlockCircuit ? (
-            <View className="bg-card rounded-2xl mb-6 p-6 border shadow-sm font-bold border-neutral-light-2">
-              <Text className="text-xl font-bold mb-4 text-text-primary">
-                {currentExercise.exercise.name}
-              </Text>
+            <View
+              ref={exerciseHeadingRef}
+              className="bg-card rounded-2xl mb-6 p-6 border shadow-sm font-bold border-neutral-light-2"
+            >
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-xl font-bold text-text-primary">
+                  {currentExercise.exercise.name}
+                </Text>
+                {currentExercise.exercise.link && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      scrollViewRef.current?.scrollTo({
+                        y: 0,
+                        animated: true,
+                      })
+                    }
+                    className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full"
+                  >
+                    <Ionicons
+                      name="play-circle-outline"
+                      size={14}
+                      color={colors.brand.primary}
+                    />
+                    <Text className="text-xs text-brand-primary">
+                      Video Available
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <Text className="text-sm text-text-primary leading-6 mb-3">
                 {currentExercise.exercise.description}
@@ -1570,11 +1608,6 @@ export default function WorkoutScreen() {
 
                   {/* Traditional Exercise Logging Interface */}
                   <View className="rounded-2xl p-4">
-                    <View className="flex-row items-center justify-between mb-3">
-                      <Text className="text-sm font-semibold text-text-primary">
-                        Exercise Logging
-                      </Text>
-                    </View>
                     <AdaptiveSetTracker
                       exercise={currentExercise}
                       sets={currentProgress.sets}
@@ -1633,10 +1666,35 @@ export default function WorkoutScreen() {
 
           {/* Circuit Logging Interface - Show for circuit workouts */}
           {isCurrentBlockCircuit && currentBlock && isWorkoutStarted ? (
-            <View className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2 mb-6">
-              <Text className="text-lg font-bold text-text-primary mb-4">
-                Circuit Workout - {currentBlock.blockName}
-              </Text>
+            <View
+              ref={circuitHeadingRef}
+              className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2 mb-6"
+            >
+              <View className="flex-row items-center justify-between mb-4">
+                <Text className="text-lg font-bold text-text-primary">
+                  {currentBlock.blockName}
+                </Text>
+                {currentBlock.exercises.some((ex) => ex.exercise.link) && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      scrollViewRef.current?.scrollTo({
+                        y: 0,
+                        animated: true,
+                      })
+                    }
+                    className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full"
+                  >
+                    <Ionicons
+                      name="play-circle-outline"
+                      size={14}
+                      color={colors.brand.primary}
+                    />
+                    <Text className="text-xs text-brand-primary">
+                      Videos Available
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <CircuitLoggingInterface
                 block={currentBlock}
                 workout={workout}

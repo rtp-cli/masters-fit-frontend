@@ -63,16 +63,6 @@ export default function GetStarted() {
 
   // If user is already authenticated, redirect based on onboarding status
   useEffect(() => {
-    // Don't redirect if we're generating a workout
-    if (isGeneratingWorkout) {
-      return;
-    }
-
-    // Don't redirect if we're preloading data
-    if (isPreloadingData) {
-      return;
-    }
-
     // Don't redirect if user is in verification flow
     if (isVerifyingUser) {
       return;
@@ -87,14 +77,17 @@ export default function GetStarted() {
       // Check if user has completed onboarding
       const needsOnboarding = user.needsOnboarding ?? true;
 
-      if (!needsOnboarding && !isPreloadingData) {
-        setIsPreloadingData(true);
-      } else {
-        // Only redirect to onboarding if not already there
+      if (needsOnboarding) {
+        // User needs onboarding - redirect to onboarding screen
         if (pathname !== "/(auth)/onboarding") {
           hasRedirected.current = true;
           router.replace("/(auth)/onboarding");
-        } else {
+        }
+      } else {
+        // User has completed onboarding - redirect to dashboard
+        // Even if generating workout or preloading data, authenticated users should see dashboard
+        if (!isPreloadingData) {
+          setIsPreloadingData(true);
         }
       }
     }

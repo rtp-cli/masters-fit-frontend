@@ -20,6 +20,7 @@ export default function OnboardingScreen() {
     user,
     isAuthenticated,
     isLoading: authLoading,
+    setIsGeneratingWorkout,
   } = useAuth();
 
   // Get background job functions
@@ -42,7 +43,7 @@ export default function OnboardingScreen() {
     if (!authLoading && isAuthenticated && user && !isCompletingOnboarding) {
       const needsOnboarding = user.needsOnboarding ?? true;
       if (!needsOnboarding) {
-        router.replace("/(tabs)/calendar");
+        router.replace("/(tabs)/dashboard");
       }
     }
   }, [authLoading, isAuthenticated, user, isCompletingOnboarding, router]);
@@ -114,9 +115,7 @@ export default function OnboardingScreen() {
         console.log("[Onboarding] Adding job to background context...");
         await addJob(result.jobId, "generation");
 
-        // Navigate to main app - the FAB will handle the rest of the flow
-        console.log("[Onboarding] Navigating to main app...");
-        router.replace("/");
+        console.log("[Onboarding] Workout generation job started successfully");
 
         return { success: true };
       } else {
@@ -220,8 +219,13 @@ export default function OnboardingScreen() {
         "[Onboarding] Profile created successfully, starting workout generation..."
       );
 
-      // Step 2: Start workout generation
+      // Step 2: Set generation flag and start workout generation
+      setIsGeneratingWorkout(true, "generation");
       await startWorkoutGeneration();
+
+      // Navigate to dashboard - the generation modal will show automatically
+      console.log("[Onboarding] Navigating to dashboard...");
+      router.replace("/(tabs)/dashboard");
 
       // Cleanup
       setIsLoading(false);
