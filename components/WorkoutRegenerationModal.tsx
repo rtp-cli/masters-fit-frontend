@@ -21,8 +21,9 @@ import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import {
   regenerateWorkoutPlanAsync,
   regenerateDailyWorkoutAsync,
+  generateRestDayWorkoutAsync,
 } from "@lib/workouts";
-import { UserProfile } from "@/types/api";
+import { Profile as UserProfile } from "@/types/api";
 
 // Enums from onboarding (should be moved to a shared types file)
 enum Gender {
@@ -156,6 +157,7 @@ interface WorkoutRegenerationModalProps {
   selectedPlanDay?: { id: number } | null; // Add selectedPlanDay for daily regeneration
   isRestDay?: boolean; // Add isRestDay prop to indicate rest day modal
   noActiveWorkoutDay?: boolean; // Add noActiveWorkoutDay prop for days outside workout plan
+  selectedDate?: string; // The date for rest day workout generation
 }
 
 export default function WorkoutRegenerationModal({
@@ -169,6 +171,7 @@ export default function WorkoutRegenerationModal({
   selectedPlanDay,
   isRestDay = false,
   noActiveWorkoutDay = false,
+  selectedDate,
 }: WorkoutRegenerationModalProps) {
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(
     null
@@ -197,7 +200,7 @@ export default function WorkoutRegenerationModal({
       setShowOnboardingForm(false);
       // For rest days and no active workout days, always default to "week" tab
       setSelectedType(
-        isRestDay || noActiveWorkoutDay ? "week" : regenerationType
+        isRestDay ? "day" : noActiveWorkoutDay ? "week" : regenerationType
       );
     }
   }, [visible, regenerationType, isRestDay, noActiveWorkoutDay]);
@@ -282,7 +285,7 @@ export default function WorkoutRegenerationModal({
           if (result?.success && result.jobId) {
             // Add job to background tracking
             await addJob(result.jobId, "regeneration");
-            
+
             // Success callback
             onSuccess?.();
           } else {
@@ -340,6 +343,9 @@ export default function WorkoutRegenerationModal({
   };
 
   const handleQuickSaveAndRegenerate = async () => {
+    if (!currentProfile) {
+      return;
+    }
     const partialFormData = convertProfileToFormData(currentProfile);
     const completeFormData: FormData = {
       email: partialFormData.email || "",
@@ -387,29 +393,62 @@ export default function WorkoutRegenerationModal({
           }
         }
       } else {
-        // Daily regeneration: call regenerateDailyWorkout directly
+        // Daily regeneration or rest day workout
         const user = await getCurrentUser();
-        if (user && selectedPlanDay) {
-          const result = await regenerateDailyWorkoutAsync(
-            user.id,
-            selectedPlanDay.id,
-            {
-              reason: customFeedback.trim() || "User requested regeneration",
+        if (user) {
+          // Check if this is a rest day workout request
+          if (isRestDay && selectedDate) {
+            console.log("Rest day workout generation started", {
+              userId: user.id,
+              date: selectedDate,
+              reason:
+                customFeedback.trim() || "User requested rest day workout",
+            });
+
+            const result = await generateRestDayWorkoutAsync(user.id, {
+              date: selectedDate,
+              reason:
+                customFeedback.trim() || "User requested rest day workout",
+            });
+
+            console.log("Rest day workout API response:", result);
+
+            if (result?.success && result.jobId) {
+              // Add job to background tracking
+              await addJob(result.jobId, "daily-regeneration");
+
+              // Success callback
+              onSuccess?.();
+            } else {
+              Alert.alert(
+                "Rest Day Workout Failed",
+                "Unable to start rest day workout generation. Please check your connection and try again.",
+                [{ text: "OK" }]
+              );
             }
-          );
-
-          if (result?.success && result.jobId) {
-            // Add job to background tracking
-            await addJob(result.jobId, "daily-regeneration");
-
-            // Success callback
-            onSuccess?.();
-          } else {
-            Alert.alert(
-              "Daily Regeneration Failed",
-              "Unable to start daily workout regeneration. Please check your connection and try again.",
-              [{ text: "OK" }]
+          } else if (selectedPlanDay) {
+            // Regular daily regeneration
+            const result = await regenerateDailyWorkoutAsync(
+              user.id,
+              selectedPlanDay.id,
+              {
+                reason: customFeedback.trim() || "User requested regeneration",
+              }
             );
+
+            if (result?.success && result.jobId) {
+              // Add job to background tracking
+              await addJob(result.jobId, "daily-regeneration");
+
+              // Success callback
+              onSuccess?.();
+            } else {
+              Alert.alert(
+                "Daily Regeneration Failed",
+                "Unable to start daily workout regeneration. Please check your connection and try again.",
+                [{ text: "OK" }]
+              );
+            }
           }
         }
       }
@@ -572,9 +611,8 @@ export default function WorkoutRegenerationModal({
                   Today is a Rest Day
                 </Text>
                 <Text className="text-sm text-text-muted mb-4 text-center">
-                  Rest days don't have individual workouts to regenerate. You
-                  can regenerate your entire weekly plan or update your fitness
-                  preferences.
+                  You can generate an optional workout for today, or regenerate
+                  your entire weekly plan.
                 </Text>
               </View>
             ) : noActiveWorkoutDay ? (
@@ -599,7 +637,7 @@ export default function WorkoutRegenerationModal({
               <TouchableOpacity
                 className={`flex-1 py-3 rounded-sm items-center ${
                   selectedType === "day" ? "bg-white" : "bg-transparent"
-                } ${isRestDay || noActiveWorkoutDay ? "opacity-50" : ""}`}
+                } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
                 style={
                   selectedType === "day"
                     ? {
@@ -611,10 +649,8 @@ export default function WorkoutRegenerationModal({
                       }
                     : undefined
                 }
-                onPress={() =>
-                  !(isRestDay || noActiveWorkoutDay) && setSelectedType("day")
-                }
-                disabled={isRestDay || noActiveWorkoutDay}
+                onPress={() => !noActiveWorkoutDay && setSelectedType("day")}
+                disabled={noActiveWorkoutDay}
               >
                 <Text
                   className={`font-medium text-sm ${
@@ -655,18 +691,19 @@ export default function WorkoutRegenerationModal({
               </TouchableOpacity>
             </View>
 
-            {(isRestDay || noActiveWorkoutDay) && (
+            {noActiveWorkoutDay && (
               <Text className="text-xs text-text-muted mb-4 text-center">
-                {isRestDay
-                  ? "Day regeneration is not available for rest days"
-                  : "Day regeneration is not available for days outside your workout plan"}
+                Day regeneration is not available for days outside your workout
+                plan
               </Text>
             )}
 
             {/* Feedback Input */}
             <View className="flex-1">
               <Text className="text-sm text-text-muted mb-4">
-                {isRestDay
+                {isRestDay && selectedType === "day"
+                  ? "What kind of workout would you like for this rest day?"
+                  : isRestDay
                   ? "Tell us what you'd like to change about your weekly workout plan:"
                   : noActiveWorkoutDay
                   ? "Tell us what you'd like to include in your next week's workout plan:"
@@ -680,7 +717,11 @@ export default function WorkoutRegenerationModal({
                   minHeight: 120,
                   textAlignVertical: "top",
                 }}
-                placeholder="Add notes about your workout here..."
+                placeholder={
+                  isRestDay && selectedType === "day"
+                    ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
+                    : "Add notes about your workout here..."
+                }
                 placeholderTextColor={colors.text.muted}
                 value={customFeedback}
                 onChangeText={setCustomFeedback}

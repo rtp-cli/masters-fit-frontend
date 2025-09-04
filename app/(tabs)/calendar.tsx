@@ -845,6 +845,7 @@ export default function CalendarScreen() {
           (workoutPlan?.endDate &&
             selectedDate > formatDateAsString(workoutPlan.endDate))
         }
+        selectedDate={selectedDate}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
         }}

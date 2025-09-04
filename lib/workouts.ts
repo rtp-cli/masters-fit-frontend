@@ -997,3 +997,43 @@ export async function regenerateDailyWorkoutAsync(
     return null;
   }
 }
+
+/**
+ * Generate rest day workout asynchronously (returns job ID immediately)
+ */
+export async function generateRestDayWorkoutAsync(
+  userId: number,
+  params: {
+    date: string;
+    reason: string;
+  }
+): Promise<{ success: boolean; jobId: number; message: string } | null> {
+  console.log("Calling rest day workout API", {
+    userId,
+    params,
+    url: `/workouts/${userId}/rest-day-workout`,
+  });
+  
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      jobId: number;
+      message: string;
+    }>(`/workouts/${userId}/rest-day-workout`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+    
+    console.log("Rest day workout API response:", response);
+    
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to start rest day workout generation");
+    }
+  } catch (error) {
+    console.error("Error starting rest day workout generation:", error);
+    return null;
+  }
+}
