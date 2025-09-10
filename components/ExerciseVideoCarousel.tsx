@@ -185,37 +185,11 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
           ))}
         </ScrollView>
 
-        {/* Overlay Navigation Controls for Hero (no header) */}
-        {!showHeader && totalVideos > 1 && (
-          <>
-            <TouchableOpacity
-              onPress={goToPrevious}
-              className="absolute w-12 h-12 rounded-full items-center justify-center border-2 border-brand-primary bg-brand-primary"
-              style={{ left: 16, top: "50%", marginTop: -24 }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color={colors.brand.secondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={goToNext}
-              className="absolute w-12 h-12 rounded-full items-center justify-center border-2 border-brand-primary bg-brand-primary"
-              style={{ right: 16, top: "50%", marginTop: -24 }}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.brand.secondary}
-              />
-            </TouchableOpacity>
-          </>
-        )}
+        {/* Overlay Navigation Controls removed for hero; swipe + dots handle navigation */}
       </View>
 
-      {/* Page Indicators - Only show for full carousel view (with header) */}
-      {showHeader && totalVideos > 1 && (
+      {/* Page Indicators */}
+      {totalVideos > 1 && (
         <View className="flex-row items-center justify-center mt-4 gap-2">
           {exercisesWithVideos.map((_, index) => (
             <TouchableOpacity
