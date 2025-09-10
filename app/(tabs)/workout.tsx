@@ -207,6 +207,16 @@ export default function WorkoutScreen() {
   const [skippedExercises, setSkippedExercises] = useState<number[]>([]);
   const [skippedBlocks, setSkippedBlocks] = useState<number[]>([]);
 
+  // Timer visibility state
+  const [showRestTimer, setShowRestTimer] = useState(false);
+
+  // Format timer display for compact view
+  const formatRestTimerDisplay = () => {
+    const minutes = Math.floor(restTimerCountdown / 60);
+    const seconds = restTimerCountdown % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
   // Modal state
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showRestCompleteModal, setShowRestCompleteModal] = useState(false);
@@ -1623,24 +1633,48 @@ export default function WorkoutScreen() {
 
                   {/* Rest Timer - Only show if exercise has rest time */}
                   {currentExercise.restTime && currentExercise.restTime > 0 ? (
-                    <View className="rounded-2xl p-4 mt-2">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Rest Timer
+                    <View className="mt-2 px-3 mb-3">
+                      {/* Timer Toggle Button */}
+                      <TouchableOpacity
+                        className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
+                          showRestTimer
+                            ? "bg-brand-primary border-brand-primary"
+                            : "border-brand-primary bg-transparent"
+                        }`}
+                        onPress={() => setShowRestTimer(!showRestTimer)}
+                      >
+                        <Text
+                          className={`text-sm font-semibold ${
+                            showRestTimer ? "text-white" : ""
+                          }`}
+                          style={
+                            !showRestTimer
+                              ? { color: colors.brand.primary }
+                              : {}
+                          }
+                        >
+                          {showRestTimer
+                            ? "Hide Rest Timer"
+                            : `Show Rest Timer (${formatRestTimerDisplay()})`}
                         </Text>
-                      </View>
+                      </TouchableOpacity>
 
-                      <CircularTimerDisplay
-                        countdown={restTimerCountdown}
-                        targetDuration={currentExercise?.restTime || 0}
-                        isActive={isRestTimerActive}
-                        isPaused={isRestTimerPaused}
-                        isCompleted={restTimerCountdown === 0}
-                        startButtonText={`Start Rest`}
-                        onStartPause={handleRestTimerStartPause}
-                        onReset={handleRestTimerReset}
-                        onCancel={handleRestTimerCancel}
-                      />
+                      {/* Timer */}
+                      {showRestTimer && (
+                        <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
+                          <CircularTimerDisplay
+                            countdown={restTimerCountdown}
+                            targetDuration={currentExercise?.restTime || 0}
+                            isActive={isRestTimerActive}
+                            isPaused={isRestTimerPaused}
+                            isCompleted={restTimerCountdown === 0}
+                            startButtonText={`Start Rest`}
+                            onStartPause={handleRestTimerStartPause}
+                            onReset={handleRestTimerReset}
+                            onCancel={handleRestTimerCancel}
+                          />
+                        </View>
+                      )}
                     </View>
                   ) : null}
 

@@ -74,17 +74,18 @@ export function useCircuitSession(
   // Create a new round with all exercises
   function createRound(
     roundNumber: number,
-    exercises: WorkoutBlockWithExercise[]
+    exercises: WorkoutBlockWithExercise[],
+    previousRound?: CircuitRound
   ): CircuitRound {
     return {
       roundNumber,
       exercises: exercises.map(
-        (exercise): CircuitExerciseLog => ({
+        (exercise, index): CircuitExerciseLog => ({
           exerciseId: exercise.exerciseId || exercise.id,
           planDayExerciseId: exercise.id,
           targetReps: exercise.reps || 0,
           actualReps: exercise.reps || 0,
-          weight: exercise.weight,
+          weight: previousRound?.exercises[index]?.weight || 0,
           completed: false,
           notes: "",
         })
@@ -260,7 +261,8 @@ export function useCircuitSession(
           }
 
           // Determine if we should advance to next round
-          const shouldAdvanceRound =
+          // For circuits, always allow advancing to enable unlimited rounds
+          const shouldAdvanceRound = prev.blockType === "circuit" || 
             !prev.targetRounds || prev.currentRound < prev.targetRounds;
 
           let newCurrentRound = prev.currentRound;
@@ -269,13 +271,14 @@ export function useCircuitSession(
           if (prev.blockType === "amrap") {
             // AMRAP: Always create a new round with fresh exercises for continuous rounds
             newCurrentRound = prev.currentRound + 1;
+            const currentRoundData = updatedRounds[prev.currentRound - 1];
             const freshExercises = block.exercises.map(
-              (exercise): CircuitExerciseLog => ({
+              (exercise, index): CircuitExerciseLog => ({
                 exerciseId: exercise.exerciseId || exercise.id,
                 planDayExerciseId: exercise.id,
                 targetReps: exercise.reps || 0,
                 actualReps: exercise.reps || 0,
-                weight: exercise.weight,
+                weight: currentRoundData?.exercises[index]?.weight || 0,
                 completed: false,
                 notes: "",
               })
@@ -292,13 +295,14 @@ export function useCircuitSession(
           } else if (prev.blockType === "tabata") {
             // Tabata: Create a new interval with fresh exercises for next 20s work period
             newCurrentRound = prev.currentRound + 1;
+            const currentRoundData = updatedRounds[prev.currentRound - 1];
             const freshExercises = block.exercises.map(
-              (exercise): CircuitExerciseLog => ({
+              (exercise, index): CircuitExerciseLog => ({
                 exerciseId: exercise.exerciseId || exercise.id,
                 planDayExerciseId: exercise.id,
                 targetReps: exercise.reps || 0,
                 actualReps: exercise.reps || 0,
-                weight: exercise.weight,
+                weight: currentRoundData?.exercises[index]?.weight || 0,
                 completed: false,
                 notes: "",
               })
@@ -317,13 +321,14 @@ export function useCircuitSession(
             const currentRoundIndex = prev.currentRound - 1;
             if (updatedRounds[currentRoundIndex]) {
               // Reset exercises for next minute while keeping the completed round data
+              const currentRoundData = updatedRounds[currentRoundIndex];
               const resetExercises = block.exercises.map(
-                (exercise): CircuitExerciseLog => ({
+                (exercise, index): CircuitExerciseLog => ({
                   exerciseId: exercise.exerciseId || exercise.id,
                   planDayExerciseId: exercise.id,
                   targetReps: exercise.reps || 0,
                   actualReps: exercise.reps || 0,
-                  weight: exercise.weight,
+                  weight: currentRoundData?.exercises[index]?.weight || 0,
                   completed: false,
                   notes: "",
                 })
@@ -346,7 +351,8 @@ export function useCircuitSession(
 
             // Create next round if it doesn't exist
             if (!updatedRounds[newCurrentRound - 1]) {
-              updatedRounds.push(createRound(newCurrentRound, block.exercises));
+              const currentRoundData = updatedRounds[prev.currentRound - 1];
+              updatedRounds.push(createRound(newCurrentRound, block.exercises, currentRoundData));
             }
           }
 
@@ -406,11 +412,12 @@ export function useCircuitSession(
 
           // Advance to next round
           const nextRound = prev.currentRound + 1;
-          const shouldCreateNextRound =
+          const shouldCreateNextRound = prev.blockType === "circuit" ||
             !prev.targetRounds || nextRound <= prev.targetRounds;
 
           if (shouldCreateNextRound && !updatedRounds[nextRound - 1]) {
-            updatedRounds.push(createRound(nextRound, block.exercises));
+            const currentRoundData = updatedRounds[prev.currentRound - 1];
+            updatedRounds.push(createRound(nextRound, block.exercises, currentRoundData));
           }
 
           return {

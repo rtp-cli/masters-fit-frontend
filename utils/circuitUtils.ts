@@ -175,9 +175,11 @@ export function getRoundCompleteButtonText(
       return currentRound >= 8 ? 'Complete Tabata' : 'Complete Interval';
     case 'circuit':
     default:
-      // If no target rounds defined, assume single round circuit
-      const isLastRound = !totalRounds || currentRound >= totalRounds;
-      return isLastRound ? null : 'Complete Round';
+      // Always allow users to complete rounds, even beyond prescribed rounds
+      if (totalRounds && currentRound > totalRounds) {
+        return 'Complete Additional Round';
+      }
+      return 'Complete Round';
   }
 }
 

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -41,6 +42,18 @@ export default function CircuitTracker({
   // Navigation state
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
+  // Timer visibility state
+  const [showTimer, setShowTimer] = useState(false);
+
+  // Horizontal scroll ref for exercise navigation
+  const exerciseScrollRef = useRef<ScrollView>(null);
+  const [containerWidth, setContainerWidth] = useState(
+    Dimensions.get("window").width
+  );
+  const cardSpacing = 16;
+  const cardWidth = Math.min(containerWidth * 0.88, containerWidth);
+  const sideInset = (containerWidth - cardWidth) / 2;
+
   // Tabata exercise work timer state
   const [exerciseWorkActive, setExerciseWorkActive] = useState(false);
   const [exerciseWorkPaused, setExerciseWorkPaused] = useState(false);
@@ -62,21 +75,59 @@ export default function CircuitTracker({
     (r) => r.isCompleted
   ).length;
 
+  // Format timer display for compact view
+  const formatTimerDisplay = () => {
+    const minutes = Math.floor(sessionData.timer.currentTime / 60);
+    const seconds = sessionData.timer.currentTime % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  // Handle scroll to specific exercise
+  const scrollToExercise = (index: number) => {
+    if (exerciseScrollRef.current) {
+      exerciseScrollRef.current.scrollTo({
+        x: sideInset + index * (cardWidth + cardSpacing),
+        animated: true,
+      });
+    }
+  };
+
+  // Handle scroll end to update current exercise index
+  const handleScrollEnd = (event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const adjustedX = contentOffsetX - sideInset;
+    const newIndex = Math.round(adjustedX / (cardWidth + cardSpacing));
+    if (
+      newIndex !== currentExerciseIndex &&
+      newIndex >= 0 &&
+      newIndex < (currentRoundData?.exercises.length || 0)
+    ) {
+      setCurrentExerciseIndex(newIndex);
+    }
+  };
+
   const goToNextExercise = () => {
     if (canGoNext) {
-      setCurrentExerciseIndex((prev) => prev + 1);
+      const nextIndex = currentExerciseIndex + 1;
+      setCurrentExerciseIndex(nextIndex);
+      scrollToExercise(nextIndex);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 
   const goToPrevExercise = () => {
     if (canGoPrev) {
-      setCurrentExerciseIndex((prev) => prev - 1);
+      const prevIndex = currentExerciseIndex - 1;
+      setCurrentExerciseIndex(prevIndex);
+      scrollToExercise(prevIndex);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 
   // Reset exercise index when round changes
   useEffect(() => {
     setCurrentExerciseIndex(0);
+    scrollToExercise(0);
     setShowExerciseWork(false);
     setExerciseWorkActive(false);
     setExerciseWorkPaused(false);
@@ -307,296 +358,295 @@ export default function CircuitTracker({
         </View>
       )}
 
-      {/* Target Information */}
-      <View className="mb-4">
-        <Text className="text-xs text-text-muted">
-          {currentRoundData.exercises.filter((ex) => ex.completed).length} /{" "}
-          {currentRoundData.exercises.length} exercises completed
-        </Text>
-        <View className="h-0.5 mt-2 bg-neutral-medium-1" />
-      </View>
-
       {/* Exercise Navigation */}
-      {currentRoundData &&
-        !isCurrentRoundCompleted &&
-        currentExercise &&
-        currentBlockExercise && (
-          <View className="mb-6">
-            {/* Current Exercise Card */}
-            <View className="p-4 rounded-lg border border-neutral-medium-1 bg-background mb-4">
-              <View className="flex-row items-center justify-between mb-4">
+      {currentRoundData && !isCurrentRoundCompleted && (
+        <View className="mb-6">
+          {/* Horizontal ScrollView for Exercise Cards */}
+          <ScrollView
+            ref={exerciseScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleScrollEnd}
+            snapToInterval={cardWidth + cardSpacing}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            contentInsetAdjustmentBehavior="never"
+            contentContainerStyle={{ paddingHorizontal: sideInset }}
+            scrollEventThrottle={16}
+            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+            style={{ marginBottom: 16 }}
+          >
+            {currentRoundData.exercises.map((exercise, index) => {
+              const blockExercise = block.exercises.find(
+                (ex) => ex.id === exercise.planDayExerciseId
+              );
+              if (!blockExercise) return null;
+
+              return (
                 <View
-                  className="w-8 h-8 rounded-full items-center justify-center"
-                  style={{ backgroundColor: colors.brand.primary + "30" }}
-                >
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{ color: colors.brand.primary }}
-                  >
-                    {currentExerciseIndex + 1}
-                  </Text>
-                </View>
-                <View className="flex-1 mx-3">
-                  <Text className="text-base font-semibold text-text-primary">
-                    {currentBlockExercise.exercise.name}
-                  </Text>
-                  <Text className="text-xs text-text-muted mt-1">
-                    Target: {currentExercise.targetReps} reps ×{" "}
-                    {currentBlockExercise.weight || 0} lbs
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  className="p-2"
-                  onPress={() => {
-                    updateExerciseReps(
-                      currentExercise.exerciseId,
-                      currentExercise.targetReps
-                    );
-                    updateExerciseWeight(
-                      currentExercise.exerciseId,
-                      currentBlockExercise.weight || 0
-                    );
+                  key={exercise.planDayExerciseId}
+                  style={{
+                    width: cardWidth,
+                    marginRight: cardSpacing,
                   }}
                 >
-                  <Ionicons
-                    name="refresh-outline"
-                    size={18}
-                    color={colors.brand.primary}
-                  />
-                </TouchableOpacity>
-              </View>
+                  <View className="p-5 rounded-lg border border-neutral-medium-1 bg-background">
+                    <View className="flex-row items-center justify-between mb-5">
+                      <View
+                        className="w-8 h-8 rounded-full items-center justify-center"
+                        style={{ backgroundColor: colors.brand.primary + "30" }}
+                      >
+                        <Text
+                          className="text-sm font-semibold"
+                          style={{ color: colors.brand.primary }}
+                        >
+                          {index + 1}
+                        </Text>
+                      </View>
+                      <View className="flex-1 mx-3">
+                        <Text className="text-base font-semibold text-text-primary">
+                          {blockExercise.exercise.name}
+                        </Text>
+                        <Text className="text-xs text-text-muted mt-1">
+                          Target: {exercise.targetReps} reps ×{" "}
+                          {blockExercise.weight || 0} lbs
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        className="p-2"
+                        onPress={() => {
+                          updateExerciseReps(
+                            exercise.exerciseId,
+                            exercise.targetReps
+                          );
+                          updateExerciseWeight(exercise.exerciseId, 0);
+                        }}
+                      >
+                        <Ionicons
+                          name="refresh-outline"
+                          size={18}
+                          color={colors.brand.primary}
+                        />
+                      </TouchableOpacity>
+                    </View>
 
-              {/* Weight Input */}
-              <View className="mb-4">
-                <Text className="text-xs mb-3 text-text-muted font-semibold">
-                  Weight
-                </Text>
-                <View className="flex-row items-center justify-center gap-3">
-                  <TouchableOpacity
-                    className="w-10 h-10 rounded-full bg-neutral-light-2 items-center justify-center"
-                    onPress={() =>
-                      updateExerciseWeight(
-                        currentExercise.exerciseId,
-                        Math.max(0, (currentExercise.weight || 0) - 5)
-                      )
-                    }
-                  >
-                    <Text className="text-sm font-semibold text-text-primary">
-                      -5
-                    </Text>
-                  </TouchableOpacity>
+                    {/* Weight Input */}
+                    <View className="mb-5">
+                      <Text className="text-xs mb-3 text-text-muted font-semibold">
+                        Weight
+                      </Text>
+                      <View className="flex-row items-center justify-center gap-5">
+                        <TouchableOpacity
+                          className="w-10 h-10 rounded-full bg-neutral-light-2 items-center justify-center"
+                          onPress={() =>
+                            updateExerciseWeight(
+                              exercise.exerciseId,
+                              Math.max(0, (exercise.weight || 0) - 5)
+                            )
+                          }
+                        >
+                          <Text className="text-sm font-semibold text-text-primary">
+                            -5
+                          </Text>
+                        </TouchableOpacity>
 
-                  <View className="bg-background rounded-full px-6 py-4 border border-dashed border-neutral-medium-2 min-w-[100px] items-center">
-                    <TextInput
-                      className="text-xl font-bold text-center text-text-primary"
-                      value={(currentExercise.weight || 0).toString()}
-                      onChangeText={(text) =>
-                        updateExerciseWeight(
-                          currentExercise.exerciseId,
-                          parseFloat(text) || 0
-                        )
-                      }
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={colors.text.muted}
-                    />
+                        <View className="bg-background rounded-full px-4 py-3 border border-dashed border-neutral-medium-2 min-w-[80px] items-center">
+                          <TextInput
+                            className="text-lg font-bold text-center text-text-primary"
+                            value={(exercise.weight || 0).toString()}
+                            onChangeText={(text) =>
+                              updateExerciseWeight(
+                                exercise.exerciseId,
+                                parseFloat(text) || 0
+                              )
+                            }
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={colors.text.muted}
+                          />
+                        </View>
+
+                        <TouchableOpacity
+                          className="w-10 h-10 rounded-full items-center justify-center"
+                          style={{ backgroundColor: colors.brand.primary }}
+                          onPress={() =>
+                            updateExerciseWeight(
+                              exercise.exerciseId,
+                              (exercise.weight || 0) + 5
+                            )
+                          }
+                        >
+                          <Text
+                            className="text-sm font-semibold"
+                            style={{ color: colors.brand.secondary }}
+                          >
+                            +5
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* Reps Input */}
+                    <View>
+                      <Text className="text-xs mb-3 text-text-muted font-semibold">
+                        Reps
+                      </Text>
+                      <View className="flex-row items-center justify-center gap-5">
+                        <TouchableOpacity
+                          className="w-10 h-10 rounded-full bg-neutral-light-2 items-center justify-center"
+                          onPress={() =>
+                            updateExerciseReps(
+                              exercise.exerciseId,
+                              Math.max(0, exercise.actualReps - 1)
+                            )
+                          }
+                        >
+                          <Ionicons
+                            name="remove"
+                            size={20}
+                            color={colors.text.primary}
+                          />
+                        </TouchableOpacity>
+
+                        <View className="bg-background rounded-full px-4 py-3 border border-dashed border-neutral-medium-2 min-w-[80px] items-center">
+                          <TextInput
+                            className="text-lg font-bold text-center text-text-primary"
+                            value={exercise.actualReps.toString()}
+                            onChangeText={(text) =>
+                              updateExerciseReps(
+                                exercise.exerciseId,
+                                parseInt(text) || 0
+                              )
+                            }
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={colors.text.muted}
+                          />
+                        </View>
+
+                        <TouchableOpacity
+                          className="w-10 h-10 rounded-full items-center justify-center"
+                          style={{ backgroundColor: colors.brand.primary }}
+                          onPress={() =>
+                            updateExerciseReps(
+                              exercise.exerciseId,
+                              exercise.actualReps + 1
+                            )
+                          }
+                        >
+                          <Ionicons
+                            name="add"
+                            size={20}
+                            color={colors.brand.secondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* Exercise Work Timer (Tabata) */}
+                    {block.blockType === "tabata" &&
+                      showExerciseWork &&
+                      index === currentExerciseIndex && (
+                        <View className="mt-6">
+                          <View className="flex-row items-center justify-between mb-3">
+                            <Text className="text-sm font-semibold text-text-primary flex-row items-center">
+                              Work Timer
+                            </Text>
+                          </View>
+                          <CircularTimerDisplay
+                            countdown={exerciseWorkCountdown}
+                            targetDuration={getExerciseWorkDuration()}
+                            isActive={exerciseWorkActive}
+                            isPaused={exerciseWorkPaused}
+                            isCompleted={exerciseWorkCountdown === 0}
+                            startButtonText="Start Work"
+                            onStartPause={() => {
+                              if (exerciseWorkCountdown === 0) {
+                                const duration = getExerciseWorkDuration();
+                                setExerciseWorkCountdown(duration);
+                                setExerciseWorkActive(true);
+                                setExerciseWorkPaused(false);
+                              } else {
+                                setExerciseWorkPaused(!exerciseWorkPaused);
+                              }
+                            }}
+                            onReset={() => {
+                              const duration = getExerciseWorkDuration();
+                              setExerciseWorkCountdown(duration);
+                              setExerciseWorkActive(true);
+                              setExerciseWorkPaused(false);
+                            }}
+                            onCancel={() => {
+                              setExerciseWorkActive(false);
+                              setExerciseWorkPaused(false);
+                              const duration = getExerciseWorkDuration();
+                              setExerciseWorkCountdown(duration);
+                              setShowExerciseWork(false);
+                            }}
+                          />
+                        </View>
+                      )}
+
+                    {/* Start Exercise Work Button (Tabata) */}
+                    {block.blockType === "tabata" &&
+                      !showExerciseWork &&
+                      index === currentExerciseIndex && (
+                        <View className="mt-4">
+                          <TouchableOpacity
+                            className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
+                            style={{
+                              borderColor: colors.brand.primary,
+                              backgroundColor: colors.brand.primary + "10",
+                            }}
+                            onPress={() => {
+                              const duration = getExerciseWorkDuration();
+                              setExerciseWorkCountdown(duration);
+                              setExerciseWorkActive(true);
+                              setExerciseWorkPaused(false);
+                              setShowExerciseWork(true);
+                            }}
+                          >
+                            <Ionicons
+                              name="timer-outline"
+                              size={20}
+                              color={colors.brand.primary}
+                            />
+                            <Text
+                              className="text-sm font-semibold ml-2"
+                              style={{ color: colors.brand.primary }}
+                            >
+                              Start Work ({getExerciseWorkDuration()}s)
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                   </View>
-
-                  <TouchableOpacity
-                    className="w-10 h-10 rounded-full items-center justify-center"
-                    style={{ backgroundColor: colors.brand.primary }}
-                    onPress={() =>
-                      updateExerciseWeight(
-                        currentExercise.exerciseId,
-                        (currentExercise.weight || 0) + 5
-                      )
-                    }
-                  >
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: colors.brand.secondary }}
-                    >
-                      +5
-                    </Text>
-                  </TouchableOpacity>
                 </View>
-              </View>
+              );
+            })}
+          </ScrollView>
 
-              {/* Reps Input */}
-              <View>
-                <Text className="text-xs mb-3 text-text-muted font-semibold">
-                  Reps
-                </Text>
-                <View className="flex-row items-center justify-center gap-4">
-                  <TouchableOpacity
-                    className="w-10 h-10 rounded-full bg-neutral-light-2 items-center justify-center"
-                    onPress={() =>
-                      updateExerciseReps(
-                        currentExercise.exerciseId,
-                        Math.max(0, currentExercise.actualReps - 1)
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="remove"
-                      size={20}
-                      color={colors.text.primary}
-                    />
-                  </TouchableOpacity>
-
-                  <View className="bg-background rounded-full px-6 py-4 border border-dashed border-neutral-medium-2 min-w-[100px] items-center">
-                    <TextInput
-                      className="text-xl font-bold text-center text-text-primary"
-                      value={currentExercise.actualReps.toString()}
-                      onChangeText={(text) =>
-                        updateExerciseReps(
-                          currentExercise.exerciseId,
-                          parseInt(text) || 0
-                        )
-                      }
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={colors.text.muted}
-                    />
-                  </View>
-
-                  <TouchableOpacity
-                    className="w-10 h-10 rounded-full items-center justify-center"
-                    style={{ backgroundColor: colors.brand.primary }}
-                    onPress={() =>
-                      updateExerciseReps(
-                        currentExercise.exerciseId,
-                        currentExercise.actualReps + 1
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name="add"
-                      size={20}
-                      color={colors.brand.secondary}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Exercise Work Timer (Tabata) */}
-              {block.blockType === "tabata" && showExerciseWork && (
-                <View className="mt-6">
-                  <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-sm font-semibold text-text-primary flex-row items-center">
-                      Work Timer
-                    </Text>
-                  </View>
-                  <CircularTimerDisplay
-                    countdown={exerciseWorkCountdown}
-                    targetDuration={getExerciseWorkDuration()}
-                    isActive={exerciseWorkActive}
-                    isPaused={exerciseWorkPaused}
-                    isCompleted={exerciseWorkCountdown === 0}
-                    startButtonText="Start Work"
-                    onStartPause={() => {
-                      if (exerciseWorkCountdown === 0) {
-                        const duration = getExerciseWorkDuration();
-                        setExerciseWorkCountdown(duration);
-                        setExerciseWorkActive(true);
-                        setExerciseWorkPaused(false);
-                      } else {
-                        setExerciseWorkPaused(!exerciseWorkPaused);
-                      }
-                    }}
-                    onReset={() => {
-                      const duration = getExerciseWorkDuration();
-                      setExerciseWorkCountdown(duration);
-                      setExerciseWorkActive(true);
-                      setExerciseWorkPaused(false);
-                    }}
-                    onCancel={() => {
-                      setExerciseWorkActive(false);
-                      setExerciseWorkPaused(false);
-                      const duration = getExerciseWorkDuration();
-                      setExerciseWorkCountdown(duration);
-                      setShowExerciseWork(false);
-                    }}
-                  />
-                </View>
-              )}
-
-              {/* Start Exercise Work Button (Tabata) */}
-              {block.blockType === "tabata" && !showExerciseWork && (
-                <View className="mt-4">
-                  <TouchableOpacity
-                    className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
-                    style={{
-                      borderColor: colors.brand.primary,
-                      backgroundColor: colors.brand.primary + "10",
-                    }}
-                    onPress={() => {
-                      const duration = getExerciseWorkDuration();
-                      setExerciseWorkCountdown(duration);
-                      setExerciseWorkActive(true);
-                      setExerciseWorkPaused(false);
-                      setShowExerciseWork(true);
-                    }}
-                  >
-                    <Ionicons
-                      name="timer-outline"
-                      size={20}
-                      color={colors.brand.primary}
-                    />
-                    <Text
-                      className="text-sm font-semibold ml-2"
-                      style={{ color: colors.brand.primary }}
-                    >
-                      Start Work ({getExerciseWorkDuration()}s)
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-
-            {/* Navigation Buttons Below Card */}
-            <View className="flex-row items-center justify-center gap-4">
-              <TouchableOpacity
-                className={`w-12 h-12 rounded-full items-center justify-center border-2 ${
-                  canGoPrev
-                    ? "border-brand-primary bg-brand-primary"
-                    : "border-neutral-medium-1 bg-neutral-light-2"
-                }`}
-                onPress={goToPrevExercise}
-                disabled={!canGoPrev}
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={20}
-                  color={canGoPrev ? colors.brand.secondary : colors.text.muted}
+          {/* Progress Indicator Dots */}
+          {currentRoundData.exercises.length > 1 && (
+            <View className="flex-row justify-center items-center mb-4">
+              {currentRoundData.exercises.map((_, index) => (
+                <View
+                  key={index}
+                  className="rounded-full mx-1"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    backgroundColor:
+                      index === currentExerciseIndex
+                        ? colors.brand.primary
+                        : colors.neutral.medium[1],
+                  }}
                 />
-              </TouchableOpacity>
-
-              <View className="flex-row items-center px-3">
-                <Text className="text-sm font-semibold text-text-primary">
-                  {currentExerciseIndex + 1} of{" "}
-                  {currentRoundData.exercises.length}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                className={`w-12 h-12 rounded-full items-center justify-center border-2 ${
-                  canGoNext
-                    ? "border-brand-primary bg-brand-primary"
-                    : "border-neutral-medium-1 bg-neutral-light-2"
-                }`}
-                onPress={goToNextExercise}
-                disabled={!canGoNext}
-              >
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={canGoNext ? colors.brand.secondary : colors.text.muted}
-                />
-              </TouchableOpacity>
+              ))}
             </View>
-          </View>
-        )}
+          )}
+        </View>
+      )}
 
       {/* EMOM manual finish button below navigation */}
       {isActive && !isCurrentRoundCompleted && block.blockType === "emom" && (
@@ -613,42 +663,6 @@ export default function CircuitTracker({
               )}
             </Text>
           </TouchableOpacity>
-        </View>
-      )}
-
-      {shouldShowTimer && (
-        <View className="bg-card rounded-2xl p-6 border shadow-sm border-neutral-light-2">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-sm font-semibold text-text-primary">
-              Circuit Timer
-            </Text>
-            <Text className="text-xs text-text-muted">
-              {block.timeCapMinutes
-                ? `${block.timeCapMinutes} minute time cap`
-                : block.blockType === "for_time"
-                ? "Complete as fast as possible"
-                : "Elapsed time"}
-            </Text>
-          </View>
-          <CircuitTimer
-            blockType={block.blockType || "circuit"}
-            timeCapMinutes={block.timeCapMinutes}
-            rounds={block.rounds}
-            timerState={sessionData.timer}
-            onTimerUpdate={updateTimerState}
-            onTimerEvent={async (event) => {
-              if (event === "completeRound" && circuitActions?.completeRound) {
-                try {
-                  await circuitActions.completeRound(
-                    "Auto-completed: minute ended"
-                  );
-                } catch (error) {
-                  console.error("Error auto-completing EMOM round:", error);
-                }
-              }
-            }}
-            disabled={!isActive}
-          />
         </View>
       )}
 
@@ -680,6 +694,57 @@ export default function CircuitTracker({
         </View>
       )}
 
+      {shouldShowTimer && (
+        <View className="mb-3">
+          {/* Timer Toggle Button */}
+          <TouchableOpacity
+            className={`py-3 px-6 rounded-lg items-center border-2 ${
+              showTimer
+                ? "bg-brand-primary border-brand-primary"
+                : "border-brand-primary bg-transparent"
+            }`}
+            onPress={() => setShowTimer(!showTimer)}
+          >
+            <Text
+              className={`text-sm font-semibold ${
+                showTimer ? "text-white" : ""
+              }`}
+              style={!showTimer ? { color: colors.brand.primary } : {}}
+            >
+              {showTimer ? "Hide Circuit Timer" : "Show Circuit Timer"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Timer */}
+          {showTimer && (
+            <View className="bg-card rounded-2xl mt-2 p-6 border shadow-sm border-neutral-light-2">
+              <CircuitTimer
+                blockType={block.blockType || "circuit"}
+                timeCapMinutes={block.timeCapMinutes}
+                rounds={block.rounds}
+                timerState={sessionData.timer}
+                onTimerUpdate={updateTimerState}
+                onTimerEvent={async (event) => {
+                  if (
+                    event === "completeRound" &&
+                    circuitActions?.completeRound
+                  ) {
+                    try {
+                      await circuitActions.completeRound(
+                        "Auto-completed: minute ended"
+                      );
+                    } catch (error) {
+                      console.error("Error auto-completing EMOM round:", error);
+                    }
+                  }
+                }}
+                disabled={!isActive}
+              />
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Complete Round Button - Hidden for EMOM (auto-completes) */}
       {isActive &&
         !isCurrentRoundCompleted &&
@@ -690,23 +755,47 @@ export default function CircuitTracker({
           sessionData.targetRounds
         ) && (
           <View className="mb-6">
-            <TouchableOpacity
-              className={`py-4 rounded-xl items-center bg-brand-primary`}
-              onPress={
-                !sessionData.targetRounds ||
-                sessionData.currentRound >= sessionData.targetRounds
-                  ? handleCompleteCircuit
-                  : handleCompleteRound
-              }
-            >
-              <Text className={`text-lg font-semibold text-white`}>
-                {getRoundCompleteButtonText(
-                  block.blockType || "circuit",
-                  sessionData.currentRound,
-                  sessionData.targetRounds
-                )}
-              </Text>
-            </TouchableOpacity>
+            {/* Show both buttons for AMRAP after first round, or for circuits beyond prescribed rounds */}
+            {(block.blockType === "amrap" && sessionData.currentRound >= 1) ||
+            (sessionData.targetRounds &&
+              sessionData.currentRound > sessionData.targetRounds &&
+              block.blockType === "circuit") ? (
+              <View className="gap-2">
+                <TouchableOpacity
+                  className={`py-3 px-4 rounded-lg items-center bg-brand-primary`}
+                  onPress={handleCompleteRound}
+                >
+                  <Text className={`text-sm font-semibold text-white`}>
+                    {getRoundCompleteButtonText(
+                      block.blockType || "circuit",
+                      sessionData.currentRound,
+                      sessionData.targetRounds
+                    )}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                className={`py-3 px-4 rounded-lg items-center bg-brand-primary`}
+                onPress={
+                  // For AMRAP, always complete round. For others, follow original logic
+                  block.blockType === "amrap"
+                    ? handleCompleteRound
+                    : !sessionData.targetRounds ||
+                      sessionData.currentRound >= sessionData.targetRounds
+                    ? handleCompleteCircuit
+                    : handleCompleteRound
+                }
+              >
+                <Text className={`text-sm font-semibold text-white`}>
+                  {getRoundCompleteButtonText(
+                    block.blockType || "circuit",
+                    sessionData.currentRound,
+                    sessionData.targetRounds
+                  )}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
     </ScrollView>

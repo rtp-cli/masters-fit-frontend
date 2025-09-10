@@ -390,17 +390,17 @@ export default function SetTracker({
           className="flex-row items-center py-3 px-6 rounded-lg border"
           style={{
             borderColor: colors.brand.primary,
-            backgroundColor: colors.brand.primary + "10",
+            backgroundColor: colors.brand.primary,
           }}
           onPress={() => addSet()}
         >
           <Ionicons
             name="add-circle-outline"
             size={20}
-            color={colors.brand.primary}
+            color={colors.brand.secondary}
           />
           <Text
-            style={{ color: colors.brand.primary }}
+            style={{ color: colors.brand.secondary }}
             className="text-sm font-semibold ml-2"
           >
             Add Set

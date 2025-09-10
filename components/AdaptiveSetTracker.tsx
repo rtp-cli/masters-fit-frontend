@@ -49,7 +49,15 @@ export default function AdaptiveSetTracker({
   const [countdown, setCountdown] = useState(exercise.duration || 0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const [showExerciseTimer, setShowExerciseTimer] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Format timer display for button
+  const formatExerciseTimerDisplay = () => {
+    const minutes = Math.floor(countdown / 60);
+    const seconds = countdown % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   // Initialize duration sets if needed
   useEffect(() => {
@@ -444,18 +452,18 @@ export default function AdaptiveSetTracker({
         className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
         style={{
           borderColor: colors.brand.primary,
-          backgroundColor: colors.brand.primary + "10",
+          backgroundColor: colors.brand.primary,
         }}
         onPress={addSet}
       >
         <Ionicons
           name="add-circle-outline"
           size={20}
-          color={colors.brand.primary}
+          color={colors.brand.secondary}
         />
         <Text
           className="text-sm font-semibold ml-2"
-          style={{ color: colors.brand.primary }}
+          style={{ color: colors.brand.secondary }}
         >
           Add Set
         </Text>
@@ -594,44 +602,67 @@ export default function AdaptiveSetTracker({
           className="flex-row items-center justify-center py-3 px-6 rounded-lg border mb-4"
           style={{
             borderColor: colors.brand.primary,
-            backgroundColor: colors.brand.primary + "10",
+            backgroundColor: colors.brand.primary,
           }}
           onPress={addDurationSet}
         >
           <Ionicons
             name="add-circle-outline"
             size={20}
-            color={colors.brand.primary}
+            color={colors.brand.secondary}
           />
           <Text
             className="text-sm font-semibold ml-2"
-            style={{ color: colors.brand.primary }}
+            style={{ color: colors.brand.secondary }}
           >
             Add Set
           </Text>
         </TouchableOpacity>
 
-        {/* Timer Component */}
+        {/* Exercise Timer */}
         {currentSetIndex < durationSets.length && (
-          <View>
-            {/* Header */}
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-sm font-semibold text-text-primary">
-                Exercise Timer
+          <View className="mt-4">
+            {/* Timer Toggle Button */}
+            <TouchableOpacity
+              className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
+                showExerciseTimer
+                  ? "bg-brand-primary border-brand-primary"
+                  : "border-brand-primary bg-transparent"
+              }`}
+              onPress={() => setShowExerciseTimer(!showExerciseTimer)}
+            >
+              <Text
+                className={`text-sm font-semibold ${
+                  showExerciseTimer ? "text-white" : ""
+                }`}
+                style={!showExerciseTimer ? { color: colors.brand.primary } : {}}
+              >
+                {showExerciseTimer ? "Hide Exercise Timer" : `Show Exercise Timer (${formatExerciseTimerDisplay()})`}
               </Text>
-            </View>
+            </TouchableOpacity>
 
-            <CircularTimerDisplay
-              countdown={countdown}
-              targetDuration={exercise.duration || 30}
-              isActive={isTimerActive}
-              isPaused={isTimerPaused}
-              isCompleted={isCompleted}
-              startButtonText={`Start Timer`}
-              onStartPause={handleStartPause}
-              onReset={handleReset}
-              onCancel={handleCancel}
-            />
+            {/* Timer */}
+            {showExerciseTimer && (
+              <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-sm font-semibold text-text-primary">
+                    Exercise Timer
+                  </Text>
+                </View>
+
+                <CircularTimerDisplay
+                  countdown={countdown}
+                  targetDuration={exercise.duration || 30}
+                  isActive={isTimerActive}
+                  isPaused={isTimerPaused}
+                  isCompleted={isCompleted}
+                  startButtonText={`Start Timer`}
+                  onStartPause={handleStartPause}
+                  onReset={handleReset}
+                  onCancel={handleCancel}
+                />
+              </View>
+            )}
           </View>
         )}
       </View>
