@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { PreferredStyles } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
@@ -8,6 +8,7 @@ import { colors } from "@/lib/theme";
 interface WorkoutStyleStepProps {
   formData: FormData;
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
+  onFieldChange: (field: keyof FormData, value: any) => void;
 }
 
 interface StyleConfig {
@@ -102,10 +103,63 @@ const getStyleConfig = (styleKey: string): StyleConfig => {
 export default function WorkoutStyleStep({
   formData,
   onToggle,
+  onFieldChange,
 }: WorkoutStyleStepProps) {
   return (
     <View className="flex-1 px-6 pb-6">
-      {Object.entries(PreferredStyles).map(([key, value]) => {
+      {/* Warmup/Cooldown Preferences */}
+      <View className="mb-6">
+        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+          Workout Preferences
+        </Text>
+        
+        {/* Include Warmup Toggle */}
+        <View className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-3">
+          <View className="flex-1">
+            <Text className="font-medium text-sm text-neutral-dark-1">
+              Include Warmup
+            </Text>
+            <Text className="text-xs mt-0.5 text-neutral-medium-4">
+              Prepare your body with dynamic movements
+            </Text>
+          </View>
+          <Switch
+            value={formData.includeWarmup ?? true}
+            onValueChange={(value) => onFieldChange("includeWarmup", value)}
+            trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
+            thumbColor={formData.includeWarmup ? "#FFFFFF" : "#9CA3AF"}
+          />
+        </View>
+
+        {/* Include Cooldown Toggle */}
+        <View className="flex-row items-center justify-between p-4 bg-white rounded-xl">
+          <View className="flex-1">
+            <Text className="font-medium text-sm text-neutral-dark-1">
+              Include Cooldown
+            </Text>
+            <Text className="text-xs mt-0.5 text-neutral-medium-4">
+              Recovery stretches and mobility work
+            </Text>
+          </View>
+          <Switch
+            value={formData.includeCooldown ?? true}
+            onValueChange={(value) => onFieldChange("includeCooldown", value)}
+            trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
+            thumbColor={formData.includeCooldown ? "#FFFFFF" : "#9CA3AF"}
+          />
+        </View>
+      </View>
+
+      {/* Workout Styles */}
+      <View>
+        <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
+          Workout Styles
+        </Text>
+        <Text className="text-sm text-neutral-medium-4 mb-4">
+          Select the training styles you enjoy (choose multiple)
+        </Text>
+        
+        {Object.entries(PreferredStyles).map(([key, value]) => {
         const config = getStyleConfig(key);
         const isSelected = formData.preferredStyles.includes(value);
 
@@ -142,6 +196,7 @@ export default function WorkoutStyleStep({
           </TouchableOpacity>
         );
       })}
+      </View>
     </View>
   );
 }

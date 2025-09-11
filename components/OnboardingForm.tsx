@@ -68,6 +68,8 @@ export default function OnboardingForm({
     workoutDuration: 30,
     intensityLevel: IntensityLevels.MODERATE,
     medicalNotes: "",
+    includeWarmup: true,
+    includeCooldown: true,
     ...initialData,
   });
 
@@ -202,6 +204,7 @@ export default function OnboardingForm({
           <WorkoutStyleStep
             formData={formData}
             onToggle={handleMultiSelectToggle}
+            onFieldChange={handleChange}
           />
         );
       default:

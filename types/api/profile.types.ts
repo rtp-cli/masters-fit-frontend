@@ -17,6 +17,8 @@ export interface Profile {
   workoutDuration?: number;
   intensityLevel?: string | number;
   medicalNotes?: string;
+  includeWarmup?: boolean;
+  includeCooldown?: boolean;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -39,6 +41,8 @@ export interface UpdateProfileParams {
   workoutDuration?: number;
   intensityLevel?: string;
   medicalNotes?: string;
+  includeWarmup?: boolean;
+  includeCooldown?: boolean;
   aerobicLevel?: number;
   strengthLevel?: number;
   remindersEnabled?: boolean;

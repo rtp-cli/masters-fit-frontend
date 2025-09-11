@@ -45,6 +45,9 @@ export default function CircuitTracker({
   // Timer visibility state
   const [showTimer, setShowTimer] = useState(false);
 
+  // Local state for round notes to prevent re-rendering issues
+  const [localRoundNotes, setLocalRoundNotes] = useState(currentRoundData?.notes || "");
+
   // Horizontal scroll ref for exercise navigation
   const exerciseScrollRef = useRef<ScrollView>(null);
   const [containerWidth, setContainerWidth] = useState(
@@ -132,7 +135,9 @@ export default function CircuitTracker({
     setExerciseWorkActive(false);
     setExerciseWorkPaused(false);
     setExerciseWorkCountdown(0);
-  }, [sessionData.currentRound]);
+    // Update local notes when round changes
+    setLocalRoundNotes(currentRoundData?.notes || "");
+  }, [sessionData.currentRound, currentRoundData?.notes]);
 
   // Tabata: work duration per exercise (seconds)
   const getExerciseWorkDuration = () => {
@@ -208,7 +213,7 @@ export default function CircuitTracker({
 
     try {
       if (circuitActions?.completeRound) {
-        await circuitActions.completeRound(currentRoundData?.notes);
+        await circuitActions.completeRound(localRoundNotes);
       } else {
         // Fallback manual completion
         const updatedRounds = [...sessionData.rounds];
@@ -220,6 +225,7 @@ export default function CircuitTracker({
             isCompleted: true,
             completedAt: new Date(),
             roundTimeSeconds: sessionData.timer.currentTime,
+            notes: localRoundNotes,
           };
 
           onRoundComplete(updatedRounds[currentRoundIndex]);
@@ -676,18 +682,8 @@ export default function CircuitTracker({
             className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
             placeholder="Add notes about this round..."
             placeholderTextColor={colors.text.muted}
-            value={currentRoundData.notes}
-            onChangeText={(text) => {
-              const updatedRounds = [...sessionData.rounds];
-              const currentRoundIndex = sessionData.currentRound - 1;
-              if (updatedRounds[currentRoundIndex]) {
-                updatedRounds[currentRoundIndex].notes = text;
-                onSessionUpdate({
-                  ...sessionData,
-                  rounds: updatedRounds,
-                });
-              }
-            }}
+            value={localRoundNotes}
+            onChangeText={setLocalRoundNotes}
             multiline
             numberOfLines={2}
           />

@@ -9,6 +9,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
@@ -251,6 +253,8 @@ export default function WorkoutRegenerationModal({
             ? 2
             : 3,
         medicalNotes: formData.medicalNotes,
+        includeWarmup: formData.includeWarmup ?? true,
+        includeCooldown: formData.includeCooldown ?? true,
       };
 
       // Update the profile first
@@ -365,6 +369,8 @@ export default function WorkoutRegenerationModal({
       intensityLevel:
         partialFormData.intensityLevel || IntensityLevels.MODERATE,
       medicalNotes: partialFormData.medicalNotes || "",
+      includeWarmup: partialFormData.includeWarmup ?? true,
+      includeCooldown: partialFormData.includeCooldown ?? true,
     };
     await handleUpdateProfile(completeFormData);
   };
@@ -507,6 +513,8 @@ export default function WorkoutRegenerationModal({
       workoutDuration: profile.workoutDuration || 30,
       intensityLevel: intensityLevel,
       medicalNotes: profile.medicalNotes || "",
+      includeWarmup: profile.includeWarmup ?? true,
+      includeCooldown: profile.includeCooldown ?? true,
     };
   };
 
@@ -587,24 +595,28 @@ export default function WorkoutRegenerationModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View className="flex-1 bg-background">
-          {/* Header */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-            <TouchableOpacity
-              onPress={onClose}
-              className="w-8 h-8 items-center justify-center"
-            >
-              <Ionicons name="close" size={20} color={colors.text.muted} />
-            </TouchableOpacity>
-            <Text className="text-base font-semibold text-text-primary">
-              Edit Workout Plan
-            </Text>
-            <View className="w-8" />
-          </View>
+      <KeyboardAvoidingView 
+        className="flex-1" 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View className="flex-1 bg-background">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+              <TouchableOpacity
+                onPress={onClose}
+                className="w-8 h-8 items-center justify-center"
+              >
+                <Ionicons name="close" size={20} color={colors.text.muted} />
+              </TouchableOpacity>
+              <Text className="text-base font-semibold text-text-primary">
+                Edit Workout Plan
+              </Text>
+              <View className="w-8" />
+            </View>
 
-          {/* Content */}
-          <View className="flex-1 px-5 py-5">
+            {/* Content */}
+            <View className="flex-1 px-5 py-5">
             {isRestDay ? (
               <View className="mb-6">
                 <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
@@ -715,6 +727,7 @@ export default function WorkoutRegenerationModal({
                 className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
                 style={{
                   minHeight: 120,
+                  maxHeight: 200,
                   textAlignVertical: "top",
                 }}
                 placeholder={
@@ -752,27 +765,28 @@ export default function WorkoutRegenerationModal({
 
           {/* Action Button */}
           <View className="px-5 pb-10 mb-5">
-            <TouchableOpacity
-              className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                loading ? "opacity-70" : ""
-              }`}
-              onPress={handleRegenerateWithFeedback}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={18} color="white" />
-                  <Text className="text-white font-semibold text-sm ml-2">
-                    Regenerate Workout Flow
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+              <TouchableOpacity
+                className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+                  loading ? "opacity-70" : ""
+                }`}
+                onPress={handleRegenerateWithFeedback}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <Ionicons name="refresh" size={18} color="white" />
+                    <Text className="text-white font-semibold text-sm ml-2">
+                      Regenerate Workout Flow
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

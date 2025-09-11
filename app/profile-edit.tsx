@@ -282,6 +282,8 @@ export default function ProfileEditScreen() {
       workoutDuration: profile.workoutDuration || 30,
       intensityLevel: intensityLevel,
       medicalNotes: profile.medicalNotes || "",
+      includeWarmup: profile.includeWarmup ?? true,
+      includeCooldown: profile.includeCooldown ?? true,
     };
   };
 
@@ -315,6 +317,8 @@ export default function ProfileEditScreen() {
         workoutDuration: formData.workoutDuration,
         intensityLevel: formData.intensityLevel.toString(),
         medicalNotes: formData.medicalNotes,
+        includeWarmup: formData.includeWarmup ?? true,
+        includeCooldown: formData.includeCooldown ?? true,
       };
 
       // Update the profile

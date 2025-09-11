@@ -27,6 +27,8 @@ export interface FormData {
   workoutDuration: number;
   intensityLevel: IntensityLevels;
   medicalNotes?: string;
+  includeWarmup?: boolean;
+  includeCooldown?: boolean;
 }
 
 export interface OnboardingFormProps {

@@ -179,6 +179,8 @@ export default function OnboardingScreen() {
         workoutDuration: formData.workoutDuration, // Add missing required field
         intensityLevel: formData.intensityLevel.toString(),
         medicalNotes: formData.medicalNotes || "",
+        includeWarmup: formData.includeWarmup ?? true,
+        includeCooldown: formData.includeCooldown ?? true,
       };
 
       console.log(
