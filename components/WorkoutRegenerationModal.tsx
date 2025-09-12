@@ -11,11 +11,14 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import ProfileOverrideForm, { TemporaryOverrides } from "./ProfileOverrideForm";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./OnboardingForm";
+import { formatEnumValue } from "./onboarding/utils/formatters";
 import { colors } from "../lib/theme";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
@@ -27,104 +30,17 @@ import {
 } from "@lib/workouts";
 import { Profile as UserProfile } from "@/types/api";
 
-// Enums from onboarding (should be moved to a shared types file)
-enum Gender {
-  MALE = "male",
-  FEMALE = "female",
-}
-
-enum FitnessGoals {
-  GENERAL_FITNESS = "general_fitness",
-  FAT_LOSS = "fat_loss",
-  ENDURANCE = "endurance",
-  MUSCLE_GAIN = "muscle_gain",
-  STRENGTH = "strength",
-  MOBILITY_FLEXIBILITY = "mobility_flexibility",
-  BALANCE = "balance",
-  RECOVERY = "recovery",
-}
-
-enum FitnessLevels {
-  BEGINNER = "beginner",
-  INTERMEDIATE = "intermediate",
-  ADVANCED = "advanced",
-}
-
-enum IntensityLevels {
-  LOW = "low",
-  MODERATE = "moderate",
-  HIGH = "high",
-}
-
-enum WorkoutEnvironments {
-  HOME_GYM = "home_gym",
-  COMMERCIAL_GYM = "commercial_gym",
-  BODYWEIGHT_ONLY = "bodyweight_only",
-}
-
-enum PreferredDays {
-  MONDAY = "monday",
-  TUESDAY = "tuesday",
-  WEDNESDAY = "wednesday",
-  THURSDAY = "thursday",
-  FRIDAY = "friday",
-  SATURDAY = "saturday",
-  SUNDAY = "sunday",
-}
-
-enum PhysicalLimitations {
-  KNEE_PAIN = "knee_pain",
-  SHOULDER_PAIN = "shoulder_pain",
-  LOWER_BACK_PAIN = "lower_back_pain",
-  NECK_PAIN = "neck_pain",
-  HIP_PAIN = "hip_pain",
-  ANKLE_INSTABILITY = "ankle_instability",
-  WRIST_PAIN = "wrist_pain",
-  ELBOW_PAIN = "elbow_pain",
-  ARTHRITIS = "arthritis",
-  OSTEOPOROSIS = "osteoporosis",
-  SCIATICA = "sciatica",
-  LIMITED_RANGE_OF_MOTION = "limited_range_of_motion",
-  POST_SURGERY_RECOVERY = "post_surgery_recovery",
-  BALANCE_ISSUES = "balance_issues",
-  CHRONIC_FATIGUE = "chronic_fatigue",
-  BREATHING_ISSUES = "breathing_issues",
-}
-
-enum AvailableEquipment {
-  BARBELLS = "barbells",
-  BENCH = "bench",
-  INCLINE_DECLINE_BENCH = "incline_decline_bench",
-  PULL_UP_BAR = "pull_up_bar",
-  BIKE = "bike",
-  MEDICINE_BALLS = "medicine_balls",
-  PLYO_BOX = "plyo_box",
-  RINGS = "rings",
-  RESISTANCE_BANDS = "resistance_bands",
-  STABILITY_BALL = "stability_ball",
-  DUMBBELLS = "dumbbells",
-  KETTLEBELLS = "kettlebells",
-  SQUAT_RACK = "squat_rack",
-  DIP_BAR = "dip_bar",
-  ROWING_MACHINE = "rowing_machine",
-  SLAM_BALLS = "slam_balls",
-  CABLE_MACHINE = "cable_machine",
-  JUMP_ROPE = "jump_rope",
-  FOAM_ROLLER = "foam_roller",
-}
-
-enum PreferredStyles {
-  HIIT = "HIIT",
-  STRENGTH = "strength",
-  CARDIO = "cardio",
-  REHAB = "rehab",
-  CROSSFIT = "crossfit",
-  FUNCTIONAL = "functional",
-  PILATES = "pilates",
-  YOGA = "yoga",
-  BALANCE = "balance",
-  MOBILITY = "mobility",
-}
+import {
+  Gender,
+  FitnessGoals,
+  FitnessLevels,
+  IntensityLevels,
+  WorkoutEnvironments,
+  PreferredDays,
+  PhysicalLimitations,
+  AvailableEquipment,
+  PreferredStyles,
+} from "@/types/enums";
 
 interface WorkoutRegenerationModalProps {
   visible: boolean;
@@ -186,6 +102,20 @@ export default function WorkoutRegenerationModal({
     regenerationType
   );
 
+  // State for daily workout temporary overrides
+  const [showDailyOverrides, setShowDailyOverrides] = useState(false);
+  const [temporaryOverrides, setTemporaryOverrides] =
+    useState<TemporaryOverrides>({
+      duration: 30,
+      intensity: IntensityLevels.MODERATE,
+      styles: [],
+      environment: WorkoutEnvironments.HOME_GYM,
+      equipment: [],
+      otherEquipment: "",
+      includeWarmup: true,
+      includeCooldown: true,
+    });
+
   // Get refresh functions for data refresh after regeneration
   const {
     refresh: { refreshAll },
@@ -200,12 +130,55 @@ export default function WorkoutRegenerationModal({
       loadUserProfile();
       setCustomFeedback("");
       setShowOnboardingForm(false);
+      setShowDailyOverrides(false);
       // For rest days and no active workout days, always default to "week" tab
       setSelectedType(
         isRestDay ? "day" : noActiveWorkoutDay ? "week" : regenerationType
       );
     }
   }, [visible, regenerationType, isRestDay, noActiveWorkoutDay]);
+
+  // Initialize temporary overrides when profile loads
+  useEffect(() => {
+    if (currentProfile && visible) {
+      // Convert profile data to temporary overrides with defaults
+      let profileIntensity = IntensityLevels.MODERATE;
+      if (currentProfile.intensityLevel) {
+        if (typeof currentProfile.intensityLevel === "number") {
+          profileIntensity =
+            currentProfile.intensityLevel === 1
+              ? IntensityLevels.LOW
+              : currentProfile.intensityLevel === 2
+              ? IntensityLevels.MODERATE
+              : IntensityLevels.HIGH;
+        } else {
+          profileIntensity = currentProfile.intensityLevel as IntensityLevels;
+        }
+      }
+
+      let profileEnvironment = WorkoutEnvironments.HOME_GYM;
+      if (currentProfile.environment) {
+        if (Array.isArray(currentProfile.environment)) {
+          profileEnvironment = currentProfile
+            .environment[0] as WorkoutEnvironments;
+        } else {
+          profileEnvironment =
+            currentProfile.environment as WorkoutEnvironments;
+        }
+      }
+
+      setTemporaryOverrides({
+        duration: currentProfile.workoutDuration || 30,
+        intensity: profileIntensity,
+        styles: (currentProfile.preferredStyles as PreferredStyles[]) || [],
+        environment: profileEnvironment,
+        equipment: (currentProfile.equipment as AvailableEquipment[]) || [],
+        otherEquipment: currentProfile.otherEquipment || "",
+        includeWarmup: currentProfile.includeWarmup ?? true,
+        includeCooldown: currentProfile.includeCooldown ?? true,
+      });
+    }
+  }, [currentProfile, visible]);
 
   const loadUserProfile = async () => {
     try {
@@ -309,9 +282,11 @@ export default function WorkoutRegenerationModal({
               user.id,
               selectedPlanDay.id,
               {
-                reason:
-                  customFeedback.trim() ||
-                  "User requested regeneration with profile updates",
+                reason: formatOverridesIntoReason(
+                  customFeedback,
+                  temporaryOverrides,
+                  currentProfile
+                ),
               }
             );
 
@@ -438,7 +413,11 @@ export default function WorkoutRegenerationModal({
               user.id,
               selectedPlanDay.id,
               {
-                reason: customFeedback.trim() || "User requested regeneration",
+                reason: formatOverridesIntoReason(
+                  customFeedback,
+                  temporaryOverrides,
+                  currentProfile
+                ),
               }
             );
 
@@ -465,6 +444,192 @@ export default function WorkoutRegenerationModal({
         [{ text: "OK" }]
       );
     }
+  };
+
+  const formatOverridesIntoReason = (
+    customFeedback: string,
+    overrides: TemporaryOverrides,
+    currentProfile: UserProfile | null
+  ): string => {
+    if (!currentProfile) {
+      return customFeedback.trim() || "User requested regeneration";
+    }
+
+    // Build array of override descriptions
+    const overrideDescriptions: string[] = [];
+
+    // Check duration override
+    if (
+      overrides.duration !== undefined &&
+      overrides.duration !== (currentProfile.workoutDuration || 30)
+    ) {
+      overrideDescriptions.push(`Duration: ${overrides.duration} minutes`);
+    }
+
+    // Check intensity override
+    let currentIntensity = IntensityLevels.MODERATE;
+    if (currentProfile.intensityLevel) {
+      if (typeof currentProfile.intensityLevel === "number") {
+        currentIntensity =
+          currentProfile.intensityLevel === 1
+            ? IntensityLevels.LOW
+            : currentProfile.intensityLevel === 2
+            ? IntensityLevels.MODERATE
+            : IntensityLevels.HIGH;
+      } else {
+        currentIntensity = currentProfile.intensityLevel as IntensityLevels;
+      }
+    }
+
+    if (
+      overrides.intensity !== undefined &&
+      overrides.intensity !== currentIntensity
+    ) {
+      const intensityLabel =
+        overrides.intensity === IntensityLevels.LOW
+          ? "Low"
+          : overrides.intensity === IntensityLevels.MODERATE
+          ? "Moderate"
+          : "High";
+      overrideDescriptions.push(`Intensity: ${intensityLabel}`);
+    }
+
+    // Check styles override
+    const currentStyles =
+      (currentProfile.preferredStyles as PreferredStyles[]) || [];
+    const newStyles = overrides.styles || [];
+
+    // Compare arrays to see if they're different
+    const stylesChanged =
+      newStyles.length !== currentStyles.length ||
+      !newStyles.every((style) => currentStyles.includes(style)) ||
+      !currentStyles.every((style) => newStyles.includes(style));
+
+    if (stylesChanged && newStyles.length > 0) {
+      const styleLabels = newStyles.map((style) => {
+        return style === PreferredStyles.HIIT
+          ? "HIIT"
+          : style === PreferredStyles.STRENGTH
+          ? "Strength"
+          : style === PreferredStyles.CARDIO
+          ? "Cardio"
+          : style === PreferredStyles.REHAB
+          ? "Rehab"
+          : style === PreferredStyles.CROSSFIT
+          ? "CrossFit"
+          : style === PreferredStyles.FUNCTIONAL
+          ? "Functional"
+          : style === PreferredStyles.PILATES
+          ? "Pilates"
+          : style === PreferredStyles.YOGA
+          ? "Yoga"
+          : style === PreferredStyles.BALANCE
+          ? "Balance"
+          : style === PreferredStyles.MOBILITY
+          ? "Mobility"
+          : style;
+      });
+      overrideDescriptions.push(`Styles: ${styleLabels.join(", ")}`);
+    }
+
+    // Check environment override
+    let currentEnvironment = WorkoutEnvironments.HOME_GYM;
+    if (currentProfile.environment) {
+      if (Array.isArray(currentProfile.environment)) {
+        currentEnvironment = currentProfile
+          .environment[0] as WorkoutEnvironments;
+      } else {
+        currentEnvironment = currentProfile.environment as WorkoutEnvironments;
+      }
+    }
+
+    if (
+      overrides.environment !== undefined &&
+      overrides.environment !== currentEnvironment
+    ) {
+      const environmentLabel =
+        overrides.environment === WorkoutEnvironments.HOME_GYM
+          ? "Home Gym"
+          : overrides.environment === WorkoutEnvironments.COMMERCIAL_GYM
+          ? "Commercial Gym"
+          : "Bodyweight Only";
+      overrideDescriptions.push(`Environment: ${environmentLabel}`);
+    }
+
+    // Check equipment overrides (only for HOME_GYM)
+    if (overrides.environment === WorkoutEnvironments.HOME_GYM) {
+      const currentEquipment =
+        (currentProfile.equipment as AvailableEquipment[]) || [];
+      const newEquipment = overrides.equipment || [];
+
+      // Compare arrays to see if they're different
+      const equipmentChanged =
+        newEquipment.length !== currentEquipment.length ||
+        !newEquipment.every((eq) => currentEquipment.includes(eq)) ||
+        !currentEquipment.every((eq) => newEquipment.includes(eq));
+
+      if (equipmentChanged) {
+        const equipmentLabels = newEquipment.map((equipment) => {
+          return formatEnumValue(equipment.toUpperCase());
+        });
+        if (equipmentLabels.length > 0) {
+          overrideDescriptions.push(`Equipment: ${equipmentLabels.join(", ")}`);
+        }
+      }
+
+      // Check other equipment override
+      const currentOtherEquipment = currentProfile.otherEquipment || "";
+      if (
+        overrides.otherEquipment !== undefined &&
+        overrides.otherEquipment.trim() !== currentOtherEquipment.trim()
+      ) {
+        if (overrides.otherEquipment.trim()) {
+          overrideDescriptions.push(
+            `Other Equipment: ${overrides.otherEquipment.trim()}`
+          );
+        }
+      }
+    }
+
+    // Check warmup/cooldown overrides
+    const currentWarmup = currentProfile.includeWarmup ?? true;
+    const currentCooldown = currentProfile.includeCooldown ?? true;
+
+    if (
+      overrides.includeWarmup !== undefined &&
+      overrides.includeWarmup !== currentWarmup
+    ) {
+      overrideDescriptions.push(
+        `${overrides.includeWarmup ? "Include" : "Skip"} warmup`
+      );
+    }
+
+    if (
+      overrides.includeCooldown !== undefined &&
+      overrides.includeCooldown !== currentCooldown
+    ) {
+      overrideDescriptions.push(
+        `${overrides.includeCooldown ? "Include" : "Skip"} cooldown`
+      );
+    }
+
+    // Build final reason string
+    let finalReason = customFeedback.trim();
+
+    if (overrideDescriptions.length > 0) {
+      const overrideText = `Profile overrides for this workout: ${overrideDescriptions.join(
+        ", "
+      )}`;
+      if (finalReason) {
+        finalReason += `\n\n${overrideText}`;
+      } else {
+        finalReason = `User requested regeneration with the following changes: ${overrideDescriptions.join(
+          ", "
+        )}`;
+      }
+    }
+
+    return finalReason || "User requested regeneration";
   };
 
   const convertProfileToFormData = (
@@ -595,13 +760,13 @@ export default function WorkoutRegenerationModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
-        className="flex-1" 
+      <KeyboardAvoidingView
+        className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View className="flex-1 bg-background">
-            {/* Header */}
+        <View className="flex-1 bg-background">
+          {/* Header */}
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
               <TouchableOpacity
                 onPress={onClose}
@@ -614,178 +779,221 @@ export default function WorkoutRegenerationModal({
               </Text>
               <View className="w-8" />
             </View>
+          </TouchableWithoutFeedback>
 
-            {/* Content */}
-            <View className="flex-1 px-5 py-5">
-            {isRestDay ? (
-              <View className="mb-6">
-                <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                  Today is a Rest Day
-                </Text>
-                <Text className="text-sm text-text-muted mb-4 text-center">
-                  You can generate an optional workout for today, or regenerate
-                  your entire weekly plan.
-                </Text>
-              </View>
-            ) : noActiveWorkoutDay ? (
-              <View className="mb-6">
-                <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                  No Workout Generated
-                </Text>
-                <Text className="text-sm text-text-muted mb-4 text-center">
-                  Workouts for this period haven't been generated yet. To create
-                  workouts for this period, complete your current week and
-                  generate the next week's workout plan.
-                </Text>
-              </View>
-            ) : (
-              <Text className="text-base text-text-muted mb-6 text-center">
-                Choose how you would like to generate your workout plan:
-              </Text>
-            )}
-
-            {/* Week/Day Toggle - Fixed shadow issue */}
-            <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
-              <TouchableOpacity
-                className={`flex-1 py-3 rounded-sm items-center ${
-                  selectedType === "day" ? "bg-white" : "bg-transparent"
-                } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
-                style={
-                  selectedType === "day"
-                    ? {
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 2,
-                        elevation: 2,
-                      }
-                    : undefined
-                }
-                onPress={() => !noActiveWorkoutDay && setSelectedType("day")}
-                disabled={noActiveWorkoutDay}
-              >
-                <Text
-                  className={`font-medium text-sm ${
-                    selectedType === "day"
-                      ? "text-secondary"
-                      : "text-text-muted"
-                  }`}
-                >
-                  Day
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className={`flex-1 py-3 rounded-sm items-center ${
-                  selectedType === "week" ? "bg-white" : "bg-transparent"
-                }`}
-                style={
-                  selectedType === "week"
-                    ? {
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 2,
-                        elevation: 2,
-                      }
-                    : undefined
-                }
-                onPress={() => setSelectedType("week")}
-              >
-                <Text
-                  className={`font-medium text-sm ${
-                    selectedType === "week"
-                      ? "text-secondary"
-                      : "text-text-muted"
-                  }`}
-                >
-                  Week
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {noActiveWorkoutDay && (
-              <Text className="text-xs text-text-muted mb-4 text-center">
-                Day regeneration is not available for days outside your workout
-                plan
-              </Text>
-            )}
-
-            {/* Feedback Input */}
-            <View className="flex-1">
-              <Text className="text-sm text-text-muted mb-4">
-                {isRestDay && selectedType === "day"
-                  ? "What kind of workout would you like for this rest day?"
-                  : isRestDay
-                  ? "Tell us what you'd like to change about your weekly workout plan:"
-                  : noActiveWorkoutDay
-                  ? "Tell us what you'd like to include in your next week's workout plan:"
-                  : `Tell us why you want to regenerate this ${
-                      selectedType === "day" ? "day's" : "week's"
-                    } workout plan, and what you would like to change:`}
-              </Text>
-              <TextInput
-                className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
-                style={{
-                  minHeight: 120,
-                  maxHeight: 200,
-                  textAlignVertical: "top",
-                }}
-                placeholder={
-                  isRestDay && selectedType === "day"
-                    ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
-                    : "Add notes about your workout here..."
-                }
-                placeholderTextColor={colors.text.muted}
-                value={customFeedback}
-                onChangeText={setCustomFeedback}
-                multiline
-                scrollEnabled={true}
-              />
-              {selectedType === "day" && !isRestDay && !noActiveWorkoutDay && (
-                <Text className="text-xs text-text-muted mt-3">
-                  Only this day's workout will be changed. All other days will
-                  remain the same.
+          {/* Content */}
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 20 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            bounces={true}
+            scrollEventThrottle={16}
+            removeClippedSubviews={true}
+          >
+            <View className="px-5 py-5">
+              {isRestDay ? (
+                <View className="mb-6">
+                  <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                    Today is a Rest Day
+                  </Text>
+                  <Text className="text-sm text-text-muted mb-4 text-center">
+                    You can generate an optional workout for today, or
+                    regenerate your entire weekly plan.
+                  </Text>
+                </View>
+              ) : noActiveWorkoutDay ? (
+                <View className="mb-6">
+                  <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                    No Workout Generated
+                  </Text>
+                  <Text className="text-sm text-text-muted mb-4 text-center">
+                    Workouts for this period haven't been generated yet. To
+                    create workouts for this period, complete your current week
+                    and generate the next week's workout plan.
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-base text-text-muted mb-6 text-center">
+                  Choose how you would like to generate your workout plan:
                 </Text>
               )}
 
-              {/* Update Preferences Link */}
-              {selectedType === "week" && (
+              {/* Week/Day Toggle - Fixed shadow issue */}
+              <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
                 <TouchableOpacity
-                  className="mt-4 py-2"
-                  onPress={() => setShowOnboardingForm(true)}
-                  disabled={loading}
+                  className={`flex-1 py-3 rounded-sm items-center ${
+                    selectedType === "day" ? "bg-white" : "bg-transparent"
+                  } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
+                  style={
+                    selectedType === "day"
+                      ? {
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 2,
+                          elevation: 2,
+                        }
+                      : undefined
+                  }
+                  onPress={() => !noActiveWorkoutDay && setSelectedType("day")}
+                  disabled={noActiveWorkoutDay}
                 >
-                  <Text className="text-sm text-primary font-medium text-center">
-                    Need to update your fitness preferences? Tap here
+                  <Text
+                    className={`font-medium text-sm ${
+                      selectedType === "day"
+                        ? "text-secondary"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    Day
                   </Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  className={`flex-1 py-3 rounded-sm items-center ${
+                    selectedType === "week" ? "bg-white" : "bg-transparent"
+                  }`}
+                  style={
+                    selectedType === "week"
+                      ? {
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 2,
+                          elevation: 2,
+                        }
+                      : undefined
+                  }
+                  onPress={() => setSelectedType("week")}
+                >
+                  <Text
+                    className={`font-medium text-sm ${
+                      selectedType === "week"
+                        ? "text-secondary"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    Week
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {noActiveWorkoutDay && (
+                <Text className="text-xs text-text-muted mb-4 text-center">
+                  Day regeneration is not available for days outside your
+                  workout plan
+                </Text>
               )}
+
+              {/* Feedback Input */}
+              <View>
+                <Text className="text-sm text-text-muted mb-4">
+                  {isRestDay && selectedType === "day"
+                    ? "What kind of workout would you like for this rest day?"
+                    : isRestDay
+                    ? "Tell us what you'd like to change about your weekly workout plan:"
+                    : noActiveWorkoutDay
+                    ? "Tell us what you'd like to include in your next week's workout plan:"
+                    : `Tell us why you want to regenerate this ${
+                        selectedType === "day" ? "day's" : "week's"
+                      } workout plan, and what you would like to change:`}
+                </Text>
+                <TextInput
+                  className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
+                  style={{
+                    minHeight: 120,
+                    maxHeight: 200,
+                    textAlignVertical: "top",
+                  }}
+                  placeholder={
+                    isRestDay && selectedType === "day"
+                      ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
+                      : "Add notes about your workout here..."
+                  }
+                  placeholderTextColor={colors.text.muted}
+                  value={customFeedback}
+                  onChangeText={setCustomFeedback}
+                  multiline
+                  scrollEnabled={true}
+                />
+                {selectedType === "day" &&
+                  !isRestDay &&
+                  !noActiveWorkoutDay && (
+                    <Text className="text-xs text-text-muted mt-3">
+                      Only this day's workout will be changed. All other days
+                      will remain the same.
+                    </Text>
+                  )}
+
+                {/* Daily Override Section */}
+                {selectedType === "day" && !noActiveWorkoutDay && (
+                  <View className="mt-3">
+                    {/* Toggle Header */}
+                    <TouchableOpacity
+                      className="flex-row items-center justify-center py-3"
+                      onPress={() => setShowDailyOverrides(!showDailyOverrides)}
+                    >
+                      <Text className="text-sm text-primary font-medium mr-2">
+                        Customize workout settings for this day
+                      </Text>
+                      <Ionicons
+                        name={
+                          showDailyOverrides ? "chevron-up" : "chevron-down"
+                        }
+                        size={16}
+                        color={colors.brand.primary}
+                      />
+                    </TouchableOpacity>
+
+                    {/* Override Controls */}
+                    {showDailyOverrides && (
+                      <ProfileOverrideForm
+                        overrides={temporaryOverrides}
+                        onOverrideChange={setTemporaryOverrides}
+                      />
+                    )}
+                  </View>
+                )}
+
+                {/* Update Preferences Link */}
+                {selectedType === "week" && (
+                  <TouchableOpacity
+                    className="mt-4 py-2"
+                    onPress={() => setShowOnboardingForm(true)}
+                    disabled={loading}
+                  >
+                    <Text className="text-sm text-primary font-medium text-center">
+                      Need to update your fitness preferences? Tap here
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
+          </ScrollView>
 
           {/* Action Button */}
           <View className="px-5 pb-10 mb-5">
-              <TouchableOpacity
-                className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                  loading ? "opacity-70" : ""
-                }`}
-                onPress={handleRegenerateWithFeedback}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name="refresh" size={18} color="white" />
-                    <Text className="text-white font-semibold text-sm ml-2">
-                      Regenerate Workout Flow
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+                loading ? "opacity-70" : ""
+              }`}
+              onPress={handleRegenerateWithFeedback}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={18} color="white" />
+                  <Text className="text-white font-semibold text-sm ml-2">
+                    Regenerate Workout Flow
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );

@@ -29,6 +29,7 @@ import {
 } from "@/types/api/search.types";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { updateExerciseLink } from "@lib/exercises";
+import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
 
 import { colors } from "@/lib/theme";
 
@@ -478,16 +479,25 @@ export default function SearchScreen() {
   // Helper component for results skeleton
   const ResultsSkeleton = () => (
     <View className="px-4">
-      <View className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+      <SkeletonLoader height={24} width={160} style={{ marginBottom: 16 }} />
       {Array.from({ length: 5 }).map((_, index) => (
         <View key={index} className="bg-white rounded-xl p-4 mb-3 shadow-sm">
           <View className="flex-row items-center">
-            <View className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mr-3" />
+            <SkeletonLoader
+              height={48}
+              width={48}
+              variant="circular"
+              style={{ marginRight: 12 }}
+            />
             <View className="flex-1">
-              <View className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-2" />
-              <View className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+              <SkeletonLoader
+                height={20}
+                width={128}
+                style={{ marginBottom: 8 }}
+              />
+              <SkeletonLoader height={16} width={96} />
             </View>
-            <View className="w-6 h-6 bg-gray-100 rounded animate-pulse" />
+            <SkeletonLoader height={24} width={24} />
           </View>
         </View>
       ))}

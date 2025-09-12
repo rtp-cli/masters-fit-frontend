@@ -22,6 +22,7 @@ import {
 import { LineChart } from "@components/charts/LineChart";
 import { PieChart } from "@components/charts/PieChart";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
+import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
 import { generateWorkoutPlanAsync } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
@@ -592,43 +593,59 @@ export default function DashboardScreen() {
           >
             {/* Header Skeleton */}
             <View className="px-5 pt-3 pb-4">
-              <View className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2" />
-              <View className="h-5 w-48 bg-gray-100 rounded animate-pulse" />
+              <SkeletonLoader
+                height={32}
+                width={128}
+                style={{ marginBottom: 8 }}
+              />
+              <SkeletonLoader height={20} width={192} />
             </View>
 
             {/* Today's Schedule Skeleton */}
             <View className="px-5 mb-6">
               <View className="bg-white rounded-2xl p-5 shadow-sm">
                 <View className="flex-row items-center justify-between mb-4">
-                  <View className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
-                  <View className="h-8 w-20 bg-gray-100 rounded animate-pulse" />
+                  <SkeletonLoader height={24} width={160} />
+                  <SkeletonLoader height={32} width={80} />
                 </View>
-                <View className="h-20 bg-gray-100 rounded animate-pulse mb-3" />
+                <SkeletonLoader
+                  height={80}
+                  width="100%"
+                  style={{ marginBottom: 12 }}
+                />
                 <View className="flex-row justify-between">
-                  <View className="h-12 w-24 bg-gray-100 rounded animate-pulse" />
-                  <View className="h-12 w-24 bg-gray-100 rounded animate-pulse" />
-                  <View className="h-12 w-24 bg-gray-100 rounded animate-pulse" />
+                  <SkeletonLoader height={48} width={96} />
+                  <SkeletonLoader height={48} width={96} />
+                  <SkeletonLoader height={48} width={96} />
                 </View>
               </View>
             </View>
 
             {/* Weekly Progress Skeleton */}
             <View className="px-5 mb-6">
-              <View className="h-6 w-36 bg-gray-200 rounded animate-pulse mb-4" />
+              <SkeletonLoader
+                height={24}
+                width={144}
+                style={{ marginBottom: 16 }}
+              />
               <View className="bg-white rounded-2xl p-5 shadow-sm">
-                <View className="h-40 bg-gray-100 rounded animate-pulse" />
+                <SkeletonLoader height={160} width="100%" />
               </View>
             </View>
 
             {/* Progress Charts Skeleton */}
             <View className="px-5 mb-6">
-              <View className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+              <SkeletonLoader
+                height={24}
+                width={160}
+                style={{ marginBottom: 16 }}
+              />
               <View className="flex-row justify-between">
                 <View className="bg-white rounded-2xl p-4 shadow-sm flex-1 mr-3">
-                  <View className="h-32 bg-gray-100 rounded animate-pulse" />
+                  <SkeletonLoader height={128} width="100%" />
                 </View>
                 <View className="bg-white rounded-2xl p-4 shadow-sm flex-1">
-                  <View className="h-32 bg-gray-100 rounded animate-pulse" />
+                  <SkeletonLoader height={128} width="100%" />
                 </View>
               </View>
             </View>

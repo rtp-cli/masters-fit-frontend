@@ -18,7 +18,6 @@
     "notification": {
       "icon": "./assets/icon.png",
       "color": "#ffffff",
-      "sounds": ["default"],
       "iosDisplayInForeground": true
     },
     "android": {
