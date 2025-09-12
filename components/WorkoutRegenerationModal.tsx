@@ -103,7 +103,8 @@ export default function WorkoutRegenerationModal({
   );
 
   // State for daily workout temporary overrides
-  const [showDailyOverrides, setShowDailyOverrides] = useState(false);
+  const [showDailyOverrideForm, setShowDailyOverrideForm] = useState(false);
+  const [tempOverridesBackup, setTempOverridesBackup] = useState<TemporaryOverrides | null>(null);
   const [temporaryOverrides, setTemporaryOverrides] =
     useState<TemporaryOverrides>({
       duration: 30,
@@ -130,7 +131,8 @@ export default function WorkoutRegenerationModal({
       loadUserProfile();
       setCustomFeedback("");
       setShowOnboardingForm(false);
-      setShowDailyOverrides(false);
+      setShowDailyOverrideForm(false);
+      setTempOverridesBackup(null);
       // For rest days and no active workout days, always default to "week" tab
       setSelectedType(
         isRestDay ? "day" : noActiveWorkoutDay ? "week" : regenerationType
@@ -632,6 +634,27 @@ export default function WorkoutRegenerationModal({
     return finalReason || "User requested regeneration";
   };
 
+  const handleOpenDailyOverrideForm = () => {
+    // Backup current overrides so we can restore them if user cancels
+    setTempOverridesBackup({ ...temporaryOverrides });
+    setShowDailyOverrideForm(true);
+  };
+
+  const handleCancelDailyOverrides = () => {
+    // Restore the backed up overrides
+    if (tempOverridesBackup) {
+      setTemporaryOverrides(tempOverridesBackup);
+    }
+    setTempOverridesBackup(null);
+    setShowDailyOverrideForm(false);
+  };
+
+  const handleApplyDailyOverrides = () => {
+    // Keep the current overrides and close modal
+    setTempOverridesBackup(null);
+    setShowDailyOverrideForm(false);
+  };
+
   const convertProfileToFormData = (
     profile: UserProfile
   ): Partial<FormData> => {
@@ -746,7 +769,62 @@ export default function WorkoutRegenerationModal({
               isLoading={updatingProfile}
               submitButtonText="Save"
               showNavigation={false}
+              excludePersonalInfo={true}
             />
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  if (showDailyOverrideForm) {
+    return (
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCancelDailyOverrides}
+      >
+        <View className="flex-1 bg-background">
+          {/* Custom Header with Cancel/Apply Options */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+            <TouchableOpacity
+              onPress={handleCancelDailyOverrides}
+              className="py-2 px-3"
+            >
+              <Text className="text-base text-text-muted font-medium">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text className="text-base font-semibold text-text-primary">
+              Customize Workout Settings
+            </Text>
+            <TouchableOpacity
+              onPress={handleApplyDailyOverrides}
+              className="py-2 px-3"
+            >
+              <Text className="text-base text-primary font-medium">Apply</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Daily Override Form */}
+          <View className="flex-1">
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
+              <Text className="text-xs text-text-muted mb-4 text-center">
+                These changes apply only to this workout and won't be saved to your profile
+              </Text>
+              
+              <ProfileOverrideForm
+                overrides={temporaryOverrides}
+                onOverrideChange={setTemporaryOverrides}
+              />
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -926,34 +1004,16 @@ export default function WorkoutRegenerationModal({
                     </Text>
                   )}
 
-                {/* Daily Override Section */}
+                {/* Daily Override Button */}
                 {selectedType === "day" && !noActiveWorkoutDay && (
-                  <View className="mt-3">
-                    {/* Toggle Header */}
-                    <TouchableOpacity
-                      className="flex-row items-center justify-center py-3"
-                      onPress={() => setShowDailyOverrides(!showDailyOverrides)}
-                    >
-                      <Text className="text-sm text-primary font-medium mr-2">
-                        Customize workout settings for this day
-                      </Text>
-                      <Ionicons
-                        name={
-                          showDailyOverrides ? "chevron-up" : "chevron-down"
-                        }
-                        size={16}
-                        color={colors.brand.primary}
-                      />
-                    </TouchableOpacity>
-
-                    {/* Override Controls */}
-                    {showDailyOverrides && (
-                      <ProfileOverrideForm
-                        overrides={temporaryOverrides}
-                        onOverrideChange={setTemporaryOverrides}
-                      />
-                    )}
-                  </View>
+                  <TouchableOpacity
+                    className="mt-4 py-2"
+                    onPress={handleOpenDailyOverrideForm}
+                  >
+                    <Text className="text-sm text-primary font-medium text-center">
+                      Customize settings for this workout
+                    </Text>
+                  </TouchableOpacity>
                 )}
 
                 {/* Update Preferences Link */}

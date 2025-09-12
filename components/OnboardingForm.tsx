@@ -45,11 +45,29 @@ export default function OnboardingForm({
   showNavigation = true,
   title,
   submitButtonText = "Generate My Plan",
+  excludePersonalInfo = false,
 }: OnboardingFormProps) {
   const scrollRef = useRef<ScrollView | null>(null);
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>(
-    OnboardingStep.PERSONAL_INFO
-  );
+  
+  // Create dynamic step flow based on excludePersonalInfo
+  const getAvailableSteps = (): OnboardingStep[] => {
+    const allSteps = [
+      OnboardingStep.PERSONAL_INFO,
+      OnboardingStep.FITNESS_GOALS,
+      OnboardingStep.PHYSICAL_LIMITATIONS,
+      OnboardingStep.FITNESS_LEVEL,
+      OnboardingStep.WORKOUT_ENVIRONMENT,
+      OnboardingStep.WORKOUT_STYLE,
+    ];
+    
+    return excludePersonalInfo 
+      ? allSteps.slice(1) // Remove PERSONAL_INFO step
+      : allSteps;
+  };
+  
+  const availableSteps = getAvailableSteps();
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const currentStep = availableSteps[currentStepIndex];
 
   // Initialize form data with default values
   const [formData, setFormData] = useState<FormData>({
@@ -133,7 +151,7 @@ export default function OnboardingForm({
   const handleNext = () => {
     const validation = validateStep(currentStep, formData);
     if (validation.isValid) {
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStepIndex((prev) => prev + 1);
       setErrors({});
     } else {
       setErrors(validation.errors);
@@ -141,7 +159,7 @@ export default function OnboardingForm({
   };
 
   const handlePrevious = () => {
-    setCurrentStep((prev) => prev - 1);
+    setCurrentStepIndex((prev) => Math.max(prev - 1, 0));
     setErrors({});
   };
 
@@ -224,7 +242,11 @@ export default function OnboardingForm({
         keyboardShouldPersistTaps="handled"
       >
         {/* Header with step indicator */}
-        <OnboardingHeader currentStep={currentStep} totalSteps={6} />
+        <OnboardingHeader 
+          currentStep={currentStep} 
+          totalSteps={availableSteps.length}
+          currentStepIndex={currentStepIndex}
+        />
 
         {/* Step Content */}
         {renderStepContent()}
@@ -238,6 +260,8 @@ export default function OnboardingForm({
         onNext={handleNext}
         onPrevious={handlePrevious}
         onSubmit={handleSubmit}
+        currentStepIndex={currentStepIndex}
+        totalSteps={availableSteps.length}
       />
     </KeyboardAvoidingView>
   );

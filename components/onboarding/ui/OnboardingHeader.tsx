@@ -6,11 +6,13 @@ import { getStepConfig } from "../utils/stepConfig";
 interface OnboardingHeaderProps {
   currentStep: OnboardingStep;
   totalSteps: number;
+  currentStepIndex?: number;
 }
 
 export default function OnboardingHeader({
   currentStep,
   totalSteps,
+  currentStepIndex,
 }: OnboardingHeaderProps) {
   const stepConfig = getStepConfig(currentStep);
 
@@ -18,7 +20,7 @@ export default function OnboardingHeader({
     <View className="px-6 pt-12 pb-6">
       {/* Progress Indicator */}
       <ProgressIndicator
-        currentStep={currentStep}
+        currentStep={currentStepIndex !== undefined ? currentStepIndex : currentStep}
         totalSteps={totalSteps}
         className="mb-6"
       />

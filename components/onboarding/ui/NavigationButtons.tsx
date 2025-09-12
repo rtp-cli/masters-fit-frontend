@@ -9,6 +9,8 @@ interface NavigationButtonsProps {
   onNext: () => void;
   onPrevious: () => void;
   onSubmit: () => void;
+  currentStepIndex?: number;
+  totalSteps?: number;
 }
 
 export default function NavigationButtons({
@@ -18,13 +20,22 @@ export default function NavigationButtons({
   onNext,
   onPrevious,
   onSubmit,
+  currentStepIndex,
+  totalSteps,
 }: NavigationButtonsProps) {
-  const isLastStep = currentStep === OnboardingStep.WORKOUT_STYLE;
+  // Use index-based logic if provided, fallback to absolute step logic
+  const isLastStep = totalSteps !== undefined && currentStepIndex !== undefined 
+    ? currentStepIndex === totalSteps - 1
+    : currentStep === OnboardingStep.WORKOUT_STYLE;
+    
+  const isFirstStep = currentStepIndex !== undefined 
+    ? currentStepIndex === 0
+    : currentStep === 0;
 
   return (
     <View className="px-6 pb-8 pt-4">
       <View className="flex-row">
-        {currentStep > 0 && (
+        {!isFirstStep && (
           <TouchableOpacity
             className="flex-1 py-4 items-center justify-center bg-white rounded-xl mr-3"
             onPress={onPrevious}

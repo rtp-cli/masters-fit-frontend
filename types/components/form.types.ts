@@ -39,6 +39,7 @@ export interface OnboardingFormProps {
   showNavigation?: boolean;
   title?: string;
   submitButtonText?: string;
+  excludePersonalInfo?: boolean;
 }
 
 export type ArrayFields = Extract<
