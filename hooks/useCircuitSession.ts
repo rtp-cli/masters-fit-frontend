@@ -261,9 +261,9 @@ export function useCircuitSession(
           }
 
           // Determine if we should advance to next round
-          // For circuits, always allow advancing to enable unlimited rounds
-          const shouldAdvanceRound = prev.blockType === "circuit" || 
-            !prev.targetRounds || prev.currentRound < prev.targetRounds;
+          // Only AMRAP allows unlimited rounds, all others respect prescribed limits
+          const shouldAdvanceRound = prev.blockType === "amrap" ||
+            (prev.targetRounds && prev.currentRound < prev.targetRounds);
 
           let newCurrentRound = prev.currentRound;
 
@@ -294,32 +294,36 @@ export function useCircuitSession(
             updatedRounds.push(nextRound);
           } else if (prev.blockType === "tabata") {
             // Tabata: Create a new interval with fresh exercises for next 20s work period
-            newCurrentRound = prev.currentRound + 1;
-            const currentRoundData = updatedRounds[prev.currentRound - 1];
-            const freshExercises = block.exercises.map(
-              (exercise, index): CircuitExerciseLog => ({
-                exerciseId: exercise.exerciseId || exercise.id,
-                planDayExerciseId: exercise.id,
-                targetReps: exercise.reps || 0,
-                actualReps: exercise.reps || 0,
-                weight: currentRoundData?.exercises[index]?.weight || 0,
-                completed: false,
+            // Limit to 8 intervals (standard tabata)
+            if (prev.currentRound < 8) {
+              newCurrentRound = prev.currentRound + 1;
+              const currentRoundData = updatedRounds[prev.currentRound - 1];
+              const freshExercises = block.exercises.map(
+                (exercise, index): CircuitExerciseLog => ({
+                  exerciseId: exercise.exerciseId || exercise.id,
+                  planDayExerciseId: exercise.id,
+                  targetReps: exercise.reps || 0,
+                  actualReps: exercise.reps || 0,
+                  weight: currentRoundData?.exercises[index]?.weight || 0,
+                  completed: false,
+                  notes: "",
+                })
+              );
+
+              const nextInterval = {
+                roundNumber: newCurrentRound,
+                exercises: freshExercises,
+                isCompleted: false,
                 notes: "",
-              })
-            );
+              };
 
-            const nextInterval = {
-              roundNumber: newCurrentRound,
-              exercises: freshExercises,
-              isCompleted: false,
-              notes: "",
-            };
-
-            updatedRounds.push(nextInterval);
+              updatedRounds.push(nextInterval);
+            }
           } else if (prev.blockType === "emom") {
             // For EMOM, reset the current round exercises for next minute
+            // Limit to prescribed minutes (targetRounds)
             const currentRoundIndex = prev.currentRound - 1;
-            if (updatedRounds[currentRoundIndex]) {
+            if (updatedRounds[currentRoundIndex] && prev.targetRounds && prev.currentRound < prev.targetRounds) {
               // Reset exercises for next minute while keeping the completed round data
               const currentRoundData = updatedRounds[currentRoundIndex];
               const resetExercises = block.exercises.map(
@@ -412,8 +416,8 @@ export function useCircuitSession(
 
           // Advance to next round
           const nextRound = prev.currentRound + 1;
-          const shouldCreateNextRound = prev.blockType === "circuit" ||
-            !prev.targetRounds || nextRound <= prev.targetRounds;
+          const shouldCreateNextRound = prev.blockType === "amrap" ||
+            (prev.targetRounds && nextRound <= prev.targetRounds);
 
           if (shouldCreateNextRound && !updatedRounds[nextRound - 1]) {
             const currentRoundData = updatedRounds[prev.currentRound - 1];

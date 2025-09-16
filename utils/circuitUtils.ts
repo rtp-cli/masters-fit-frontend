@@ -160,24 +160,36 @@ export function calculateCircuitScore(
  * @returns Button text
  */
 export function getRoundCompleteButtonText(
-  blockType: string, 
-  currentRound: number, 
+  blockType: string,
+  currentRound: number,
   totalRounds?: number
 ): string | null {
   switch (blockType) {
     case 'amrap':
-      return 'Complete Round';
+      return 'Complete Round'; // AMRAP allows unlimited rounds
     case 'emom':
+      // Hide button if reached prescribed minutes
+      if (totalRounds && currentRound >= totalRounds) {
+        return null;
+      }
       return null; // EMOM rounds auto-complete, no manual button needed
     case 'for_time':
-      return totalRounds && currentRound >= totalRounds ? 'Finish Workout' : 'Complete Round';
+      // Hide button if reached prescribed rounds
+      if (totalRounds && currentRound >= totalRounds) {
+        return null;
+      }
+      return 'Complete Round';
     case 'tabata':
-      return currentRound >= 8 ? 'Complete Tabata' : 'Complete Interval';
+      // Hide button after 8 intervals
+      if (currentRound >= 8) {
+        return null;
+      }
+      return 'Complete Interval';
     case 'circuit':
     default:
-      // Always allow users to complete rounds, even beyond prescribed rounds
-      if (totalRounds && currentRound > totalRounds) {
-        return 'Complete Additional Round';
+      // Hide button if reached prescribed rounds
+      if (totalRounds && currentRound >= totalRounds) {
+        return null;
       }
       return 'Complete Round';
   }
