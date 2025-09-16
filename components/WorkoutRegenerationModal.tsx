@@ -390,8 +390,11 @@ export default function WorkoutRegenerationModal({
 
             const result = await generateRestDayWorkoutAsync(user.id, {
               date: selectedDate,
-              reason:
-                customFeedback.trim() || "User requested rest day workout",
+              reason: formatOverridesIntoReason(
+                customFeedback,
+                temporaryOverrides,
+                currentProfile
+              ),
             });
 
             console.log("Rest day workout API response:", result);
