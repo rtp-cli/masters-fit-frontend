@@ -8,9 +8,8 @@
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "buildNumber": "27",
       "supportsTablet": true,
-      "bundleIdentifier": "com.mastersfit.app",
+      "bundleIdentifier": "com.mastersfit.ai",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
