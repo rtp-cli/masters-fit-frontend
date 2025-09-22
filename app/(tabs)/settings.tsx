@@ -33,6 +33,7 @@ export default function SettingsScreen() {
   // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [legalExpanded, setLegalExpanded] = useState(false);
 
   // Use profile data from the centralized store
   const profile = profileData;
@@ -520,32 +521,6 @@ export default function SettingsScreen() {
           <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">
               <Ionicons
-                name="notifications-outline"
-                size={20}
-                color={colors.text.muted}
-              />
-              <Text className="text-sm text-text-primary ml-3">
-                Push Notifications
-              </Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{
-                false: colors.neutral.medium[1],
-                true: colors.brand.primary,
-              }}
-              thumbColor={
-                notificationsEnabled
-                  ? colors.neutral.white
-                  : colors.neutral.light[1]
-              }
-            />
-          </View>
-
-          <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-            <View className="flex-row items-center flex-1">
-              <Ionicons
                 name="moon-outline"
                 size={20}
                 color={colors.text.muted}
@@ -565,23 +540,108 @@ export default function SettingsScreen() {
             />
           </View>
 
-          <TouchableOpacity className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+          {/* Legal Accordion */}
+          <TouchableOpacity
+            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
+            onPress={() => setLegalExpanded(!legalExpanded)}
+          >
             <View className="flex-row items-center flex-1">
               <Ionicons
-                name="shield-checkmark-outline"
+                name="document-text-outline"
                 size={20}
                 color={colors.text.muted}
               />
-              <Text className="text-sm text-text-primary ml-3">
-                Privacy Settings
-              </Text>
+              <Text className="text-sm text-text-primary ml-3">Legal</Text>
             </View>
             <Ionicons
-              name="chevron-forward"
+              name={legalExpanded ? "chevron-up" : "chevron-down"}
               size={16}
               color={colors.neutral.medium[3]}
             />
           </TouchableOpacity>
+
+          {/* Expanded Legal Options */}
+          {legalExpanded && (
+            <View className="bg-neutral-light-1">
+              <TouchableOpacity
+                className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
+                onPress={() =>
+                  router.push({
+                    pathname: "/legal-document",
+                    params: { type: "terms" },
+                  })
+                }
+              >
+                <View className="flex-row items-center flex-1">
+                  <Ionicons
+                    name="newspaper-outline"
+                    size={18}
+                    color={colors.text.muted}
+                  />
+                  <Text className="text-sm text-text-primary ml-3">
+                    Terms & Conditions
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.neutral.medium[3]}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
+                onPress={() =>
+                  router.push({
+                    pathname: "/legal-document",
+                    params: { type: "privacy" },
+                  })
+                }
+              >
+                <View className="flex-row items-center flex-1">
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color={colors.text.muted}
+                  />
+                  <Text className="text-sm text-text-primary ml-3">
+                    Privacy Policy
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.neutral.medium[3]}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
+                onPress={() =>
+                  router.push({
+                    pathname: "/legal-document",
+                    params: { type: "waiver" },
+                  })
+                }
+              >
+                <View className="flex-row items-center flex-1">
+                  <Ionicons
+                    name="shield-checkmark-outline"
+                    size={18}
+                    color={colors.text.muted}
+                  />
+                  <Text className="text-sm text-text-primary ml-3">
+                    Waiver of Liability
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.neutral.medium[3]}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Logout Button */}

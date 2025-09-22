@@ -111,7 +111,7 @@ export default function GetStarted() {
   }, [isAuthenticated]);
 
   const handleGetStarted = () => {
-    router.push("/(auth)/login");
+    router.push("/(auth)/waiver");
   };
 
   if (isLoading) {
