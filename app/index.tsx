@@ -74,6 +74,18 @@ export default function GetStarted() {
     }
 
     if (isAuthenticated && !isLoading && user && isVerifyingUser !== null) {
+      // Check if user has accepted waiver
+      const hasAcceptedWaiver = user.waiverAcceptedAt !== null;
+
+      if (!hasAcceptedWaiver) {
+        // User needs to accept waiver - redirect to waiver screen
+        if (pathname !== "/(auth)/waiver") {
+          hasRedirected.current = true;
+          router.replace("/(auth)/waiver");
+        }
+        return;
+      }
+
       // Check if user has completed onboarding
       const needsOnboarding = user.needsOnboarding ?? true;
 
@@ -95,6 +107,7 @@ export default function GetStarted() {
     isAuthenticated,
     isLoading,
     user?.needsOnboarding,
+    user?.waiverAcceptedAt,
     isGeneratingWorkout,
     isPreloadingData,
     isVerifyingUser,
@@ -111,7 +124,7 @@ export default function GetStarted() {
   }, [isAuthenticated]);
 
   const handleGetStarted = () => {
-    router.push("/(auth)/waiver");
+    router.push("/(auth)/login");
   };
 
   if (isLoading) {

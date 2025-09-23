@@ -9,17 +9,39 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import * as SecureStore from "expo-secure-store";
 import { colors } from "@/lib/theme";
 import { images } from "@/assets";
+import { useAuth } from "@/contexts/AuthContext";
+import { API_URL } from "@/config";
+import * as SecureStore from "expo-secure-store";
 
 export default function WaiverScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [isAgreed, setIsAgreed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Get token from SecureStore since AuthContext doesn't provide it
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        const storedToken = await SecureStore.getItemAsync("token");
+        setToken(storedToken);
+      } catch (error) {
+        console.error("Error getting token:", error);
+      }
+    };
+    getToken();
+  }, []);
 
   const handleAgree = async () => {
+    console.log("handleAgree called - isAgreed:", isAgreed);
+    console.log("User object:", user ? `${user.email} (ID: ${user.id})` : "null");
+    console.log("Token:", token ? "Present" : "null");
+
     if (!isAgreed) {
       Alert.alert(
         "Agreement Required",
@@ -28,19 +50,52 @@ export default function WaiverScreen() {
       return;
     }
 
-    try {
-      // Store waiver acceptance
-      await SecureStore.setItemAsync("waiverAccepted", "true");
-      await SecureStore.setItemAsync(
-        "waiverAcceptedDate",
-        new Date().toISOString()
-      );
+    if (!user || !token) {
+      console.log("Missing user or token - showing login alert");
+      Alert.alert("Error", "Please log in first to accept the waiver.");
+      return;
+    }
 
-      // Navigate to login
-      router.push("/(auth)/login");
+    console.log("All checks passed, proceeding with API call...");
+
+    setIsLoading(true);
+
+    try {
+      console.log("Making waiver API call to:", `${API_URL}/auth/accept-waiver`);
+      console.log("Token:", token ? "Present" : "Missing");
+      console.log("User:", user ? user.email : "Missing");
+
+      // Call API to accept waiver
+      const response = await fetch(`${API_URL}/auth/accept-waiver`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          version: "1.0", // Current waiver version
+        }),
+      });
+
+      console.log("Response status:", response.status);
+      const data = await response.json();
+      console.log("Response data:", data);
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to accept waiver");
+      }
+
+      // Navigate to onboarding or dashboard based on user status
+      if (user.needsOnboarding) {
+        router.push("/(auth)/onboarding");
+      } else {
+        router.push("/(tabs)/dashboard");
+      }
     } catch (error) {
-      console.error("Error storing waiver acceptance:", error);
+      console.error("Error accepting waiver:", error);
       Alert.alert("Error", "Failed to save your agreement. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -64,10 +119,7 @@ export default function WaiverScreen() {
   };
 
   const viewDocument = (type: "waiver" | "terms" | "privacy") => {
-    router.push({
-      pathname: "/legal-document",
-      params: { type },
-    });
+    router.push(`/legal-document?type=${type}`);
   };
 
   return (
@@ -77,8 +129,8 @@ export default function WaiverScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="px-6 pt-4 pb-2">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+          <TouchableOpacity onPress={() => router.replace("/(tabs)/dashboard")} className="p-2 -ml-2">
+            <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
 
@@ -227,18 +279,18 @@ export default function WaiverScreen() {
 
           <TouchableOpacity
             className={`flex-1 py-4 px-6 rounded-xl items-center ${
-              isAgreed ? "bg-brand-primary" : "bg-neutral-light-2"
+              isAgreed && !isLoading ? "bg-brand-primary" : "bg-neutral-light-2"
             }`}
-            style={isAgreed ? { backgroundColor: colors.brand.primary } : {}}
+            style={isAgreed && !isLoading ? { backgroundColor: colors.brand.primary } : {}}
             onPress={handleAgree}
-            disabled={!isAgreed}
+            disabled={!isAgreed || isLoading}
           >
             <Text
               className={`text-base font-semibold ${
-                isAgreed ? "text-white" : "text-neutral-medium-3"
+                isAgreed && !isLoading ? "text-white" : "text-neutral-medium-3"
               }`}
             >
-              Continue
+              {isLoading ? "Saving..." : "Continue"}
             </Text>
             </TouchableOpacity>
         </View>

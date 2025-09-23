@@ -108,9 +108,14 @@ export default function VerifyScreen() {
       });
 
       if (response.success) {
-        if (response.token) {
-          await SecureStore.setItemAsync("token", response.token);
+        // Check if we have a token
+        if (!response.token) {
+          Alert.alert("Error", "Authentication failed. Please try again.");
+          return;
         }
+
+        // Store the token
+        await SecureStore.setItemAsync("token", response.token);
 
         // Set the user data in auth context if available
         if (response.user) {
@@ -124,31 +129,29 @@ export default function VerifyScreen() {
             "user",
             JSON.stringify(userWithOnboardingStatus)
           );
-        }
 
-        // If user is signing up or response indicates onboarding is needed, store email and user ID
-        if (isSigningUp || response.needsOnboarding) {
-          await Promise.all([
-            SecureStore.setItemAsync("pendingEmail", email),
-            // Store the user ID for onboarding
-            response.user?.id
-              ? SecureStore.setItemAsync(
-                  "pendingUserId",
-                  response.user.id.toString()
-                )
-              : Promise.resolve(),
-            // Set flag to prevent index.tsx from redirecting
-            SecureStore.setItemAsync("isVerifyingUser", "true"),
-          ]);
+          // Check waiver status and navigate accordingly
+          const hasAcceptedWaiver = response.user.waiverAcceptedAt !== null;
 
-          // Only redirect if not already on onboarding page
-          if (pathname !== "/(auth)/onboarding") {
+          if (!hasAcceptedWaiver) {
+            // User needs to accept waiver first
+            router.replace("/(auth)/waiver");
+          } else if (response.needsOnboarding) {
+            // User has waiver but needs onboarding
+            await Promise.all([
+              SecureStore.setItemAsync("pendingEmail", email),
+              SecureStore.setItemAsync("pendingUserId", response.user.id.toString()),
+              SecureStore.setItemAsync("isVerifyingUser", "true"),
+            ]);
             router.replace("/(auth)/onboarding");
+          } else {
+            // User has waiver and completed onboarding - go to dashboard
+            await SecureStore.deleteItemAsync("isVerifyingUser");
+            setIsPreloadingData(true);
+            router.replace("/");
           }
         } else {
-          // Clear verification flag and let index.tsx handle the preloading
-          await SecureStore.deleteItemAsync("isVerifyingUser");
-          router.replace("/");
+          Alert.alert("Error", "User data not received. Please try again.");
         }
       } else {
         Alert.alert(
