@@ -175,11 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typeof userIdToUse === "string" ? parseInt(userIdToUse) : userIdToUse,
       });
       if (result.success && result.profile) {
-        // Get current user and update with needsOnboarding: false
-        const currentUser = user || (await getCurrentUser());
-        if (currentUser) {
+        // Use current user from context to preserve all fields (including waiver data)
+        if (user) {
           const updatedUser = {
-            ...currentUser,
+            ...user,
             needsOnboarding: false,
           };
           setUser(updatedUser);

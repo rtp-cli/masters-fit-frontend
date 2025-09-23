@@ -16,10 +16,11 @@ import { images } from "@/assets";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/config";
 import * as SecureStore from "expo-secure-store";
+import { saveUserToSecureStorage } from "@/lib/auth";
 
 export default function WaiverScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, setUserData } = useAuth();
   const [isAgreed, setIsAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -85,8 +86,23 @@ export default function WaiverScreen() {
         throw new Error(data.error || "Failed to accept waiver");
       }
 
+      // Update user object with waiver acceptance
+      if (user) {
+        const updatedUser = {
+          ...user,
+          waiverAcceptedAt: new Date(),
+          waiverVersion: "1.0",
+        };
+
+        // Update both AuthContext and SecureStore
+        setUserData(updatedUser);
+        await saveUserToSecureStorage(updatedUser);
+
+        console.log("User data updated with waiver acceptance");
+      }
+
       // Navigate to onboarding or dashboard based on user status
-      if (user.needsOnboarding) {
+      if (user?.needsOnboarding) {
         router.push("/(auth)/onboarding");
       } else {
         router.push("/(tabs)/dashboard");
