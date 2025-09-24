@@ -65,6 +65,7 @@ export default function CustomSlider({
             maximumValue={maximumValue}
             step={step}
             value={value}
+            trackClickable={false}
             onValueChange={(values) =>
               onValueChange(Array.isArray(values) ? values[0] : values)
             }
@@ -72,9 +73,10 @@ export default function CustomSlider({
             maximumTrackTintColor={colors.neutral.medium[1]}
             thumbStyle={{
               backgroundColor: colors.neutral.dark[1],
-              width: 20,
-              height: 20,
+              width: 24,
+              height: 24,
             }}
+            thumbTouchSize={{ width: 40, height: 40 }}
             trackStyle={{
               height: 4,
               borderRadius: 2,
