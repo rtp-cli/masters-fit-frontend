@@ -10,7 +10,8 @@ export const waiverDocument: LegalDocument = {
   title: "Waiver of Liability & Assumption of Risk",
   effectiveDate: "September 20, 2025",
   lastUpdated: "September 20, 2025",
-  disclaimer: "Please read this Waiver carefully. By creating an account and using the MastersFit app, you acknowledge and agree to the following terms.",
+  disclaimer:
+    "Please read this Waiver carefully. By creating an account and using the MastersFit app, you acknowledge and agree to the following terms.",
   content: `## 1. Health Acknowledgment
 
 - I understand that MastersFit provides fitness information and workout programming only and is not a medical service.
@@ -35,14 +36,15 @@ export const waiverDocument: LegalDocument = {
 ## 5. Binding Agreement
 
 - I confirm that I have read this Waiver, fully understand its terms, and agree voluntarily.
-- This Waiver is binding upon me, my heirs, executors, administrators, and assigns.`
+- This Waiver is binding upon me, my heirs, executors, administrators, and assigns.`,
 };
 
 export const termsDocument: LegalDocument = {
   title: "MastersFit LLC – Terms & Conditions",
   effectiveDate: "September 20, 2025",
   lastUpdated: "September 20, 2025",
-  disclaimer: "Welcome to MastersFit (\"we,\" \"us,\" \"our\"). These Terms & Conditions (\"Terms\") govern your access and use of the MastersFit mobile application, website, and related services (collectively, the \"App\"). Please read them carefully. By creating an account, subscribing, or otherwise using the App, you agree to be bound by these Terms. If you disagree, you must not use the App.",
+  disclaimer:
+    'Welcome to MastersFit ("we," "us," "our"). These Terms & Conditions ("Terms") govern your access and use of the MastersFit mobile application, website, and related services (collectively, the "App"). Please read them carefully. By creating an account, subscribing, or otherwise using the App, you agree to be bound by these Terms. If you disagree, you must not use the App.',
   content: `## 1. Eligibility
 
 - You must be at least 18 years of age to use MastersFit.
@@ -79,40 +81,45 @@ export const termsDocument: LegalDocument = {
 - All content, branding, software, and intellectual property associated with MastersFit are owned by MastersFit LLC.
 - You may not copy, reproduce, distribute, or use any content from the App except as permitted for personal, non-commercial fitness use.
 
-## 7. Privacy
+## 7. Third-Party Content
+
+MastersFit may provide links to or embed exercise demonstration videos from YouTube and other third-party platforms. These videos are provided "as is" and are subject to the terms, conditions, and availability of the respective content owners. MastersFit does not endorse, control, or guarantee the accuracy, completeness, or safety of any third-party content. Videos may be removed or become unavailable at any time without notice. Your use of any third-party content is at your own risk and subject to the policies of the hosting platform (e.g., YouTube).
+
+## 8. Privacy
 
 Your use of the App is also governed by our Privacy Policy, which describes how we collect, use, and protect your personal information.
 
-## 8. Limitation of Liability
+## 9. Limitation of Liability
 
 To the maximum extent permitted by law:
 
 - MastersFit LLC, its employees, contractors, and affiliates are not liable for any direct, indirect, incidental, consequential, or special damages resulting from your use of the App.
 - Our total liability for any claim shall not exceed the amount paid by you for the App in the past twelve (12) months, or one hundred dollars ($100), whichever is greater.
 
-## 9. Indemnification
+## 10. Indemnification
 
 You agree to indemnify and hold harmless MastersFit LLC, its officers, employees, and contractors from any claims, damages, or liabilities arising out of your use of the App or violation of these Terms.
 
-## 10. Termination
+## 11. Termination
 
 - MastersFit may suspend or terminate your account at any time, without notice, if you violate these Terms or misuse the App.
 - You may stop using the App and cancel your subscription at any time through your account settings or the app store provider.
 
-## 11. Governing Law
+## 12. Governing Law
 
 These Terms shall be governed by and construed in accordance with the laws of the State of Wyoming, without regard to conflict-of-law principles.
 
-## 12. Changes to Terms
+## 13. Changes to Terms
 
-We may update these Terms periodically. Updates will be posted in the App with a revised "Last Updated" date. Your continued use of the App indicates acceptance of the updated Terms.`
+We may update these Terms periodically. Updates will be posted in the App with a revised "Last Updated" date. Your continued use of the App indicates acceptance of the updated Terms.`,
 };
 
 export const privacyDocument: LegalDocument = {
   title: "Privacy Policy",
   effectiveDate: "September 20, 2025",
   lastUpdated: "September 20, 2025",
-  disclaimer: "MastersFit LLC values your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and safeguard your data when you use the MastersFit mobile application, website, and related services. By using the App, you agree to the terms of this Privacy Policy. If you disagree, please discontinue use.",
+  disclaimer:
+    "MastersFit LLC values your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and safeguard your data when you use the MastersFit mobile application, website, and related services. By using the App, you agree to the terms of this Privacy Policy. If you disagree, please discontinue use.",
   content: `## 1. Information We Collect
 
 We may collect the following categories of information:
@@ -181,7 +188,7 @@ If you access the App outside the United States, your data may be transferred to
 
 ## 9. Changes to this Privacy Policy
 
-We may update this Privacy Policy from time to time. Updates will be posted in the App and on our website with a revised "Last Updated" date. Continued use of the App after updates indicates acceptance.`
+We may update this Privacy Policy from time to time. Updates will be posted in the App and on our website with a revised "Last Updated" date. Continued use of the App after updates indicates acceptance.`,
 };
 
 // Export individual content strings for backward compatibility
