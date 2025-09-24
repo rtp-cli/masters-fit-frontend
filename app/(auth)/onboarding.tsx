@@ -41,7 +41,7 @@ export default function OnboardingScreen() {
   // Redirect users who don't need onboarding
   useEffect(() => {
     if (!authLoading && isAuthenticated && user && !isCompletingOnboarding) {
-      const needsOnboarding = user.needsOnboarding ?? true;
+      const needsOnboarding = user.needsOnboarding ?? false;
       if (!needsOnboarding) {
         router.replace("/(tabs)/dashboard");
       }

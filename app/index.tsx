@@ -87,7 +87,8 @@ export default function GetStarted() {
       }
 
       // Check if user has completed onboarding
-      const needsOnboarding = user.needsOnboarding ?? true;
+      // Default to false for existing users (null means they're old users who already onboarded)
+      const needsOnboarding = user.needsOnboarding ?? false;
 
       if (needsOnboarding) {
         // User needs onboarding - redirect to onboarding screen
