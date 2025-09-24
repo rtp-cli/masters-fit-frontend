@@ -93,9 +93,6 @@ export default function OnboardingForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  }, [currentStep]);
 
   // Helper function for type-safe form updates
   const handleChange = (
@@ -236,6 +233,7 @@ export default function OnboardingForm({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
+        key={currentStep}
         ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
