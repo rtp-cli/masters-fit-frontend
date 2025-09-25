@@ -29,6 +29,7 @@ export default function VerifyScreen() {
   const { isSigningUp, setUserData, setIsPreloadingData } = useAuth();
 
   const inputs = useRef<TextInput[]>([]);
+  const hiddenInputRef = useRef<TextInput>(null);
 
   // Redirect if no email
   useEffect(() => {
@@ -37,38 +38,26 @@ export default function VerifyScreen() {
     }
   }, [email]);
 
-  const handleOtpChange = (text: string, index: number) => {
-    // Handle multi-digit paste (iOS autofill)
-    if (text.length > 1) {
-      const digits = text.slice(0, 4).split('');
-      const newOtp = [...otp];
-
-      // Fill in the digits starting from current index
-      for (let i = 0; i < digits.length && (index + i) < 4; i++) {
-        newOtp[index + i] = digits[i];
-      }
-
-      setOtp(newOtp);
-
-      // Focus the last filled input or next empty one
-      const lastIndex = Math.min(index + digits.length - 1, 3);
-      if (lastIndex < 3 && digits.length < 4) {
-        inputs.current[lastIndex + 1].focus();
-      }
+  // Handle autofill from hidden input
+  const handleHiddenInputChange = (text: string) => {
+    if (text.length === 4) {
+      const digits = text.split('');
+      setOtp(digits);
 
       // Auto-submit if we have 4 digits
-      if (newOtp.every((digit) => digit !== "") && !isLoading) {
+      if (!isLoading) {
         setTimeout(() => {
-          const code = newOtp.join("");
-          handleVerifyWithCode(code);
+          handleVerifyWithCode(text);
         }, 100);
       }
-      return;
     }
+  };
 
-    // Handle single digit input
+  // Handle manual input from visible inputs
+  const handleOtpChange = (text: string, index: number) => {
+    // Only handle single digit input for visible inputs
     const newOtp = [...otp];
-    newOtp[index] = text;
+    newOtp[index] = text.slice(-1); // Take only the last character
     setOtp(newOtp);
 
     // Move to next input
@@ -79,7 +68,7 @@ export default function VerifyScreen() {
     // Auto-submit when last digit is entered
     if (text && index === 3) {
       const completeCode = [...newOtp];
-      completeCode[index] = text;
+      completeCode[index] = text.slice(-1);
       if (completeCode.every((digit) => digit !== "") && !isLoading) {
         setTimeout(() => {
           const code = completeCode.join("");
@@ -243,6 +232,26 @@ export default function VerifyScreen() {
             expire in 10 minutes.
           </Text>
 
+          {/* Hidden input for iOS autofill */}
+          <TextInput
+            ref={hiddenInputRef}
+            style={{
+              position: 'absolute',
+              left: -9999,
+              top: -9999,
+              opacity: 0,
+              height: 0,
+              width: 0,
+            }}
+            value={otp.join('')}
+            onChangeText={handleHiddenInputChange}
+            textContentType="oneTimeCode"
+            keyboardType="number-pad"
+            maxLength={4}
+            editable={!isLoading}
+            autoComplete="sms-otp"
+          />
+
           {/* OTP Input Boxes */}
           <View className="flex-row justify-center space-x-6 my-lg">
             {otp.map((digit, index) => (
@@ -256,8 +265,7 @@ export default function VerifyScreen() {
                 onChangeText={(text) => handleOtpChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 keyboardType="number-pad"
-                maxLength={index === 0 ? 4 : 1}
-                textContentType={index === 0 ? "oneTimeCode" : undefined}
+                maxLength={1}
                 editable={!isLoading}
                 autoFocus={index === 0}
               />
