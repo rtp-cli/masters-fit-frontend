@@ -38,6 +38,35 @@ export default function VerifyScreen() {
   }, [email]);
 
   const handleOtpChange = (text: string, index: number) => {
+    // Handle multi-digit paste (iOS autofill)
+    if (text.length > 1) {
+      const digits = text.slice(0, 4).split('');
+      const newOtp = [...otp];
+
+      // Fill in the digits starting from current index
+      for (let i = 0; i < digits.length && (index + i) < 4; i++) {
+        newOtp[index + i] = digits[i];
+      }
+
+      setOtp(newOtp);
+
+      // Focus the last filled input or next empty one
+      const lastIndex = Math.min(index + digits.length - 1, 3);
+      if (lastIndex < 3 && digits.length < 4) {
+        inputs.current[lastIndex + 1].focus();
+      }
+
+      // Auto-submit if we have 4 digits
+      if (newOtp.every((digit) => digit !== "") && !isLoading) {
+        setTimeout(() => {
+          const code = newOtp.join("");
+          handleVerifyWithCode(code);
+        }, 100);
+      }
+      return;
+    }
+
+    // Handle single digit input
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
@@ -227,7 +256,8 @@ export default function VerifyScreen() {
                 onChangeText={(text) => handleOtpChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 keyboardType="number-pad"
-                maxLength={1}
+                maxLength={index === 0 ? 4 : 1}
+                textContentType={index === 0 ? "oneTimeCode" : undefined}
                 editable={!isLoading}
                 autoFocus={index === 0}
               />
