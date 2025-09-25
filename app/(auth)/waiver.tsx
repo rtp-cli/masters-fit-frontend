@@ -17,13 +17,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/config";
 import * as SecureStore from "expo-secure-store";
 import { saveUserToSecureStorage } from "@/lib/auth";
+import { CURRENT_WAIVER_VERSION, isWaiverUpdate } from "@/constants/waiver";
 
 export default function WaiverScreen() {
   const router = useRouter();
-  const { user, setUserData } = useAuth();
+  const { user, setUserData, logout } = useAuth();
   const [isAgreed, setIsAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+
+  // Check if this is a waiver update (existing user with old version)
+  const isUpdate = isWaiverUpdate(user?.waiverVersion || null);
 
   // Get token from SecureStore since AuthContext doesn't provide it
   useEffect(() => {
@@ -40,7 +44,10 @@ export default function WaiverScreen() {
 
   const handleAgree = async () => {
     console.log("handleAgree called - isAgreed:", isAgreed);
-    console.log("User object:", user ? `${user.email} (ID: ${user.id})` : "null");
+    console.log(
+      "User object:",
+      user ? `${user.email} (ID: ${user.id})` : "null"
+    );
     console.log("Token:", token ? "Present" : "null");
 
     if (!isAgreed) {
@@ -62,7 +69,10 @@ export default function WaiverScreen() {
     setIsLoading(true);
 
     try {
-      console.log("Making waiver API call to:", `${API_URL}/auth/accept-waiver`);
+      console.log(
+        "Making waiver API call to:",
+        `${API_URL}/auth/accept-waiver`
+      );
       console.log("Token:", token ? "Present" : "Missing");
       console.log("User:", user ? user.email : "Missing");
 
@@ -74,7 +84,7 @@ export default function WaiverScreen() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          version: "1.0", // Current waiver version
+          version: CURRENT_WAIVER_VERSION,
         }),
       });
 
@@ -91,7 +101,7 @@ export default function WaiverScreen() {
         const updatedUser = {
           ...user,
           waiverAcceptedAt: new Date(),
-          waiverVersion: "1.0",
+          waiverVersion: CURRENT_WAIVER_VERSION,
         };
 
         // Update both AuthContext and SecureStore
@@ -117,17 +127,26 @@ export default function WaiverScreen() {
 
   const handleCancel = () => {
     Alert.alert(
-      "Cancel Registration",
-      "Are you sure you want to cancel? You must agree to the waiver to use MastersFit.",
+      "Exit Application",
+      "You must accept the waiver to use MastersFit. Exiting will log you out.",
       [
         {
           text: "Stay",
           style: "cancel",
         },
         {
-          text: "Leave",
+          text: "Log Out",
           style: "destructive",
-          onPress: () => router.back(),
+          onPress: async () => {
+            // Log the user out completely since they can't use the app without accepting the waiver
+            try {
+              await logout();
+              router.replace("/");
+            } catch (error) {
+              console.error("Error during logout:", error);
+              router.replace("/");
+            }
+          },
         },
       ],
       { cancelable: true }
@@ -145,7 +164,10 @@ export default function WaiverScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="px-6 pt-4 pb-2">
-          <TouchableOpacity onPress={() => router.replace("/(tabs)/dashboard")} className="p-2 -ml-2">
+          <TouchableOpacity
+            onPress={handleCancel}
+            className="p-2 -ml-2"
+          >
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
@@ -158,10 +180,12 @@ export default function WaiverScreen() {
             resizeMode="contain"
           />
           <Text className="text-3xl font-bold text-text-primary text-center mb-2">
-            Before You Begin
+            {isUpdate ? "Updated Legal Agreement" : "Before You Begin"}
           </Text>
           <Text className="text-base text-text-muted text-center">
-            Please review and accept our legal agreements
+            {isUpdate
+              ? "Our terms have been updated. Please review and accept the new version"
+              : "Please review and accept our legal agreements"}
           </Text>
         </View>
 
@@ -228,7 +252,8 @@ export default function WaiverScreen() {
               )}
             </View>
             <Text className="flex-1 text-base text-text-primary">
-              I have read and accept all legal agreements
+              I have read and accept all legal agreements (v
+              {CURRENT_WAIVER_VERSION})
             </Text>
           </TouchableOpacity>
         </View>
@@ -288,16 +313,18 @@ export default function WaiverScreen() {
             className="flex-1 py-3 px-6 rounded-xl bg-red-500 items-center justify-center"
             onPress={handleCancel}
           >
-            <Text className="text-white font-semibold">
-              Cancel
-            </Text>
+            <Text className="text-white font-semibold">Cancel</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             className={`flex-1 py-4 px-6 rounded-xl items-center ${
               isAgreed && !isLoading ? "bg-brand-primary" : "bg-neutral-light-2"
             }`}
-            style={isAgreed && !isLoading ? { backgroundColor: colors.brand.primary } : {}}
+            style={
+              isAgreed && !isLoading
+                ? { backgroundColor: colors.brand.primary }
+                : {}
+            }
             onPress={handleAgree}
             disabled={!isAgreed || isLoading}
           >
@@ -308,7 +335,7 @@ export default function WaiverScreen() {
             >
               {isLoading ? "Saving..." : "Continue"}
             </Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>

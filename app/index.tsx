@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import WarmingUpScreen from "@/components/ui/WarmingUpScreen";
 import { useDataPreload } from "@hooks/useDataPreload";
 import { images } from "@/assets";
+import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 
 export default function GetStarted() {
   const router = useRouter();
@@ -74,11 +75,14 @@ export default function GetStarted() {
     }
 
     if (isAuthenticated && !isLoading && user && isVerifyingUser !== null) {
-      // Check if user has accepted waiver
-      const hasAcceptedWaiver = user.waiverAcceptedAt !== null;
+      // Check if user has accepted the current waiver version
+      const hasValidWaiver = hasAcceptedCurrentWaiver(
+        user.waiverAcceptedAt || null,
+        user.waiverVersion || null
+      );
 
-      if (!hasAcceptedWaiver) {
-        // User needs to accept waiver - redirect to waiver screen
+      if (!hasValidWaiver) {
+        // User needs to accept waiver (first time or version update) - redirect to waiver screen
         if (pathname !== "/(auth)/waiver") {
           hasRedirected.current = true;
           router.replace("/(auth)/waiver");
@@ -109,6 +113,7 @@ export default function GetStarted() {
     isLoading,
     user?.needsOnboarding,
     user?.waiverAcceptedAt,
+    user?.waiverVersion,
     isGeneratingWorkout,
     isPreloadingData,
     isVerifyingUser,

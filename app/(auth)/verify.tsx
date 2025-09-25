@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import { colors } from "../../lib/theme";
 import Header from "@components/Header";
+import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -149,10 +150,13 @@ export default function VerifyScreen() {
           );
 
           // Check waiver status and navigate accordingly
-          const hasAcceptedWaiver = response.user.waiverAcceptedAt !== null;
+          const hasValidWaiver = hasAcceptedCurrentWaiver(
+            response.user.waiverAcceptedAt || null,
+            response.user.waiverVersion || null
+          );
 
-          if (!hasAcceptedWaiver) {
-            // User needs to accept waiver first
+          if (!hasValidWaiver) {
+            // User needs to accept waiver (first time or version update)
             router.replace("/(auth)/waiver");
           } else if (response.needsOnboarding) {
             // User has waiver but needs onboarding

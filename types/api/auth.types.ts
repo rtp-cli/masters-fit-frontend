@@ -3,6 +3,8 @@ export interface User {
   email: string;
   name: string;
   needsOnboarding?: boolean;
+  waiverAcceptedAt?: Date | string | null;
+  waiverVersion?: string | null;
 }
 
 export interface AuthResponse {
@@ -11,6 +13,7 @@ export interface AuthResponse {
   message?: string;
   user?: User;
   needsOnboarding?: boolean;
+  needsWaiverUpdate?: boolean;
   email?: string;
   token?: string;
 }

@@ -1,3 +1,5 @@
+import { CURRENT_WAIVER_VERSION } from "@/constants/waiver";
+
 interface LegalDocument {
   title: string;
   effectiveDate: string;
@@ -7,7 +9,7 @@ interface LegalDocument {
 }
 
 export const waiverDocument: LegalDocument = {
-  title: "Waiver of Liability & Assumption of Risk",
+  title: `Waiver of Liability & Assumption of Risk (v${CURRENT_WAIVER_VERSION})`,
   effectiveDate: "September 20, 2025",
   lastUpdated: "September 20, 2025",
   disclaimer:
@@ -40,7 +42,7 @@ export const waiverDocument: LegalDocument = {
 };
 
 export const termsDocument: LegalDocument = {
-  title: "MastersFit LLC – Terms & Conditions",
+  title: `MastersFit LLC – Terms & Conditions (v${CURRENT_WAIVER_VERSION})`,
   effectiveDate: "September 20, 2025",
   lastUpdated: "September 20, 2025",
   disclaimer:
@@ -115,7 +117,7 @@ We may update these Terms periodically. Updates will be posted in the App with a
 };
 
 export const privacyDocument: LegalDocument = {
-  title: "Privacy Policy",
+  title: `Privacy Policy (v${CURRENT_WAIVER_VERSION})`,
   effectiveDate: "September 20, 2025",
   lastUpdated: "September 20, 2025",
   disclaimer:
