@@ -3,6 +3,13 @@ import { User, OnboardingData, AuthResponse } from "./types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "./logger";
 
+// Callback for handling waiver redirects (set by WaiverContext)
+let waiverRedirectCallback: (() => void) | null = null;
+
+export function setWaiverRedirectCallback(callback: () => void) {
+  waiverRedirectCallback = callback;
+}
+
 /**
  * Get the JWT token from secure storage
  */
@@ -59,6 +66,26 @@ export async function apiRequest<T>(
     // Handle HTTP errors
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+
+      // Handle waiver update required (HTTP 426)
+      if (response.status === 426) {
+        console.log("[API] Waiver update required, redirecting to waiver screen");
+        logger.info("Waiver enforcement intercepted", {
+          operation: "apiRequest",
+          metadata: endpoint,
+        });
+
+        // Redirect to waiver screen using callback
+        if (waiverRedirectCallback) {
+          setTimeout(() => {
+            waiverRedirectCallback!();
+          }, 100); // Small delay to ensure current operation completes
+        }
+
+        // Still throw error to prevent further processing
+        throw new Error("WAIVER_UPDATE_REQUIRED");
+      }
+
       console.error(
         `[API] ${response.status} Error Response:`,
         JSON.stringify(errorData, null, 2)
@@ -164,6 +191,47 @@ export async function verifyAPI(params: {
   } catch (error) {
     console.error("Verify error:", error);
     return { success: false, error: "Failed to verify code" };
+  }
+}
+
+/**
+ * Check waiver status for current user
+ */
+export async function getWaiverStatusAPI(): Promise<{
+  success: boolean;
+  waiverInfo: {
+    currentVersion: string;
+    userVersion: string | null;
+    hasAccepted: boolean;
+    isUpdate: boolean;
+    needsAcceptance: boolean;
+  };
+}> {
+  try {
+    return await apiRequest<{
+      success: boolean;
+      waiverInfo: {
+        currentVersion: string;
+        userVersion: string | null;
+        hasAccepted: boolean;
+        isUpdate: boolean;
+        needsAcceptance: boolean;
+      };
+    }>("/auth/waiver-status", {
+      method: "GET",
+    });
+  } catch (error) {
+    console.error("Waiver status check error:", error);
+    return {
+      success: false,
+      waiverInfo: {
+        currentVersion: "1.0",
+        userVersion: null,
+        hasAccepted: false,
+        isUpdate: false,
+        needsAcceptance: true,
+      },
+    };
   }
 }
 

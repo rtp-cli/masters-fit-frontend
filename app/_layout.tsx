@@ -8,6 +8,7 @@ import {
   BackgroundJobProvider,
   useBackgroundJobs,
 } from "@contexts/BackgroundJobContext";
+import { WaiverProvider } from "@contexts/WaiverContext";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -247,13 +248,15 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <WorkoutProvider>
-        <AppDataProvider>
-          <BackgroundJobProvider>
-            <AppContent />
-          </BackgroundJobProvider>
-        </AppDataProvider>
-      </WorkoutProvider>
+      <WaiverProvider>
+        <WorkoutProvider>
+          <AppDataProvider>
+            <BackgroundJobProvider>
+              <AppContent />
+            </BackgroundJobProvider>
+          </AppDataProvider>
+        </WorkoutProvider>
+      </WaiverProvider>
     </AuthProvider>
   );
 }
