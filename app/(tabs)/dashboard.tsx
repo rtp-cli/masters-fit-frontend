@@ -1083,7 +1083,7 @@ export default function DashboardScreen() {
                         }}
                       >
                         <Text className="text-white font-semibold text-sm">
-                          Start Workout
+                          View Workout
                         </Text>
                       </TouchableOpacity>
                     )}

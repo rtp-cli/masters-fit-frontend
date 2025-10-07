@@ -119,7 +119,7 @@ export default function WorkoutBlock({
     >
       {/* Block Header */}
       <TouchableOpacity
-        className={`bg-brand-light-2 p-4 ${isCompactVariant ? "p-3" : "p-4"}`}
+        className={`bg-brand-light-1 p-4 ${isCompactVariant ? "p-3" : "p-4"}`}
         onPress={onToggleExpanded}
         disabled={!onToggleExpanded}
       >

@@ -673,7 +673,7 @@ export default function CalendarScreen() {
                   />
                 ) : (
                   // Active workout plan and selected date is within plan duration but no workout scheduled (rest day)
-                  <View className="bg-brand-light-2 p-6 rounded-xl items-center">
+                  <View className="bg-brand-light-1 p-6 rounded-xl items-center">
                     <Text className="text-base font-bold text-text-primary mb-xs">
                       Rest Day
                     </Text>
@@ -768,7 +768,7 @@ export default function CalendarScreen() {
                         />
                       ))
                   ) : (
-                    <View className="bg-neutral-light-2 p-6 rounded-xl items-center">
+                    <View className="bg-brand-light-1 p-6 rounded-xl items-center">
                       <Text className="text-base font-bold text-text-primary mb-xs">
                         No Workout Planned
                       </Text>
