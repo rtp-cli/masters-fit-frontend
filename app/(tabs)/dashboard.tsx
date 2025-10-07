@@ -26,6 +26,7 @@ import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
 import { generateWorkoutPlanAsync } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
 import {
   formatDate,
   formatNumber,
@@ -1088,52 +1089,12 @@ export default function DashboardScreen() {
                     )}
                   </View>
                 ) : (
-                  <View className="items-center py-6">
-                    <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
-                      <Ionicons
-                        name="fitness-outline"
-                        size={24}
-                        color={colors.text.muted}
-                      />
-                    </View>
-                    <Text className="text-base font-semibold text-text-primary mb-2">
-                      No Active Workout
-                    </Text>
-                    <Text className="text-sm text-text-muted text-center mb-6 leading-5">
-                      You don't have a workout scheduled for this week.
-                    </Text>
-
-                    {/* Action buttons */}
-                    <View className="w-full space-y-3">
-                      <TouchableOpacity
-                        className="bg-primary rounded-xl py-3 px-6 mb-2 flex-row items-center justify-center"
-                        onPress={() => setShowRepeatModal(true)}
-                      >
-                        <Ionicons
-                          name="repeat"
-                          size={18}
-                          color={colors.text.secondary}
-                        />
-                        <Text className="text-secondary font-semibold text-sm ml-2">
-                          Repeat a Previous Workout Plan
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-row items-center justify-center"
-                        onPress={handleGenerateNewWorkout}
-                      >
-                        <Ionicons
-                          name="sparkles"
-                          size={18}
-                          color={colors.text.primary}
-                        />
-                        <Text className="text-text-primary font-semibold text-sm ml-2">
-                          Generate a New Workout Plan
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                  <NoActiveWorkoutCard
+                    isGenerating={isGenerating}
+                    onRepeatWorkout={() => setShowRepeatModal(true)}
+                    onGenerateWorkout={handleGenerateNewWorkout}
+                    variant="dashboard"
+                  />
                 )}
               </View>
             </View>

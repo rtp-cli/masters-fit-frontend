@@ -31,6 +31,7 @@ import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import WorkoutBlock from "@components/WorkoutBlock";
+import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
 import {
   calculatePlanDayDuration,
   formatWorkoutDuration,
@@ -662,54 +663,14 @@ export default function CalendarScreen() {
                 (workoutPlan?.endDate &&
                   selectedDate > formatDateAsString(workoutPlan.endDate)) ? (
                   // No active workout plan at all OR selected date is beyond workout plan end date
-                  <View className="items-center py-6">
-                    <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
-                      <Ionicons
-                        name="fitness-outline"
-                        size={24}
-                        color={colors.text.muted}
-                      />
-                    </View>
-                    <Text className="text-base font-semibold text-text-primary mb-2">
-                      No Active Workout
-                    </Text>
-                    <Text className="text-sm text-text-muted text-center mb-6 leading-5">
-                      You don't have a workout scheduled for this week.
-                    </Text>
-
-                    {/* Action buttons - only show for today */}
-                    {isToday() && (
-                      <View className="w-full space-y-3">
-                        <TouchableOpacity
-                          className="bg-primary rounded-xl py-3 px-6 mb-2 flex-row items-center justify-center"
-                          onPress={() => setShowRepeatModal(true)}
-                        >
-                          <Ionicons
-                            name="repeat"
-                            size={18}
-                            color={colors.text.secondary}
-                          />
-                          <Text className="text-secondary font-semibold text-sm ml-2">
-                            Repeat a Previous Workout Plan
-                          </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-row items-center justify-center"
-                          onPress={handleGenerateNewWorkout}
-                        >
-                          <Ionicons
-                            name="sparkles"
-                            size={18}
-                            color={colors.text.primary}
-                          />
-                          <Text className="text-text-primary font-semibold text-sm ml-2">
-                            Generate a New Workout Plan
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
+                  <NoActiveWorkoutCard
+                    isGenerating={isGenerating}
+                    onRepeatWorkout={() => setShowRepeatModal(true)}
+                    onGenerateWorkout={handleGenerateNewWorkout}
+                    variant="calendar"
+                    showActionsOnlyForToday={true}
+                    isToday={isToday()}
+                  />
                 ) : (
                   // Active workout plan and selected date is within plan duration but no workout scheduled (rest day)
                   <View className="bg-brand-light-2 p-6 rounded-xl items-center">

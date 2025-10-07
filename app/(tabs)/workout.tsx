@@ -63,6 +63,7 @@ import {
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -1318,50 +1319,12 @@ export default function WorkoutScreen() {
               </>
             ) : (
               // No active workout plan at all
-              <>
-                <Ionicons
-                  name="fitness-outline"
-                  size={64}
-                  color={colors.text.muted}
-                />
-                <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
-                  No Workout Plan
-                </Text>
-                <Text className="text-text-muted text-center mb-8 leading-6">
-                  You don't have an active workout plan for this week.
-                </Text>
-
-                {/* Action buttons for no workout plan */}
-                <View className="w-full space-y-3">
-                  <TouchableOpacity
-                    className="bg-primary rounded-xl py-4 px-6 mb-2 flex-row items-center justify-center"
-                    onPress={() => setShowRepeatModal(true)}
-                  >
-                    <Ionicons
-                      name="repeat"
-                      size={20}
-                      color={colors.text.secondary}
-                    />
-                    <Text className="text-secondary font-semibold text-base ml-2">
-                      Repeat a Previous Workout Plan
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="bg-neutral-light-2 rounded-xl py-4 px-6 flex-row items-center justify-center"
-                    onPress={handleGenerateNewWorkout}
-                  >
-                    <Ionicons
-                      name="sparkles"
-                      size={20}
-                      color={colors.text.primary}
-                    />
-                    <Text className="text-text-primary font-semibold text-base ml-2">
-                      Generate a New Workout Plan
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
+              <NoActiveWorkoutCard
+                isGenerating={isGenerating}
+                onRepeatWorkout={() => setShowRepeatModal(true)}
+                onGenerateWorkout={handleGenerateNewWorkout}
+                variant="workout"
+              />
             )}
           </View>
         </ScrollView>
