@@ -97,35 +97,39 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         exerciseStartTime.current = new Date(Date.now() - exerciseTimer * 1000);
       }
 
-      workoutTimerRef.current = setInterval(() => {
-        if (workoutStartTime.current) {
-          const elapsed = Math.floor(
-            (Date.now() - workoutStartTime.current.getTime()) / 1000
-          );
-          setWorkoutTimer(elapsed);
-        }
-      }, 1000);
+      // TIMER DISABLED: Workout timer interval commented out
+      // workoutTimerRef.current = setInterval(() => {
+      //   if (workoutStartTime.current) {
+      //     const elapsed = Math.floor(
+      //       (Date.now() - workoutStartTime.current.getTime()) / 1000
+      //     );
+      //     setWorkoutTimer(elapsed);
+      //   }
+      // }, 1000);
 
-      exerciseTimerRef.current = setInterval(() => {
-        if (exerciseStartTime.current) {
-          const elapsed = Math.floor(
-            (Date.now() - exerciseStartTime.current.getTime()) / 1000
-          );
-          setExerciseTimer(elapsed);
-        }
-      }, 1000);
+      // TIMER DISABLED: Exercise timer interval commented out
+      // exerciseTimerRef.current = setInterval(() => {
+      //   if (exerciseStartTime.current) {
+      //     const elapsed = Math.floor(
+      //       (Date.now() - exerciseStartTime.current.getTime()) / 1000
+      //     );
+      //     setExerciseTimer(elapsed);
+      //   }
+      // }, 1000);
     } else {
       // Deactivate keep awake when timer stops
       deactivateKeepAwake("workout-session-timer");
 
-      if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-      if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+      // TIMER DISABLED: Clear intervals commented out
+      // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
+      // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     }
 
     return () => {
       deactivateKeepAwake("workout-session-timer");
-      if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-      if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+      // TIMER DISABLED: Clear intervals commented out
+      // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
+      // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     };
   }, [isWorkoutActive, isPaused]);
 
@@ -287,9 +291,9 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setIsWorkoutActive(false);
     setIsPaused(false);
 
-    // Clear any running timers
-    if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-    if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+    // TIMER DISABLED: Clear any running timers commented out
+    // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
+    // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     workoutStartTime.current = null;
     exerciseStartTime.current = null;
 
@@ -614,9 +618,9 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     setIsWorkoutActive(false);
     setExerciseData([]);
 
-    // Cleanup timers and keep awake
-    if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-    if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
+    // TIMER DISABLED: Cleanup timers commented out
+    // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
+    // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
     deactivateKeepAwake("workout-session-timer");
 
     // Reset timestamps

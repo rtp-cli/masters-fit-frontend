@@ -32,6 +32,9 @@ export default function CircularTimerDisplay({
   onReset,
   onCancel,
 }: CircularTimerDisplayProps) {
+  // TIMER DISPLAY HIDDEN: CircularTimerDisplay component hidden
+  return null;
+
   const progress = targetDuration > 0 ? ((targetDuration - countdown) / targetDuration) * 100 : 0;
 
   return (

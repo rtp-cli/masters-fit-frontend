@@ -36,6 +36,8 @@ export default function CircuitTracker({
   updateTimerState,
   shouldShowTimer,
 }: CircuitTrackerProps & { circuitActions?: CircuitActions }) {
+  // TIMER DISPLAY HIDDEN: Override shouldShowTimer to false
+  const hideTimers = false;
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];
   const isCurrentRoundCompleted = currentRoundData?.isCompleted || false;
 
@@ -306,45 +308,48 @@ export default function CircuitTracker({
       !exerciseWorkPaused &&
       exerciseWorkCountdown > 0
     ) {
-      exerciseWorkTimerRef.current = setTimeout(() => {
-        setExerciseWorkCountdown((prev) => {
-          const newValue = prev - 1;
-          if (newValue <= 0) {
-            setExerciseWorkActive(false);
-            setExerciseWorkPaused(false);
-            setShowExerciseWork(false);
+      // TIMER DISABLED: Exercise work timer timeout commented out
+      // exerciseWorkTimerRef.current = setTimeout(() => {
+      //   setExerciseWorkCountdown((prev) => {
+      //     const newValue = prev - 1;
+      //     if (newValue <= 0) {
+      //       setExerciseWorkActive(false);
+      //       setExerciseWorkPaused(false);
+      //       setShowExerciseWork(false);
 
-            try {
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-              Notifications.scheduleNotificationAsync({
-                content: {
-                  title: "Work Interval Complete!",
-                  body: "Great effort on that interval",
-                  sound: "tri-tone",
-                },
-                trigger: null,
-              });
-            } catch (error) {
-              console.log("Notification error:", error);
-            }
+      //       try {
+      //         Haptics.notificationAsync(
+      //           Haptics.NotificationFeedbackType.Success
+      //         );
+      //         Notifications.scheduleNotificationAsync({
+      //           content: {
+      //             title: "Work Interval Complete!",
+      //             body: "Great effort on that interval",
+      //             sound: "tri-tone",
+      //           },
+      //           trigger: null,
+      //         });
+      //       } catch (error) {
+      //         console.log("Notification error:", error);
+      //       }
 
-            return 0;
-          }
-          return newValue;
-        });
-      }, 1000);
+      //       return 0;
+      //     }
+      //     return newValue;
+      //   });
+      // }, 1000);
     } else {
       if (exerciseWorkTimerRef.current) {
-        clearTimeout(exerciseWorkTimerRef.current);
+        // TIMER DISABLED: Clear timeout commented out
+        // clearTimeout(exerciseWorkTimerRef.current);
         exerciseWorkTimerRef.current = null;
       }
     }
 
     return () => {
       if (exerciseWorkTimerRef.current) {
-        clearTimeout(exerciseWorkTimerRef.current);
+        // TIMER DISABLED: Clear timeout commented out
+        // clearTimeout(exerciseWorkTimerRef.current);
         exerciseWorkTimerRef.current = null;
       }
     };
@@ -549,8 +554,8 @@ export default function CircuitTracker({
                       </View>
                     </View>
 
-                    {/* Exercise Work Timer (Tabata) */}
-                    {block.blockType === "tabata" &&
+                    {/* TIMER DISPLAY HIDDEN: Exercise Work Timer commented out */}
+                    {/* {block.blockType === "tabata" &&
                       showExerciseWork &&
                       index === currentExerciseIndex && (
                         <View className="mt-6">
@@ -591,7 +596,7 @@ export default function CircuitTracker({
                             }}
                           />
                         </View>
-                      )}
+                      )} */}
 
                     {/* Start Exercise Work Button (Tabata) */}
                     {block.blockType === "tabata" &&
@@ -690,7 +695,7 @@ export default function CircuitTracker({
         </View>
       )}
 
-      {shouldShowTimer && (
+      {hideTimers && (
         <View className="mb-3">
           {/* Timer Toggle Button */}
           <TouchableOpacity

@@ -96,50 +96,53 @@ export default function CircuitTimer({
   // Timer logic
   useEffect(() => {
     if (timerState.isActive && !timerState.isPaused) {
-      timerRef.current = setInterval(() => {
-        const now = Date.now();
-        let newCurrentTime = timerState.currentTime;
+      // TIMER DISABLED: Circuit timer interval commented out
+      // timerRef.current = setInterval(() => {
+      //   const now = Date.now();
+      //   let newCurrentTime = timerState.currentTime;
 
-        if (timerState.startTime) {
-          const elapsed = Math.floor(
-            (now - timerState.startTime.getTime()) / 1000
-          );
-          newCurrentTime = elapsed - timerState.totalPausedTime;
-        } else {
-          newCurrentTime = timerState.currentTime + 1;
-        }
+      //   if (timerState.startTime) {
+      //     const elapsed = Math.floor(
+      //       (now - timerState.startTime.getTime()) / 1000
+      //     );
+      //     newCurrentTime = elapsed - timerState.totalPausedTime;
+      //   } else {
+      //     newCurrentTime = timerState.currentTime + 1;
+      //   }
 
-        const newState: CircuitTimerState = {
-          ...timerState,
-          currentTime: newCurrentTime,
-        };
+      //   const newState: CircuitTimerState = {
+      //     ...timerState,
+      //     currentTime: newCurrentTime,
+      //   };
 
-        // Handle specific timer behaviors
-        if (blockType === "tabata") {
-          handleTabataLogic(newCurrentTime, newState);
-        } else if (blockType === "emom") {
-          handleEmomLogic(newCurrentTime, newState);
-        } else if (blockType === "amrap" && timeCapMinutes) {
-          handleAmrapLogic(newCurrentTime, newState);
-        } else if (blockType === "for_time" && timeCapMinutes) {
-          handleForTimeLogic(newCurrentTime, newState);
-        }
+      //   // Handle specific timer behaviors
+      //   if (blockType === "tabata") {
+      //     handleTabataLogic(newCurrentTime, newState);
+      //   } else if (blockType === "emom") {
+      //     handleEmomLogic(newCurrentTime, newState);
+      //   } else if (blockType === "amrap" && timeCapMinutes) {
+      //     handleAmrapLogic(newCurrentTime, newState);
+      //   } else if (blockType === "for_time" && timeCapMinutes) {
+      //     handleForTimeLogic(newCurrentTime, newState);
+      //   }
 
-        // Ensure state consistency - don't update if timer was stopped during logic
-        if (newState.isActive) {
-          onTimerUpdate(newState);
-        }
-      }, 1000);
+      //   // Ensure state consistency - don't update if timer was stopped during logic
+      //   if (newState.isActive) {
+      //     onTimerUpdate(newState);
+      //   }
+      // }, 1000);
     } else {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        // TIMER DISABLED: Clear interval commented out
+        // clearInterval(timerRef.current);
         timerRef.current = null;
       }
     }
 
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        // TIMER DISABLED: Clear interval commented out
+        // clearInterval(timerRef.current);
         timerRef.current = null;
       }
     };

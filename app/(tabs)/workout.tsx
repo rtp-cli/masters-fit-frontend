@@ -134,11 +134,12 @@ function CircuitLoggingInterface({
     }
   };
 
-  // Show timer for time-based circuits (AMRAP, EMOM with time cap, or For Time)
-  const shouldShowTimer = Boolean(
-    (block.timeCapMinutes && block.timeCapMinutes > 0) ||
-      block.blockType === "for_time"
-  );
+  // TIMER DISPLAY HIDDEN: Timer display disabled
+  // const shouldShowTimer = Boolean(
+  //   (block.timeCapMinutes && block.timeCapMinutes > 0) ||
+  //     block.blockType === "for_time"
+  // );
+  const shouldShowTimer = false;
 
   return (
     <View className="space-y-6">
@@ -312,30 +313,33 @@ export default function WorkoutScreen() {
         exerciseStartTime.current = Date.now() - exerciseTimer * 1000;
       }
 
-      timerRef.current = setInterval(() => {
-        const now = Date.now();
-        if (workoutStartTime.current) {
-          setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
-        }
-        if (exerciseStartTime.current) {
-          setExerciseTimer(
-            Math.floor((now - exerciseStartTime.current) / 1000)
-          );
-        }
-      }, 1000);
+      // TIMER DISABLED: Workout timer interval commented out
+      // timerRef.current = setInterval(() => {
+      //   const now = Date.now();
+      //   if (workoutStartTime.current) {
+      //     setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
+      //   }
+      //   if (exerciseStartTime.current) {
+      //     setExerciseTimer(
+      //       Math.floor((now - exerciseStartTime.current) / 1000)
+      //     );
+      //   }
+      // }, 1000);
     } else {
       // Deactivate keep awake when timer stops
       deactivateKeepAwake("workout-timer");
 
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        // TIMER DISABLED: Clear interval commented out
+        // clearInterval(timerRef.current);
       }
     }
 
     return () => {
       deactivateKeepAwake("workout-timer");
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        // TIMER DISABLED: Clear interval commented out
+        // clearInterval(timerRef.current);
       }
     };
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
@@ -353,51 +357,52 @@ export default function WorkoutScreen() {
           Date.now() - (targetDuration - restTimerCountdown) * 1000;
       }
 
-      restTimerRef.current = setInterval(() => {
-        const now = Date.now();
-        const targetDuration = currentExercise?.restTime || 0;
+      // TIMER DISABLED: Rest timer interval commented out
+      // restTimerRef.current = setInterval(() => {
+      //   const now = Date.now();
+      //   const targetDuration = currentExercise?.restTime || 0;
 
-        if (restTimerStartTime.current) {
-          const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
-          const remaining = Math.max(0, targetDuration - elapsed);
+      //   if (restTimerStartTime.current) {
+      //     const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
+      //     const remaining = Math.max(0, targetDuration - elapsed);
 
-          setRestTimerCountdown(remaining);
+      //     setRestTimerCountdown(remaining);
 
-          if (remaining <= 0) {
-            // Timer finished - add notification + haptic feedback
-            try {
-              // Send local notification with sound (no banner will show)
-              Notifications.scheduleNotificationAsync({
-                content: {
-                  title: "Rest Complete!",
-                  body: "Your rest period has ended. Ready for the next set?",
-                  sound: "tri-tone", // Different iOS notification sound
-                },
-                trigger: null, // Show immediately
-              });
+      //     if (remaining <= 0) {
+      //       // Timer finished - add notification + haptic feedback
+      //       try {
+      //         // Send local notification with sound (no banner will show)
+      //         Notifications.scheduleNotificationAsync({
+      //           content: {
+      //             title: "Rest Complete!",
+      //             body: "Your rest period has ended. Ready for the next set?",
+      //             sound: "tri-tone", // Different iOS notification sound
+      //           },
+      //           trigger: null, // Show immediately
+      //         });
 
-              // Add haptic feedback
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-            } catch (error) {
-              console.log("Notification/haptic feedback error:", error);
-            }
+      //         // Add haptic feedback
+      //         Haptics.notificationAsync(
+      //           Haptics.NotificationFeedbackType.Success
+      //         );
+      //       } catch (error) {
+      //         console.log("Notification/haptic feedback error:", error);
+      //       }
 
-            setIsRestTimerActive(false);
-            setIsRestTimerPaused(false);
-            restTimerStartTime.current = null;
-            deactivateKeepAwake("rest-timer");
+      //       setIsRestTimerActive(false);
+      //       setIsRestTimerPaused(false);
+      //       restTimerStartTime.current = null;
+      //       deactivateKeepAwake("rest-timer");
 
-            if (restTimerRef.current) {
-              clearInterval(restTimerRef.current);
-            }
+      //       if (restTimerRef.current) {
+      //         clearInterval(restTimerRef.current);
+      //       }
 
-            // Show rest completion modal when rest timer finishes
-            setShowRestCompleteModal(true);
-          }
-        }
-      }, 1000);
+      //       // Show rest completion modal when rest timer finishes
+      //       setShowRestCompleteModal(true);
+      //     }
+      //   }
+      // }, 1000);
     } else {
       if (!isRestTimerActive) {
         deactivateKeepAwake("rest-timer");
@@ -405,14 +410,16 @@ export default function WorkoutScreen() {
       }
 
       if (restTimerRef.current) {
-        clearInterval(restTimerRef.current);
+        // TIMER DISABLED: Clear interval commented out
+        // clearInterval(restTimerRef.current);
       }
     }
 
     return () => {
       deactivateKeepAwake("rest-timer");
       if (restTimerRef.current) {
-        clearInterval(restTimerRef.current);
+        // TIMER DISABLED: Clear interval commented out
+        // clearInterval(restTimerRef.current);
       }
     };
   }, [
@@ -543,12 +550,12 @@ export default function WorkoutScreen() {
       deactivateKeepAwake("workout-timer");
       deactivateKeepAwake("rest-timer");
 
-      // Clear any active timers
+      // TIMER DISABLED: Clear any active timers commented out
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        // clearInterval(timerRef.current);
       }
       if (restTimerRef.current) {
-        clearInterval(restTimerRef.current);
+        // clearInterval(restTimerRef.current);
       }
     }
   }, [isWorkoutInProgress, isWorkoutStarted, isWorkoutCompleted]);
@@ -586,12 +593,12 @@ export default function WorkoutScreen() {
       // Cleanup keep awake on unmount
       deactivateKeepAwake("workout-timer");
       deactivateKeepAwake("rest-timer");
-      // Clear timers
+      // TIMER DISABLED: Clear timers commented out
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        // clearInterval(timerRef.current);
       }
       if (restTimerRef.current) {
-        clearInterval(restTimerRef.current);
+        // clearInterval(restTimerRef.current);
       }
     };
   }, [setWorkoutInProgress]);
@@ -841,10 +848,10 @@ export default function WorkoutScreen() {
     exerciseStartTime.current = now;
     setWorkoutInProgress(true); // Notify context that workout started
 
-    // Scroll to first exercise heading after starting
-    setTimeout(() => {
-      scrollToExerciseHeading(0);
-    }, 100);
+    // TIMER DISABLED: Scroll timeout commented out
+    // setTimeout(() => {
+    //   scrollToExerciseHeading(0);
+    // }, 100);
   };
 
   // Toggle pause
@@ -890,7 +897,8 @@ export default function WorkoutScreen() {
     restTimerStartTime.current = null;
     deactivateKeepAwake("rest-timer");
     if (restTimerRef.current) {
-      clearInterval(restTimerRef.current);
+      // TIMER DISABLED: Clear interval commented out
+      // clearInterval(restTimerRef.current);
     }
   };
 
@@ -924,7 +932,8 @@ export default function WorkoutScreen() {
     restTimerStartTime.current = null;
     deactivateKeepAwake("rest-timer");
     if (restTimerRef.current) {
-      clearInterval(restTimerRef.current);
+      // TIMER DISABLED: Clear interval commented out
+      // clearInterval(restTimerRef.current);
     }
   };
 
@@ -1360,9 +1369,10 @@ export default function WorkoutScreen() {
           {!hasCompletedWorkoutDuration &&
             skippedExercises.length > 0 &&
             ` (${skippedExercises.length} skipped)`}{" "}
-          {hasCompletedWorkoutDuration
+          {/* TIMER DISPLAY HIDDEN: Completion timer message commented out */}
+          {/* {hasCompletedWorkoutDuration
             ? `in ${formatTime(workoutTimer)}.`
-            : "(duration not available)."}
+            : "(duration not available)."} */}
         </Text>
         <Text className="text-text-muted text-center mb-8 leading-6">
           Check back tomorrow for your next workout.
@@ -1415,13 +1425,14 @@ export default function WorkoutScreen() {
               <Text className="text-2xl font-bold text-text-primary flex-1 mr-3">
                 {workout.name}
               </Text>
-              {isWorkoutStarted && (
+              {/* TIMER DISPLAY HIDDEN: Main workout timer commented out */}
+              {/* {isWorkoutStarted && (
                 <View className="bg-background rounded-xl px-3 py-1 min-w-[80px]">
                   <Text className="text-lg font-bold text-text-primary text-center">
                     {formatTime(workoutTimer)}
                   </Text>
                 </View>
-              )}
+              )} */}
             </View>
             {workout.instructions ? (
               <Text className="text-base text-text-secondary leading-6">
@@ -1594,10 +1605,9 @@ export default function WorkoutScreen() {
                     />
                   </View>
 
-                  {/* Rest Timer - Only show if exercise has rest time */}
-                  {currentExercise.restTime && currentExercise.restTime > 0 ? (
+                  {/* TIMER DISPLAY HIDDEN: Rest timer interface commented out */}
+                  {/* {currentExercise.restTime && currentExercise.restTime > 0 ? (
                     <View className="mt-2 px-3 mb-3">
-                      {/* Timer Toggle Button */}
                       <TouchableOpacity
                         className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
                           showRestTimer
@@ -1622,7 +1632,6 @@ export default function WorkoutScreen() {
                         </Text>
                       </TouchableOpacity>
 
-                      {/* Timer */}
                       {showRestTimer && (
                         <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
                           <CircularTimerDisplay
@@ -1639,7 +1648,7 @@ export default function WorkoutScreen() {
                         </View>
                       )}
                     </View>
-                  ) : null}
+                  ) : null} */}
 
                   {/* Notes - Compact with quick chips */}
                   <View className="rounded-2xl p-4">
@@ -1985,9 +1994,10 @@ export default function WorkoutScreen() {
       <Modal visible={showRestCompleteModal} transparent animationType="fade">
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <View className="items-center mb-4">
+            {/* TIMER DISPLAY HIDDEN: Timer icon commented out */}
+            {/* <View className="items-center mb-4">
               <Ionicons name="timer" size={48} color={colors.brand.primary} />
-            </View>
+            </View> */}
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               Rest Complete!
             </Text>

@@ -103,56 +103,59 @@ export default function AdaptiveSetTracker({
   // Timer countdown logic
   useEffect(() => {
     if (isTimerActive && !isTimerPaused && countdown > 0 && !isCompleted) {
-      timerRef.current = setTimeout(() => {
-        setCountdown((prev) => {
-          const newValue = prev - 1;
+      // TIMER DISABLED: Exercise timer timeout commented out
+      // timerRef.current = setTimeout(() => {
+      //   setCountdown((prev) => {
+      //     const newValue = prev - 1;
 
-          if (newValue <= 0) {
-            // Timer finished
-            setIsCompleted(true);
-            setIsTimerActive(false);
-            setIsTimerPaused(false);
+      //     if (newValue <= 0) {
+      //       // Timer finished
+      //       setIsCompleted(true);
+      //       setIsTimerActive(false);
+      //       setIsTimerPaused(false);
 
-            // Add notification and haptic feedback
-            try {
-              // Send local notification with sound (no banner will show)
-              Notifications.scheduleNotificationAsync({
-                content: {
-                  title: "Exercise Complete!",
-                  body: "Your exercise duration has ended.",
-                  sound: "tri-tone", // iOS notification sound
-                },
-                trigger: null, // Show immediately
-              });
+      //       // Add notification and haptic feedback
+      //       try {
+      //         // Send local notification with sound (no banner will show)
+      //         Notifications.scheduleNotificationAsync({
+      //           content: {
+      //             title: "Exercise Complete!",
+      //             body: "Your exercise duration has ended.",
+      //             sound: "tri-tone", // iOS notification sound
+      //           },
+      //           trigger: null, // Show immediately
+      //         });
 
-              // Add haptic feedback
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-            } catch (error) {
-              console.log("Notification/haptic feedback error:", error);
-            }
+      //         // Add haptic feedback
+      //         Haptics.notificationAsync(
+      //           Haptics.NotificationFeedbackType.Success
+      //         );
+      //       } catch (error) {
+      //         console.log("Notification/haptic feedback error:", error);
+      //       }
 
-            // Handle duration logging (but don't auto-advance)
-            setTimeout(() => {
-              handleTimerCompletion();
-            }, 100);
+      //       // Handle duration logging (but don't auto-advance)
+      //       setTimeout(() => {
+      //         handleTimerCompletion();
+      //       }, 100);
 
-            return 0;
-          }
-          return newValue;
-        });
-      }, 1000);
+      //       return 0;
+      //     }
+      //     return newValue;
+      //   });
+      // }, 1000);
     } else {
       if (timerRef.current) {
-        clearTimeout(timerRef.current);
+        // TIMER DISABLED: Clear timeout commented out
+        // clearTimeout(timerRef.current);
         timerRef.current = null;
       }
     }
 
     return () => {
       if (timerRef.current) {
-        clearTimeout(timerRef.current);
+        // TIMER DISABLED: Clear timeout commented out
+        // clearTimeout(timerRef.current);
         timerRef.current = null;
       }
     };
@@ -619,10 +622,9 @@ export default function AdaptiveSetTracker({
           </Text>
         </TouchableOpacity>
 
-        {/* Exercise Timer */}
-        {currentSetIndex < durationSets.length && (
+        {/* TIMER DISPLAY HIDDEN: Exercise Timer interface commented out */}
+        {/* {currentSetIndex < durationSets.length && (
           <View className="mt-4">
-            {/* Timer Toggle Button */}
             <TouchableOpacity
               className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
                 showExerciseTimer
@@ -641,7 +643,6 @@ export default function AdaptiveSetTracker({
               </Text>
             </TouchableOpacity>
 
-            {/* Timer */}
             {showExerciseTimer && (
               <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
                 <View className="flex-row items-center justify-between mb-4">
@@ -664,7 +665,7 @@ export default function AdaptiveSetTracker({
               </View>
             )}
           </View>
-        )}
+        )} */}
       </View>
     );
   };
