@@ -46,12 +46,23 @@ export function isTraditionalBlock(blockType?: string): boolean {
 }
 
 /**
+ * Determines if a workout block is a warmup or cooldown block
+ * @param blockType The type of workout block
+ * @returns true if block is warmup or cooldown
+ */
+export function isWarmupCooldownBlock(blockType?: string): boolean {
+  if (!blockType) return false;
+  return blockType === 'warmup' || blockType === 'cooldown';
+}
+
+/**
  * Gets the logging interface type for a workout block
  * @param block The workout block
- * @returns 'circuit' or 'traditional' based on block type
+ * @returns 'circuit', 'traditional', or 'skip' based on block type
  */
-export function getLoggingInterface(block?: WorkoutBlockWithExercises): 'circuit' | 'traditional' {
+export function getLoggingInterface(block?: WorkoutBlockWithExercises): 'circuit' | 'traditional' | 'skip' {
   if (!block) return 'traditional';
+  if (isWarmupCooldownBlock(block.blockType)) return 'skip';
   return isCircuitBlock(block.blockType) ? 'circuit' : 'traditional';
 }
 

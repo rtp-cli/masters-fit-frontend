@@ -45,7 +45,7 @@ import {
   CircuitRound,
   CircuitExerciseLog as CircuitExercise,
 } from "@/types/api/circuit.types";
-import { isCircuitBlock, getLoggingInterface } from "@/utils/circuitUtils";
+import { isCircuitBlock, getLoggingInterface, isWarmupCooldownBlock } from "@/utils/circuitUtils";
 import { useCircuitSession } from "@/hooks/useCircuitSession";
 import {
   logCircuitSession,
@@ -281,10 +281,12 @@ export default function WorkoutScreen() {
     }
   };
 
-  // Get flattened exercises from blocks
+  // Get flattened exercises from blocks (excluding warmup/cooldown)
   const getFlattenedExercises = (): WorkoutBlockWithExercise[] => {
     if (!workout?.blocks) return [];
-    return workout.blocks.flatMap((block) => block.exercises);
+    return workout.blocks
+      .filter(block => !isWarmupCooldownBlock(block.blockType))
+      .flatMap((block) => block.exercises);
   };
 
   const exercises = getFlattenedExercises();
@@ -680,10 +682,10 @@ export default function WorkoutScreen() {
       // Check if there's an existing workout session in progress
       // (You might need to add logic here to detect if a workout was previously started)
 
-      // Initialize exercise progress
-      const flatExercises = todaysWorkout.blocks.flatMap(
-        (block: WorkoutBlockWithExercises) => block.exercises
-      );
+      // Initialize exercise progress (excluding warmup/cooldown)
+      const flatExercises = todaysWorkout.blocks
+        .filter((block: WorkoutBlockWithExercises) => !isWarmupCooldownBlock(block.blockType))
+        .flatMap((block: WorkoutBlockWithExercises) => block.exercises);
       const initialProgress: ExerciseProgress[] = flatExercises.map(
         (exercise: WorkoutBlockWithExercise) => ({
           setsCompleted: 0,
@@ -848,10 +850,10 @@ export default function WorkoutScreen() {
     exerciseStartTime.current = now;
     setWorkoutInProgress(true); // Notify context that workout started
 
-    // TIMER DISABLED: Scroll timeout commented out
-    // setTimeout(() => {
-    //   scrollToExerciseHeading(0);
-    // }, 100);
+    // Auto-scroll to first exercise when workout starts
+    setTimeout(() => {
+      scrollToExerciseHeading(0);
+    }, 100);
   };
 
   // Toggle pause
@@ -946,6 +948,7 @@ export default function WorkoutScreen() {
     try {
       const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
+
 
       // Handle circuit completion differently
       if (isCurrentBlockCircuit && currentBlock) {
@@ -1479,31 +1482,30 @@ export default function WorkoutScreen() {
               ref={exerciseHeadingRef}
               className="bg-card rounded-2xl mb-6 p-6 border shadow-sm font-bold border-neutral-light-2"
             >
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-xl font-bold text-text-primary">
-                  {currentExercise.exercise.name}
-                </Text>
-                {currentExercise.exercise.link && (
-                  <TouchableOpacity
-                    onPress={() =>
-                      scrollViewRef.current?.scrollTo({
-                        y: 0,
-                        animated: true,
-                      })
-                    }
-                    className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full"
-                  >
-                    <Ionicons
-                      name="play-circle-outline"
-                      size={14}
-                      color={colors.brand.primary}
-                    />
-                    <Text className="text-xs text-brand-primary">
-                      Video Available
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              <Text className="text-xl font-bold text-text-primary mb-3">
+                {currentExercise.exercise.name}
+              </Text>
+
+              {currentExercise.exercise.link && (
+                <TouchableOpacity
+                  onPress={() =>
+                    scrollViewRef.current?.scrollTo({
+                      y: 0,
+                      animated: true,
+                    })
+                  }
+                  className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full self-start mb-3"
+                >
+                  <Ionicons
+                    name="play-circle-outline"
+                    size={14}
+                    color={colors.brand.primary}
+                  />
+                  <Text className="text-xs text-brand-primary">
+                    Video Available
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <Text className="text-sm text-text-primary leading-6 mb-3">
                 {currentExercise.exercise.description}
@@ -1716,7 +1718,9 @@ export default function WorkoutScreen() {
               Today's Workout Plan
             </Text>
 
-            {workout.blocks.map((block, blockIndex) => (
+            {workout.blocks
+              .filter(block => !isWarmupCooldownBlock(block.blockType))
+              .map((block, blockIndex) => (
               <View key={block.id} className="mb-4 last:mb-0">
                 <View className="rounded-xl p-3 mb-2">
                   <Text className="text-sm font-bold text-text-primary">
@@ -1831,25 +1835,6 @@ export default function WorkoutScreen() {
           </TouchableOpacity>
         ) : (
           <View className="flex-row gap-2">
-            {/* Only show skip button for warmup/cooldown blocks, not for circuits */}
-            {!isCurrentBlockCircuit &&
-              (currentBlock?.blockType === "warmup" ||
-                currentBlock?.blockType === "cooldown") && (
-                <TouchableOpacity
-                  className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
-                  onPress={() => setShowSkipModal(true)}
-                >
-                  <Ionicons
-                    name="play-skip-forward-outline"
-                    size={20}
-                    color={colors.text.primary}
-                  />
-                  <Text className="text-text-primary font-semibold ml-2">
-                    Skip
-                  </Text>
-                </TouchableOpacity>
-              )}
-
             <TouchableOpacity
               className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
               onPress={togglePause}
@@ -1865,13 +1850,7 @@ export default function WorkoutScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className={`bg-primary rounded-2xl py-4 flex-row items-center justify-center ${
-                !isCurrentBlockCircuit &&
-                (currentBlock?.blockType === "warmup" ||
-                  currentBlock?.blockType === "cooldown")
-                  ? "flex-1"
-                  : "flex-1"
-              }`}
+              className="bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1"
               onPress={() => setShowCompleteModal(true)}
             >
               <Ionicons
