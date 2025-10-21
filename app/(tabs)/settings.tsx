@@ -17,6 +17,7 @@ import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
 import { SettingsSkeleton } from "../../components/skeletons/SkeletonScreens";
+import ComingSoonModal from "../../components/ComingSoonModal";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
@@ -34,6 +35,17 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [legalExpanded, setLegalExpanded] = useState(false);
+
+  // Coming Soon modals state
+  const [comingSoonModal, setComingSoonModal] = useState<{
+    visible: boolean;
+    description: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }>({
+    visible: false,
+    description: "",
+    icon: "information-circle-outline",
+  });
 
   // Use profile data from the centralized store
   const profile = profileData;
@@ -81,6 +93,26 @@ export default function SettingsScreen() {
       loadUserData();
     }
   }, [user?.id, profileData]);
+
+  // Show coming soon modal
+  const showComingSoonModal = (
+    description: string,
+    icon: keyof typeof Ionicons.glyphMap
+  ) => {
+    setComingSoonModal({
+      visible: true,
+      description,
+      icon,
+    });
+  };
+
+  // Hide coming soon modal
+  const hideComingSoonModal = () => {
+    setComingSoonModal({
+      ...comingSoonModal,
+      visible: false,
+    });
+  };
 
   // Handle logout
   const handleLogout = async () => {
@@ -250,7 +282,15 @@ export default function SettingsScreen() {
               <Text className="text-xs text-text-muted">Edit Profile</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="items-center">
+            <TouchableOpacity
+              className="items-center"
+              onPress={() =>
+                showComingSoonModal(
+                  "Get help and support for your fitness journey. Access FAQs and contact our support team.",
+                  "help-circle-outline"
+                )
+              }
+            >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="help-circle-outline"
@@ -261,7 +301,15 @@ export default function SettingsScreen() {
               <Text className="text-xs text-text-muted">Help</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="items-center">
+            <TouchableOpacity
+              className="items-center"
+              onPress={() =>
+                showComingSoonModal(
+                  "Share your fitness progress and achievements with friends on social media. Celebrate your milestones together!",
+                  "share-outline"
+                )
+              }
+            >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="share-outline"
@@ -529,7 +577,12 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={darkModeEnabled}
-              onValueChange={setDarkModeEnabled}
+              onValueChange={() =>
+                showComingSoonModal(
+                  "Customize your app appearance with a beautiful dark theme that's easier on your eyes during evening workouts.",
+                  "moon-outline"
+                )
+              }
               trackColor={{
                 false: colors.neutral.medium[1],
                 true: colors.brand.primary,
@@ -665,6 +718,14 @@ export default function SettingsScreen() {
           <Text className="text-xs text-text-muted">Masters Fit v1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Coming Soon Modal */}
+      <ComingSoonModal
+        visible={comingSoonModal.visible}
+        onClose={hideComingSoonModal}
+        description={comingSoonModal.description}
+        icon={comingSoonModal.icon}
+      />
     </View>
   );
 }
