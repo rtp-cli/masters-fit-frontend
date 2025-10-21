@@ -39,11 +39,9 @@ export default function SettingsScreen() {
   // Coming Soon modals state
   const [comingSoonModal, setComingSoonModal] = useState<{
     visible: boolean;
-    description: string;
     icon: keyof typeof Ionicons.glyphMap;
   }>({
     visible: false,
-    description: "",
     icon: "information-circle-outline",
   });
 
@@ -95,13 +93,9 @@ export default function SettingsScreen() {
   }, [user?.id, profileData]);
 
   // Show coming soon modal
-  const showComingSoonModal = (
-    description: string,
-    icon: keyof typeof Ionicons.glyphMap
-  ) => {
+  const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
     setComingSoonModal({
       visible: true,
-      description,
       icon,
     });
   };
@@ -284,12 +278,7 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               className="items-center"
-              onPress={() =>
-                showComingSoonModal(
-                  "Get help and support for your fitness journey. Access FAQs and contact our support team.",
-                  "help-circle-outline"
-                )
-              }
+              onPress={() => showComingSoonModal("help-circle-outline")}
             >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
@@ -303,12 +292,7 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               className="items-center"
-              onPress={() =>
-                showComingSoonModal(
-                  "Share your fitness progress and achievements with friends on social media. Celebrate your milestones together!",
-                  "share-outline"
-                )
-              }
+              onPress={() => showComingSoonModal("share-outline")}
             >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
@@ -577,12 +561,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={darkModeEnabled}
-              onValueChange={() =>
-                showComingSoonModal(
-                  "Customize your app appearance with a beautiful dark theme that's easier on your eyes during evening workouts.",
-                  "moon-outline"
-                )
-              }
+              onValueChange={() => showComingSoonModal("moon-outline")}
               trackColor={{
                 false: colors.neutral.medium[1],
                 true: colors.brand.primary,
@@ -723,7 +702,6 @@ export default function SettingsScreen() {
       <ComingSoonModal
         visible={comingSoonModal.visible}
         onClose={hideComingSoonModal}
-        description={comingSoonModal.description}
         icon={comingSoonModal.icon}
       />
     </View>

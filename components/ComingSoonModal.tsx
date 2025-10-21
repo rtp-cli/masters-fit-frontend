@@ -12,14 +12,12 @@ import { colors } from "../lib/theme";
 interface ComingSoonModalProps {
   visible: boolean;
   onClose: () => void;
-  description: string;
   icon: keyof typeof Ionicons.glyphMap;
 }
 
 export default function ComingSoonModal({
   visible,
   onClose,
-  description,
   icon,
 }: ComingSoonModalProps) {
   return (
@@ -40,7 +38,8 @@ export default function ComingSoonModal({
 
               {/* Description */}
               <Text className="text-base text-text-secondary text-center mb-6 leading-6">
-                {description}
+                Oops — you caught us mid-workout! This feature isn’t live yet
+                but will be ready soon. Stay tuned for updates!
               </Text>
 
               {/* Close Button */}
