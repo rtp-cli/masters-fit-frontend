@@ -5,6 +5,7 @@ import { FitnessLevels, PreferredDays, IntensityLevels } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/IconComponent";
 import { colors } from "@/lib/theme";
+import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
 
 interface FitnessLevelStepProps {
   formData: FormData;
@@ -145,6 +146,18 @@ export default function FitnessLevelStep({
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Available Days
         </Text>
+        {/* Schedule Information - Show specific dates */}
+        {formData.availableDays.length >= 1 && (
+          <View className="mb-4 p-4 bg-brand-light-1 rounded-xl">
+            <Text className="text-sm font-semibold text-text-primary mb-3">
+              Your Workout Plan Timeline
+            </Text>
+            <Text className="text-sm text-text-primary mb-2">
+              Your weekly plan will begin on {formatWorkoutPlanStartDate()} and
+              end on {formatWorkoutPlanEndDate()}.
+            </Text>
+          </View>
+        )}
         <View className="flex-row flex-wrap">
           {Object.entries(PreferredDays).map(([key, value]) => (
             <TouchableOpacity

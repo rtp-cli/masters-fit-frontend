@@ -627,3 +627,93 @@ export function formatWorkoutStyles(
     })
     .join(", ");
 }
+
+/**
+ * Get ordinal suffix for a number (1st, 2nd, 3rd, etc.)
+ */
+function getOrdinalSuffix(num: number): string {
+  const j = num % 10;
+  const k = num % 100;
+
+  if (j === 1 && k !== 11) {
+    return "st";
+  }
+  if (j === 2 && k !== 12) {
+    return "nd";
+  }
+  if (j === 3 && k !== 13) {
+    return "rd";
+  }
+  return "th";
+}
+
+/**
+ * Format date with day name and ordinal (e.g. "January 23rd, Wednesday")
+ */
+export function formatDateWithDayAndOrdinal(date: Date): string {
+  const dayName = getDayOfWeek(date);
+  const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
+  const day = date.getDate();
+  const ordinalSuffix = getOrdinalSuffix(day);
+
+  return `${monthName} ${day}${ordinalSuffix}, ${dayName}`;
+}
+
+/**
+ * Calculate workout plan start and end dates (7 consecutive days from today)
+ */
+export function calculateWorkoutPlanDates() {
+  const today = new Date();
+  const startDate = new Date(today);
+
+  // Add 6 days using milliseconds for more reliable calculation across month boundaries
+  const endDate = new Date(today.getTime() + (6 * 24 * 60 * 60 * 1000));
+
+  // Debug logging (temporary)
+  console.log('Workout plan dates:', {
+    today: today.toDateString(),
+    startDate: startDate.toDateString(),
+    endDate: endDate.toDateString(),
+    daysAdded: 6
+  });
+
+  return {
+    startDate,
+    endDate,
+  };
+}
+
+/**
+ * Format workout plan start date for display
+ */
+export function formatWorkoutPlanStartDate(): string {
+  const { startDate } = calculateWorkoutPlanDates();
+  return formatDateWithDayAndOrdinal(startDate);
+}
+
+/**
+ * Format workout plan end date for display
+ */
+export function formatWorkoutPlanEndDate(): string {
+  const { endDate } = calculateWorkoutPlanDates();
+  return formatDateWithDayAndOrdinal(endDate);
+}
+
+/**
+ * Format available days list for display with proper grammar
+ */
+export function formatAvailableDaysList(availableDays: string[]): string {
+  if (availableDays.length === 0) return "";
+
+  const formattedDays = availableDays.map(day => formatEnumValue(day));
+
+  if (formattedDays.length === 1) {
+    return formattedDays[0];
+  }
+
+  if (formattedDays.length === 2) {
+    return formattedDays.join(" and ");
+  }
+
+  return formattedDays.slice(0, -1).join(", ") + ", and " + formattedDays[formattedDays.length - 1];
+}

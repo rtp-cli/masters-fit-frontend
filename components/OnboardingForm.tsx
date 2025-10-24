@@ -44,7 +44,7 @@ export default function OnboardingForm({
   isLoading = false,
   showNavigation = true,
   title,
-  submitButtonText = "Generate My Plan",
+  submitButtonText = "Generate Weekly Plan",
   excludePersonalInfo = false,
 }: OnboardingFormProps) {
   const scrollRef = useRef<ScrollView | null>(null);

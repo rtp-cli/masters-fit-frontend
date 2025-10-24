@@ -287,7 +287,7 @@ export default function OnboardingScreen() {
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        submitButtonText={isLoading ? "Creating Profile..." : "Generate Plan"}
+        submitButtonText={isLoading ? "Creating Profile..." : "Generate Weekly Plan"}
       />
     </SafeAreaView>
   );

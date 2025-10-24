@@ -23,6 +23,7 @@ import { colors } from "../lib/theme";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { useAuth } from "@contexts/AuthContext";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
 import {
   regenerateWorkoutPlanAsync,
   regenerateDailyWorkoutAsync,
@@ -104,7 +105,8 @@ export default function WorkoutRegenerationModal({
 
   // State for daily workout temporary overrides
   const [showDailyOverrideForm, setShowDailyOverrideForm] = useState(false);
-  const [tempOverridesBackup, setTempOverridesBackup] = useState<TemporaryOverrides | null>(null);
+  const [tempOverridesBackup, setTempOverridesBackup] =
+    useState<TemporaryOverrides | null>(null);
   const [temporaryOverrides, setTemporaryOverrides] =
     useState<TemporaryOverrides>({
       duration: 30,
@@ -820,9 +822,10 @@ export default function WorkoutRegenerationModal({
               keyboardDismissMode="on-drag"
             >
               <Text className="text-xs text-text-muted mb-4 text-center">
-                These changes apply only to this workout and won't be saved to your profile
+                These changes apply only to this workout and won't be saved to
+                your profile
               </Text>
-              
+
               <ProfileOverrideForm
                 overrides={temporaryOverrides}
                 onOverrideChange={setTemporaryOverrides}
@@ -904,7 +907,7 @@ export default function WorkoutRegenerationModal({
               {/* Week/Day Toggle - Fixed shadow issue */}
               <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
                 <TouchableOpacity
-                  className={`flex-1 py-3 rounded-sm items-center ${
+                  className={`flex-1 py-3 px-2 rounded-sm items-center ${
                     selectedType === "day" ? "bg-white" : "bg-transparent"
                   } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
                   style={
@@ -928,11 +931,20 @@ export default function WorkoutRegenerationModal({
                         : "text-text-muted"
                     }`}
                   >
-                    Day
+                    Single Day
+                  </Text>
+                  <Text
+                    className={`text-xs mt-1 text-center ${
+                      selectedType === "day"
+                        ? "text-secondary"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    Today only
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className={`flex-1 py-3 rounded-sm items-center ${
+                  className={`flex-1 py-3 px-2 rounded-sm items-center ${
                     selectedType === "week" ? "bg-white" : "bg-transparent"
                   }`}
                   style={
@@ -955,7 +967,16 @@ export default function WorkoutRegenerationModal({
                         : "text-text-muted"
                     }`}
                   >
-                    Week
+                    Full Week
+                  </Text>
+                  <Text
+                    className={`text-xs mt-1 text-center ${
+                      selectedType === "week"
+                        ? "text-secondary"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    Next 7 days
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1007,6 +1028,14 @@ export default function WorkoutRegenerationModal({
                     </Text>
                   )}
 
+                {selectedType === "week" && (
+                  <Text className="text-xs text-text-muted mt-3">
+                    Your regenerated weekly plan will begin on{" "}
+                    {formatWorkoutPlanStartDate()} and end on{" "}
+                    {formatWorkoutPlanEndDate()}.
+                  </Text>
+                )}
+
                 {/* Daily Override Button */}
                 {selectedType === "day" && !noActiveWorkoutDay && (
                   <TouchableOpacity
@@ -1050,7 +1079,9 @@ export default function WorkoutRegenerationModal({
                 <>
                   <Ionicons name="refresh" size={18} color="white" />
                   <Text className="text-white font-semibold text-sm ml-2">
-                    Regenerate Workout Flow
+                    {selectedType === "week"
+                      ? "Regenerate Weekly Plan"
+                      : "Regenerate Today's Workout"}
                   </Text>
                 </>
               )}
