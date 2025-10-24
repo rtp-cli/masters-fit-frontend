@@ -29,6 +29,7 @@ import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
+import WorkoutEditModal from "@components/WorkoutEditModal";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import WorkoutBlock from "@components/WorkoutBlock";
 import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
@@ -67,6 +68,7 @@ export default function CalendarScreen() {
     formatDateAsString(new Date())
   );
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
 
@@ -630,24 +632,47 @@ export default function CalendarScreen() {
           </View>
         )}
 
-        {/* Regenerate Button - Only show for current workouts */}
+        {/* Action Buttons - Only show for current workouts */}
         {workoutPlan && !isHistoricalWorkout && !isPastDate() && (
           <View className="px-lg my-lg">
-            <TouchableOpacity
-              className="bg-primary py-md rounded-xl items-center flex-row justify-center"
-              onPress={() =>
-                handleOpenRegeneration(currentSelectedPlanDay || undefined)
-              }
-            >
-              <Ionicons
-                name="settings-outline"
-                size={18}
-                color={colors.neutral.light[1]}
-              />
-              <Text className="text-neutral-light-1 font-semibold text-md ml-sm">
-                Edit your workout plan
-              </Text>
-            </TouchableOpacity>
+            <View className="flex-row space-x-3">
+              {/* Edit Workout Plan Button */}
+              <TouchableOpacity
+                className="flex-1 bg-primary py-3 rounded-lg items-center flex-row justify-center"
+                onPress={() =>
+                  handleOpenRegeneration(currentSelectedPlanDay || undefined)
+                }
+              >
+                <Ionicons
+                  name="settings-outline"
+                  size={16}
+                  color={colors.neutral.light[1]}
+                />
+                <Text className="text-neutral-light-1 font-semibold text-sm ml-2">
+                  Edit Workout Plan
+                </Text>
+              </TouchableOpacity>
+
+              {/* Edit Exercises Button */}
+              {currentSelectedPlanDay && (
+                <TouchableOpacity
+                  className="flex-1 ml-2 bg-white border border-primary py-3 rounded-lg items-center flex-row justify-center"
+                  onPress={() => {
+                    setSelectedPlanDay(currentSelectedPlanDay);
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={16}
+                    color={colors.brand.primary}
+                  />
+                  <Text className="text-primary font-semibold text-sm ml-2">
+                    Replace Exercises
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -817,6 +842,23 @@ export default function CalendarScreen() {
         visible={showRepeatModal}
         onClose={() => setShowRepeatModal(false)}
         onSuccess={handleRepeatWorkoutSuccess}
+      />
+
+      {/* Workout Edit Modal */}
+      <WorkoutEditModal
+        visible={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedPlanDay(null);
+        }}
+        planDay={selectedPlanDay}
+        onSuccess={() => {
+          // Refresh workout data
+          refreshWorkout();
+        }}
+        onError={(error) => {
+          Alert.alert("Error", error);
+        }}
       />
     </View>
   );

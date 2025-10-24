@@ -1013,7 +1013,7 @@ export async function generateRestDayWorkoutAsync(
     params,
     url: `/workouts/${userId}/rest-day-workout`,
   });
-  
+
   try {
     const response = await apiRequest<{
       success: boolean;
@@ -1023,9 +1023,9 @@ export async function generateRestDayWorkoutAsync(
       method: "POST",
       body: JSON.stringify(params),
     });
-    
+
     console.log("Rest day workout API response:", response);
-    
+
     if (response?.success) {
       invalidateActiveWorkoutCache();
       return response;
@@ -1034,6 +1034,35 @@ export async function generateRestDayWorkoutAsync(
     }
   } catch (error) {
     console.error("Error starting rest day workout generation:", error);
+    return null;
+  }
+}
+
+/**
+ * Replace an exercise in a workout
+ */
+export async function replaceExercise(
+  exerciseId: number,
+  newExerciseId: number
+): Promise<{ success: boolean; workoutBlockExercise: any } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      workoutBlockExercise: any;
+    }>(`/workouts/exercise/${exerciseId}/replace`, {
+      method: "PUT",
+      body: JSON.stringify({ newExerciseId }),
+    });
+
+    if (response?.success) {
+      // Invalidate cache to force fresh data fetch
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to replace exercise");
+    }
+  } catch (error) {
+    console.error("Error replacing exercise:", error);
     return null;
   }
 }
