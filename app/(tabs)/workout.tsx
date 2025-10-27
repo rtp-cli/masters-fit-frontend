@@ -45,7 +45,11 @@ import {
   CircuitRound,
   CircuitExerciseLog as CircuitExercise,
 } from "@/types/api/circuit.types";
-import { isCircuitBlock, getLoggingInterface, isWarmupCooldownBlock } from "@/utils/circuitUtils";
+import {
+  isCircuitBlock,
+  getLoggingInterface,
+  isWarmupCooldownBlock,
+} from "@/utils/circuitUtils";
 import { useCircuitSession } from "@/hooks/useCircuitSession";
 import {
   logCircuitSession,
@@ -281,12 +285,10 @@ export default function WorkoutScreen() {
     }
   };
 
-  // Get flattened exercises from blocks (excluding warmup/cooldown)
+  // Get flattened exercises from blocks (including warmup/cooldown)
   const getFlattenedExercises = (): WorkoutBlockWithExercise[] => {
     if (!workout?.blocks) return [];
-    return workout.blocks
-      .filter(block => !isWarmupCooldownBlock(block.blockType))
-      .flatMap((block) => block.exercises);
+    return workout.blocks.flatMap((block) => block.exercises);
   };
 
   const exercises = getFlattenedExercises();
@@ -682,10 +684,10 @@ export default function WorkoutScreen() {
       // Check if there's an existing workout session in progress
       // (You might need to add logic here to detect if a workout was previously started)
 
-      // Initialize exercise progress (excluding warmup/cooldown)
-      const flatExercises = todaysWorkout.blocks
-        .filter((block: WorkoutBlockWithExercises) => !isWarmupCooldownBlock(block.blockType))
-        .flatMap((block: WorkoutBlockWithExercises) => block.exercises);
+      // Initialize exercise progress (including warmup/cooldown)
+      const flatExercises = todaysWorkout.blocks.flatMap(
+        (block: WorkoutBlockWithExercises) => block.exercises
+      );
       const initialProgress: ExerciseProgress[] = flatExercises.map(
         (exercise: WorkoutBlockWithExercise) => ({
           setsCompleted: 0,
@@ -949,6 +951,64 @@ export default function WorkoutScreen() {
       const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Handle warmup/cooldown completion differently - simplified logging
+      if (isCurrentBlockWarmupCooldown) {
+        // For warmup/cooldown, we don't require detailed logging
+        // Just mark as complete with minimal data
+        await createExerciseLog({
+          planDayExerciseId: currentExercise.id,
+          sets: [
+            {
+              roundNumber: 1,
+              setNumber: 1,
+              weight: 0,
+              reps: currentExercise.reps || 1, // Use target reps or default to 1
+            },
+          ],
+          durationCompleted: currentExercise.duration || 0,
+          isComplete: true,
+          timeTaken: exerciseTimer,
+          notes: currentProgress.notes || "",
+        });
+
+        // Move to next exercise or complete workout
+        if (currentExerciseIndex < exercises.length - 1) {
+          setCurrentExerciseIndex((prev) => prev + 1);
+          setExerciseTimer(0);
+          exerciseStartTime.current = Date.now();
+          scrollToExerciseHeading(currentExerciseIndex + 1);
+        } else {
+          // All exercises completed, complete the workout
+          if (workout?.id) {
+            const completedExerciseCount = exercises.length;
+            const completedBlockCount = workout.blocks.length;
+
+            await markPlanDayAsComplete(workout.id, {
+              totalTimeSeconds: workoutTimer,
+              exercisesCompleted: completedExerciseCount,
+              blocksCompleted: completedBlockCount,
+            });
+
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+            const endDate = new Date(today);
+            endDate.setDate(today.getDate() + 7);
+
+            await refreshDashboard({
+              startDate: startDate.toISOString().split("T")[0],
+              endDate: endDate.toISOString().split("T")[0],
+            });
+          }
+
+          setCurrentExerciseIndex(exercises.length);
+          setIsWorkoutCompleted(true);
+          setWorkoutInProgress(false);
+        }
+
+        setShowCompleteModal(false);
+        return;
+      }
 
       // Handle circuit completion differently
       if (isCurrentBlockCircuit && currentBlock) {
@@ -1240,6 +1300,9 @@ export default function WorkoutScreen() {
   const loggingInterface = getLoggingInterface(currentBlock || undefined);
   const isCurrentBlockCircuit = currentBlock
     ? isCircuitBlock(currentBlock.blockType)
+    : false;
+  const isCurrentBlockWarmupCooldown = currentBlock
+    ? isWarmupCooldownBlock(currentBlock.blockType)
     : false;
 
   // Circuit session management - Always call hook but initialize properly
@@ -1545,128 +1608,200 @@ export default function WorkoutScreen() {
 
               {isWorkoutStarted && currentProgress ? (
                 <View className="space-y-4">
-                  {/* Rounds - Show if block has multiple rounds */}
-                  {currentBlock &&
-                  currentBlock.rounds &&
-                  currentBlock.rounds > 1 ? (
-                    <View className="rounded-2xl p-4">
-                      <View className="flex-row items-center justify-between mb-3">
-                        <Text className="text-sm font-semibold text-text-primary">
-                          Rounds
-                        </Text>
-                        <Text className="text-xs text-text-muted">
-                          Target: {currentBlock.rounds} Rounds
-                        </Text>
-                      </View>
-                      <View className="flex-row justify-center gap-2">
-                        {Array.from({ length: currentBlock.rounds }, (_, i) => {
-                          const isCompleted =
-                            i < (currentProgress?.roundsCompleted || 0);
-                          return (
-                            <TouchableOpacity
-                              key={i}
-                              className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
-                                isCompleted
-                                  ? "border-primary bg-primary"
-                                  : "border-neutral-medium-1 bg-background"
-                              }`}
-                              onPress={() =>
-                                updateProgress("roundsCompleted", i + 1)
-                              }
-                            >
-                              {isCompleted ? (
-                                <Ionicons
-                                  name="checkmark"
-                                  size={14}
-                                  color={colors.text.secondary}
-                                />
-                              ) : (
-                                <Text className="text-xs font-semibold text-text-muted">
-                                  {i + 1}
+                  {/* Show simplified interface for warmup/cooldown */}
+                  {isCurrentBlockWarmupCooldown ? (
+                    <View>
+                      {/* Show target parameters in a structured layout matching the main interface */}
+                      {(currentExercise.duration ||
+                        currentExercise.reps ||
+                        currentExercise.sets) && (
+                        <View className="flex items-center bg-background rounded-xl pt-6">
+                          <View className="flex-row flex-wrap gap-3">
+                            {currentExercise.sets && (
+                              <View className="flex-row items-center">
+                                <Text className="text-sm text-text-muted mr-1">
+                                  Sets:
                                 </Text>
-                              )}
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ) : null}
-
-                  {/* Traditional Exercise Logging Interface */}
-                  <View className="rounded-2xl p-4">
-                    <AdaptiveSetTracker
-                      exercise={currentExercise}
-                      sets={currentProgress.sets}
-                      onSetsChange={(sets) => updateProgress("sets", sets)}
-                      onProgressUpdate={(progress) => {
-                        updateProgress("setsCompleted", progress.setsCompleted);
-                        updateProgress("duration", progress.duration);
-                        // Note: Removed auto-completion - user now manually completes exercise
-                      }}
-                      blockType={currentBlock?.blockType}
-                    />
-                  </View>
-
-                  {/* TIMER DISPLAY HIDDEN: Rest timer interface commented out */}
-                  {/* {currentExercise.restTime && currentExercise.restTime > 0 ? (
-                    <View className="mt-2 px-3 mb-3">
-                      <TouchableOpacity
-                        className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
-                          showRestTimer
-                            ? "bg-brand-primary border-brand-primary"
-                            : "border-brand-primary bg-transparent"
-                        }`}
-                        onPress={() => setShowRestTimer(!showRestTimer)}
-                      >
-                        <Text
-                          className={`text-sm font-semibold ${
-                            showRestTimer ? "text-white" : ""
-                          }`}
-                          style={
-                            !showRestTimer
-                              ? { color: colors.brand.primary }
-                              : {}
-                          }
-                        >
-                          {showRestTimer
-                            ? "Hide Rest Timer"
-                            : `Show Rest Timer (${formatRestTimerDisplay()})`}
-                        </Text>
-                      </TouchableOpacity>
-
-                      {showRestTimer && (
-                        <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
-                          <CircularTimerDisplay
-                            countdown={restTimerCountdown}
-                            targetDuration={currentExercise?.restTime || 0}
-                            isActive={isRestTimerActive}
-                            isPaused={isRestTimerPaused}
-                            isCompleted={restTimerCountdown === 0}
-                            startButtonText={`Start Rest`}
-                            onStartPause={handleRestTimerStartPause}
-                            onReset={handleRestTimerReset}
-                            onCancel={handleRestTimerCancel}
-                          />
+                                <Text className="text-sm font-semibold text-text-primary">
+                                  {currentExercise.sets}
+                                </Text>
+                              </View>
+                            )}
+                            {currentExercise.reps && (
+                              <View className="flex-row items-center">
+                                <Text className="text-sm text-text-muted mr-1">
+                                  Reps:
+                                </Text>
+                                <Text className="text-sm font-semibold text-text-primary">
+                                  {currentExercise.reps}
+                                </Text>
+                              </View>
+                            )}
+                            {currentExercise.duration && (
+                              <View className="flex-row items-center">
+                                <Text className="text-sm text-text-muted mr-1">
+                                  Duration:
+                                </Text>
+                                <Text className="text-sm font-semibold text-text-primary">
+                                  {currentExercise.duration}s
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text className="text-xs text-text-muted mt-2 leading-4">
+                            {currentBlock?.blockType === "warmup"
+                              ? "Prepare your muscles and joints for the workout ahead."
+                              : "Focus on stretching and recovery to wind down."}
+                          </Text>
                         </View>
                       )}
-                    </View>
-                  ) : null} */}
 
-                  {/* Notes - Compact with quick chips */}
-                  <View className="rounded-2xl p-4">
-                    <Text className="text-sm font-semibold text-text-primary mb-3">
-                      Notes
-                    </Text>
-                    <TextInput
-                      className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
-                      placeholder="Add a note... (Optional)"
-                      placeholderTextColor={colors.text.muted}
-                      value={currentProgress.notes}
-                      onChangeText={(text) => updateProgress("notes", text)}
-                      multiline
-                      numberOfLines={2}
-                    />
-                  </View>
+                      {/* Show message when no specific targets are set */}
+                      {!currentExercise.duration &&
+                        !currentExercise.reps &&
+                        !currentExercise.sets && (
+                          <View className="bg-background rounded-xl p-3 border border-neutral-light-2">
+                            <Text className="text-sm text-text-secondary text-center leading-5">
+                              {currentBlock?.blockType === "warmup"
+                                ? "Take your time to properly warm up your muscles and prepare for the workout."
+                                : "Focus on stretching and recovery. Take the time you need to cool down properly."}
+                            </Text>
+                          </View>
+                        )}
+                    </View>
+                  ) : (
+                    /* Traditional Exercise Logging Interface for main workout */
+                    <>
+                      {/* Rounds - Show if block has multiple rounds */}
+                      {currentBlock &&
+                      currentBlock.rounds &&
+                      currentBlock.rounds > 1 ? (
+                        <View className="rounded-2xl p-4">
+                          <View className="flex-row items-center justify-between mb-3">
+                            <Text className="text-sm font-semibold text-text-primary">
+                              Rounds
+                            </Text>
+                            <Text className="text-xs text-text-muted">
+                              Target: {currentBlock.rounds} Rounds
+                            </Text>
+                          </View>
+                          <View className="flex-row justify-center gap-2">
+                            {Array.from(
+                              { length: currentBlock.rounds },
+                              (_, i) => {
+                                const isCompleted =
+                                  i < (currentProgress?.roundsCompleted || 0);
+                                return (
+                                  <TouchableOpacity
+                                    key={i}
+                                    className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
+                                      isCompleted
+                                        ? "border-primary bg-primary"
+                                        : "border-neutral-medium-1 bg-background"
+                                    }`}
+                                    onPress={() =>
+                                      updateProgress("roundsCompleted", i + 1)
+                                    }
+                                  >
+                                    {isCompleted ? (
+                                      <Ionicons
+                                        name="checkmark"
+                                        size={14}
+                                        color={colors.text.secondary}
+                                      />
+                                    ) : (
+                                      <Text className="text-xs font-semibold text-text-muted">
+                                        {i + 1}
+                                      </Text>
+                                    )}
+                                  </TouchableOpacity>
+                                );
+                              }
+                            )}
+                          </View>
+                        </View>
+                      ) : null}
+
+                      {/* Traditional Exercise Logging Interface */}
+                      <View className="rounded-2xl p-4">
+                        <AdaptiveSetTracker
+                          exercise={currentExercise}
+                          sets={currentProgress.sets}
+                          onSetsChange={(sets) => updateProgress("sets", sets)}
+                          onProgressUpdate={(progress) => {
+                            updateProgress(
+                              "setsCompleted",
+                              progress.setsCompleted
+                            );
+                            updateProgress("duration", progress.duration);
+                            // Note: Removed auto-completion - user now manually completes exercise
+                          }}
+                          blockType={currentBlock?.blockType}
+                        />
+                      </View>
+
+                      {/* TIMER DISPLAY HIDDEN: Rest timer interface commented out */}
+                      {/* {currentExercise.restTime && currentExercise.restTime > 0 ? (
+                        <View className="mt-2 px-3 mb-3">
+                          <TouchableOpacity
+                            className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
+                              showRestTimer
+                                ? "bg-brand-primary border-brand-primary"
+                                : "border-brand-primary bg-transparent"
+                            }`}
+                            onPress={() => setShowRestTimer(!showRestTimer)}
+                          >
+                            <Text
+                              className={`text-sm font-semibold ${
+                                showRestTimer ? "text-white" : ""
+                              }`}
+                              style={
+                                !showRestTimer
+                                  ? { color: colors.brand.primary }
+                                  : {}
+                              }
+                            >
+                              {showRestTimer
+                                ? "Hide Rest Timer"
+                                : `Show Rest Timer (${formatRestTimerDisplay()})`}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {showRestTimer && (
+                            <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
+                              <CircularTimerDisplay
+                                countdown={restTimerCountdown}
+                                targetDuration={currentExercise?.restTime || 0}
+                                isActive={isRestTimerActive}
+                                isPaused={isRestTimerPaused}
+                                isCompleted={restTimerCountdown === 0}
+                                startButtonText={`Start Rest`}
+                                onStartPause={handleRestTimerStartPause}
+                                onReset={handleRestTimerReset}
+                                onCancel={handleRestTimerCancel}
+                              />
+                            </View>
+                          )}
+                        </View>
+                      ) : null} */}
+
+                      {/* Notes - Compact with quick chips */}
+                      <View className="rounded-2xl p-4">
+                        <Text className="text-sm font-semibold text-text-primary mb-3">
+                          Notes
+                        </Text>
+                        <TextInput
+                          className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
+                          placeholder="Add a note... (Optional)"
+                          placeholderTextColor={colors.text.muted}
+                          value={currentProgress.notes}
+                          onChangeText={(text) => updateProgress("notes", text)}
+                          multiline
+                          numberOfLines={2}
+                        />
+                      </View>
+                    </>
+                  )}
                 </View>
               ) : null}
             </View>
@@ -1718,9 +1853,7 @@ export default function WorkoutScreen() {
               Today's Workout Plan
             </Text>
 
-            {workout.blocks
-              .filter(block => !isWarmupCooldownBlock(block.blockType))
-              .map((block, blockIndex) => (
+            {workout.blocks.map((block, blockIndex) => (
               <View key={block.id} className="mb-4 last:mb-0">
                 <View className="rounded-xl p-3 mb-2">
                   <Text className="text-sm font-bold text-text-primary">
@@ -1835,6 +1968,21 @@ export default function WorkoutScreen() {
           </TouchableOpacity>
         ) : (
           <View className="flex-row gap-2">
+            {/* Skip button - only show for warmup/cooldown */}
+            {isCurrentBlockWarmupCooldown && (
+              <TouchableOpacity
+                className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+                onPress={() => setShowSkipModal(true)}
+              >
+                <Ionicons
+                  name="play-skip-forward-outline"
+                  size={20}
+                  color={colors.text.secondary}
+                />
+                <Text className="text-secondary font-semibold ml-2">Skip</Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
               onPress={togglePause}
@@ -1859,7 +2007,11 @@ export default function WorkoutScreen() {
                 color={colors.text.secondary}
               />
               <Text className="text-secondary font-semibold ml-2">
-                {isCurrentBlockCircuit ? "Complete Circuit" : "Complete"}
+                {isCurrentBlockCircuit
+                  ? "Complete Circuit"
+                  : isCurrentBlockWarmupCooldown
+                  ? "Complete"
+                  : "Complete"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1871,13 +2023,27 @@ export default function WorkoutScreen() {
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
-              {isCurrentBlockCircuit ? "Complete Circuit" : "Complete Exercise"}
+              {isCurrentBlockCircuit
+                ? "Complete Circuit"
+                : isCurrentBlockWarmupCooldown
+                ? `Complete ${
+                    currentBlock?.blockType === "warmup" ? "Warmup" : "Cooldown"
+                  }`
+                : "Complete Exercise"}
             </Text>
             <Text className="text-base text-text-secondary text-center mb-6 leading-6">
               {isCurrentBlockCircuit
                 ? `Complete "${
                     currentBlock?.blockName || "Circuit Block"
                   }"? All rounds and exercises will be logged.`
+                : isCurrentBlockWarmupCooldown
+                ? `Mark "${
+                    currentExercise?.exercise.name
+                  }" as complete and move to the next ${
+                    currentExerciseIndex < exercises.length - 1
+                      ? "exercise"
+                      : "phase"
+                  }?`
                 : `Mark "${currentExercise?.exercise.name}" as complete? Your progress will be saved.`}
             </Text>
 
