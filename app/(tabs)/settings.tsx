@@ -18,6 +18,8 @@ import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
 import { SettingsSkeleton } from "../../components/skeletons/SkeletonScreens";
 import ComingSoonModal from "../../components/ComingSoonModal";
+import { useSecretActivation } from "@/hooks/useSecretActivation";
+import * as Haptics from "expo-haptics";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
@@ -35,6 +37,11 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [legalExpanded, setLegalExpanded] = useState(false);
+
+  // Secret activation state
+  const [tapCount, setTapCount] = useState(0);
+  const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null);
+  const { isSecretActivated, activateSecret } = useSecretActivation();
 
   // Coming Soon modals state
   const [comingSoonModal, setComingSoonModal] = useState<{
@@ -85,6 +92,15 @@ export default function SettingsScreen() {
     };
   }, []);
 
+  // Cleanup tap timeout
+  useEffect(() => {
+    return () => {
+      if (tapTimeout) {
+        clearTimeout(tapTimeout);
+      }
+    };
+  }, [tapTimeout]);
+
   useEffect(() => {
     // Only fetch if we don't have profile data yet
     if (!profileData) {
@@ -106,6 +122,36 @@ export default function SettingsScreen() {
       ...comingSoonModal,
       visible: false,
     });
+  };
+
+  // Secret trigger handler
+  const handleVersionTap = async () => {
+    // Clear existing timeout
+    if (tapTimeout) {
+      clearTimeout(tapTimeout);
+    }
+
+    const newTapCount = tapCount + 1;
+    setTapCount(newTapCount);
+
+    // Provide haptic feedback
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (newTapCount >= 5) {
+      // Success! Activate secret and navigate to page
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      await activateSecret();
+      setTapCount(0);
+
+      // Navigate to AI provider selection page
+      router.push("/ai-provider-selection");
+    } else {
+      // Set timeout to reset tap count after 1 second
+      const timeout = setTimeout(() => {
+        setTapCount(0);
+      }, 500);
+      setTapTimeout(timeout);
+    }
   };
 
   // Handle logout
@@ -694,7 +740,32 @@ export default function SettingsScreen() {
 
         {/* Version Info */}
         <View className="items-center pb-8">
-          <Text className="text-xs text-text-muted">Masters Fit v1.0.0</Text>
+          <TouchableOpacity
+            onPress={handleVersionTap}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+          >
+            <Text
+              className={`text-xs text-text-muted`}
+              style={{
+                transform: tapCount > 0 ? [{ scale: 1.05 }] : [{ scale: 1 }],
+                fontWeight:
+                  tapCount == 0
+                    ? "normal"
+                    : tapCount == 1
+                    ? "100"
+                    : tapCount == 2
+                    ? "200"
+                    : tapCount == 3
+                    ? "300"
+                    : tapCount == 4
+                    ? "400"
+                    : "500",
+              }}
+            >
+              MastersFit v1.0.0
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
