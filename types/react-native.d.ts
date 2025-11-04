@@ -81,14 +81,6 @@ declare module "expo-secure-store" {
   export function deleteItemAsync(key: string, options?: any): Promise<void>;
 }
 
-declare module "react-native-safe-area-context" {
-  export const SafeAreaView: React.FC<{
-    edges?: ("top" | "right" | "bottom" | "left")[];
-    style?: any;
-    [key: string]: any;
-  }>;
-}
-
 declare module "react-native-calendars" {
   export interface DateData {
     year: number;
