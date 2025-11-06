@@ -20,7 +20,7 @@ import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
 
-type RegenerationType = "daily" | "weekly" | "repeat" | "initial";
+import { RegenerationType } from "../constants";
 
 // Define the shape of our context
 interface AuthContextType {
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPreloadingData, setIsPreloadingData] = useState(false);
   const [needsFullAppRefresh, setNeedsFullAppRefresh] = useState(false);
   const [currentRegenerationType, setCurrentRegenerationType] =
-    useState<RegenerationType>("initial");
+    useState<RegenerationType>(RegenerationType.Initial);
 
   // Initialize user from secure storage on app start
   useEffect(() => {
@@ -174,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userId:
           typeof userIdToUse === "string" ? parseInt(userIdToUse) : userIdToUse,
       });
-      if (result.success && result.profile) {
+      if (result.success && result.user) {
         // Use current user from context to preserve all fields (including waiver data)
         if (user) {
           const updatedUser = {
@@ -237,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update generating workout state with regeneration type
   const handleSetIsGeneratingWorkout = (
     value: boolean,
-    regenerationType: RegenerationType = "initial"
+    regenerationType: RegenerationType = RegenerationType.Initial
   ) => {
     setIsGeneratingWorkout(value);
     if (value) {
