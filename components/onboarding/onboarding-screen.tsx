@@ -10,12 +10,8 @@ import { useOnboardingController } from "@components/onboarding/use-onboarding-c
 export const OnboardingScreen = () => {
   const { user } = useAuth();
 
-  const {
-    isLoading,
-    isCompletingOnboarding,
-    pendingEmail,
-    handleSubmit,
-  } = useOnboardingController();
+  const { isLoading, isCompletingOnboarding, pendingEmail, handleSubmit } =
+    useOnboardingController();
 
   // Pending email and user state are handled in the controller
   // Submit and generation logic moved to useOnboardingController
