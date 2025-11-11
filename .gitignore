@@ -1,3 +1,5 @@
 .expo/
 .env*
 node_modules
+/android/
+/ios/
