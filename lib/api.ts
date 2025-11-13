@@ -9,6 +9,9 @@ let waiverRedirectCallback: (() => void) | null = null;
 // Callback for handling auth failures (set by AuthContext)
 let authFailureCallback: (() => void) | null = null;
 
+// Race condition protection for refresh token
+let refreshInProgress = false;
+
 export function setWaiverRedirectCallback(callback: () => void) {
   waiverRedirectCallback = callback;
 }
@@ -49,6 +52,93 @@ export async function getAuthToken(): Promise<string | null> {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;
+  }
+}
+
+/**
+ * Get the refresh token from secure storage
+ */
+async function getRefreshToken(): Promise<string | null> {
+  try {
+    const refreshToken = await SecureStore.getItemAsync("refreshToken");
+    return refreshToken;
+  } catch (error) {
+    console.error("[TOKEN_REFRESH] Error retrieving refresh token:", error);
+    return null;
+  }
+}
+
+/**
+ * Refresh the access token using the stored refresh token
+ * Returns true if successful, false if refresh failed
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  const startTime = Date.now();
+
+  // Prevent concurrent refresh attempts
+  if (refreshInProgress) {
+    // Wait for the current refresh to complete
+    while (refreshInProgress) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    // Check if a token exists after the other refresh completed
+    const token = await getAuthToken();
+    const success = !!token;
+    return success;
+  }
+
+  refreshInProgress = true;
+
+  try {
+    const refreshToken = await getRefreshToken();
+
+    if (!refreshToken) {
+      return false;
+    }
+
+    // Make refresh request directly (avoid recursion by not using apiRequest)
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    const duration = Date.now() - startTime;
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.log(
+        "[TOKEN_REFRESH] Refresh failed:",
+        response.status,
+        errorData
+      );
+      return false;
+    }
+
+    const data = await response.json();
+
+    if (!data.success || !data.token || !data.refreshToken) {
+      console.log(
+        "[TOKEN_REFRESH] Refresh response missing required fields:",
+        data
+      );
+      return false;
+    }
+
+    await Promise.all([
+      SecureStore.setItemAsync("token", data.token),
+      SecureStore.setItemAsync("refreshToken", data.refreshToken),
+    ]);
+    return true;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[TOKEN_REFRESH] Refresh failed after ${duration}ms:`, error);
+    return false;
+  } finally {
+    refreshInProgress = false;
   }
 }
 
@@ -96,7 +186,7 @@ export async function apiRequest<T>(
           errorData = parsedError;
         } catch (parseError) {
           // If parsing fails, keep the original error string
-          console.error(
+          console.warn(
             "[API] Error field is string but not valid JSON:",
             errorData.error
           );
@@ -121,10 +211,21 @@ export async function apiRequest<T>(
         throw new Error("WAIVER_UPDATE_REQUIRED");
       }
 
-      // Handle unauthorized (HTTP 401) - immediate logout
+      // Handle unauthorized (HTTP 401) - try refresh before logout
       if (response.status === 401 && token) {
-        await handleAuthFailure();
-        throw new Error("Session expired - user logged out");
+        const refreshSuccess = await refreshAccessToken();
+
+        if (refreshSuccess) {
+          // Retry the original request with the new token
+          const retryStartTime = Date.now();
+          const retryResponse = await apiRequest<T>(endpoint, options);
+          const retryDuration = Date.now() - retryStartTime;
+
+          return retryResponse;
+        } else {
+          await handleAuthFailure();
+          throw new Error("Session expired - user logged out");
+        }
       }
 
       console.error(
@@ -216,6 +317,36 @@ export async function generateAuthCodeAPI(params: {
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+/**
+ * Refresh access token using refresh token
+ */
+export async function refreshTokenAPI(params: {
+  refreshToken: string;
+}): Promise<AuthResponse> {
+  try {
+    // Use direct fetch to avoid recursion with apiRequest's 401 handling
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.message || "Refresh failed" };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    return { success: false, error: "Failed to refresh token" };
+  }
 }
 
 /**

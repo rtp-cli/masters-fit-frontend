@@ -7,6 +7,7 @@ import {
   verifyAPI,
   signupAPI,
   generateAuthCodeAPI,
+  refreshTokenAPI,
 } from "./api";
 
 // List of all keys used in SecureStore
@@ -105,6 +106,8 @@ export async function verify(params: {
       await SecureStore.setItemAsync("token", data.token);
       if (data.refreshToken) {
         await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+      } else {
+        console.warn("[Auth] NO REFRESH TOKEN IN VERIFY RESPONSE!");
       }
       if (data.user) {
         // Include needsOnboarding from the response in the user object
@@ -213,6 +216,38 @@ export async function saveUserToSecureStorage(user: User): Promise<void> {
     await SecureStore.setItemAsync("user", JSON.stringify(user));
   } catch (error) {
     console.error("Error saving user:", error);
+  }
+}
+
+/**
+ * Refresh the access token using the stored refresh token
+ */
+export async function refreshToken(): Promise<AuthResponse> {
+  try {
+    const storedRefreshToken = await getRefreshToken();
+
+    if (!storedRefreshToken) {
+      return { success: false, error: "No refresh token available" };
+    }
+
+    const data = await refreshTokenAPI({ refreshToken: storedRefreshToken });
+
+    if (data.success && data.token) {
+      // Store both new access token and new refresh token (backend rotates refresh tokens)
+      await SecureStore.setItemAsync("token", data.token);
+      if (data.refreshToken) {
+        await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+      } else {
+        console.warn("[Auth] No new refresh token in response!");
+      }
+    } else {
+      console.warn("[Auth] Refresh API call failed:", data.error);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("[Auth] Token refresh error:", error);
+    return { success: false, error: "Failed to refresh token" };
   }
 }
 

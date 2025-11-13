@@ -108,6 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success && result.token) {
         // Store the token if it's returned
         await SecureStore.setItemAsync("token", result.token);
+
+        // Also store refresh token if provided
+        if (result.refreshToken) {
+          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
+        } else {
+          console.warn(
+            "[AuthContext] NO REFRESH TOKEN in checkEmail response!"
+          );
+        }
+
         logger.info("User authentication successful", {
           needsOnboarding: result.needsOnboarding,
         });
