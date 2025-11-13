@@ -45,6 +45,7 @@ import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
 } from "@/types/api";
+import Header from "@/components/Header";
 
 // Goal name mappings
 const goalNames: Record<string, string> = {
@@ -941,6 +942,7 @@ export default function DashboardScreen() {
         }
       >
         {/* Header with Streak */}
+        <Header />
         <View className="px-4 pt-6 mb-6">
           <View className="flex-row items-center justify-between mb-2">
             <View className="px-5">
