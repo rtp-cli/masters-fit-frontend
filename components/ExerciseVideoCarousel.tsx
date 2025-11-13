@@ -146,7 +146,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
               className="mr-0"
             >
               {showHeader ? (
-                <View className="bg-card rounded-2xl border border-neutral-light-2 shadow-sm overflow-hidden">
+                <View className="bg-card rounded-2xl border border-neutral-light-2 shadow-rn-sm overflow-hidden">
                   {/* Exercise Info Header */}
                   <View className="p-4 pb-2">
                     <Text className="text-base font-semibold text-text-primary">

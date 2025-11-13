@@ -616,7 +616,7 @@ export default function CalendarScreen() {
           <View className="mx-lg mb-4">
             <View className="flex justify-center items-center">
               <TouchableOpacity
-                className="px-4 py-2 rounded-lg shadow-sm"
+                className="px-4 py-2 rounded-lg shadow-rn-sm"
                 onPress={() => {
                   const today = formatDateAsString(new Date());
                   setSelectedDate(today);

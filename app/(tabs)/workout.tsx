@@ -148,7 +148,7 @@ function CircuitLoggingInterface({
   return (
     <View className="space-y-6">
       {/* Circuit Tracker */}
-      <View className="bg-card rounded-2xl p-6 border shadow-sm border-neutral-light-2">
+      <View className="bg-card rounded-2xl p-6 border shadow-rn-sm border-neutral-light-2">
         <CircuitTracker
           block={block}
           sessionData={sessionData}
@@ -1543,7 +1543,7 @@ export default function WorkoutScreen() {
           {currentExercise && !isCurrentBlockCircuit ? (
             <View
               ref={exerciseHeadingRef}
-              className="bg-card rounded-2xl mb-6 p-6 border shadow-sm font-bold border-neutral-light-2"
+              className="bg-card rounded-2xl mb-6 p-6 border shadow-rn-sm font-bold border-neutral-light-2"
             >
               <Text className="text-xl font-bold text-text-primary mb-3">
                 {currentExercise.exercise.name}
@@ -1768,7 +1768,7 @@ export default function WorkoutScreen() {
                           </TouchableOpacity>
 
                           {showRestTimer && (
-                            <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
+                            <View className="rounded-2xl p-4 border shadow-rn-sm border-neutral-light-2 bg-card">
                               <CircularTimerDisplay
                                 countdown={restTimerCountdown}
                                 targetDuration={currentExercise?.restTime || 0}
@@ -1811,7 +1811,7 @@ export default function WorkoutScreen() {
           {isCurrentBlockCircuit && currentBlock && isWorkoutStarted ? (
             <View
               ref={circuitHeadingRef}
-              className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2 mb-6"
+              className="bg-card rounded-2xl p-6 shadow-rn-sm border border-neutral-light-2 mb-6"
             >
               <View className="flex-row items-center justify-between mb-4">
                 <Text className="text-lg font-bold text-text-primary">
@@ -1848,7 +1848,7 @@ export default function WorkoutScreen() {
           ) : null}
 
           {/* Workout Overview */}
-          <View className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2">
+          <View className="bg-card rounded-2xl p-6 shadow-rn-sm border border-neutral-light-2">
             <Text className="text-lg font-bold text-text-primary mb-4">
               Today's Workout Plan
             </Text>

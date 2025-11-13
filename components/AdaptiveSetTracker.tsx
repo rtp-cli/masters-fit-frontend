@@ -107,13 +107,11 @@ export default function AdaptiveSetTracker({
       // timerRef.current = setTimeout(() => {
       //   setCountdown((prev) => {
       //     const newValue = prev - 1;
-
       //     if (newValue <= 0) {
       //       // Timer finished
       //       setIsCompleted(true);
       //       setIsTimerActive(false);
       //       setIsTimerPaused(false);
-
       //       // Add notification and haptic feedback
       //       try {
       //         // Send local notification with sound (no banner will show)
@@ -125,7 +123,6 @@ export default function AdaptiveSetTracker({
       //           },
       //           trigger: null, // Show immediately
       //         });
-
       //         // Add haptic feedback
       //         Haptics.notificationAsync(
       //           Haptics.NotificationFeedbackType.Success
@@ -133,12 +130,10 @@ export default function AdaptiveSetTracker({
       //       } catch (error) {
       //         console.log("Notification/haptic feedback error:", error);
       //       }
-
       //       // Handle duration logging (but don't auto-advance)
       //       setTimeout(() => {
       //         handleTimerCompletion();
       //       }, 100);
-
       //       return 0;
       //     }
       //     return newValue;
@@ -644,7 +639,7 @@ export default function AdaptiveSetTracker({
             </TouchableOpacity>
 
             {showExerciseTimer && (
-              <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
+              <View className="rounded-2xl p-4 border shadow-rn-sm border-neutral-light-2 bg-card">
                 <View className="flex-row items-center justify-between mb-4">
                   <Text className="text-sm font-semibold text-text-primary">
                     Exercise Timer
