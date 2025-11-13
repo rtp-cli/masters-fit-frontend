@@ -509,10 +509,10 @@ export default function SearchScreen() {
       <ScrollView ref={scrollViewRef} className="flex-1">
         {/* Search Inputs */}
         <View className="p-4 pt-6">
-          <View className="flex-row space-x-3">
+          <View className="flex-row gap-3">
             {/* Exercise Search */}
             <View className="flex-1">
-              <View className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm h-12">
+              <View className="flex-row items-center bg-white rounded-xl px-4 py-1 shadow-sm h-12">
                 <Ionicons
                   name="search"
                   size={18}
