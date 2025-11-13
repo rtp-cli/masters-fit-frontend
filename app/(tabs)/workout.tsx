@@ -1848,7 +1848,7 @@ export default function WorkoutScreen() {
           ) : null}
 
           {/* Workout Overview */}
-          <View className="bg-card rounded-2xl p-6 shadow-sm border border-neutral-light-2">
+          <View className="bg-card rounded-2xl p-6 border border-neutral-light-2">
             <Text className="text-lg font-bold text-text-primary mb-4">
               Today's Workout Plan
             </Text>

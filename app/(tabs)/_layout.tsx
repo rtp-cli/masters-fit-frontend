@@ -107,7 +107,6 @@ export default function TabLayout() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <Header />
       <View className="flex-1">
         <Tabs
           screenOptions={{

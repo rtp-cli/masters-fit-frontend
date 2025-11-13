@@ -45,6 +45,7 @@ import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
 } from "@/types/api";
+import Header from "@/components/Header";
 
 // Goal name mappings
 const goalNames: Record<string, string> = {
@@ -604,7 +605,7 @@ export default function DashboardScreen() {
 
             {/* Today's Schedule Skeleton */}
             <View className="px-5 mb-6">
-              <View className="bg-white rounded-2xl p-5 shadow-sm">
+              <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
                 <View className="flex-row items-center justify-between mb-4">
                   <SkeletonLoader height={24} width={160} />
                   <SkeletonLoader height={32} width={80} />
@@ -629,7 +630,7 @@ export default function DashboardScreen() {
                 width={144}
                 style={{ marginBottom: 16 }}
               />
-              <View className="bg-white rounded-2xl p-5 shadow-sm">
+              <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
                 <SkeletonLoader height={160} width="100%" />
               </View>
             </View>
@@ -642,10 +643,10 @@ export default function DashboardScreen() {
                 style={{ marginBottom: 16 }}
               />
               <View className="flex-row justify-between">
-                <View className="bg-white rounded-2xl p-4 shadow-sm flex-1 mr-3">
+                <View className="bg-white rounded-2xl p-4 shadow-rn-sm flex-1 mr-3">
                   <SkeletonLoader height={128} width="100%" />
                 </View>
-                <View className="bg-white rounded-2xl p-4 shadow-sm flex-1">
+                <View className="bg-white rounded-2xl p-4 shadow-rn-sm flex-1">
                   <SkeletonLoader height={128} width="100%" />
                 </View>
               </View>
@@ -941,6 +942,7 @@ export default function DashboardScreen() {
         }
       >
         {/* Header with Streak */}
+        <Header />
         <View className="px-4 pt-6 mb-6">
           <View className="flex-row items-center justify-between mb-2">
             <View className="px-5">
@@ -978,7 +980,7 @@ export default function DashboardScreen() {
           <>
             {/* Today's Workout Card */}
             <View className="px-4 mb-6">
-              <View className="bg-white rounded-2xl p-5 shadow-sm">
+              <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
                 {/* Header with title and duration */}
                 <View className="flex-row items-center justify-between mb-6">
                   <Text className="text-base font-semibold text-text-primary mb-1">
@@ -1110,7 +1112,7 @@ export default function DashboardScreen() {
                     Your workout completion for this week
                   </Text>
                 </View>
-                <View className="bg-white rounded-2xl px-4 pt-5 shadow-sm">
+                <View className="bg-white rounded-2xl px-4 pt-5 shadow-rn-sm">
                   {/* Chart Section */}
                   <View className="mb-4">
                     <View className="flex-row justify-between items-end mb-4 h-30">
@@ -1229,7 +1231,7 @@ export default function DashboardScreen() {
                     </View>
                   </View>
 
-                  <View className="bg-white rounded-2xl p-5 shadow-sm">
+                  <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
                     {/* Main Pie Chart Display */}
                     <View className="items-center mb-6">
                       <PieChart
@@ -1348,7 +1350,7 @@ export default function DashboardScreen() {
                     </View>
                   </View>
 
-                  <View className="bg-white rounded-2xl p-5 shadow-sm">
+                  <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
                     <View className="items-center py-8">
                       <Text className="text-sm text-text-muted text-center mb-2">
                         No weight data available for {weightPerformanceFilter}
@@ -1412,7 +1414,7 @@ export default function DashboardScreen() {
                   </View>
                 </View>
 
-                <View className="bg-white rounded-2xl p-4 shadow-sm">
+                <View className="bg-white rounded-2xl p-4 shadow-rn-sm">
                   {/* Line Chart */}
                   <View className="mb-4">
                     <LineChart
@@ -1587,7 +1589,7 @@ export default function DashboardScreen() {
                     </View>
                   </View>
 
-                  <View className="bg-white rounded-2xl p-5 shadow-sm">
+                  <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
                     {/* Donut Chart */}
                     <View className="items-center mb-4">
                       <PieChart
@@ -1765,7 +1767,7 @@ export default function DashboardScreen() {
             {/* Empty State Message - Only show when no charts are visible */}
             {!hasLoadedInitialData && (
               <View className="px-4 mb-6">
-                <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
+                <View className="bg-white rounded-2xl p-6 shadow-rn-sm items-center">
                   <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
                     <Ionicons
                       name="analytics-outline"
@@ -1794,7 +1796,7 @@ export default function DashboardScreen() {
               (!weightProgressionData || weightProgressionData.length === 0) &&
               (!weeklySummary || weeklySummary.totalWorkoutsThisWeek === 0) && (
                 <View className="px-4 mb-6">
-                  <View className="bg-white rounded-2xl p-6 shadow-sm items-center">
+                  <View className="bg-white rounded-2xl p-6 shadow-rn-sm items-center">
                     <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
                       <Ionicons
                         name="analytics-outline"

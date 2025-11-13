@@ -164,10 +164,7 @@ export default function WaiverScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="px-6 pt-4 pb-2">
-          <TouchableOpacity
-            onPress={handleCancel}
-            className="p-2 -ml-2"
-          >
+          <TouchableOpacity onPress={handleCancel} className="p-2 -ml-2">
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
@@ -191,7 +188,7 @@ export default function WaiverScreen() {
 
         {/* Main Content */}
         <View className="px-6 mb-2">
-          <View className="bg-white rounded-xl p-5 shadow-sm">
+          <View className="bg-white rounded-xl p-5 shadow-rn-sm">
             <View className="flex-col items-start mb-4">
               <View className="flex items-center justify-center flex-row mb-4">
                 <Ionicons
@@ -230,7 +227,7 @@ export default function WaiverScreen() {
         <View className="px-6 mb-6">
           <TouchableOpacity
             onPress={() => setIsAgreed(!isAgreed)}
-            className="flex-row items-center bg-white rounded-xl p-4 shadow-sm"
+            className="flex-row items-center bg-white rounded-xl p-4 shadow-rn-sm"
           >
             <View
               className={`w-6 h-6 rounded-md border-2 mr-3 items-center justify-center ${
