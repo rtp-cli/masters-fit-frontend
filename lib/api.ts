@@ -6,8 +6,28 @@ import { logger } from "./logger";
 // Callback for handling waiver redirects (set by WaiverContext)
 let waiverRedirectCallback: (() => void) | null = null;
 
+// Callback for handling auth failures (set by AuthContext)
+let authFailureCallback: (() => void) | null = null;
+
 export function setWaiverRedirectCallback(callback: () => void) {
   waiverRedirectCallback = callback;
+}
+
+export function setAuthFailureCallback(callback: () => void) {
+  authFailureCallback = callback;
+}
+
+async function handleAuthFailure(): Promise<void> {
+  if (authFailureCallback) {
+    try {
+      // Let AuthContext handle everything: cache clear, data clear, state, redirect
+      authFailureCallback();
+    } catch (error) {
+      console.error("[API] Error triggering AuthContext logout:", error);
+    }
+  } else {
+    console.error("[API] No auth callback registered!");
+  }
 }
 
 /**
@@ -65,11 +85,26 @@ export async function apiRequest<T>(
 
     // Handle HTTP errors
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      let errorData = await response.json().catch(() => ({}));
+
+      // Handle double-encoded JSON in error responses
+      if (errorData.error && typeof errorData.error === "string") {
+        try {
+          // Try to parse the error string as JSON
+          const parsedError = JSON.parse(errorData.error);
+          // Use the parsed error data instead
+          errorData = parsedError;
+        } catch (parseError) {
+          // If parsing fails, keep the original error string
+          console.error(
+            "[API] Error field is string but not valid JSON:",
+            errorData.error
+          );
+        }
+      }
 
       // Handle waiver update required (HTTP 426)
       if (response.status === 426) {
-        console.log("[API] Waiver update required, redirecting to waiver screen");
         logger.info("Waiver enforcement intercepted", {
           operation: "apiRequest",
           metadata: endpoint,
@@ -84,6 +119,12 @@ export async function apiRequest<T>(
 
         // Still throw error to prevent further processing
         throw new Error("WAIVER_UPDATE_REQUIRED");
+      }
+
+      // Handle unauthorized (HTTP 401) - immediate logout
+      if (response.status === 401 && token) {
+        await handleAuthFailure();
+        throw new Error("Session expired - user logged out");
       }
 
       console.error(
