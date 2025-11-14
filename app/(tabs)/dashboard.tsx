@@ -46,6 +46,10 @@ import {
   WorkoutBlockWithExercise,
 } from "@/types/api";
 import Header from "@/components/Header";
+import {
+  connectHealth as connectHealthAPI,
+  fetchStepsToday as fetchStepsTodayAPI,
+} from "@utils/health";
 
 // Goal name mappings
 const goalNames: Record<string, string> = {
@@ -73,6 +77,10 @@ export default function DashboardScreen() {
     planDays?: PlanDayWithBlocks[];
   } | null>(null);
   const [loadingToday, setLoadingToday] = useState(false);
+  const [stepsCount, setStepsCount] = useState<number | null>(null);
+  const [healthReady, setHealthReady] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   // Filtering state for individual charts
   const [strengthFilter, setStrengthFilter] = useState<"1W" | "1M" | "3M">(
@@ -726,6 +734,39 @@ export default function DashboardScreen() {
     handleRefresh();
   };
 
+  const handleFetchStepsToday = async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const count = await fetchStepsTodayAPI();
+      setStepsCount(count);
+    } catch (e: any) {
+      setHealthError(e?.message || "Failed to read steps");
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  const handleConnectHealth = async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const granted = await connectHealthAPI();
+      if (granted) {
+        setHealthReady(true);
+        await handleFetchStepsToday();
+      } else {
+        setHealthReady(false);
+        setHealthError("Health permissions not granted");
+      }
+    } catch (e: any) {
+      setHealthError(e?.message || "Health permissions failed");
+      setHealthReady(false);
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
   if (error) {
     Alert.alert("Error", error);
   }
@@ -978,6 +1019,57 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <>
+            <View className="px-4 mb-6">
+              <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-base font-semibold text-text-primary">
+                    Steps (Today)
+                  </Text>
+                  {healthLoading && (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand.primary}
+                    />
+                  )}
+                </View>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center">
+                    <Ionicons
+                      name="walk-outline"
+                      size={24}
+                      color={colors.brand.primary}
+                    />
+                    <Text className="text-lg font-bold text-text-primary ml-3">
+                      {stepsCount ?? "—"}
+                    </Text>
+                  </View>
+                  {!healthReady ? (
+                    <TouchableOpacity
+                      className="bg-secondary rounded-xl px-4 py-2"
+                      onPress={handleConnectHealth}
+                    >
+                      <Text className="text-white font-semibold text-sm">
+                        Connect Health
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      className="bg-primary rounded-xl px-4 py-2"
+                      onPress={handleFetchStepsToday}
+                    >
+                      <Text className="text-text-primary font-semibold text-sm">
+                        Refresh
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {healthError && (
+                  <Text className="text-xs text-accent mt-3">
+                    {healthError}
+                  </Text>
+                )}
+              </View>
+            </View>
             {/* Today's Workout Card */}
             <View className="px-4 mb-6">
               <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
