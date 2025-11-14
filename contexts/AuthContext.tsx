@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
 } from "react";
+import { useRouter } from "expo-router";
 import {
   checkEmailExists,
   completeOnboarding as apiCompleteOnboarding,
@@ -19,6 +20,7 @@ import { invalidateActiveWorkoutCache } from "../lib/workouts";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
+import { setAuthFailureCallback } from "../lib/api";
 
 type RegenerationType = "daily" | "weekly" | "repeat" | "initial";
 
@@ -70,6 +72,7 @@ export function useAuth() {
 
 // Provider component that wraps the app
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -105,6 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success && result.token) {
         // Store the token if it's returned
         await SecureStore.setItemAsync("token", result.token);
+
+        // Also store refresh token if provided
+        if (result.refreshToken) {
+          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
+        } else {
+          console.warn(
+            "[AuthContext] NO REFRESH TOKEN in checkEmail response!"
+          );
+        }
+
         logger.info("User authentication successful", {
           needsOnboarding: result.needsOnboarding,
         });
@@ -224,6 +237,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  // Set up API auth failure callback (after logout function is defined)
+  useEffect(() => {
+    const handleAuthFailure = async () => {
+      try {
+        // Use the same logout flow as the logout button
+        await logout();
+        router.replace("/");
+      } catch (error) {
+        console.error("[AuthContext] Error during logout process:", error);
+
+        // Fallback: still try to redirect even if logout fails
+        try {
+          router.replace("/");
+        } catch (redirectError) {
+          console.error(
+            "[AuthContext] Fallback redirect also failed:",
+            redirectError
+          );
+        }
+      }
+    };
+    setAuthFailureCallback(handleAuthFailure);
+
+    // Cleanup function
+    return () => {
+      setAuthFailureCallback(() => {});
+    };
+  }, [logout, router]);
 
   // Update user data
   const setUserData = (userData: User | null) => {

@@ -16,6 +16,7 @@ export interface AuthResponse {
   needsWaiverUpdate?: boolean;
   email?: string;
   token?: string;
+  refreshToken?: string;
 }
 
 export interface OnboardingData {
