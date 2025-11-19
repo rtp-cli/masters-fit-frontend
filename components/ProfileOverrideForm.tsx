@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Switch,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
 import CustomSlider from "@/components/ui/Slider";
 import IconComponent from "./onboarding/ui/IconComponent";
 import { formatEnumValue } from "./onboarding/utils/formatters";
@@ -632,7 +626,9 @@ export default function ProfileOverrideForm({
           </View>
           <Switch
             value={overrides.includeCooldown ?? true}
-            onValueChange={(value) => updateOverride({ includeCooldown: value })}
+            onValueChange={(value) =>
+              updateOverride({ includeCooldown: value })
+            }
             trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
             thumbColor={overrides.includeCooldown ? "#FFFFFF" : "#9CA3AF"}
           />

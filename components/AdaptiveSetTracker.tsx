@@ -616,51 +616,6 @@ export default function AdaptiveSetTracker({
             Add Set
           </Text>
         </TouchableOpacity>
-
-        {/* TIMER DISPLAY HIDDEN: Exercise Timer interface commented out */}
-        {/* {currentSetIndex < durationSets.length && (
-          <View className="mt-4">
-            <TouchableOpacity
-              className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
-                showExerciseTimer
-                  ? "bg-brand-primary border-brand-primary"
-                  : "border-brand-primary bg-transparent"
-              }`}
-              onPress={() => setShowExerciseTimer(!showExerciseTimer)}
-            >
-              <Text
-                className={`text-sm font-semibold ${
-                  showExerciseTimer ? "text-white" : ""
-                }`}
-                style={!showExerciseTimer ? { color: colors.brand.primary } : {}}
-              >
-                {showExerciseTimer ? "Hide Exercise Timer" : `Show Exercise Timer (${formatExerciseTimerDisplay()})`}
-              </Text>
-            </TouchableOpacity>
-
-            {showExerciseTimer && (
-              <View className="rounded-2xl p-4 border shadow-rn-sm border-neutral-light-2 bg-card">
-                <View className="flex-row items-center justify-between mb-4">
-                  <Text className="text-sm font-semibold text-text-primary">
-                    Exercise Timer
-                  </Text>
-                </View>
-
-                <CircularTimerDisplay
-                  countdown={countdown}
-                  targetDuration={exercise.duration || 30}
-                  isActive={isTimerActive}
-                  isPaused={isTimerPaused}
-                  isCompleted={isCompleted}
-                  startButtonText={`Start Timer`}
-                  onStartPause={handleStartPause}
-                  onReset={handleReset}
-                  onCancel={handleCancel}
-                />
-              </View>
-            )}
-          </View>
-        )} */}
       </View>
     );
   };

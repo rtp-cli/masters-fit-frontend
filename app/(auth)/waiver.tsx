@@ -188,7 +188,7 @@ export default function WaiverScreen() {
 
         {/* Main Content */}
         <View className="px-6 mb-2">
-          <View className="bg-white rounded-xl p-5 shadow-rn-sm">
+          <View className="bg-white rounded-xl p-5">
             <View className="flex-col items-start mb-4">
               <View className="flex items-center justify-center flex-row mb-4">
                 <Ionicons
@@ -227,7 +227,7 @@ export default function WaiverScreen() {
         <View className="px-6 mb-6">
           <TouchableOpacity
             onPress={() => setIsAgreed(!isAgreed)}
-            className="flex-row items-center bg-white rounded-xl p-4 shadow-rn-sm"
+            className="flex-row items-center bg-white rounded-xl p-4"
           >
             <View
               className={`w-6 h-6 rounded-md border-2 mr-3 items-center justify-center ${
