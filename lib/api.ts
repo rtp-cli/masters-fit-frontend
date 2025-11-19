@@ -20,6 +20,36 @@ export function setAuthFailureCallback(callback: () => void) {
   authFailureCallback = callback;
 }
 
+/**
+ * Test helper to simulate waiver requirement detection
+ * @param errorData - Simulated error response data
+ * @param statusCode - HTTP status code to test
+ * @returns true if waiver detection would be triggered
+ */
+export function testWaiverDetection(
+  errorData: any,
+  statusCode: number
+): boolean {
+  const isWaiverError =
+    statusCode === 426 || // Explicit waiver status
+    statusCode === 403 || // Forbidden - might be waiver-related
+    statusCode === 428 || // Precondition Required
+    (errorData.message &&
+      /waiver|liability|acceptance required/i.test(errorData.message)) ||
+    (errorData.error &&
+      /waiver|liability|acceptance required/i.test(errorData.error)) ||
+    errorData.code === "WAIVER_REQUIRED" ||
+    errorData.type === "WAIVER_ERROR";
+
+  console.log("[TEST] Waiver detection result:", {
+    statusCode,
+    errorData,
+    isWaiverError,
+  });
+
+  return isWaiverError;
+}
+
 async function handleAuthFailure(): Promise<void> {
   if (authFailureCallback) {
     try {
@@ -206,9 +236,36 @@ export async function apiRequest<T>(
             waiverRedirectCallback!();
           }, 100); // Small delay to ensure current operation completes
         }
+      }
 
-        // Still throw error to prevent further processing
-        throw new Error("WAIVER_UPDATE_REQUIRED");
+      // Enhanced waiver detection for other status codes and error messages
+      const isWaiverError =
+        response.status === 403 || // Forbidden - might be waiver-related
+        response.status === 428 || // Precondition Required
+        (errorData.message &&
+          /waiver|liability|acceptance required/i.test(errorData.message)) ||
+        (errorData.error &&
+          /waiver|liability|acceptance required/i.test(errorData.error)) ||
+        errorData.code === "WAIVER_REQUIRED" ||
+        errorData.type === "WAIVER_ERROR";
+
+      if (isWaiverError) {
+        logger.info("Waiver requirement detected from error response", {
+          operation: "apiRequest",
+          metadata: {
+            endpoint,
+            status: response.status,
+            errorMessage: errorData.message,
+            errorCode: errorData.code,
+          },
+        });
+
+        // Redirect to waiver screen using callback
+        if (waiverRedirectCallback) {
+          setTimeout(() => {
+            waiverRedirectCallback!();
+          }, 100);
+        }
       }
 
       // Handle unauthorized (HTTP 401) - try refresh before logout

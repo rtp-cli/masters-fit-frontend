@@ -726,10 +726,6 @@ export default function DashboardScreen() {
     handleRefresh();
   };
 
-  if (error) {
-    Alert.alert("Error", error);
-  }
-
   // The global generating screen will handle workout generation display
 
   // Show message if user is not authenticated
