@@ -856,9 +856,6 @@ export default function CalendarScreen() {
           // Refresh workout data
           refreshWorkout();
         }}
-        onError={(error) => {
-          Alert.alert("Error", error);
-        }}
       />
     </View>
   );

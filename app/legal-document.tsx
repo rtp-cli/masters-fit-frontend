@@ -265,7 +265,7 @@ export default function LegalDocumentScreen() {
       <StatusBar style="light" />
 
       {/* Header */}
-      <View className="bg-white shadow-rn-sm">
+      <View className="bg-white">
         <View className="px-5 py-4">
           <View className="flex-row items-center">
             <TouchableOpacity
@@ -364,7 +364,7 @@ export default function LegalDocumentScreen() {
           )}
 
           {/* Document Sections */}
-          <View className="bg-white rounded-xl shadow-rn-sm px-6 py-6">
+          <View className="bg-white rounded-xl px-6 py-6">
             {groupedSections.map((group, groupIndex) => (
               <View key={groupIndex} className={groupIndex > 0 ? "mt-8" : ""}>
                 {/* Section Header */}

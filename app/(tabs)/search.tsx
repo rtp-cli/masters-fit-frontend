@@ -1497,7 +1497,7 @@ export default function SearchScreen() {
               How to Search
             </Text>
 
-            <View className="bg-white rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center">
+            <View className="bg-white rounded-xl p-4 mb-3 flex-row items-center">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="calendar-outline"
@@ -1510,7 +1510,7 @@ export default function SearchScreen() {
               </Text>
             </View>
 
-            <View className="bg-white rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center">
+            <View className="bg-white rounded-xl p-4 mb-3 flex-row items-center">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="barbell-outline"

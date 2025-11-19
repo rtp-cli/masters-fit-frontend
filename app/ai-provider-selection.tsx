@@ -309,7 +309,7 @@ export default function AIProviderSelectionPage() {
         {/* Current Provider Info */}
         <View className="mx-5 mb-4">
           <View
-            className="bg-white rounded-xl p-3 shadow-rn-sm border"
+            className="bg-white rounded-xl p-3 border"
             style={{ borderColor: colors.brand.primary }}
           >
             <View className="flex-row items-center">

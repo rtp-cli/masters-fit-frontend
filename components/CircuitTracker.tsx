@@ -718,7 +718,7 @@ export default function CircuitTracker({
 
           {/* Timer */}
           {showTimer && (
-            <View className="bg-card rounded-2xl mt-2 p-6 border shadow-rn-sm border-neutral-light-2">
+            <View className="bg-card rounded-2xl mt-2 p-6 border border-neutral-light-2">
               <CircuitTimer
                 blockType={block.blockType || "circuit"}
                 timeCapMinutes={block.timeCapMinutes}
