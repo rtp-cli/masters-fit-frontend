@@ -49,6 +49,7 @@ import Header from "@/components/Header";
 import {
   connectHealth as connectHealthAPI,
   fetchStepsToday as fetchStepsTodayAPI,
+  openHealthApp,
 } from "@utils/health";
 
 // Goal name mappings

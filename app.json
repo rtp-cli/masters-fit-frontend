@@ -56,7 +56,14 @@
       "expo-font",
       "expo-health-connect",
       "expo-notifications",
-      "./plugins/healthkit",
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "MastersFit reads your step count to show daily activity.",
+          "healthUpdatePermission": "MastersFit may write step counts to help track progress.",
+          "isClinicalDataEnabled": false
+        }
+      ],
       "./plugins/healthconnect",
       [
         "expo-build-properties",

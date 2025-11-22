@@ -1,6 +1,9 @@
 import { Platform, AppState, Linking } from "react-native";
-import AppleHealthKit, { HealthKitPermissions } from "react-native-health";
-const HK: any = AppleHealthKit;
+import BrokenHealthKit, { HealthKitPermissions } from "react-native-health";
+import { NativeModules } from "react-native";
+
+const AppleHealthKit = NativeModules.AppleHealthKit as typeof BrokenHealthKit;
+AppleHealthKit.Constants = BrokenHealthKit.Constants;
 import {
   initialize,
   requestPermission,
@@ -9,38 +12,29 @@ import {
 
 export async function connectHealth(): Promise<boolean> {
   if (Platform.OS === "ios") {
-    if (!HK || typeof HK.initHealthKit !== "function") {
-      return false;
+    if (!AppleHealthKit) {
+      throw new Error(
+        "HealthKit unavailable. Build and run a custom dev client (expo run:ios)."
+      );
     }
     const available = await isHealthKitAvailable();
-    if (!available) return false;
-    const perms = HK?.Constants?.Permissions || {};
+    if (!available) throw new Error("HealthKit not available on this device.");
+    const perms = AppleHealthKit?.Constants?.Permissions || {};
     const permissions: HealthKitPermissions = {
       permissions: {
         read: [
-          perms.Steps,
           perms.StepCount,
+          perms.Steps,
           perms.FlightsClimbed,
           perms.DistanceWalkingRunning,
-        ].filter(Boolean),
-        write: [perms.Steps].filter(Boolean),
+        ],
+        write: [perms.Steps],
       },
     };
-    await new Promise<void>((resolve, reject) => {
-      HK.initHealthKit(permissions, (err: any) => {
-        if (err) reject(err);
-        else resolve();
-      });
+    AppleHealthKit.initHealthKit(permissions, (err) => {
+      if (err) throw err;
     });
-    const authorized = await new Promise<boolean>((resolve) => {
-      if (typeof HK.getAuthStatus !== "function") return resolve(true);
-      HK.getAuthStatus(permissions, (_err: any, results: any) => {
-        const codes: number[] = results?.permissions?.write || [];
-        // 2 = SharingAuthorized
-        resolve(codes.some((c) => c === 2));
-      });
-    });
-    return authorized;
+    return true;
   }
   await ensureHealthConnectInitialized();
   const granted = await requestPermission([
@@ -70,7 +64,10 @@ export async function ensureHealthConnectInitialized(): Promise<void> {
 
 export async function fetchStepsToday(): Promise<number> {
   if (Platform.OS === "ios") {
-    if (!HK || typeof HK.getDailyStepCountSamples !== "function") {
+    if (
+      !AppleHealthKit ||
+      typeof AppleHealthKit.getDailyStepCountSamples !== "function"
+    ) {
       return 0;
     }
     const start = new Date();
@@ -81,10 +78,13 @@ export async function fetchStepsToday(): Promise<number> {
       endDate: end.toISOString(),
     } as any;
     const results: any[] = await new Promise((resolve, reject) => {
-      HK.getDailyStepCountSamples(options, (error: any, res: any) => {
-        if (error) reject(error);
-        else resolve(res || []);
-      });
+      AppleHealthKit.getDailyStepCountSamples(
+        options,
+        (error: any, res: any) => {
+          if (error) reject(error);
+          else resolve(res || []);
+        }
+      );
     });
     const today = new Date();
     const y = today.getFullYear();
@@ -117,9 +117,9 @@ export async function fetchStepsToday(): Promise<number> {
 
 export async function isHealthKitAvailable(): Promise<boolean> {
   if (Platform.OS !== "ios") return false;
-  if (!HK || typeof HK.isAvailable !== "function") return false;
+  if (!AppleHealthKit) return false;
   return await new Promise<boolean>((resolve) => {
-    HK.isAvailable((err: any, available: boolean) => {
+    AppleHealthKit.isAvailable((err: any, available: boolean) => {
       if (err) resolve(false);
       else resolve(!!available);
     });
