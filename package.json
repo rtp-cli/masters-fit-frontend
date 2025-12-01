@@ -38,6 +38,7 @@
     "react-native-gesture-handler": "~2.28.0",
     "react-native-health": "^1.19.0",
     "react-native-health-connect": "^3.4.0",
+    "react-native-pager-view": "^6.9.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
@@ -50,7 +51,10 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
+    "@types/expo__vector-icons": "^9.0.1",
     "@types/react": "~19.2.0",
+    "@types/react-native": "^0.72.8",
+    "@types/react-navigation": "^3.0.8",
     "babel-plugin-module-resolver": "^5.0.2",
     "expo-build-properties": "^1.0.9",
     "typescript": "~5.9.2"

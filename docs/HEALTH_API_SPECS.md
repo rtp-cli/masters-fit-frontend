@@ -87,3 +87,11 @@ return AndroidHealth.getSteps(startDate);
 }
 
 `
+
+- REQUIREMENTS UPDATE
+- now i want to track the following values
+  - max heart rate (read)
+  - avg heart rate (read)
+  - calories tracking (read)
+  - workout duration from our current workouts (read and write)
+  - step count (read)

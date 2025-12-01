@@ -44,6 +44,7 @@ export const colors = {
     muted: "#8A93A2",
   },
   background: "#FFFFFF",
+  danger: "#EF4444", // A common red color for danger
 } as const;
 
 // Spacing system
