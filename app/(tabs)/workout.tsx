@@ -67,6 +67,7 @@ import {
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { trackWorkoutStarted } from "@/lib/analytics";
 import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -171,7 +172,8 @@ function CircuitLoggingInterface({
 
 export default function WorkoutScreen() {
   // Get workout context for tab disabling
-  const { setWorkoutInProgress, isWorkoutInProgress } = useWorkout();
+  const { setWorkoutInProgress, isWorkoutInProgress, setCurrentWorkoutData } =
+    useWorkout();
 
   // Get user from auth context
   const { user, isLoading: authLoading } = useAuth();
@@ -317,33 +319,34 @@ export default function WorkoutScreen() {
         exerciseStartTime.current = Date.now() - exerciseTimer * 1000;
       }
 
-      // TIMER DISABLED: Workout timer interval commented out
-      // timerRef.current = setInterval(() => {
-      //   const now = Date.now();
-      //   if (workoutStartTime.current) {
-      //     setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
-      //   }
-      //   if (exerciseStartTime.current) {
-      //     setExerciseTimer(
-      //       Math.floor((now - exerciseStartTime.current) / 1000)
-      //     );
-      //   }
-      // }, 1000);
+      // Workout timer interval
+      timerRef.current = setInterval(() => {
+        const now = Date.now();
+        if (workoutStartTime.current) {
+          setWorkoutTimer(Math.floor((now - workoutStartTime.current) / 1000));
+        }
+        if (exerciseStartTime.current) {
+          setExerciseTimer(
+            Math.floor((now - exerciseStartTime.current) / 1000)
+          );
+        }
+      }, 1000);
     } else {
       // Deactivate keep awake when timer stops
       deactivateKeepAwake("workout-timer");
 
+      // Clean up display timer when workout stops
       if (timerRef.current) {
-        // TIMER DISABLED: Clear interval commented out
-        // clearInterval(timerRef.current);
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     }
 
     return () => {
       deactivateKeepAwake("workout-timer");
       if (timerRef.current) {
-        // TIMER DISABLED: Clear interval commented out
-        // clearInterval(timerRef.current);
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
@@ -554,9 +557,10 @@ export default function WorkoutScreen() {
       deactivateKeepAwake("workout-timer");
       deactivateKeepAwake("rest-timer");
 
-      // TIMER DISABLED: Clear any active timers commented out
+      // Clear any active timers
       if (timerRef.current) {
-        // clearInterval(timerRef.current);
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
       if (restTimerRef.current) {
         // clearInterval(restTimerRef.current);
@@ -597,9 +601,10 @@ export default function WorkoutScreen() {
       // Cleanup keep awake on unmount
       deactivateKeepAwake("workout-timer");
       deactivateKeepAwake("rest-timer");
-      // TIMER DISABLED: Clear timers commented out
+      // Clear timers
       if (timerRef.current) {
-        // clearInterval(timerRef.current);
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
       if (restTimerRef.current) {
         // clearInterval(restTimerRef.current);
@@ -842,15 +847,71 @@ export default function WorkoutScreen() {
     });
   };
 
+  // Get workout duration for analytics (ignores pause state)
+  const getWorkoutDurationForAnalytics = (): number => {
+    if (workoutStartTime.current) {
+      // Simple calculation: total time from start to now in seconds (backend converts to ms)
+      return Math.floor((Date.now() - workoutStartTime.current) / 1000);
+    }
+    return 0; // No start time recorded
+  };
+
+  // Update current block for abandonment tracking
+  const updateCurrentBlockForAbandonment = (exerciseIndex: number) => {
+    if (!workout || !exercises[exerciseIndex]) return;
+
+    const currentExercise = exercises[exerciseIndex];
+    const currentBlock = workout.blocks.find((block) =>
+      block.exercises?.some(
+        (ex) => ex.exerciseId === currentExercise.exerciseId
+      )
+    );
+
+    if (currentBlock) {
+      setCurrentWorkoutData({
+        workout_id: workout.workoutId,
+        plan_day_id: workout.id,
+        block_id: currentBlock.id,
+        block_name: currentBlock.blockType || "unknown",
+      });
+    }
+  };
+
   // Start workout
-  const startWorkout = () => {
+  const startWorkout = async () => {
     const now = Date.now();
     setIsWorkoutStarted(true);
     setWorkoutTimer(0);
     setExerciseTimer(0);
     workoutStartTime.current = now;
     exerciseStartTime.current = now;
+    // Set current workout data BEFORE marking workout as in progress
+    if (workout) {
+      const currentBlock = workout.blocks[0]; // Start with first block
+      const abandData = {
+        workout_id: workout.workoutId,
+        plan_day_id: workout.id,
+        block_id: currentBlock?.id || 0,
+        block_name: currentBlock?.blockType || "unknown",
+      };
+      console.log("🐛 Setting workout abandonment data:", abandData);
+      setCurrentWorkoutData(abandData);
+    }
+
     setWorkoutInProgress(true); // Notify context that workout started
+
+    // Track workout started
+    if (workout?.id) {
+      try {
+        await trackWorkoutStarted({
+          workout_id: workout.workoutId,
+          plan_day_id: workout.id,
+          workout_name: workout.name,
+        });
+      } catch (error) {
+        console.warn("Failed to track workout started:", error);
+      }
+    }
 
     // Auto-scroll to first exercise when workout starts
     setTimeout(() => {
@@ -973,18 +1034,23 @@ export default function WorkoutScreen() {
 
         // Move to next exercise or complete workout
         if (currentExerciseIndex < exercises.length - 1) {
-          setCurrentExerciseIndex((prev) => prev + 1);
+          const nextIndex = currentExerciseIndex + 1;
+          setCurrentExerciseIndex(nextIndex);
           setExerciseTimer(0);
           exerciseStartTime.current = Date.now();
-          scrollToExerciseHeading(currentExerciseIndex + 1);
+          updateCurrentBlockForAbandonment(nextIndex);
+          scrollToExerciseHeading(nextIndex);
         } else {
           // All exercises completed, complete the workout
           if (workout?.id) {
-            const completedExerciseCount = exercises.length;
+            const completedExerciseCount = exercises.length - skippedExercises.length;
             const completedBlockCount = workout.blocks.length;
 
+            // Get duration for analytics (simple start to end time)
+            const finalDuration = getWorkoutDurationForAnalytics();
+
             await markPlanDayAsComplete(workout.id, {
-              totalTimeSeconds: workoutTimer,
+              totalTimeSeconds: finalDuration,
               exercisesCompleted: completedExerciseCount,
               blocksCompleted: completedBlockCount,
             });
@@ -1066,11 +1132,14 @@ export default function WorkoutScreen() {
         } else {
           // All exercises completed, complete the workout day
           if (workout?.id) {
-            const completedExerciseCount = exercises.length;
+            const completedExerciseCount = exercises.length - skippedExercises.length;
             const completedBlockCount = workout.blocks.length;
 
+            // Get duration for analytics (simple start to end time)
+            const finalDuration = getWorkoutDurationForAnalytics();
+
             await markPlanDayAsComplete(workout.id, {
-              totalTimeSeconds: workoutTimer,
+              totalTimeSeconds: finalDuration,
               exercisesCompleted: completedExerciseCount,
               blocksCompleted: completedBlockCount,
             });
@@ -1140,10 +1209,12 @@ export default function WorkoutScreen() {
 
       // Move to next exercise or complete workout
       if (currentExerciseIndex < exercises.length - 1) {
-        setCurrentExerciseIndex((prev) => prev + 1);
+        const nextIndex = currentExerciseIndex + 1;
+        setCurrentExerciseIndex(nextIndex);
         setExerciseTimer(0);
         exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
-        scrollToExerciseHeading(currentExerciseIndex + 1);
+        updateCurrentBlockForAbandonment(nextIndex);
+        scrollToExerciseHeading(nextIndex);
       } else {
         // All exercises completed, so mark the plan day as complete
         if (workout?.id) {
@@ -1158,9 +1229,11 @@ export default function WorkoutScreen() {
             blocksCompleted: completedBlockCount,
           });
 
-          // Mark plan day as complete with detailed timing in seconds
+          // Get duration for analytics (simple start to end time)
+          const finalDuration = getWorkoutDurationForAnalytics();
+
           await markPlanDayAsComplete(workout.id, {
-            totalTimeSeconds: workoutTimer,
+            totalTimeSeconds: finalDuration,
             exercisesCompleted: completedExerciseCount,
             blocksCompleted: completedBlockCount,
           });
@@ -1181,6 +1254,7 @@ export default function WorkoutScreen() {
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
         setIsWorkoutCompleted(true);
         setWorkoutInProgress(false); // Notify context that workout ended
+
         Alert.alert(
           "Workout Complete!",
           "Congratulations! You've completed today's workout.",
@@ -1232,10 +1306,12 @@ export default function WorkoutScreen() {
 
       // Move to next exercise or complete workout
       if (currentExerciseIndex < exercises.length - 1) {
-        setCurrentExerciseIndex((prev) => prev + 1);
+        const nextIndex = currentExerciseIndex + 1;
+        setCurrentExerciseIndex(nextIndex);
         setExerciseTimer(0);
         exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
-        scrollToExerciseHeading(currentExerciseIndex + 1);
+        updateCurrentBlockForAbandonment(nextIndex);
+        scrollToExerciseHeading(nextIndex);
       } else {
         // Check if all exercises are completed or skipped
         const allProcessed = exercises.every(
@@ -1248,22 +1324,22 @@ export default function WorkoutScreen() {
         if (allProcessed && workout?.id) {
           // Calculate completion data (including skipped exercises/blocks)
           const completedExerciseCount = currentExerciseIndex; // Current index is number of completed
-          const skippedExerciseCount = skippedExercises.length;
-          const totalProcessedExercises =
-            completedExerciseCount + skippedExerciseCount;
           const completedBlockCount = workout.blocks.length; // All blocks processed
 
+          // Get duration for analytics (simple start to end time)
+          const finalDuration = getWorkoutDurationForAnalytics();
+
           console.log("Workout skip completion data:", {
-            workoutTimer,
-            totalTimeSeconds: workoutTimer,
-            exercisesCompleted: totalProcessedExercises,
+            finalDuration,
+            totalTimeSeconds: finalDuration,
+            exercisesCompleted: completedExerciseCount,
             blocksCompleted: completedBlockCount,
           });
 
           // Mark plan day as complete with detailed timing in seconds
           await markPlanDayAsComplete(workout.id, {
-            totalTimeSeconds: workoutTimer,
-            exercisesCompleted: totalProcessedExercises,
+            totalTimeSeconds: finalDuration,
+            exercisesCompleted: completedExerciseCount,
             blocksCompleted: completedBlockCount,
           });
           setCurrentExerciseIndex(exercises.length);
@@ -1468,6 +1544,7 @@ export default function WorkoutScreen() {
           <ExerciseLink
             link={currentExercise.exercise.link}
             exerciseName={currentExercise.exercise.name}
+            exerciseId={currentExercise.exercise.id}
             variant="hero"
           />
         ) : isCurrentBlockCircuit && currentBlock ? (

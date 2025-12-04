@@ -167,6 +167,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
                     <ExerciseLink
                       link={item.exercise.exercise.link}
                       exerciseName={item.exercise.exercise.name}
+                      exerciseId={item.exercise.exercise.id}
                       variant="default"
                       showFullVideo={false}
                     />
@@ -177,6 +178,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
                 <ExerciseLink
                   link={item.exercise.exercise.link}
                   exerciseName={item.exercise.exercise.name}
+                  exerciseId={item.exercise.exercise.id}
                   variant="hero"
                   showFullVideo={false}
                 />

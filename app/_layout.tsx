@@ -9,6 +9,7 @@ import {
   useBackgroundJobs,
 } from "@contexts/BackgroundJobContext";
 import { WaiverProvider } from "@contexts/WaiverContext";
+import { MixpanelProvider } from "@contexts/MixpanelContext";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -247,16 +248,18 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <WaiverProvider>
-        <WorkoutProvider>
-          <AppDataProvider>
-            <BackgroundJobProvider>
-              <AppContent />
-            </BackgroundJobProvider>
-          </AppDataProvider>
-        </WorkoutProvider>
-      </WaiverProvider>
-    </AuthProvider>
+    <MixpanelProvider>
+      <AuthProvider>
+        <WaiverProvider>
+          <WorkoutProvider>
+            <AppDataProvider>
+              <BackgroundJobProvider>
+                <AppContent />
+              </BackgroundJobProvider>
+            </AppDataProvider>
+          </WorkoutProvider>
+        </WaiverProvider>
+      </AuthProvider>
+    </MixpanelProvider>
   );
 }

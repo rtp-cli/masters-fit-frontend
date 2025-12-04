@@ -710,6 +710,7 @@ export default function SearchScreen() {
                 <ExerciseLink
                   link={exerciseResult.exercise.link}
                   exerciseName={exerciseResult.exercise.name}
+                  exerciseId={exerciseResult.exercise.id}
                   variant="hero"
                 />
               </View>

@@ -1,5 +1,6 @@
 export interface User {
   id: number;
+  uuid: string; // UUID for analytics
   email: string;
   name: string;
   needsOnboarding?: boolean;

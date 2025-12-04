@@ -21,6 +21,8 @@ import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
 import { setAuthFailureCallback } from "../lib/api";
+import { trackAppOpened, AnalyticsUtils } from "@/lib/analytics";
+import * as Application from "expo-application";
 
 type RegenerationType = "daily" | "weekly" | "repeat" | "initial";
 
@@ -87,8 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         const storedUser = await getCurrentUser();
+
+        // Track app session start
+        const sessionId = AnalyticsUtils.generateSessionId();
+
+        trackAppOpened({
+          app_version: Application.nativeApplicationVersion || "1.0.0",
+          platform: AnalyticsUtils.getPlatform(),
+        }).catch(console.warn);
+
         if (storedUser) {
           setUser(storedUser);
+          // User profile creation/identification now handled by backend
+          logger.debug("User authenticated, profile handled by backend", {
+            userId: storedUser.id,
+          });
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -199,6 +214,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await SecureStore.deleteItemAsync("pendingEmail");
           await SecureStore.deleteItemAsync("pendingUserId");
 
+          // User profile tracking now handled by backend in completeOnboarding API
+          logger.debug(
+            "Onboarding completed, profile tracking handled by backend"
+          );
+
           logger.businessEvent("Onboarding completed", {
             userId: updatedUser.id,
             fitnessLevel: userData.fitnessLevel,
@@ -228,6 +248,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       invalidateActiveWorkoutCache();
       await clearAllData();
+
+      // User data clearing now handled by backend on logout
+
       setUser(null);
     } catch (error) {
       logger.error("Logout failed", {
@@ -273,6 +296,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Also save to SecureStore to maintain consistency
     if (userData) {
       saveUserToSecureStorage(userData);
+      // User profile tracking now handled by backend
+      logger.debug("User data updated, profile tracking handled by backend");
     }
   };
 

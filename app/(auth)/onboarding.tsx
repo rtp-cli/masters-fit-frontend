@@ -12,6 +12,7 @@ import * as SecureStore from "expo-secure-store";
 import { colors } from "../../lib/theme";
 import Header from "@components/Header";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { trackOnboardingStarted } from "@/lib/analytics";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -65,6 +66,12 @@ export default function OnboardingScreen() {
           setPendingUserId(userId);
         }
 
+        try {
+          await trackOnboardingStarted({});
+        } catch (error) {
+          console.warn("Failed to track onboarding started:", error);
+        }
+
         // Clear the verification flag to allow normal redirect behavior
         await SecureStore.deleteItemAsync("isVerifyingUser").catch(() => {});
       } catch (error) {
@@ -73,7 +80,7 @@ export default function OnboardingScreen() {
     };
 
     loadPendingData();
-  }, []);
+  }, [user?.uuid]);
 
   const startWorkoutGeneration = async () => {
     try {
@@ -287,7 +294,9 @@ export default function OnboardingScreen() {
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        submitButtonText={isLoading ? "Creating Profile..." : "Generate Weekly Plan"}
+        submitButtonText={
+          isLoading ? "Creating Profile..." : "Generate Weekly Plan"
+        }
       />
     </SafeAreaView>
   );

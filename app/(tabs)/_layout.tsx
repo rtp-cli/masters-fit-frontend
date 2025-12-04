@@ -65,7 +65,7 @@ function DisabledTabButton({
             text: "Leave Anyway",
             style: "destructive",
             onPress: () => {
-              abandonWorkout();
+              abandonWorkout("navigation");
               onPress?.(e);
             },
           },
