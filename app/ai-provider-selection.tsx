@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { colors } from "@/lib/theme";
 import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
 import {
   getAvailableProviders,
   updateUserProvider,
@@ -246,14 +245,10 @@ export default function AIProviderSelectionPage() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 bg-background border-b border-neutral-light-2">
+        <View className="flex-row items-center px-4 py-3 bg-background border-b border-neutral-light-2">
           <TouchableOpacity onPress={handleExit}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <View className="flex-1 items-center">
-            <Header />
-          </View>
-          <View className="w-6" />
         </View>
 
         <View className="flex-1 justify-center items-center px-4">
@@ -272,14 +267,10 @@ export default function AIProviderSelectionPage() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 bg-background border-b border-neutral-light-2">
+      <View className="flex-row items-center justify-between px-4 py-1 bg-background border-b border-neutral-light-2">
         <TouchableOpacity onPress={handleExit}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <View className="flex-1 items-center">
-          <Header />
-        </View>
-        <View className="w-6" />
       </View>
 
       <ScrollView

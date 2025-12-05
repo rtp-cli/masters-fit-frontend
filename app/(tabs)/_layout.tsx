@@ -31,14 +31,6 @@ function TabBarIcon({
   );
 }
 
-function WorkoutTabIcon() {
-  return (
-    <View className="w-[60px] h-[60px] rounded-[28px] bg-secondary items-center justify-center mb-5 shadow-lg">
-      <Ionicons size={28} name="play" color={colors.neutral.white} />
-    </View>
-  );
-}
-
 // Custom tab button that shows toast when workout is in progress and handles re-clicks
 function DisabledTabButton({
   children,
@@ -94,7 +86,6 @@ function DisabledTabButton({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 8,
       }}
     >
       {children}
@@ -117,11 +108,9 @@ export default function TabLayout() {
             tabBarStyle: {
               borderTopWidth: 1,
               borderTopColor: colors.neutral.medium[1],
-              height: 60,
-              paddingBottom: 15,
-              paddingTop: 8,
-              backgroundColor: colors.background,
-              minHeight: 60,
+              height: 70,
+              paddingTop: 10,
+              paddingBottom: 10,
             },
           }}
         >
@@ -147,6 +136,27 @@ export default function TabLayout() {
             }}
           />
           <Tabs.Screen
+            name="workout"
+            options={{
+              tabBarIcon: ({ color }: { color: string }) => (
+                <TabBarIcon
+                  name="play"
+                  color={color}
+                  disabled={isWorkoutInProgress}
+                />
+              ),
+              tabBarButton: (props: BottomTabBarButtonProps) => (
+                <DisabledTabButton
+                  onPress={props.onPress}
+                  disabled={false} // Workout tab is always accessible
+                  routeName="workout"
+                >
+                  {props.children}
+                </DisabledTabButton>
+              ),
+            }}
+          />
+          <Tabs.Screen
             name="calendar"
             options={{
               tabBarIcon: ({ color }: { color: string }) => (
@@ -161,63 +171,6 @@ export default function TabLayout() {
                   onPress={props.onPress}
                   disabled={isWorkoutInProgress}
                   routeName="calendar"
-                >
-                  {props.children}
-                </DisabledTabButton>
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="workout"
-            options={{
-              tabBarIcon: () => <WorkoutTabIcon />,
-              tabBarButton: (props: BottomTabBarButtonProps) => (
-                <DisabledTabButton
-                  onPress={props.onPress}
-                  disabled={false} // Workout tab is always accessible
-                  routeName="workout"
-                >
-                  {props.children}
-                </DisabledTabButton>
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="search"
-            options={{
-              tabBarIcon: ({ color }: { color: string }) => (
-                <TabBarIcon
-                  name="search"
-                  color={color}
-                  disabled={isWorkoutInProgress}
-                />
-              ),
-              tabBarButton: (props: BottomTabBarButtonProps) => (
-                <DisabledTabButton
-                  onPress={props.onPress}
-                  disabled={isWorkoutInProgress}
-                  routeName="search"
-                >
-                  {props.children}
-                </DisabledTabButton>
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="settings"
-            options={{
-              tabBarIcon: ({ color }: { color: string }) => (
-                <TabBarIcon
-                  name="person"
-                  color={color}
-                  disabled={isWorkoutInProgress}
-                />
-              ),
-              tabBarButton: (props: BottomTabBarButtonProps) => (
-                <DisabledTabButton
-                  onPress={props.onPress}
-                  disabled={isWorkoutInProgress}
-                  routeName="settings"
                 >
                   {props.children}
                 </DisabledTabButton>

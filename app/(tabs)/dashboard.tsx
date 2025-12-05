@@ -937,22 +937,27 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* Header with Streak */}
-        <View className="px-4 pt-6 mb-6">
-          <View className="flex-row items-center justify-between mb-2">
-            <View className="px-5">
-              <Text className="text-lg font-bold text-text-primary">
-                Hello, {user?.name || "User"}
-              </Text>
-              <Text className="text-sm text-text-muted mt-1">
-                {formatDate(new Date(), {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </Text>
-            </View>
+        {/* Header with User Greeting and Icons */}
+        <Header
+          currentDate={formatDate(new Date(), {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        />
+
+        {/* Date and Streak Section */}
+        <View className="px-5 mb-6">
+          <View className="flex-row items-center justify-between">
+            {/* <Text className="text-sm text-text-muted">
+              {formatDate(new Date(), {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </Text> */}
             {weeklySummary && weeklySummary.streak > 0 && (
               <View className="flex-row items-center bg-primary/10 px-3 py-2 rounded-full">
                 <Ionicons name="flame" size={16} color={colors.brand.primary} />

@@ -37,7 +37,7 @@ type SearchType = "date" | "exercise" | "general";
 
 type PlanDayForCompletion = DateSearchWorkout["planDay"];
 
-export default function SearchScreen() {
+export default function SearchView() {
   const { user } = useAuth();
   const {
     refresh: { searchByDate, searchExercise, searchExercises },
