@@ -15,6 +15,7 @@
     "@miblanchard/react-native-slider": "^2.6.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.4",
+    "babel-plugin-module-resolver": "^5.0.2",
     "expo": "^54.0.22",
     "expo-constants": "~18.0.10",
     "expo-dev-client": "~6.0.17",
@@ -50,7 +51,6 @@
   "devDependencies": {
     "@babel/core": "^7.24.3",
     "@types/react": "~19.2.0",
-    "babel-plugin-module-resolver": "^5.0.2",
     "typescript": "~5.9.2"
   },
   "private": true
