@@ -1,10 +1,30 @@
-import React, { createContext, useState, ReactNode, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  ReactNode,
+  useContext,
+  useRef,
+} from "react";
+import { trackWorkoutAbandoned } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Simple context that only tracks if workout is in progress
+// Workout abandonment tracking data
+interface WorkoutAbandonmentData {
+  workout_id: number;
+  plan_day_id: number;
+  block_id: number;
+  block_name: string;
+}
+
+// Context interface
 interface WorkoutContextType {
   isWorkoutInProgress: boolean;
   setWorkoutInProgress: (inProgress: boolean) => void;
-  abandonWorkout: () => void;
+  abandonWorkout: (
+    reason?: "manual_exit" | "navigation" | "app_backgrounded" | "other",
+    workoutData?: WorkoutAbandonmentData
+  ) => void;
+  setCurrentWorkoutData: (data: WorkoutAbandonmentData | null) => void;
 }
 
 // Create the context
@@ -25,13 +45,59 @@ export function useWorkout() {
 // Provider component that wraps the app
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [isWorkoutInProgress, setIsWorkoutInProgress] = useState(false);
+  const [currentWorkoutData, setCurrentWorkoutData] =
+    useState<WorkoutAbandonmentData | null>(null);
+  const { user } = useAuth();
+  const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const setWorkoutInProgress = (inProgress: boolean) => {
-    setIsWorkoutInProgress(inProgress);
+  // Debug function to log workout data changes
+  const setCurrentWorkoutDataWithLogging = (
+    data: WorkoutAbandonmentData | null
+  ) => {
+    setCurrentWorkoutData(data);
   };
 
-  const abandonWorkout = () => {
+  const setWorkoutInProgress = (inProgress: boolean) => {
+    // Cancel any pending clear timeout
+    if (clearTimeoutRef.current) {
+      clearTimeout(clearTimeoutRef.current);
+      clearTimeoutRef.current = null;
+    }
+
+    setIsWorkoutInProgress(inProgress);
+
+    // If stopping workout, schedule data clearing after a delay to prevent race conditions
+    if (!inProgress) {
+      clearTimeoutRef.current = setTimeout(() => {
+        setCurrentWorkoutData(null);
+        clearTimeoutRef.current = null;
+      }, 100);
+    }
+  };
+
+  const abandonWorkout = (
+    reason:
+      | "manual_exit"
+      | "navigation"
+      | "app_backgrounded"
+      | "other" = "manual_exit",
+    workoutData?: WorkoutAbandonmentData
+  ) => {
+    // Use provided workout data or fall back to stored data
+    const dataToUse = workoutData || currentWorkoutData;
+
+    // Track workout abandonment if we have workout data
+    if (dataToUse) {
+      trackWorkoutAbandoned({
+        workout_id: dataToUse.workout_id,
+        plan_day_id: dataToUse.plan_day_id,
+        block_id: dataToUse.block_id,
+        block_name: dataToUse.block_name,
+      }).catch(console.warn);
+    }
+
     setIsWorkoutInProgress(false);
+    setCurrentWorkoutData(null);
   };
 
   // Create the context value object
@@ -39,6 +105,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     isWorkoutInProgress,
     setWorkoutInProgress,
     abandonWorkout,
+    setCurrentWorkoutData: setCurrentWorkoutDataWithLogging,
   };
 
   // Provide the context to children components

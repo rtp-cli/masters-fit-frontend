@@ -7,11 +7,13 @@ import {
   verifyAPI,
   signupAPI,
   generateAuthCodeAPI,
+  refreshTokenAPI,
 } from "./api";
 
 // List of all keys used in SecureStore
 const STORAGE_KEYS = [
   "token",
+  "refreshToken",
   "user",
   "pendingEmail",
   "pendingUserId",
@@ -100,8 +102,13 @@ export async function verify(params: {
   try {
     const data = await verifyAPI(params);
     if (data.success && data.token) {
-      // Store the auth token
+      // Store the auth token and refresh token
       await SecureStore.setItemAsync("token", data.token);
+      if (data.refreshToken) {
+        await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+      } else {
+        console.warn("[Auth] NO REFRESH TOKEN IN VERIFY RESPONSE!");
+      }
       if (data.user) {
         // Include needsOnboarding from the response in the user object
         const userWithOnboardingStatus = {
@@ -113,6 +120,8 @@ export async function verify(params: {
           JSON.stringify(userWithOnboardingStatus)
         );
       }
+    } else {
+      console.warn("[Auth] Verify failed or no token received");
     }
     return data;
   } catch (error) {
@@ -170,6 +179,22 @@ export async function getPendingUserId(): Promise<string | null> {
 }
 
 /**
+ * Get the refresh token from secure storage
+ */
+export async function getRefreshToken(): Promise<string | null> {
+  try {
+    const refreshToken = await SecureStore.getItemAsync("refreshToken");
+    if (!refreshToken) {
+      console.warn("[Auth] No refresh token found in storage");
+    }
+    return refreshToken;
+  } catch (error) {
+    console.error("Error retrieving refresh token:", error);
+    return null;
+  }
+}
+
+/**
  * Get the current user from secure storage
  */
 export async function getCurrentUser(): Promise<User | null> {
@@ -195,12 +220,45 @@ export async function saveUserToSecureStorage(user: User): Promise<void> {
 }
 
 /**
+ * Refresh the access token using the stored refresh token
+ */
+export async function refreshToken(): Promise<AuthResponse> {
+  try {
+    const storedRefreshToken = await getRefreshToken();
+
+    if (!storedRefreshToken) {
+      return { success: false, error: "No refresh token available" };
+    }
+
+    const data = await refreshTokenAPI({ refreshToken: storedRefreshToken });
+
+    if (data.success && data.token) {
+      // Store both new access token and new refresh token (backend rotates refresh tokens)
+      await SecureStore.setItemAsync("token", data.token);
+      if (data.refreshToken) {
+        await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+      } else {
+        console.warn("[Auth] No new refresh token in response!");
+      }
+    } else {
+      console.warn("[Auth] Refresh API call failed:", data.error);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("[Auth] Token refresh error:", error);
+    return { success: false, error: "Failed to refresh token" };
+  }
+}
+
+/**
  * Log out the current user
  */
 export async function logout(): Promise<void> {
   try {
     await Promise.all([
       SecureStore.deleteItemAsync("token"),
+      SecureStore.deleteItemAsync("refreshToken"),
       SecureStore.deleteItemAsync("user"),
       SecureStore.deleteItemAsync("pendingEmail"),
       SecureStore.deleteItemAsync("pendingUserId"),

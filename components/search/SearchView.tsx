@@ -37,7 +37,7 @@ type SearchType = "date" | "exercise" | "general";
 
 type PlanDayForCompletion = DateSearchWorkout["planDay"];
 
-export default function SearchScreen() {
+export default function SearchView() {
   const { user } = useAuth();
   const {
     refresh: { searchByDate, searchExercise, searchExercises },
@@ -481,7 +481,7 @@ export default function SearchScreen() {
     <View className="px-4">
       <SkeletonLoader height={24} width={160} style={{ marginBottom: 16 }} />
       {Array.from({ length: 5 }).map((_, index) => (
-        <View key={index} className="bg-white rounded-xl p-4 mb-3 shadow-sm">
+        <View key={index} className="bg-white rounded-xl p-4 mb-3 shadow-rn-sm">
           <View className="flex-row items-center">
             <SkeletonLoader
               height={48}
@@ -509,10 +509,10 @@ export default function SearchScreen() {
       <ScrollView ref={scrollViewRef} className="flex-1">
         {/* Search Inputs */}
         <View className="p-4 pt-6">
-          <View className="flex-row space-x-3">
+          <View className="flex-row gap-3">
             {/* Exercise Search */}
             <View className="flex-1">
-              <View className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-sm h-12">
+              <View className="flex-row items-center bg-white rounded-xl px-4 py-1 shadow-rn-sm h-12">
                 <Ionicons
                   name="search"
                   size={18}
@@ -544,7 +544,7 @@ export default function SearchScreen() {
 
             {/* Date Picker Icon */}
             <TouchableOpacity
-              className="bg-white rounded-xl shadow-sm h-12 w-12 items-center justify-center"
+              className="bg-white rounded-xl shadow-rn-sm h-12 w-12 items-center justify-center"
               onPress={() => setShowDatePicker(true)}
             >
               <Ionicons
@@ -704,12 +704,13 @@ export default function SearchScreen() {
         {/* Exercise Detail View */}
         {!isLoading && exerciseResult ? (
           <View className="px-4 pb-4">
-            <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
               {/* Exercise Link at the top inside card */}
               <View className="mb-4 -mx-5 -mt-5">
                 <ExerciseLink
                   link={exerciseResult.exercise.link}
                   exerciseName={exerciseResult.exercise.name}
+                  exerciseId={exerciseResult.exercise.id}
                   variant="hero"
                 />
               </View>
@@ -828,7 +829,7 @@ export default function SearchScreen() {
                   </Text>
 
                   <View className="flex-row justify-around mb-4 flex-wrap">
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.totalAssignments || 0}`}
                       </Text>
@@ -836,7 +837,7 @@ export default function SearchScreen() {
                         Assigned
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.totalCompletions || 0}`}
                       </Text>
@@ -844,7 +845,7 @@ export default function SearchScreen() {
                         Done
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.completionRate || 0}%`}
                       </Text>
@@ -855,7 +856,7 @@ export default function SearchScreen() {
                   </View>
 
                   <View className="flex-row justify-around mb-4 flex-wrap">
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.averageSets || 0}`}
                       </Text>
@@ -863,7 +864,7 @@ export default function SearchScreen() {
                         Avg Sets
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.averageReps || 0}`}
                       </Text>
@@ -871,7 +872,7 @@ export default function SearchScreen() {
                         Avg Reps
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-sm">
+                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {exerciseResult.userStats.averageWeight
                           ? `${exerciseResult.userStats.averageWeight}`
@@ -889,7 +890,7 @@ export default function SearchScreen() {
                       Personal Records
                     </Text>
                     <View className="flex-row justify-around">
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-sm">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-rn-sm">
                         <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxSets || 0
@@ -899,7 +900,7 @@ export default function SearchScreen() {
                           Max Sets
                         </Text>
                       </View>
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-sm">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-rn-sm">
                         <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxReps || 0
@@ -909,7 +910,7 @@ export default function SearchScreen() {
                           Max Reps
                         </Text>
                       </View>
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-sm">
+                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-rn-sm">
                         <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxWeight ||
@@ -943,7 +944,7 @@ export default function SearchScreen() {
         {/* Date Search Results */}
         {!isLoading && dateResult ? (
           <View className="px-4">
-            <View className="bg-white rounded-2xl p-5 shadow-sm">
+            <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
               <View className="flex-row justify-between items-center mb-3">
                 <Text className="text-lg font-bold text-text-primary flex-1">
                   {safeString(dateResult.name)}
@@ -1367,7 +1368,7 @@ export default function SearchScreen() {
             {generalResults.map((exercise: Exercise, index: number) => (
               <TouchableOpacity
                 key={`general-exercise-${exercise?.id || index}`}
-                className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center"
+                className="bg-white rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center"
                 onPress={() => {
                   try {
                     handleExerciseSelect({
@@ -1470,7 +1471,7 @@ export default function SearchScreen() {
         !exerciseResult &&
         generalResults.length === 0 &&
         (exerciseQuery.trim() || dateQuery.trim()) ? (
-          <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-sm">
+          <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-rn-sm">
             <Ionicons
               name="search-outline"
               size={40}
@@ -1497,7 +1498,7 @@ export default function SearchScreen() {
               How to Search
             </Text>
 
-            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+            <View className="bg-white rounded-xl p-4 mb-3 flex-row items-center">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="calendar-outline"
@@ -1510,7 +1511,7 @@ export default function SearchScreen() {
               </Text>
             </View>
 
-            <View className="bg-white rounded-xl p-4 mb-3 shadow-sm flex-row items-center">
+            <View className="bg-white rounded-xl p-4 mb-3 flex-row items-center">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="barbell-outline"

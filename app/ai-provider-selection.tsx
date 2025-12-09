@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { colors } from "@/lib/theme";
 import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
 import {
   getAvailableProviders,
   updateUserProvider,
@@ -173,11 +172,9 @@ export default function AIProviderSelectionPage() {
         [{ text: "OK" }]
       );
     } else {
-      Alert.alert(
-        "Error",
-        "Failed to switch AI provider. Please try again.",
-        [{ text: "OK" }]
-      );
+      Alert.alert("Error", "Failed to switch AI provider. Please try again.", [
+        { text: "OK" },
+      ]);
     }
   };
 
@@ -248,14 +245,10 @@ export default function AIProviderSelectionPage() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 bg-background border-b border-neutral-light-2">
+        <View className="flex-row items-center px-4 py-3 bg-background border-b border-neutral-light-2">
           <TouchableOpacity onPress={handleExit}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <View className="flex-1 items-center">
-            <Header />
-          </View>
-          <View className="w-6" />
         </View>
 
         <View className="flex-1 justify-center items-center px-4">
@@ -274,14 +267,10 @@ export default function AIProviderSelectionPage() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 bg-background border-b border-neutral-light-2">
+      <View className="flex-row items-center justify-between px-4 py-1 bg-background border-b border-neutral-light-2">
         <TouchableOpacity onPress={handleExit}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <View className="flex-1 items-center">
-          <Header />
-        </View>
-        <View className="w-6" />
       </View>
 
       <ScrollView
@@ -311,7 +300,7 @@ export default function AIProviderSelectionPage() {
         {/* Current Provider Info */}
         <View className="mx-5 mb-4">
           <View
-            className="bg-white rounded-xl p-3 shadow-sm border"
+            className="bg-white rounded-xl p-3 border"
             style={{ borderColor: colors.brand.primary }}
           >
             <View className="flex-row items-center">
@@ -339,7 +328,11 @@ export default function AIProviderSelectionPage() {
         {/* Provider Options */}
         <View className="mx-5 pt-4">
           <View className="flex-row items-center mb-6">
-            <Ionicons name="hardware-chip" size={20} color={colors.brand.primary} />
+            <Ionicons
+              name="hardware-chip"
+              size={20}
+              color={colors.brand.primary}
+            />
             <Text className="text-lg font-bold text-text-primary ml-2">
               Available Providers
             </Text>
@@ -354,7 +347,10 @@ export default function AIProviderSelectionPage() {
             const isExpanded = expandedProviders[providerKey];
 
             return (
-              <View key={provider} className="mb-6 rounded-xl border-2 border-neutral-light-2 overflow-hidden">
+              <View
+                key={provider}
+                className="mb-6 rounded-xl border-2 border-neutral-light-2 overflow-hidden"
+              >
                 {/* Provider Subheading - Accordion Trigger */}
                 <TouchableOpacity
                   className="bg-white p-4 border-b border-neutral-light-2"
@@ -473,8 +469,15 @@ export default function AIProviderSelectionPage() {
             <TouchableWithoutFeedback>
               <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
                 {/* Icon */}
-                <View className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto" style={{ backgroundColor: colors.brand.primary + '20' }}>
-                  <Ionicons name="swap-horizontal" size={32} color={colors.brand.primary} />
+                <View
+                  className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto"
+                  style={{ backgroundColor: colors.brand.primary + "20" }}
+                >
+                  <Ionicons
+                    name="swap-horizontal"
+                    size={32}
+                    color={colors.brand.primary}
+                  />
                 </View>
 
                 {/* Title */}
@@ -486,10 +489,10 @@ export default function AIProviderSelectionPage() {
                 <Text className="text-base text-text-secondary text-center mb-6 leading-6">
                   Switch to{" "}
                   <Text className="font-semibold">
-                    {pendingSwitch?.providerInfo?.displayName} - {pendingSwitch?.modelInfo?.displayName}
+                    {pendingSwitch?.providerInfo?.displayName} -{" "}
+                    {pendingSwitch?.modelInfo?.displayName}
                   </Text>
-                  ?
-                  {"\n\n"}
+                  ?{"\n\n"}
                   This will affect workout generation quality and style.
                 </Text>
 

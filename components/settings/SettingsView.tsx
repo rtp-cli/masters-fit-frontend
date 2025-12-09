@@ -16,12 +16,16 @@ import { useAppDataContext } from "@contexts/AppDataContext";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
-import { SettingsSkeleton } from "../../components/skeletons/SkeletonScreens";
-import ComingSoonModal from "../../components/ComingSoonModal";
+import { SettingsSkeleton } from "../skeletons/SkeletonScreens";
+import ComingSoonModal from "../ComingSoonModal";
 import { useSecretActivation } from "@/hooks/useSecretActivation";
 import * as Haptics from "expo-haptics";
 
-export default function SettingsScreen() {
+interface SettingsViewProps {
+  onClose?: () => void;
+}
+
+export default function SettingsView({ onClose }: SettingsViewProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const {
@@ -142,6 +146,11 @@ export default function SettingsScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       await activateSecret();
       setTapCount(0);
+
+      // Close the settings modal if it's open
+      if (onClose) {
+        onClose();
+      }
 
       // Navigate to AI provider selection page
       router.push("/ai-provider-selection");

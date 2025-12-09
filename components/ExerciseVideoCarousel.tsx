@@ -146,7 +146,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
               className="mr-0"
             >
               {showHeader ? (
-                <View className="bg-card rounded-2xl border border-neutral-light-2 shadow-sm overflow-hidden">
+                <View className="bg-card rounded-2xl border border-neutral-light-2 overflow-hidden">
                   {/* Exercise Info Header */}
                   <View className="p-4 pb-2">
                     <Text className="text-base font-semibold text-text-primary">
@@ -167,6 +167,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
                     <ExerciseLink
                       link={item.exercise.exercise.link}
                       exerciseName={item.exercise.exercise.name}
+                      exerciseId={item.exercise.exercise.id}
                       variant="default"
                       showFullVideo={false}
                     />
@@ -177,6 +178,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
                 <ExerciseLink
                   link={item.exercise.exercise.link}
                   exerciseName={item.exercise.exercise.name}
+                  exerciseId={item.exercise.exercise.id}
                   variant="hero"
                   showFullVideo={false}
                 />

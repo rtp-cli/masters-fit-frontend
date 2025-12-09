@@ -9,7 +9,7 @@ import React, {
 import { AppState, AppStateStatus } from "react-native";
 import { getWaiverStatusAPI, setWaiverRedirectCallback } from "@/lib/api";
 import { useAuth } from "./AuthContext";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { logger } from "@/lib/logger";
 
 interface WaiverContextType {
@@ -38,6 +38,7 @@ export function useWaiver() {
 export function WaiverProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isCheckingWaiver, setIsCheckingWaiver] = useState(false);
   const [lastWaiverCheck, setLastWaiverCheck] = useState<Date | null>(null);
   const [waiverInfo, setWaiverInfo] = useState<{
@@ -55,8 +56,13 @@ export function WaiverProvider({ children }: { children: ReactNode }) {
   // Set up waiver redirect callback
   useEffect(() => {
     const redirectToWaiver = () => {
-      console.log("[WaiverContext] API intercepted waiver requirement, redirecting");
-      router.replace("/(auth)/waiver");
+      // Only redirect if NOT already on waiver page
+      if (pathname !== "/(auth)/waiver" && !pathname.includes('/waiver')) {
+        console.log("[WaiverContext] API intercepted waiver requirement, redirecting");
+        router.replace("/(auth)/waiver");
+      } else {
+        console.log("[WaiverContext] Already on waiver page, skipping redirect");
+      }
     };
 
     setWaiverRedirectCallback(redirectToWaiver);
@@ -65,12 +71,18 @@ export function WaiverProvider({ children }: { children: ReactNode }) {
     return () => {
       setWaiverRedirectCallback(() => {});
     };
-  }, [router]);
+  }, [router, pathname]);
 
   // Check waiver status
   const checkWaiverStatus = async () => {
     // Prevent concurrent checks
     if (isCheckingRef.current || !isAuthenticated || !user) {
+      return;
+    }
+
+    // Skip check if already on waiver page
+    if (pathname === "/(auth)/waiver" || pathname.includes('/waiver')) {
+      console.log("[WaiverContext] On waiver page, skipping status check");
       return;
     }
 

@@ -48,7 +48,9 @@ export default function CircuitTracker({
   const [showTimer, setShowTimer] = useState(false);
 
   // Local state for round notes to prevent re-rendering issues
-  const [localRoundNotes, setLocalRoundNotes] = useState(currentRoundData?.notes || "");
+  const [localRoundNotes, setLocalRoundNotes] = useState(
+    currentRoundData?.notes || ""
+  );
 
   // Horizontal scroll ref for exercise navigation
   const exerciseScrollRef = useRef<ScrollView>(null);
@@ -316,7 +318,6 @@ export default function CircuitTracker({
       //       setExerciseWorkActive(false);
       //       setExerciseWorkPaused(false);
       //       setShowExerciseWork(false);
-
       //       try {
       //         Haptics.notificationAsync(
       //           Haptics.NotificationFeedbackType.Success
@@ -332,7 +333,6 @@ export default function CircuitTracker({
       //       } catch (error) {
       //         console.log("Notification error:", error);
       //       }
-
       //       return 0;
       //     }
       //     return newValue;
@@ -718,7 +718,7 @@ export default function CircuitTracker({
 
           {/* Timer */}
           {showTimer && (
-            <View className="bg-card rounded-2xl mt-2 p-6 border shadow-sm border-neutral-light-2">
+            <View className="bg-card rounded-2xl mt-2 p-6 border border-neutral-light-2">
               <CircuitTimer
                 blockType={block.blockType || "circuit"}
                 timeCapMinutes={block.timeCapMinutes}

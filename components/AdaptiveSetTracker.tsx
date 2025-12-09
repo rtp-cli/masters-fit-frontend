@@ -107,13 +107,11 @@ export default function AdaptiveSetTracker({
       // timerRef.current = setTimeout(() => {
       //   setCountdown((prev) => {
       //     const newValue = prev - 1;
-
       //     if (newValue <= 0) {
       //       // Timer finished
       //       setIsCompleted(true);
       //       setIsTimerActive(false);
       //       setIsTimerPaused(false);
-
       //       // Add notification and haptic feedback
       //       try {
       //         // Send local notification with sound (no banner will show)
@@ -125,7 +123,6 @@ export default function AdaptiveSetTracker({
       //           },
       //           trigger: null, // Show immediately
       //         });
-
       //         // Add haptic feedback
       //         Haptics.notificationAsync(
       //           Haptics.NotificationFeedbackType.Success
@@ -133,12 +130,10 @@ export default function AdaptiveSetTracker({
       //       } catch (error) {
       //         console.log("Notification/haptic feedback error:", error);
       //       }
-
       //       // Handle duration logging (but don't auto-advance)
       //       setTimeout(() => {
       //         handleTimerCompletion();
       //       }, 100);
-
       //       return 0;
       //     }
       //     return newValue;
@@ -621,51 +616,6 @@ export default function AdaptiveSetTracker({
             Add Set
           </Text>
         </TouchableOpacity>
-
-        {/* TIMER DISPLAY HIDDEN: Exercise Timer interface commented out */}
-        {/* {currentSetIndex < durationSets.length && (
-          <View className="mt-4">
-            <TouchableOpacity
-              className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
-                showExerciseTimer
-                  ? "bg-brand-primary border-brand-primary"
-                  : "border-brand-primary bg-transparent"
-              }`}
-              onPress={() => setShowExerciseTimer(!showExerciseTimer)}
-            >
-              <Text
-                className={`text-sm font-semibold ${
-                  showExerciseTimer ? "text-white" : ""
-                }`}
-                style={!showExerciseTimer ? { color: colors.brand.primary } : {}}
-              >
-                {showExerciseTimer ? "Hide Exercise Timer" : `Show Exercise Timer (${formatExerciseTimerDisplay()})`}
-              </Text>
-            </TouchableOpacity>
-
-            {showExerciseTimer && (
-              <View className="rounded-2xl p-4 border shadow-sm border-neutral-light-2 bg-card">
-                <View className="flex-row items-center justify-between mb-4">
-                  <Text className="text-sm font-semibold text-text-primary">
-                    Exercise Timer
-                  </Text>
-                </View>
-
-                <CircularTimerDisplay
-                  countdown={countdown}
-                  targetDuration={exercise.duration || 30}
-                  isActive={isTimerActive}
-                  isPaused={isTimerPaused}
-                  isCompleted={isCompleted}
-                  startButtonText={`Start Timer`}
-                  onStartPause={handleStartPause}
-                  onReset={handleReset}
-                  onCancel={handleCancel}
-                />
-              </View>
-            )}
-          </View>
-        )} */}
       </View>
     );
   };

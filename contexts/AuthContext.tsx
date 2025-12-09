@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
 } from "react";
+import { useRouter } from "expo-router";
 import {
   checkEmailExists,
   completeOnboarding as apiCompleteOnboarding,
@@ -19,6 +20,9 @@ import { invalidateActiveWorkoutCache } from "../lib/workouts";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
+import { setAuthFailureCallback } from "../lib/api";
+import { trackAppOpened, AnalyticsUtils } from "@/lib/analytics";
+import * as Application from "expo-application";
 
 import { RegenerationType } from "../constants";
 
@@ -70,6 +74,7 @@ export function useAuth() {
 
 // Provider component that wraps the app
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -84,8 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         const storedUser = await getCurrentUser();
+
+        // Track app session start
+        const sessionId = AnalyticsUtils.generateSessionId();
+
+        trackAppOpened({
+          app_version: Application.nativeApplicationVersion || "1.0.0",
+          platform: AnalyticsUtils.getPlatform(),
+        }).catch(console.warn);
+
         if (storedUser) {
           setUser(storedUser);
+          // User profile creation/identification now handled by backend
+          logger.debug("User authenticated, profile handled by backend", {
+            userId: storedUser.id,
+          });
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -105,6 +123,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success && result.token) {
         // Store the token if it's returned
         await SecureStore.setItemAsync("token", result.token);
+
+        // Also store refresh token if provided
+        if (result.refreshToken) {
+          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
+        } else {
+          console.warn(
+            "[AuthContext] NO REFRESH TOKEN in checkEmail response!"
+          );
+        }
+
         logger.info("User authentication successful", {
           needsOnboarding: result.needsOnboarding,
         });
@@ -186,6 +214,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await SecureStore.deleteItemAsync("pendingEmail");
           await SecureStore.deleteItemAsync("pendingUserId");
 
+          // User profile tracking now handled by backend in completeOnboarding API
+          logger.debug(
+            "Onboarding completed, profile tracking handled by backend"
+          );
+
           logger.businessEvent("Onboarding completed", {
             userId: updatedUser.id,
             fitnessLevel: userData.fitnessLevel,
@@ -215,6 +248,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       invalidateActiveWorkoutCache();
       await clearAllData();
+
+      // User data clearing now handled by backend on logout
+
       setUser(null);
     } catch (error) {
       logger.error("Logout failed", {
@@ -225,12 +261,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Set up API auth failure callback (after logout function is defined)
+  useEffect(() => {
+    const handleAuthFailure = async () => {
+      try {
+        // Use the same logout flow as the logout button
+        await logout();
+        router.replace("/");
+      } catch (error) {
+        console.error("[AuthContext] Error during logout process:", error);
+
+        // Fallback: still try to redirect even if logout fails
+        try {
+          router.replace("/");
+        } catch (redirectError) {
+          console.error(
+            "[AuthContext] Fallback redirect also failed:",
+            redirectError
+          );
+        }
+      }
+    };
+    setAuthFailureCallback(handleAuthFailure);
+
+    // Cleanup function
+    return () => {
+      setAuthFailureCallback(() => {});
+    };
+  }, [logout, router]);
+
   // Update user data
   const setUserData = (userData: User | null) => {
     setUser(userData);
     // Also save to SecureStore to maintain consistency
     if (userData) {
       saveUserToSecureStorage(userData);
+      // User profile tracking now handled by backend
+      logger.debug("User data updated, profile tracking handled by backend");
     }
   };
 

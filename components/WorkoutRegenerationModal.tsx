@@ -821,11 +821,6 @@ export default function WorkoutRegenerationModal({
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
             >
-              <Text className="text-xs text-text-muted mb-4 text-center">
-                These changes apply only to this workout and won't be saved to
-                your profile
-              </Text>
-
               <ProfileOverrideForm
                 overrides={temporaryOverrides}
                 onOverrideChange={setTemporaryOverrides}

@@ -1,4 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, Linking, Image } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+  Image,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -8,7 +15,11 @@ import { colors } from "@/lib/theme";
 import { images } from "@/assets";
 
 // Import legal documents
-import { waiverDocument, termsDocument, privacyDocument } from "@/lib/legalDocuments";
+import {
+  waiverDocument,
+  termsDocument,
+  privacyDocument,
+} from "@/lib/legalDocuments";
 
 interface MarkdownSection {
   type: "heading2" | "heading3" | "paragraph" | "list";
@@ -112,7 +123,9 @@ export default function LegalDocumentScreen() {
   };
 
   // Group sections by H2 headings
-  const groupSectionsByHeading = (sections: MarkdownSection[]): GroupedSection[] => {
+  const groupSectionsByHeading = (
+    sections: MarkdownSection[]
+  ): GroupedSection[] => {
     const grouped: GroupedSection[] = [];
     let currentGroup: GroupedSection | null = null;
 
@@ -123,7 +136,7 @@ export default function LegalDocumentScreen() {
         }
         currentGroup = {
           heading: section.content,
-          content: []
+          content: [],
         };
       } else if (currentGroup) {
         currentGroup.content.push(section);
@@ -186,14 +199,16 @@ export default function LegalDocumentScreen() {
               return (
                 <View
                   key={itemIndex}
-                  className={`flex-row mb-3 ${isSubItem ? 'ml-6' : ''}`}
+                  className={`flex-row mb-3 ${isSubItem ? "ml-6" : ""}`}
                 >
                   <Text className="text-base text-text-primary mt-1.5">
-                    {isSubItem ? '◦' : '•'}
+                    {isSubItem ? "◦" : "•"}
                   </Text>
                   <View className="flex-1 ml-3">
                     <Text className="text-base text-text-primary leading-7">
-                      {parseBoldText(isSubItem ? item.substring(3).trim() : item)}
+                      {parseBoldText(
+                        isSubItem ? item.substring(3).trim() : item
+                      )}
                     </Text>
                   </View>
                 </View>
@@ -203,7 +218,10 @@ export default function LegalDocumentScreen() {
         );
       case "paragraph":
         return (
-          <Text key={index} className="text-base text-text-secondary mb-4 leading-7">
+          <Text
+            key={index}
+            className="text-base text-text-secondary mb-4 leading-7"
+          >
             {parseBoldText(section.content)}
           </Text>
         );
@@ -233,9 +251,10 @@ export default function LegalDocumentScreen() {
 
   // Calculate reading time (approx 200 words per minute)
   const wordCount = documentData.sections.reduce((acc, section) => {
-    if (section.type === "paragraph") return acc + section.content.split(' ').length;
+    if (section.type === "paragraph")
+      return acc + section.content.split(" ").length;
     if (section.type === "list" && section.items) {
-      return acc + section.items.join(' ').split(' ').length;
+      return acc + section.items.join(" ").split(" ").length;
     }
     return acc;
   }, 0);
@@ -246,18 +265,25 @@ export default function LegalDocumentScreen() {
       <StatusBar style="light" />
 
       {/* Header */}
-      <View className="bg-white shadow-sm">
+      <View className="bg-white">
         <View className="px-5 py-4">
           <View className="flex-row items-center">
             <TouchableOpacity
               onPress={() => router.back()}
               className="p-1 -ml-1"
             >
-              <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color={colors.text.primary}
+              />
             </TouchableOpacity>
             <View className="ml-4 flex-1">
               <Text className="text-sm text-text-muted">Legal Document</Text>
-              <Text className="text-base font-semibold text-text-primary" numberOfLines={1}>
+              <Text
+                className="text-base font-semibold text-text-primary"
+                numberOfLines={1}
+              >
                 {documentData.title}
               </Text>
             </View>
@@ -286,10 +312,10 @@ export default function LegalDocumentScreen() {
                 source={images.logo}
                 className="w-10 h-10 mr-3"
                 resizeMode="contain"
-                style={{ tintColor: 'white' }}
+                style={{ tintColor: "white" }}
               />
               <Text className="text-3xl font-bold text-white flex-1">
-                {documentData.title.replace('MastersFit LLC – ', '')}
+                {documentData.title.replace("MastersFit LLC – ", "")}
               </Text>
             </View>
             <View className="flex-row items-center mb-2">
@@ -338,7 +364,7 @@ export default function LegalDocumentScreen() {
           )}
 
           {/* Document Sections */}
-          <View className="bg-white rounded-xl shadow-sm px-6 py-6">
+          <View className="bg-white rounded-xl px-6 py-6">
             {groupedSections.map((group, groupIndex) => (
               <View key={groupIndex} className={groupIndex > 0 ? "mt-8" : ""}>
                 {/* Section Header */}
@@ -347,7 +373,9 @@ export default function LegalDocumentScreen() {
                 </Text>
 
                 {/* Section Content */}
-                {group.content.map((section, index) => renderSection(section, index))}
+                {group.content.map((section, index) =>
+                  renderSection(section, index)
+                )}
               </View>
             ))}
           </View>
@@ -372,7 +400,7 @@ export default function LegalDocumentScreen() {
                 </View>
                 <TouchableOpacity
                   className="ml-4"
-                  onPress={() => Linking.openURL('mailto:legal@mastersfit.ai')}
+                  onPress={() => Linking.openURL("mailto:legal@mastersfit.ai")}
                 >
                   <View
                     className="w-12 h-12 rounded-full items-center justify-center"
@@ -402,9 +430,9 @@ export default function LegalDocumentScreen() {
             width: 48,
             height: 48,
             borderRadius: 24,
-            justifyContent: 'center',
-            alignItems: 'center',
-            shadowColor: '#000',
+            justifyContent: "center",
+            alignItems: "center",
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
             shadowRadius: 4,
