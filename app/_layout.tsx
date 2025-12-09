@@ -26,6 +26,7 @@ import {
   setupNotificationCategories,
 } from "@/lib/notifications";
 import "../global.css";
+import { ensureHealthConnectInitialized } from "@utils/health";
 
 // Inner component that can access auth context
 function AppContent() {
@@ -44,6 +45,10 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
+
+  useEffect(() => {
+    ensureHealthConnectInitialized();
+  }, []);
 
   // State to track notification-triggered refreshes
   const [isNotificationRefresh, setIsNotificationRefresh] = useState(false);

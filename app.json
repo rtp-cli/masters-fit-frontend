@@ -6,7 +6,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mastersfit.ai",
@@ -16,7 +18,9 @@
         "backgroundColor": "#FFFFFF"
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSHealthShareUsageDescription": "This app reads your step count to show daily activity metrics.",
+        "NSHealthUpdateUsageDescription": "This app writes fitness data to help track your progress."
       }
     },
     "notification": {
@@ -34,7 +38,14 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mastersfit.ai"
+      "package": "com.mastersfit.ai",
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.WRITE_STEPS",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_EXERCISE_SESSION"
+      ]
     },
     "scheme": "masters-fit",
     "web": {
@@ -45,7 +56,27 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
-      "expo-notifications"
+      "expo-health-connect",
+      "expo-notifications",
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "MastersFit reads your step count to show daily activity.",
+          "healthUpdatePermission": "MastersFit may write step counts to help track progress.",
+          "isClinicalDataEnabled": false
+        }
+      ],
+      "./plugins/healthconnect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 26
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},

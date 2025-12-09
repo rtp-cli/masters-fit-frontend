@@ -8,13 +8,18 @@ import {
   Alert,
   TouchableOpacity,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import {
-  TotalVolumeMetrics,
+  fetchHeartRateSamples,
+  fetchCaloriesToday,
+  fetchWorkoutDuration,
+} from "@utils/health";
+import {
   WeightAccuracyMetrics,
   WorkoutTypeMetrics,
   TodayWorkout,
@@ -45,19 +50,40 @@ import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
 } from "@/types/api";
-import Header from "@/components/Header";
+import PagerView from "react-native-pager-view";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-// Goal name mappings
-const goalNames: Record<string, string> = {
-  general_fitness: "General Fitness",
-  fat_loss: "Fat Loss",
-  endurance: "Endurance",
-  muscle_gain: "Muscle Gain",
-  strength: "Strength",
-  mobility_flexibility: "Mobility & Flexibility",
-  balance: "Balance",
-  recovery: "Recovery",
-};
+interface HealthMetricCardProps {
+  title: string;
+  value: string | number | null;
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  unit?: string;
+}
+
+const HealthMetricCard: React.FC<HealthMetricCardProps> = ({
+  title,
+  value,
+  iconName,
+  iconColor,
+  unit,
+}) => (
+  <View className="flex-1 items-center justify-center bg-white rounded-2xl p-3 shadow-rn-sm mx-2 my-2">
+    <Ionicons name={iconName} size={32} color={iconColor} />
+    <Text className="text-lg font-semibold text-text-primary mt-2">
+      {title}
+    </Text>
+    <Text className="text-2xl font-bold text-text-secondary mt-1">
+      {value !== null ? `${value} ${unit || ""}` : "N/A"}
+    </Text>
+  </View>
+);
+
+import {
+  connectHealth as connectHealthAPI,
+  fetchStepsToday as fetchStepsTodayAPI,
+  fetchNutritionCaloriesToday,
+} from "@utils/health";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -73,6 +99,17 @@ export default function DashboardScreen() {
     planDays?: PlanDayWithBlocks[];
   } | null>(null);
   const [loadingToday, setLoadingToday] = useState(false);
+  const [stepsCount, setStepsCount] = useState<number | null>(null);
+  const [maxHeartRate, setMaxHeartRate] = useState<number | null>(null);
+  const [avgHeartRate, setAvgHeartRate] = useState<number | null>(null);
+  const [caloriesBurned, setCaloriesBurned] = useState<number | null>(null);
+  const [nutritionCaloriesConsumed, setNutritionCaloriesConsumed] = useState<
+    number | null
+  >(null);
+  const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
+  const [healthReady, setHealthReady] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   // Filtering state for individual charts
   const [strengthFilter, setStrengthFilter] = useState<"1W" | "1M" | "3M">(
@@ -86,9 +123,7 @@ export default function DashboardScreen() {
   >("1M");
 
   // Separate data state for filtered charts
-  const [filteredStrengthData, setFilteredStrengthData] = useState<
-    TotalVolumeMetrics[]
-  >([]);
+
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
   >([]);
@@ -141,7 +176,6 @@ export default function DashboardScreen() {
 
     // State
     loading,
-    error,
 
     // Actions
     refresh: {
@@ -238,6 +272,37 @@ export default function DashboardScreen() {
       tabEvents.off("scrollToTop:dashboard", handleScrollToTop);
     };
   }, []);
+
+  // Fetch health data
+  useEffect(() => {
+    const getHealthData = async () => {
+      if (!healthReady) return;
+      setHealthLoading(true);
+      try {
+        const steps = await fetchStepsTodayAPI();
+        setStepsCount(steps);
+
+        const { max, avg } = await fetchHeartRateSamples();
+        setMaxHeartRate(max);
+        setAvgHeartRate(avg);
+
+        const calories = await fetchCaloriesToday();
+        setCaloriesBurned(calories);
+
+        const nutritionCalories = await fetchNutritionCaloriesToday();
+        setNutritionCaloriesConsumed(nutritionCalories);
+
+        const duration = await fetchWorkoutDuration();
+        setWorkoutDuration(duration);
+      } catch (error) {
+        console.error("Error fetching health data:", error);
+        setHealthError("Failed to fetch health data.");
+      } finally {
+        setHealthLoading(false);
+      }
+    };
+    getHealthData();
+  }, [healthReady]);
 
   // Wide date range function for getting all data
   const calculateWideDataRange = () => {
@@ -603,6 +668,10 @@ export default function DashboardScreen() {
               <SkeletonLoader height={20} width={192} />
             </View>
 
+            <View className="px-5 mb-6">
+              <SkeletonLoader height={200} width="100%" />
+            </View>
+
             {/* Today's Schedule Skeleton */}
             <View className="px-5 mb-6">
               <View className="bg-white rounded-2xl p-5">
@@ -610,6 +679,7 @@ export default function DashboardScreen() {
                   <SkeletonLoader height={24} width={160} />
                   <SkeletonLoader height={32} width={80} />
                 </View>
+
                 <SkeletonLoader
                   height={80}
                   width="100%"
@@ -724,6 +794,39 @@ export default function DashboardScreen() {
   const handleRepeatWorkoutSuccess = () => {
     // Refresh all data after successful workout repetition
     handleRefresh();
+  };
+
+  const handleFetchStepsToday = async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const count = await fetchStepsTodayAPI();
+      setStepsCount(count);
+    } catch (e: any) {
+      setHealthError(e?.message || "Failed to read steps");
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  const handleConnectHealth = async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const granted = await connectHealthAPI();
+      if (granted) {
+        setHealthReady(true);
+        await handleFetchStepsToday();
+      } else {
+        setHealthReady(false);
+        setHealthError("Health permissions not granted");
+      }
+    } catch (e: any) {
+      setHealthError(e?.message || "Health permissions failed");
+      setHealthReady(false);
+    } finally {
+      setHealthLoading(false);
+    }
   };
 
   // The global generating screen will handle workout generation display
@@ -978,6 +1081,118 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <>
+            {/* Steps Card */}
+            {/* <View className="px-4 mb-6">
+              <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-base font-semibold text-text-primary">
+                    Steps (Today)
+                  </Text>
+                  {healthLoading && (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand.primary}
+                    />
+                  )}
+                </View>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center">
+                    <Ionicons
+                      name="walk-outline"
+                      size={24}
+                      color={colors.brand.primary}
+                    />
+                    <Text className="text-lg font-bold text-text-primary ml-3">
+                      {stepsCount ?? "—"}
+                    </Text>
+                  </View>
+                  {!healthReady ? (
+                    <TouchableOpacity
+                      className="bg-secondary rounded-xl px-4 py-2"
+                      onPress={handleConnectHealth}
+                    >
+                      <Text className="text-white font-semibold text-sm">
+                        Connect Health
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      className="bg-primary rounded-xl px-4 py-2"
+                      onPress={handleFetchStepsToday}
+                    >
+                      <Text className="text-text-primary font-semibold text-sm">
+                        Refresh
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {healthError && (
+                  <Text className="text-xs text-accent mt-3">
+                    {healthError}
+                  </Text>
+                )}
+              </View>
+            </View> */}
+            <View className="px-5 mb-6 relative">
+              <GestureHandlerRootView>
+                <PagerView style={{ height: 200 }} initialPage={0}>
+                  <View key="0">
+                    <HealthMetricCard
+                      title="Steps"
+                      value={stepsCount}
+                      iconName="walk"
+                      iconColor={colors.brand.primary}
+                      unit="steps"
+                    />
+                  </View>
+                  <View key="1">
+                    <HealthMetricCard
+                      title="Calories Consumed"
+                      value={nutritionCaloriesConsumed}
+                      iconName="fast-food"
+                      iconColor={colors.brand.secondary}
+                      unit="kcal"
+                    />
+                  </View>
+                  <View key="2">
+                    <HealthMetricCard
+                      title="Calories Burned"
+                      value={caloriesBurned}
+                      iconName="flame"
+                      iconColor={colors.brand.dark[1]}
+                      unit="kcal"
+                    />
+                  </View>
+                  <View key="3">
+                    <HealthMetricCard
+                      title="Max Heart Rate"
+                      value={maxHeartRate}
+                      iconName="heart"
+                      iconColor={colors.danger}
+                      unit="bpm"
+                    />
+                  </View>
+                </PagerView>
+                {!healthReady && (
+                  <TouchableOpacity
+                    className="absolute right-3 top-3 bg-secondary rounded-xl px-4 py-2 items-center"
+                    onPress={handleConnectHealth}
+                    disabled={healthLoading}
+                  >
+                    {healthLoading ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.neutral.light[1]}
+                      />
+                    ) : (
+                      <Text className="text-white font-semibold text-sm">
+                        Connect Health
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </GestureHandlerRootView>
+            </View>
             {/* Today's Workout Card */}
             <View className="px-4 mb-6">
               <View className="bg-white rounded-2xl p-5">
