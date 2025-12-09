@@ -85,8 +85,9 @@ import {
   fetchNutritionCaloriesToday,
 } from "@utils/health";
 import Header from "@/components/Header";
+import { DashboardScreen as DashboardComponent } from "@/components/dashboard";
 
-export default function DashboardScreen() {
+function DashboardLegacyScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
@@ -1998,4 +1999,8 @@ export default function DashboardScreen() {
       />
     </View>
   );
+}
+
+export default function DashboardRoute() {
+  return <DashboardComponent />;
 }
