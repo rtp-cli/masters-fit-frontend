@@ -1082,58 +1082,6 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <>
-            {/* Steps Card */}
-            {/* <View className="px-4 mb-6">
-              <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
-                <View className="flex-row items-center justify-between mb-4">
-                  <Text className="text-base font-semibold text-text-primary">
-                    Steps (Today)
-                  </Text>
-                  {healthLoading && (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.brand.primary}
-                    />
-                  )}
-                </View>
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="walk-outline"
-                      size={24}
-                      color={colors.brand.primary}
-                    />
-                    <Text className="text-lg font-bold text-text-primary ml-3">
-                      {stepsCount ?? "—"}
-                    </Text>
-                  </View>
-                  {!healthReady ? (
-                    <TouchableOpacity
-                      className="bg-secondary rounded-xl px-4 py-2"
-                      onPress={handleConnectHealth}
-                    >
-                      <Text className="text-white font-semibold text-sm">
-                        Connect Health
-                      </Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      className="bg-primary rounded-xl px-4 py-2"
-                      onPress={handleFetchStepsToday}
-                    >
-                      <Text className="text-text-primary font-semibold text-sm">
-                        Refresh
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                {healthError && (
-                  <Text className="text-xs text-accent mt-3">
-                    {healthError}
-                  </Text>
-                )}
-              </View>
-            </View> */}
             <View className="px-5 mb-6 relative">
               <GestureHandlerRootView>
                 <PagerView style={{ height: 200 }} initialPage={0}>
