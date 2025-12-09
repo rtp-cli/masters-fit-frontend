@@ -84,6 +84,7 @@ import {
   fetchStepsToday as fetchStepsTodayAPI,
   fetchNutritionCaloriesToday,
 } from "@utils/health";
+import Header from "@/components/Header";
 
 export default function DashboardScreen() {
   const router = useRouter();
