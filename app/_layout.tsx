@@ -9,13 +9,14 @@ import {
   useBackgroundJobs,
 } from "@contexts/BackgroundJobContext";
 import { WaiverProvider } from "@contexts/WaiverContext";
+import { MixpanelProvider } from "@contexts/MixpanelContext";
 import { useFonts } from "expo-font";
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from "@expo-google-fonts/manrope";
 import { useEffect, useState } from "react";
 import WarmingUpScreen from "@/components/ui/WarmingUpScreen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
@@ -241,10 +242,10 @@ function AppContent() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
   });
 
   if (!fontsLoaded && !fontError) {
@@ -252,16 +253,18 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <WaiverProvider>
-        <WorkoutProvider>
-          <AppDataProvider>
-            <BackgroundJobProvider>
-              <AppContent />
-            </BackgroundJobProvider>
-          </AppDataProvider>
-        </WorkoutProvider>
-      </WaiverProvider>
-    </AuthProvider>
+    <MixpanelProvider>
+      <AuthProvider>
+        <WaiverProvider>
+          <WorkoutProvider>
+            <AppDataProvider>
+              <BackgroundJobProvider>
+                <AppContent />
+              </BackgroundJobProvider>
+            </AppDataProvider>
+          </WorkoutProvider>
+        </WaiverProvider>
+      </AuthProvider>
+    </MixpanelProvider>
   );
 }

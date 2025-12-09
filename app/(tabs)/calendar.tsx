@@ -40,6 +40,7 @@ import {
 } from "../../utils";
 import { colors } from "../../lib/theme";
 import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
+import Header from "@/components/Header";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -502,27 +503,6 @@ export default function CalendarScreen() {
     : null;
   const isHistoricalWorkout = selectedPlanDayResult?.isHistorical || false;
 
-  const formatDate = (dateString: string) => {
-    // Use safe parsing for YYYY-MM-DD format strings
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-      const [year, month, day] = dateString.split("-").map(Number);
-      const date = new Date(year, month - 1, day); // month is 0-indexed
-      return date.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      });
-    }
-
-    // Fallback for other date formats
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   // Handle pull to refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -548,15 +528,8 @@ export default function CalendarScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        <View className="pt-6">
-          {workoutPlan?.name && (
-            <View className="flex justify-center items-center px-4">
-              <Text className="text-xl font-bold text-text-primary mb-4">
-                {workoutPlan?.name}
-              </Text>
-            </View>
-          )}
-        </View>
+        {/* Header with Workout Title and Icons */}
+        <Header workoutTitle={workoutPlan?.name} />
         {/* Calendar */}
         <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
           <RNCalendar
@@ -681,9 +654,6 @@ export default function CalendarScreen() {
           <View className="px-lg">
             {!currentSelectedPlanDay ? (
               <View>
-                <Text className="text-base font-bold text-text-primary mb-md">
-                  {formatDate(selectedDate)}
-                </Text>
                 {!workoutPlan ||
                 (workoutPlan?.endDate &&
                   selectedDate > formatDateAsString(workoutPlan.endDate)) ? (
@@ -716,8 +686,7 @@ export default function CalendarScreen() {
                   <View className="flex-row items-center justify-between mb-1">
                     <View className="flex-1">
                       <Text className="text-base font-bold text-text-primary">
-                        {currentSelectedPlanDay.description ||
-                          formatDate(selectedDate)}
+                        {currentSelectedPlanDay.description || "Workout"}
                       </Text>
                       <View className="flex-row items-center mt-xs">
                         <Text className="text-xs text-text-muted">
@@ -766,11 +735,11 @@ export default function CalendarScreen() {
                       )}
                     </View>
                   </View>
-                  {currentSelectedPlanDay.instructions && (
+                  {/* {currentSelectedPlanDay.instructions && (
                     <Text className="text-sm text-text-muted leading-5">
                       {currentSelectedPlanDay.instructions}
                     </Text>
-                  )}
+                  )} */}
                 </View>
 
                 {/* Workout Blocks */}

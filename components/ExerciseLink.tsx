@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import Text from "./Text";
 import { images } from "@/assets";
+import { trackVideoEngagement } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ExerciseLinkProps {
   link: string | null | undefined;
@@ -20,6 +22,7 @@ interface ExerciseLinkProps {
   style?: ViewStyle;
   showFullVideo?: boolean;
   variant?: "default" | "hero";
+  exerciseId?: number;
 }
 
 interface LinkInfo {
@@ -35,6 +38,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   style,
   showFullVideo = false,
   variant = "default",
+  exerciseId,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [webViewError, setWebViewError] = useState(false);
@@ -42,6 +46,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   const [imageError, setImageError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+  const { user } = useAuth();
 
   // Reset image error and fallback when exercise name changes
   useEffect(() => {
@@ -148,6 +153,15 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
 
   const handleOpenInBrowser = async () => {
     if (!link) return;
+
+    // Track video engagement before opening
+    if (exerciseId && exerciseName && link) {
+      trackVideoEngagement({
+        exercise_id: exerciseId,
+        exercise_name: exerciseName,
+        video_url: link,
+      }).catch(console.warn);
+    }
 
     try {
       const supported = await Linking.canOpenURL(link);
@@ -471,7 +485,17 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
       return (
         <TouchableOpacity
           className="relative h-80"
-          onPress={() => setShowVideo(true)}
+          onPress={async () => {
+            // Track video engagement when thumbnail is tapped
+            if (exerciseId && exerciseName && link) {
+              trackVideoEngagement({
+                exercise_id: exerciseId,
+                exercise_name: exerciseName,
+                video_url: link,
+              }).catch(console.warn);
+            }
+            setShowVideo(true);
+          }}
         >
           <Image
             source={{ uri: linkInfo.thumbnailUrl }}
@@ -496,7 +520,17 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
       <View className={`my-2 ${style ? "" : ""}`}>
         <TouchableOpacity
           className="relative rounded-lg overflow-hidden"
-          onPress={() => setShowVideo(true)}
+          onPress={async () => {
+            // Track video engagement when thumbnail is tapped
+            if (exerciseId && exerciseName && link) {
+              trackVideoEngagement({
+                exercise_id: exerciseId,
+                exercise_name: exerciseName,
+                video_url: link,
+              }).catch(console.warn);
+            }
+            setShowVideo(true);
+          }}
         >
           <Image
             source={{ uri: linkInfo.thumbnailUrl }}
