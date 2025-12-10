@@ -83,7 +83,7 @@ export async function fetchStepsToday(): Promise<number> {
     const options = {
       startDate: start.toISOString(),
       endDate: end.toISOString(),
-      type: "Workout",
+
     } as any;
     const results: any[] = await new Promise((resolve, reject) => {
       AppleHealthKit.getDailyStepCountSamples(
