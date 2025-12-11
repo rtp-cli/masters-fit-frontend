@@ -5,9 +5,13 @@ import {
   TouchableOpacity,
   Alert,
   GestureResponderEvent,
+  Platform,
 } from "react-native";
 import { useNavigation, NavigationState } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import Header from "@/components/Header";
 import FloatingActionButton from "@components/FloatingActionButton";
 import { colors } from "@/lib/theme";
@@ -95,6 +99,7 @@ function DisabledTabButton({
 
 export default function TabLayout() {
   const { isWorkoutInProgress } = useWorkout();
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -182,6 +187,14 @@ export default function TabLayout() {
         {/* Floating Action Button for background jobs */}
         <FloatingActionButton />
       </View>
+      {Platform.OS === "android" && (
+        <View
+          style={{
+            height: insets.bottom ?? 0,
+            backgroundColor: colors.brand.secondary,
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

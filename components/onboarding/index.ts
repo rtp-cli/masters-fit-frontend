@@ -1,5 +1,7 @@
 // Main OnboardingForm component
+export { OnboardingScreen } from "./onboarding-screen";
 export { default as OnboardingForm } from "../OnboardingForm";
+export { useOnboardingController } from "./use-onboarding-controller";
 
 // Step components
 export { default as PersonalInfoStep } from "./steps/PersonalInfoStep";

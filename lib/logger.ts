@@ -11,7 +11,7 @@ export enum LogLevel {
 }
 
 interface LogContext {
-  [key: string]: string | number | boolean | undefined | null;
+  [key: string]: string | number | boolean | undefined | null | unknown;
 }
 
 interface LogEntry {
