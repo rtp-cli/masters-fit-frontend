@@ -30,9 +30,13 @@ const HealthMetricCard: React.FC<HealthMetricCardProps> = ({
   iconColor,
   unit,
 }) => (
-  <View className="flex-1 items-center justify-center bg-white rounded-2xl p-3 shadow-rn-sm mx-2 my-2">
-    <Ionicons name={iconName} size={32} color={iconColor} />
-    <Text className="text-lg font-semibold text-text-primary mt-2">{title}</Text>
+  <View className="flex-1 flex-row items-center justify-around bg-white rounded-2xl gap-8 shadow-rn-sm mx-2 my-1">
+    <View className="flex-row items-center justify-center">
+      <Ionicons name={iconName} size={32} color={iconColor} />
+      <Text className="text-lg font-semibold text-text-primary mt-2">
+        {title}
+      </Text>
+    </View>
     <Text className="text-2xl font-bold text-text-secondary mt-1">
       {value !== null ? `${value} ${unit || ""}` : "N/A"}
     </Text>
@@ -49,16 +53,15 @@ const HealthMetricsCarousel: React.FC<HealthMetricsCarouselProps> = ({
   onConnect,
 }) => {
   return (
-    <View className="px-5 mb-6 relative">
+    <View className="px-2 mb-4 relative">
       <GestureHandlerRootView>
-        <PagerView style={{ height: 200 }} initialPage={0}>
+        <PagerView style={{ height: 100 }} initialPage={0}>
           <View key="0">
             <HealthMetricCard
               title="Steps"
               value={stepsCount}
               iconName="walk"
               iconColor={colors.brand.primary}
-              unit="steps"
             />
           </View>
           <View key="1">
@@ -98,7 +101,9 @@ const HealthMetricsCarousel: React.FC<HealthMetricsCarouselProps> = ({
             {healthLoading ? (
               <ActivityIndicator size="small" color={colors.neutral.light[1]} />
             ) : (
-              <Text className="text-white font-semibold text-sm">Connect Health</Text>
+              <Text className="text-white font-semibold text-sm">
+                Connect Health
+              </Text>
             )}
           </TouchableOpacity>
         )}
