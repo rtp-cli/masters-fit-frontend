@@ -118,9 +118,6 @@ export const VerifyScreen = () => {
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
-      {/* Header */}
-      <Header />
-
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}

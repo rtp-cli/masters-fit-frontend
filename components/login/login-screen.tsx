@@ -13,7 +13,6 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { colors } from "../../lib/theme";
-import Header from "@components/Header";
 
 export const LoginScreen = () => {
   const router = useRouter();
@@ -109,7 +108,6 @@ export const LoginScreen = () => {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
-      <Header />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Title and description */}
         <View className="px-lg pt-2xl pb-lg">

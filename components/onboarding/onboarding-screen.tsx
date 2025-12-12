@@ -21,9 +21,6 @@ export const OnboardingScreen = () => {
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
 
-      {/* Header */}
-      <Header />
-
       <OnboardingForm
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
