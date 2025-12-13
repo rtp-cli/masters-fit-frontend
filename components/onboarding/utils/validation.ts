@@ -91,6 +91,10 @@ export const validateStep = (
       }
       break;
 
+    case OnboardingStep.HEALTH_CONNECT:
+      // Health connection is optional; no validation needed.
+      break;
+
     case OnboardingStep.WORKOUT_STYLE:
       if (formData.preferredStyles.length === 0) {
         newErrors.preferredStyles = "Please select at least one workout style";

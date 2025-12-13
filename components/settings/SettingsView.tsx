@@ -7,6 +7,7 @@ import {
   Switch,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ import { SettingsSkeleton } from "../skeletons/SkeletonScreens";
 import ComingSoonModal from "../ComingSoonModal";
 import { useSecretActivation } from "@/hooks/useSecretActivation";
 import * as Haptics from "expo-haptics";
+import { connectHealth, getHealthConnection } from "@/utils/health";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -41,6 +43,9 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [legalExpanded, setLegalExpanded] = useState(false);
+  const [healthConnected, setHealthConnected] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   // Secret activation state
   const [tapCount, setTapCount] = useState(0);
@@ -111,6 +116,40 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       loadUserData();
     }
   }, [user?.id, profileData]);
+
+  // Health connect status
+  const loadHealthStatus = useCallback(async () => {
+    try {
+      const connected = await getHealthConnection();
+      setHealthConnected(connected);
+      if (connected) setHealthError(null);
+    } catch {
+      setHealthConnected(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHealthStatus();
+  }, [loadHealthStatus]);
+
+  const handleConnectHealth = useCallback(async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const granted = await connectHealth();
+      if (granted) {
+        setHealthConnected(true);
+      } else {
+        setHealthConnected(false);
+        setHealthError("Health permissions not granted");
+      }
+    } catch (err: any) {
+      setHealthConnected(false);
+      setHealthError(err?.message || "Unable to connect health right now.");
+    } finally {
+      setHealthLoading(false);
+    }
+  }, []);
 
   // Show coming soon modal
   const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
@@ -319,7 +358,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           <View className="flex-row justify-around">
             <TouchableOpacity
               className="items-center"
-              onPress={() => router.push("/profile-edit")}
+              onPress={() => {
+                if (onClose) onClose();
+                router.push("/profile-edit");
+              }}
             >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
@@ -604,6 +646,58 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           <Text className="text-base font-semibold text-text-primary p-4 pb-2">
             App Settings
           </Text>
+
+          {!healthConnected && (
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <Text className="text-sm font-semibold text-text-primary">
+                    Connect Health
+                  </Text>
+                  <Text className="text-xs text-text-secondary mt-1">
+                    Sync steps, calories, heart rate, and workouts from Apple
+                    Health or Health Connect.
+                  </Text>
+                  {healthError && (
+                    <Text className="text-xs text-danger mt-2">
+                      {healthError}
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  className="bg-secondary px-4 py-2 rounded-xl items-center justify-center"
+                  onPress={handleConnectHealth}
+                  disabled={healthLoading}
+                >
+                  {healthLoading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.neutral.white}
+                    />
+                  ) : (
+                    <Text className="text-sm font-semibold text-white">
+                      Connect
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {healthConnected && (
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color={colors.brand.primary}
+                />
+                <Text className="text-sm font-semibold text-text-primary ml-2">
+                  Health Connected
+                </Text>
+              </View>
+            </View>
+          )}
 
           <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1">

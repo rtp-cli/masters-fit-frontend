@@ -10,6 +10,7 @@ export { default as PhysicalLimitationsStep } from "./steps/PhysicalLimitationsS
 export { default as FitnessLevelStep } from "./steps/FitnessLevelStep";
 export { default as WorkoutEnvironmentStep } from "./steps/WorkoutEnvironmentStep";
 export { default as WorkoutStyleStep } from "./steps/WorkoutStyleStep";
+export { default as HealthConnectStep } from "./steps/HealthConnectStep";
 
 // UI components
 export { default as OnboardingHeader } from "./ui/OnboardingHeader";

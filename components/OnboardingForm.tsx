@@ -28,6 +28,7 @@ import PhysicalLimitationsStep from "./onboarding/steps/PhysicalLimitationsStep"
 import FitnessLevelStep from "./onboarding/steps/FitnessLevelStep";
 import WorkoutEnvironmentStep from "./onboarding/steps/WorkoutEnvironmentStep";
 import WorkoutStyleStep from "./onboarding/steps/WorkoutStyleStep";
+import HealthConnectStep from "./onboarding/steps/HealthConnectStep";
 
 // Re-export types for backward compatibility
 export type {
@@ -48,7 +49,7 @@ export default function OnboardingForm({
   excludePersonalInfo = false,
 }: OnboardingFormProps) {
   const scrollRef = useRef<ScrollView | null>(null);
-  
+
   // Create dynamic step flow based on excludePersonalInfo
   const getAvailableSteps = (): OnboardingStep[] => {
     const allSteps = [
@@ -57,14 +58,15 @@ export default function OnboardingForm({
       OnboardingStep.PHYSICAL_LIMITATIONS,
       OnboardingStep.FITNESS_LEVEL,
       OnboardingStep.WORKOUT_ENVIRONMENT,
+      OnboardingStep.HEALTH_CONNECT,
       OnboardingStep.WORKOUT_STYLE,
     ];
-    
-    return excludePersonalInfo 
+
+    return excludePersonalInfo
       ? allSteps.slice(1) // Remove PERSONAL_INFO step
       : allSteps;
   };
-  
+
   const availableSteps = getAvailableSteps();
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const currentStep = availableSteps[currentStepIndex];
@@ -92,7 +94,6 @@ export default function OnboardingForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
 
   // Helper function for type-safe form updates
   const handleChange = (
@@ -214,6 +215,8 @@ export default function OnboardingForm({
             onToggle={handleMultiSelectToggle}
           />
         );
+      case OnboardingStep.HEALTH_CONNECT:
+        return <HealthConnectStep />;
       case OnboardingStep.WORKOUT_STYLE:
         return (
           <WorkoutStyleStep
@@ -240,8 +243,8 @@ export default function OnboardingForm({
         keyboardShouldPersistTaps="handled"
       >
         {/* Header with step indicator */}
-        <OnboardingHeader 
-          currentStep={currentStep} 
+        <OnboardingHeader
+          currentStep={currentStep}
           totalSteps={availableSteps.length}
           currentStepIndex={currentStepIndex}
         />

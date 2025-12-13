@@ -19,6 +19,7 @@ import {
   connectHealth as connectHealthAPI,
   fetchStepsToday as fetchStepsTodayAPI,
   fetchNutritionCaloriesToday,
+  getHealthConnection,
 } from "@utils/health";
 import Header from "@/components/Header";
 import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
@@ -71,15 +72,23 @@ export default function DashboardScreen() {
   const [maxHeartRate, setMaxHeartRate] = useState<number | null>(null);
   const [avgHeartRate, setAvgHeartRate] = useState<number | null>(null);
   const [caloriesBurned, setCaloriesBurned] = useState<number | null>(null);
-  const [nutritionCaloriesConsumed, setNutritionCaloriesConsumed] = useState<number | null>(null);
+  const [nutritionCaloriesConsumed, setNutritionCaloriesConsumed] = useState<
+    number | null
+  >(null);
   const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
   const [healthReady, setHealthReady] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
   const [healthError, setHealthError] = useState<string | null>(null);
 
-  const [strengthFilter, setStrengthFilter] = useState<"1W" | "1M" | "3M">("3M");
-  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<"1W" | "1M" | "3M">("1M");
-  const [weightPerformanceFilter, setWeightPerformanceFilter] = useState<"1W" | "1M" | "3M">("1M");
+  const [strengthFilter, setStrengthFilter] = useState<"1W" | "1M" | "3M">(
+    "3M"
+  );
+  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<
+    "1W" | "1M" | "3M"
+  >("1M");
+  const [weightPerformanceFilter, setWeightPerformanceFilter] = useState<
+    "1W" | "1M" | "3M"
+  >("1M");
 
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
@@ -88,21 +97,52 @@ export default function DashboardScreen() {
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
   >([]);
   const [rawWeightAccuracyData, setRawWeightAccuracyData] = useState<
-    { date: string; totalSets: number; exactMatches: number; higherWeight: number; lowerWeight: number; label: string }[]
+    {
+      date: string;
+      totalSets: number;
+      exactMatches: number;
+      higherWeight: number;
+      lowerWeight: number;
+      label: string;
+    }[]
   >([]);
   const [rawWorkoutTypeData, setRawWorkoutTypeData] = useState<
-    { date: string; workoutTypes: { tag: string; label: string; totalSets: number; totalReps: number; exerciseCount: number }[]; label: string }[]
+    {
+      date: string;
+      workoutTypes: {
+        tag: string;
+        label: string;
+        totalSets: number;
+        totalReps: number;
+        exerciseCount: number;
+      }[];
+      label: string;
+    }[]
   >([]);
-  const [filteredWeightAccuracy, setFilteredWeightAccuracy] = useState<WeightAccuracyMetrics | null>(null);
-  const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] = useState<WorkoutTypeMetrics | null>(null);
+  const [filteredWeightAccuracy, setFilteredWeightAccuracy] =
+    useState<WeightAccuracyMetrics | null>(null);
+  const [filteredWorkoutTypeMetrics, setFilteredWorkoutTypeMetrics] =
+    useState<WorkoutTypeMetrics | null>(null);
 
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
 
   const {
-    data: { weeklySummary, workoutConsistency, weightMetrics, totalVolumeMetrics, dailyWorkoutProgress },
+    data: {
+      weeklySummary,
+      workoutConsistency,
+      weightMetrics,
+      totalVolumeMetrics,
+      dailyWorkoutProgress,
+    },
     loading,
-    refresh: { fetchWeightProgression, fetchWeightAccuracyByDate, fetchWorkoutTypeByDate, refreshAll: refreshAllData, reset },
+    refresh: {
+      fetchWeightProgression,
+      fetchWeightAccuracyByDate,
+      fetchWorkoutTypeByDate,
+      refreshAll: refreshAllData,
+      reset,
+    },
   } = useAppDataContext();
 
   const fetchTodaysWorkout = async () => {
@@ -118,7 +158,9 @@ export default function DashboardScreen() {
           planDays: workoutPlan.planDays,
         });
         const today = getCurrentDate();
-        const todaysPlanDay = workoutPlan.planDays?.find((day: PlanDayWithBlocks) => formatDateAsString(day.date) === today);
+        const todaysPlanDay = workoutPlan.planDays?.find(
+          (day: PlanDayWithBlocks) => formatDateAsString(day.date) === today
+        );
         setTodaysWorkout(todaysPlanDay || null);
       } else {
         setWorkoutInfo(null);
@@ -172,6 +214,38 @@ export default function DashboardScreen() {
     }, [reloadJobs])
   );
 
+  const resetHealthMetrics = useCallback(() => {
+    setStepsCount(null);
+    setMaxHeartRate(null);
+    setAvgHeartRate(null);
+    setCaloriesBurned(null);
+    setNutritionCaloriesConsumed(null);
+    setWorkoutDuration(null);
+  }, []);
+
+  const loadHealthConnectionStatus = useCallback(async () => {
+    try {
+      const connected = await getHealthConnection();
+      setHealthReady(connected);
+      if (!connected) {
+        setHealthError(null);
+        resetHealthMetrics();
+      }
+    } catch {
+      setHealthReady(false);
+    }
+  }, [resetHealthMetrics]);
+
+  useEffect(() => {
+    loadHealthConnectionStatus();
+  }, [loadHealthConnectionStatus]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadHealthConnectionStatus();
+    }, [loadHealthConnectionStatus])
+  );
+
   useEffect(() => {
     const handleScrollToTop = () => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -208,11 +282,19 @@ export default function DashboardScreen() {
     getHealthData();
   }, [healthReady]);
 
-  const calculateWideDataRange = () => ({ startDate: "2020-01-01", endDate: "2030-12-31" });
+  const calculateWideDataRange = () => ({
+    startDate: "2020-01-01",
+    endDate: "2030-12-31",
+  });
 
-  const filterDataByDateRange = <T extends { date: string }>(data: T[], filter: "1W" | "1M" | "3M"): T[] => {
+  const filterDataByDateRange = <T extends { date: string }>(
+    data: T[],
+    filter: "1W" | "1M" | "3M"
+  ): T[] => {
     if (!data || data.length === 0) return data;
-    const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedData = [...data].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     let cutoffDate = new Date(today);
@@ -242,21 +324,60 @@ export default function DashboardScreen() {
   };
 
   const filterWeightAccuracyData = (
-    data: { date: string; totalSets: number; exactMatches: number; higherWeight: number; lowerWeight: number; label: string }[],
+    data: {
+      date: string;
+      totalSets: number;
+      exactMatches: number;
+      higherWeight: number;
+      lowerWeight: number;
+      label: string;
+    }[],
     filter: "1W" | "1M" | "3M"
   ): WeightAccuracyMetrics | null => {
     if (!data || data.length === 0) return null;
     const filteredData = filterDataByDateRange(data, filter);
     const totalSets = filteredData.reduce((sum, day) => sum + day.totalSets, 0);
-    const exactMatches = filteredData.reduce((sum, day) => sum + day.exactMatches, 0);
-    const higherWeight = filteredData.reduce((sum, day) => sum + day.higherWeight, 0);
-    const lowerWeight = filteredData.reduce((sum, day) => sum + day.lowerWeight, 0);
+    const exactMatches = filteredData.reduce(
+      (sum, day) => sum + day.exactMatches,
+      0
+    );
+    const higherWeight = filteredData.reduce(
+      (sum, day) => sum + day.higherWeight,
+      0
+    );
+    const lowerWeight = filteredData.reduce(
+      (sum, day) => sum + day.lowerWeight,
+      0
+    );
     if (totalSets === 0) return null;
     const accuracyRate = (exactMatches / totalSets) * 100;
-    const chartData: { label: string; value: number; color: string; count: number }[] = [];
-    if (exactMatches > 0) chartData.push({ label: "As Planned", value: Math.round((exactMatches / totalSets) * 100 * 100) / 100, color: colors.brand.medium[1], count: exactMatches });
-    if (higherWeight > 0) chartData.push({ label: "Progressed", value: Math.round((higherWeight / totalSets) * 100 * 100) / 100, color: colors.brand.primary, count: higherWeight });
-    if (lowerWeight > 0) chartData.push({ label: "Adapted", value: Math.round((lowerWeight / totalSets) * 100 * 100) / 100, color: colors.brand.dark[1], count: lowerWeight });
+    const chartData: {
+      label: string;
+      value: number;
+      color: string;
+      count: number;
+    }[] = [];
+    if (exactMatches > 0)
+      chartData.push({
+        label: "As Planned",
+        value: Math.round((exactMatches / totalSets) * 100 * 100) / 100,
+        color: colors.brand.medium[1],
+        count: exactMatches,
+      });
+    if (higherWeight > 0)
+      chartData.push({
+        label: "Progressed",
+        value: Math.round((higherWeight / totalSets) * 100 * 100) / 100,
+        color: colors.brand.primary,
+        count: higherWeight,
+      });
+    if (lowerWeight > 0)
+      chartData.push({
+        label: "Adapted",
+        value: Math.round((lowerWeight / totalSets) * 100 * 100) / 100,
+        color: colors.brand.dark[1],
+        count: lowerWeight,
+      });
     return {
       accuracyRate: Math.round(accuracyRate * 100) / 100,
       totalSets,
@@ -273,7 +394,13 @@ export default function DashboardScreen() {
   const filterWorkoutTypeData = (
     data: {
       date: string;
-      workoutTypes: { tag: string; label: string; totalSets: number; totalReps: number; exerciseCount: number }[];
+      workoutTypes: {
+        tag: string;
+        label: string;
+        totalSets: number;
+        totalReps: number;
+        exerciseCount: number;
+      }[];
       label: string;
     }[],
     filter: "1W" | "1M" | "3M"
@@ -282,14 +409,34 @@ export default function DashboardScreen() {
     const filteredData = filterDataByDateRange(data, filter);
     const typeAggregates = new Map<
       string,
-      { tag: string; label: string; totalSets: number; totalReps: number; exerciseCount: number; completedWorkouts: number }
+      {
+        tag: string;
+        label: string;
+        totalSets: number;
+        totalReps: number;
+        exerciseCount: number;
+        completedWorkouts: number;
+      }
     >();
     filteredData.forEach((day) => {
       day.workoutTypes
-        .filter((type) => type.tag !== "warmup" && type.tag !== "cooldown" && type.tag !== "warm-up" && type.tag !== "cool-down")
+        .filter(
+          (type) =>
+            type.tag !== "warmup" &&
+            type.tag !== "cooldown" &&
+            type.tag !== "warm-up" &&
+            type.tag !== "cool-down"
+        )
         .forEach((type) => {
           if (!typeAggregates.has(type.tag)) {
-            typeAggregates.set(type.tag, { tag: type.tag, label: type.label, totalSets: 0, totalReps: 0, exerciseCount: 0, completedWorkouts: 0 });
+            typeAggregates.set(type.tag, {
+              tag: type.tag,
+              label: type.label,
+              totalSets: 0,
+              totalReps: 0,
+              exerciseCount: 0,
+              completedWorkouts: 0,
+            });
           }
           const aggregate = typeAggregates.get(type.tag)!;
           aggregate.totalSets += type.totalSets;
@@ -298,19 +445,41 @@ export default function DashboardScreen() {
           aggregate.completedWorkouts += 1;
         });
     });
-    const totalSets = Array.from(typeAggregates.values()).reduce((sum, type) => sum + type.totalSets, 0);
-    const totalExercises = Array.from(typeAggregates.values()).reduce((sum, type) => sum + type.exerciseCount, 0);
+    const totalSets = Array.from(typeAggregates.values()).reduce(
+      (sum, type) => sum + type.totalSets,
+      0
+    );
+    const totalExercises = Array.from(typeAggregates.values()).reduce(
+      (sum, type) => sum + type.exerciseCount,
+      0
+    );
     if (totalSets === 0) return null;
     const distribution = Array.from(typeAggregates.values())
-      .filter((type) => type.tag !== "warmup" && type.tag !== "cooldown" && type.tag !== "warm-up" && type.tag !== "cool-down")
+      .filter(
+        (type) =>
+          type.tag !== "warmup" &&
+          type.tag !== "cooldown" &&
+          type.tag !== "warm-up" &&
+          type.tag !== "cool-down"
+      )
       .map((type) => ({
         ...type,
-        percentage: totalSets > 0 ? Math.round((type.totalSets / totalSets) * 100 * 10) / 10 : 0,
+        percentage:
+          totalSets > 0
+            ? Math.round((type.totalSets / totalSets) * 100 * 10) / 10
+            : 0,
         color: colors.text.muted,
       }))
       .sort((a, b) => b.totalSets - a.totalSets);
-    const dominantType = distribution.length > 0 ? distribution[0].label : "None";
-    return { distribution, totalExercises, totalSets, dominantType, hasData: distribution.length > 0 && totalSets > 0 };
+    const dominantType =
+      distribution.length > 0 ? distribution[0].label : "None";
+    return {
+      distribution,
+      totalExercises,
+      totalSets,
+      dominantType,
+      hasData: distribution.length > 0 && totalSets > 0,
+    };
   };
 
   useEffect(() => {
@@ -321,11 +490,19 @@ export default function DashboardScreen() {
       } catch {}
     };
     if (user?.id && hasLoadedInitialData) loadWeightAccuracyData();
-  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWeightAccuracyByDate]);
+  }, [
+    user?.id,
+    hasLoadedInitialData,
+    weeklySummary,
+    dailyWorkoutProgress,
+    fetchWeightAccuracyByDate,
+  ]);
 
   useEffect(() => {
     if (rawWeightAccuracyData.length > 0) {
-      setFilteredWeightAccuracy(filterWeightAccuracyData(rawWeightAccuracyData, weightPerformanceFilter));
+      setFilteredWeightAccuracy(
+        filterWeightAccuracyData(rawWeightAccuracyData, weightPerformanceFilter)
+      );
     } else {
       setFilteredWeightAccuracy(null);
     }
@@ -339,11 +516,19 @@ export default function DashboardScreen() {
       } catch {}
     };
     if (user?.id && hasLoadedInitialData) loadWorkoutTypeData();
-  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWorkoutTypeByDate]);
+  }, [
+    user?.id,
+    hasLoadedInitialData,
+    weeklySummary,
+    dailyWorkoutProgress,
+    fetchWorkoutTypeByDate,
+  ]);
 
   useEffect(() => {
     if (rawWorkoutTypeData.length > 0) {
-      setFilteredWorkoutTypeMetrics(filterWorkoutTypeData(rawWorkoutTypeData, workoutTypeFilter));
+      setFilteredWorkoutTypeMetrics(
+        filterWorkoutTypeData(rawWorkoutTypeData, workoutTypeFilter)
+      );
     } else {
       setFilteredWorkoutTypeMetrics(null);
     }
@@ -357,11 +542,19 @@ export default function DashboardScreen() {
       } catch {}
     };
     if (user?.id && hasLoadedInitialData) loadWeightProgressionData();
-  }, [user?.id, hasLoadedInitialData, weeklySummary, dailyWorkoutProgress, fetchWeightProgression]);
+  }, [
+    user?.id,
+    hasLoadedInitialData,
+    weeklySummary,
+    dailyWorkoutProgress,
+    fetchWeightProgression,
+  ]);
 
   useEffect(() => {
     if (rawWeightProgressionData.length > 0) {
-      setWeightProgressionData(filterDataByDateRange(rawWeightProgressionData, strengthFilter));
+      setWeightProgressionData(
+        filterDataByDateRange(rawWeightProgressionData, strengthFilter)
+      );
     } else {
       setWeightProgressionData([]);
     }
@@ -371,7 +564,9 @@ export default function DashboardScreen() {
     return (
       <View className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center py-12">
-          <Text className="text-base text-text-muted">Please log in to view your dashboard</Text>
+          <Text className="text-base text-text-muted">
+            Please log in to view your dashboard
+          </Text>
         </View>
       </View>
     );
@@ -384,7 +579,10 @@ export default function DashboardScreen() {
       startDate.setDate(today.getDate() - 30);
       const endDate = new Date(today);
       endDate.setDate(today.getDate() + 7);
-      const refreshDateRange = { startDate: startDate.toISOString().split("T")[0], endDate: endDate.toISOString().split("T")[0] };
+      const refreshDateRange = {
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+      };
       refreshAllData(refreshDateRange);
       fetchTodaysWorkout();
     }
@@ -393,7 +591,11 @@ export default function DashboardScreen() {
   const handleGenerateNewWorkout = async () => {
     if (!user?.id) return;
     if (isGenerating) {
-      Alert.alert("Generation in Progress", "A workout is already being generated. Please wait for it to complete.", [{ text: "OK" }]);
+      Alert.alert(
+        "Generation in Progress",
+        "A workout is already being generated. Please wait for it to complete.",
+        [{ text: "OK" }]
+      );
       return;
     }
     try {
@@ -402,10 +604,18 @@ export default function DashboardScreen() {
       if (result?.success && result.jobId) {
         await addJob(result.jobId, "generation");
       } else {
-        Alert.alert("Generation Failed", "Unable to start workout generation. Please check your connection and try again.", [{ text: "OK" }]);
+        Alert.alert(
+          "Generation Failed",
+          "Unable to start workout generation. Please check your connection and try again.",
+          [{ text: "OK" }]
+        );
       }
     } catch (error) {
-      Alert.alert("Generation Error", "An error occurred while starting workout generation. Please try again.", [{ text: "OK" }]);
+      Alert.alert(
+        "Generation Error",
+        "An error occurred while starting workout generation. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 
@@ -461,16 +671,33 @@ export default function DashboardScreen() {
   const todayCompletionRate = (() => {
     if (!todaysWorkout) return 0;
     if (isPlanDayWithBlocks(todaysWorkout)) {
-      const totalExercises = todaysWorkout.blocks.reduce((total: number, block: WorkoutBlockWithExercises) => total + (block.exercises?.length || 0), 0);
+      const totalExercises = todaysWorkout.blocks.reduce(
+        (total: number, block: WorkoutBlockWithExercises) =>
+          total + (block.exercises?.length || 0),
+        0
+      );
       if (totalExercises === 0) return 0;
-      const completedExercises = todaysWorkout.blocks.reduce((total: number, block: WorkoutBlockWithExercises) => {
-        return total + (block.exercises?.reduce((sum: number, exercise: WorkoutBlockWithExercise) => sum + (exercise.completed ? 1 : 0), 0) || 0);
-      }, 0);
+      const completedExercises = todaysWorkout.blocks.reduce(
+        (total: number, block: WorkoutBlockWithExercises) => {
+          return (
+            total +
+            (block.exercises?.reduce(
+              (sum: number, exercise: WorkoutBlockWithExercise) =>
+                sum + (exercise.completed ? 1 : 0),
+              0
+            ) || 0)
+          );
+        },
+        0
+      );
       return (completedExercises / totalExercises) * 100;
     }
     if (isPlanDayWithExercises(todaysWorkout)) {
       if (todaysWorkout.exercises.length === 0) return 0;
-      const completedCount = todaysWorkout.exercises.reduce((sum, exercise) => sum + (exercise.completed ? 1 : 0), 0);
+      const completedCount = todaysWorkout.exercises.reduce(
+        (sum, exercise) => sum + (exercise.completed ? 1 : 0),
+        0
+      );
       return (completedCount / todaysWorkout.exercises.length) * 100;
     }
     return 0;
@@ -501,11 +728,22 @@ export default function DashboardScreen() {
       const date = new Date(weekStartDate);
       date.setDate(weekStartDate.getDate() + i);
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const dateStr = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+      const dateStr =
+        date.getFullYear() +
+        "-" +
+        String(date.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(date.getDate()).padStart(2, "0");
       let dayName = dayNames[date.getDay()];
-      const plannedWorkoutDay = dailyWorkoutProgress.find((day) => day.date === dateStr);
+      const plannedWorkoutDay = dailyWorkoutProgress.find(
+        (day) => day.date === dateStr
+      );
       if (plannedWorkoutDay && plannedWorkoutDay.date === dateStr) {
-        const safeDayCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const safeDayCheck = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate()
+        );
         dayName = dayNames[safeDayCheck.getDay()];
       }
       const dayData = dailyWorkoutProgress.find((day) => day.date === dateStr);
@@ -526,7 +764,14 @@ export default function DashboardScreen() {
       } else if (isFuture) {
         status = "upcoming";
       }
-      workout7Days.push({ dayName, dateStr, completionRate, status, isToday, isFuture });
+      workout7Days.push({
+        dayName,
+        dateStr,
+        completionRate,
+        status,
+        isToday,
+        isFuture,
+      });
     }
     return workout7Days;
   })();
@@ -535,9 +780,17 @@ export default function DashboardScreen() {
     return (
       <View className="flex-1 bg-background">
         <SafeAreaView className="flex-1">
-          <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+          >
             <View className="px-5 pt-3 pb-4">
-              <SkeletonLoader height={32} width={128} style={{ marginBottom: 8 }} />
+              <SkeletonLoader
+                height={32}
+                width={128}
+                style={{ marginBottom: 8 }}
+              />
               <SkeletonLoader height={20} width={192} />
             </View>
             <View className="px-5 mb-6">
@@ -549,7 +802,11 @@ export default function DashboardScreen() {
                   <SkeletonLoader height={24} width={160} />
                   <SkeletonLoader height={32} width={80} />
                 </View>
-                <SkeletonLoader height={80} width="100%" style={{ marginBottom: 12 }} />
+                <SkeletonLoader
+                  height={80}
+                  width="100%"
+                  style={{ marginBottom: 12 }}
+                />
                 <View className="flex-row justify-between">
                   <SkeletonLoader height={48} width={96} />
                   <SkeletonLoader height={48} width={96} />
@@ -558,13 +815,21 @@ export default function DashboardScreen() {
               </View>
             </View>
             <View className="px-5 mb-6">
-              <SkeletonLoader height={24} width={144} style={{ marginBottom: 16 }} />
+              <SkeletonLoader
+                height={24}
+                width={144}
+                style={{ marginBottom: 16 }}
+              />
               <View className="bg-white rounded-2xl p-5">
                 <SkeletonLoader height={160} width="100%" />
               </View>
             </View>
             <View className="px-5 mb-6">
-              <SkeletonLoader height={24} width={160} style={{ marginBottom: 16 }} />
+              <SkeletonLoader
+                height={24}
+                width={160}
+                style={{ marginBottom: 16 }}
+              />
               <View className="flex-row justify-between">
                 <View className="bg-white rounded-2xl p-4 flex-1 mr-3">
                   <SkeletonLoader height={128} width="100%" />
@@ -581,9 +846,14 @@ export default function DashboardScreen() {
   }
 
   const showLoadingEmpty = !hasLoadedInitialData;
-  const showNoDataEmpty = hasLoadedInitialData &&
-    (!filteredWeightAccuracy || !filteredWeightAccuracy.hasExerciseData || filteredWeightAccuracy.totalSets === 0) &&
-    (!filteredWorkoutTypeMetrics || !filteredWorkoutTypeMetrics.hasData || filteredWorkoutTypeMetrics.totalSets === 0) &&
+  const showNoDataEmpty =
+    hasLoadedInitialData &&
+    (!filteredWeightAccuracy ||
+      !filteredWeightAccuracy.hasExerciseData ||
+      filteredWeightAccuracy.totalSets === 0) &&
+    (!filteredWorkoutTypeMetrics ||
+      !filteredWorkoutTypeMetrics.hasData ||
+      filteredWorkoutTypeMetrics.totalSets === 0) &&
     (!weightProgressionData || weightProgressionData.length === 0) &&
     (!weeklySummary || weeklySummary.totalWorkoutsThisWeek === 0);
 
@@ -592,7 +862,12 @@ export default function DashboardScreen() {
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"
-        refreshControl={<RefreshControl refreshing={loading.dashboardLoading} onRefresh={handleRefresh} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading.dashboardLoading}
+            onRefresh={handleRefresh}
+          />
+        }
       >
         <Header
           currentDate={formatDate(new Date(), {
@@ -607,24 +882,32 @@ export default function DashboardScreen() {
           <View className="flex-row items-center justify-between">
             {weeklySummary && weeklySummary.streak > 0 && (
               <View className="flex-row items-center bg-primary/10 px-3 py-2 rounded-full">
-                <Text className="text-sm font-bold text-secondary ml-2">{weeklySummary.streak} day streak</Text>
+                <Text className="text-sm font-bold text-secondary ml-2">
+                  {weeklySummary.streak} day streak
+                </Text>
               </View>
             )}
           </View>
         </View>
 
-        <HealthMetricsCarousel
-          stepsCount={stepsCount}
-          nutritionCaloriesConsumed={nutritionCaloriesConsumed}
-          caloriesBurned={caloriesBurned}
-          maxHeartRate={maxHeartRate}
-          healthReady={healthReady}
-          healthLoading={healthLoading}
-          onConnect={handleConnectHealth}
-        />
+        {healthReady && (
+          <HealthMetricsCarousel
+            stepsCount={stepsCount}
+            nutritionCaloriesConsumed={nutritionCaloriesConsumed}
+            caloriesBurned={caloriesBurned}
+            maxHeartRate={maxHeartRate}
+            healthReady={healthReady}
+            healthLoading={healthLoading}
+            onConnect={handleConnectHealth}
+          />
+        )}
 
         <ActiveWorkoutCard
-          workoutInfo={workoutInfo ? { name: workoutInfo.name, description: workoutInfo.description } : null}
+          workoutInfo={
+            workoutInfo
+              ? { name: workoutInfo.name, description: workoutInfo.description }
+              : null
+          }
           todaysWorkout={todaysWorkout}
           totalDurationMinutes={totalDurationMinutes}
           loadingToday={loadingToday}
@@ -636,7 +919,11 @@ export default function DashboardScreen() {
           onGenerateWorkout={handleGenerateNewWorkout}
         />
 
-        {weeklySummary && <WeeklyProgressSection weeklyProgressData={weeklyProgressData as any} />}
+        {weeklySummary && (
+          <WeeklyProgressSection
+            weeklyProgressData={weeklyProgressData as any}
+          />
+        )}
 
         <WeightPerformanceSection
           filteredWeightAccuracy={filteredWeightAccuracy}
@@ -645,10 +932,18 @@ export default function DashboardScreen() {
         />
 
         {weightProgressionData && weightProgressionData.length > 0 && (
-          <StrengthProgressSection data={weightProgressionData} filter={strengthFilter} onChangeFilter={setStrengthFilter} />
+          <StrengthProgressSection
+            data={weightProgressionData}
+            filter={strengthFilter}
+            onChangeFilter={setStrengthFilter}
+          />
         )}
 
-        <WorkoutTypeDistributionSection metrics={filteredWorkoutTypeMetrics} filter={workoutTypeFilter} onChangeFilter={setWorkoutTypeFilter} />
+        <WorkoutTypeDistributionSection
+          metrics={filteredWorkoutTypeMetrics}
+          filter={workoutTypeFilter}
+          onChangeFilter={setWorkoutTypeFilter}
+        />
 
         <DashboardEmptyStateSection
           showLoading={showLoadingEmpty}
@@ -657,7 +952,11 @@ export default function DashboardScreen() {
         />
       </ScrollView>
 
-      <WorkoutRepeatModal visible={showRepeatModal} onClose={() => setShowRepeatModal(false)} onSuccess={handleRepeatWorkoutSuccess} />
+      <WorkoutRepeatModal
+        visible={showRepeatModal}
+        onClose={() => setShowRepeatModal(false)}
+        onSuccess={handleRepeatWorkoutSuccess}
+      />
     </View>
   );
 }

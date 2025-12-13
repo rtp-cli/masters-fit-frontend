@@ -1,6 +1,7 @@
 import { Platform, AppState, Linking } from "react-native";
 import BrokenHealthKit, { HealthKitPermissions } from "react-native-health";
 import { NativeModules } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AppleHealthKit = NativeModules.AppleHealthKit as typeof BrokenHealthKit;
 if (Platform.OS === "ios") {
@@ -11,6 +12,36 @@ import {
   requestPermission,
   readRecords,
 } from "react-native-health-connect";
+
+export const HEALTH_CONNECTION_KEY = "health_connection_enabled";
+
+export async function setHealthConnection(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(
+      HEALTH_CONNECTION_KEY,
+      enabled ? "true" : "false"
+    );
+  } catch {
+    // Swallow storage errors to avoid breaking UX; connection state is best-effort
+  }
+}
+
+export async function getHealthConnection(): Promise<boolean> {
+  try {
+    const value = await AsyncStorage.getItem(HEALTH_CONNECTION_KEY);
+    return value === "true";
+  } catch {
+    return false;
+  }
+}
+
+export async function clearHealthConnection(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(HEALTH_CONNECTION_KEY);
+  } catch {
+    // ignore cleanup errors
+  }
+}
 
 export async function connectHealth(): Promise<boolean> {
   if (Platform.OS === "ios") {
@@ -33,10 +64,21 @@ export async function connectHealth(): Promise<boolean> {
         write: [perms.Steps],
       },
     };
-    AppleHealthKit.initHealthKit(permissions, (err) => {
-      if (err) throw err;
+
+    const granted = await new Promise<boolean>((resolve, reject) => {
+      AppleHealthKit.initHealthKit(permissions, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(true);
+        }
+      });
     });
-    return true;
+
+    if (granted) {
+      await setHealthConnection(true);
+    }
+    return granted;
   }
   await ensureHealthConnectInitialized();
   const granted = await requestPermission([
@@ -47,6 +89,9 @@ export async function connectHealth(): Promise<boolean> {
     { recordType: "TotalCaloriesBurned", accessType: "read" },
     { recordType: "Nutrition", accessType: "read" },
   ]);
+  if (granted) {
+    await setHealthConnection(true);
+  }
   return !!granted;
 }
 
@@ -83,7 +128,6 @@ export async function fetchStepsToday(): Promise<number> {
     const options = {
       startDate: start.toISOString(),
       endDate: end.toISOString(),
-
     } as any;
     const results: any[] = await new Promise((resolve, reject) => {
       AppleHealthKit.getDailyStepCountSamples(
@@ -302,10 +346,13 @@ export async function fetchNutritionCaloriesToday(): Promise<number | null> {
       endDate: end.toISOString(),
     } as any;
     const results: any[] = await new Promise((resolve, reject) => {
-      AppleHealthKit.getEnergyConsumedSamples(options, (error: any, res: any) => {
-        if (error) reject(error);
-        else resolve(res || []);
-      });
+      AppleHealthKit.getEnergyConsumedSamples(
+        options,
+        (error: any, res: any) => {
+          if (error) reject(error);
+          else resolve(res || []);
+        }
+      );
     });
     const total = results.reduce(
       (sum: number, item: any) => sum + (item.value ?? 0),

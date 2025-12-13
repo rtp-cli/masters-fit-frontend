@@ -95,3 +95,22 @@ return AndroidHealth.getSteps(startDate);
   - calories tracking (read)
   - workout duration from our current workouts (read and write)
   - step count (read)
+
+# Requirements Changes
+
+- I think we should integrate the device Health Connect interaction into onboarding, add it to the Profile page (not required, but optional), but not make it a showcase feature on the main app dashboard. If a user connects their watch or fitness tracker, we can display some metrics on the main dashboard.
+
+1.  the health connect button should be 2nd last step in onboarding, we should not remove generate weekly plan button
+2.  the health connect button connection should be persisted over all, if user once connected then we should not show prompt again cta anywhere in app
+3.  in edit profile the connect health button should be shown
+4.  in dashboard screen if user has not connected health hide the health carousel else show it
+5.  make sure ui is clean and are consistent
+    donot over complicate the flow
+
+keep health connection in local storage
+
+#Profile Page
+
+- If user has not connected the health connection I want to show a button to connect to health somewhere down in app settings area
+- although we do show in onboarding steps even when in editing profile but I want a cta there as well
+- if health is connected show it is connected etc.
