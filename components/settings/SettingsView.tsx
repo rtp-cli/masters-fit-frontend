@@ -358,7 +358,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           <View className="flex-row justify-around">
             <TouchableOpacity
               className="items-center"
-              onPress={() => router.push("/profile-edit")}
+              onPress={() => {
+                if (onClose) onClose();
+                router.push("/profile-edit");
+              }}
             >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons

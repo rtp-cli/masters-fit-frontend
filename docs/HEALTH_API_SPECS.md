@@ -108,3 +108,9 @@ return AndroidHealth.getSteps(startDate);
     donot over complicate the flow
 
 keep health connection in local storage
+
+#Profile Page
+
+- If user has not connected the health connection I want to show a button to connect to health somewhere down in app settings area
+- although we do show in onboarding steps even when in editing profile but I want a cta there as well
+- if health is connected show it is connected etc.
