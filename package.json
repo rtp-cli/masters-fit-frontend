@@ -6,7 +6,16 @@
     "start": "npx expo start --clear",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "prebuild": "expo prebuild",
+    "cleanNodeCache": "rm -rf node_modules/.cache",
+    "cleanEASCache": " eas build --clear-cache",
+    "cleanExpoCache": "rm -rf ~/.expo",
+    "doctor": "npx expo-doctor@latest",
+    "build:android:dev": "eas build --profile development --platform android",
+    "build:android:prod": "eas build --profile production --platform android",
+    "build:ios:dev": "eas build --profile development --platform ios",
+    "build:ios:prod": "eas build --profile production --platform ios"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",
