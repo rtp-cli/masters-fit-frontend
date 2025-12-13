@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { LineChart } from "@components/charts/LineChart";
+import { LineChart } from "@/components/charts/line-chart";
 import { colors } from "../../../lib/theme";
 
 type StrengthProgressItem = {
