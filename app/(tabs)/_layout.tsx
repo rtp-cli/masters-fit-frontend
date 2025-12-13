@@ -191,7 +191,7 @@ export default function TabLayout() {
         <View
           style={{
             height: insets.bottom ?? 0,
-            backgroundColor: colors.brand.secondary,
+            backgroundColor: colors.background,
           }}
         />
       )}

@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { AuthProvider, useAuth } from "@contexts/AuthContext";
 import { WorkoutProvider } from "@contexts/WorkoutContext";
 import { AppDataProvider, useAppDataContext } from "@contexts/AppDataContext";
@@ -27,6 +27,8 @@ import {
 } from "@/lib/notifications";
 import "../global.css";
 import { ensureHealthConnectInitialized } from "@utils/health";
+import * as NavigationBar from "expo-navigation-bar";
+import { colors } from "@/lib/theme";
 
 // Inner component that can access auth context
 function AppContent() {
@@ -45,6 +47,14 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
+
+  useEffect(() => {
+    // Ensure Android system UI matches the light app background
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync(colors.background).catch(() => {});
+      NavigationBar.setButtonStyleAsync("dark").catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     ensureHealthConnectInitialized();
@@ -225,8 +235,8 @@ function AppContent() {
   }
 
   return (
-    <View className="flex-1">
-      <StatusBar style="dark" />
+    <View className="flex-1 bg-background">
+      <StatusBar style="dark" backgroundColor={colors.background} />
       <Stack
         screenOptions={{
           headerShown: false,
