@@ -41,6 +41,12 @@ export const getStepConfig = (currentStep: OnboardingStep): StepConfig => {
         description:
           "Where will you workout and what equipment do you have access to?",
       };
+    case OnboardingStep.HEALTH_CONNECT:
+      return {
+        title: "Connect Health",
+        description:
+          "Connect Apple Health or Health Connect to sync steps, calories, heart rate, and workouts.",
+      };
     case OnboardingStep.WORKOUT_STYLE:
       return {
         title: "Workout Preferences",
