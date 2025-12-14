@@ -1,10 +1,5 @@
 // Type declarations for external dependencies in our React Native project
 
-// Required React Native modules
-declare module "react-native" {
-  export * from "react-native/types";
-}
-
 // Expo modules
 declare module "expo-status-bar" {
   export interface StatusBarProps {
