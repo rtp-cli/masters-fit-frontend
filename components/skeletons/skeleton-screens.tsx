@@ -1,7 +1,7 @@
 import React from "react";
 import { View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { SkeletonLoader } from "./SkeletonLoader";
+import { SkeletonLoader } from "./skeleton-loader";
 
 // Generic header skeleton
 export const HeaderSkeleton = () => (

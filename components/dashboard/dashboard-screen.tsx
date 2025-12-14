@@ -22,7 +22,7 @@ import {
   getHealthConnection,
 } from "@utils/health";
 import Header from "@/components/header";
-import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
+import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import { generateWorkoutPlanAsync, fetchActiveWorkout } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";

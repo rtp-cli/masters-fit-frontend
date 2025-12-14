@@ -58,7 +58,7 @@ import {
 } from "@/lib/circuits";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useAppDataContext } from "@/contexts/AppDataContext";
-import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
+import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
 import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
 import {
   generateWorkoutPlanAsync,
@@ -1043,7 +1043,8 @@ export default function WorkoutScreen() {
         } else {
           // All exercises completed, complete the workout
           if (workout?.id) {
-            const completedExerciseCount = exercises.length - skippedExercises.length;
+            const completedExerciseCount =
+              exercises.length - skippedExercises.length;
             const completedBlockCount = workout.blocks.length;
 
             // Get duration for analytics (simple start to end time)
@@ -1132,7 +1133,8 @@ export default function WorkoutScreen() {
         } else {
           // All exercises completed, complete the workout day
           if (workout?.id) {
-            const completedExerciseCount = exercises.length - skippedExercises.length;
+            const completedExerciseCount =
+              exercises.length - skippedExercises.length;
             const completedBlockCount = workout.blocks.length;
 
             // Get duration for analytics (simple start to end time)

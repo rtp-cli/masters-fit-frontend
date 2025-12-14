@@ -29,7 +29,7 @@ import {
 } from "@/types/api/search.types";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { updateExerciseLink } from "@lib/exercises";
-import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
+import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 
 import { colors } from "@/lib/theme";
 

@@ -17,7 +17,7 @@ import { useAppDataContext } from "@contexts/AppDataContext";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
-import { SettingsSkeleton } from "../skeletons/SkeletonScreens";
+import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../ComingSoonModal";
 import { useSecretActivation } from "@/hooks/useSecretActivation";
 import * as Haptics from "expo-haptics";

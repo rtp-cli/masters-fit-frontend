@@ -39,7 +39,7 @@ import {
   formatDateAsString,
 } from "../../utils";
 import { colors } from "../../lib/theme";
-import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
+import { CalendarSkeleton } from "../../components/skeletons/skeleton-screens";
 import Header from "@/components/header";
 
 export default function CalendarScreen() {
