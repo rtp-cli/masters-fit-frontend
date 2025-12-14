@@ -52,7 +52,7 @@ import WeightPerformanceSection from "./sections/weight-performance";
 import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
-import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
+import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 
 export default function DashboardScreen() {
   const router = useRouter();

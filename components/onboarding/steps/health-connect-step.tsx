@@ -3,7 +3,7 @@ import { View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
 import { connectHealth, getHealthConnection } from "@/utils/health";
-import Text from "@/components/Text";
+import Text from "@/components/text";
 
 export default function HealthConnectStep() {
   const [isConnected, setIsConnected] = useState(false);

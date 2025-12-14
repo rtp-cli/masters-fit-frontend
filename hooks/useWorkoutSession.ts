@@ -20,7 +20,7 @@ import {
   CreateExerciseLogParams,
   PlanDayWithExercisesLegacy,
 } from "@/types/api";
-import { ExerciseSet } from "@/components/SetTracker";
+import { ExerciseSet } from "@/components/set-tracker";
 import { UseWorkoutSessionReturn } from "@/types/hooks";
 import { formatDateAsLocalString } from "@/utils";
 import { logger } from "../lib/logger";

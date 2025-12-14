@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import ProgressIndicator from "@/components/ProgressIndicator";
+import ProgressIndicator from "@/components/progressive-indicator";
 import { OnboardingStep } from "@/types/enums";
 import { getStepConfig } from "../utils/step-config";
 

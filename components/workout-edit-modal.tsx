@@ -29,7 +29,7 @@ import {
   searchExercisesWithFiltersAPI,
   getFilterOptionsAPI,
 } from "@/lib/search";
-import WorkoutBlock from "@/components/WorkoutBlock";
+import WorkoutBlock from "@/components/workout-block";
 import {
   formatWorkoutDuration,
   calculatePlanDayDuration,
@@ -143,26 +143,24 @@ export default function WorkoutEditModal({
   // Format muscle group names by replacing underscores with spaces and capitalizing
   const formatMuscleGroup = (muscleGroup: string) => {
     return muscleGroup
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .replace(/_/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Convert display name back to raw enum value
   const toRawEnumValue = (displayName: string) => {
-    return displayName
-      .toLowerCase()
-      .replace(/\s+/g, '_');
+    return displayName.toLowerCase().replace(/\s+/g, "_");
   };
 
   // Format equipment names for display
   const formatEquipmentDisplay = (equipment: string) => {
     return equipment
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .replace(/_/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Initialize expanded blocks when modal opens
@@ -1112,20 +1110,25 @@ export default function WorkoutEditModal({
               </View>
 
               {/* Show More/Less button for equipment */}
-              {filterOptions?.equipment && filterOptions.equipment.length > 10 && (
-                <TouchableOpacity
-                  onPress={() => setShowAllEquipment(!showAllEquipment)}
-                  className="mt-3 py-2 px-4 rounded-lg self-start"
-                  style={{ backgroundColor: colors.neutral.light[1] }}
-                >
-                  <Text
-                    className="text-sm font-medium"
-                    style={{ color: colors.brand.primary }}
+              {filterOptions?.equipment &&
+                filterOptions.equipment.length > 10 && (
+                  <TouchableOpacity
+                    onPress={() => setShowAllEquipment(!showAllEquipment)}
+                    className="mt-3 py-2 px-4 rounded-lg self-start"
+                    style={{ backgroundColor: colors.neutral.light[1] }}
                   >
-                    {showAllEquipment ? "Show Less" : `Show More (${filterOptions.equipment.length - 10} more)`}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <Text
+                      className="text-sm font-medium"
+                      style={{ color: colors.brand.primary }}
+                    >
+                      {showAllEquipment
+                        ? "Show Less"
+                        : `Show More (${
+                            filterOptions.equipment.length - 10
+                          } more)`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
             </View>
 
             {/* Muscle Group Filters */}

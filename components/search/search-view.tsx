@@ -15,8 +15,8 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useAuth } from "@contexts/AuthContext";
-import ExerciseLink from "@components/ExerciseLink";
-import ExerciseLinkModal from "@components/ExerciseLinkModal";
+import ExerciseLink from "@/components/exercise-link";
+import ExerciseLinkModal from "@/components/exercise-link-modal";
 import {
   Exercise,
   DateSearchWorkout,

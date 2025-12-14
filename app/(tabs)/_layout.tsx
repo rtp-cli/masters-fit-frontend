@@ -13,7 +13,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Header from "@/components/header";
-import FloatingActionButton from "@components/FloatingActionButton";
+import FloatingActionButton from "@/components/floating-action-button";
 import { colors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { tabEvents } from "@/lib/tabEvents";

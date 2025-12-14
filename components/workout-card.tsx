@@ -2,8 +2,8 @@ import React from "react";
 import { colors } from "../lib/theme";
 import { View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Text from "./Text";
-import Card from "./Card";
+import Text from "./text";
+import Card from "./card";
 import { formatDuration, getIntensityText } from "../utils";
 
 interface Workout {

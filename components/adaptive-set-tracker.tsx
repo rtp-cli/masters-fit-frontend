@@ -5,8 +5,8 @@ import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { colors } from "@/lib/theme";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
-import { ExerciseSet } from "./SetTracker";
-import CircularTimerDisplay from "./CircularTimerDisplay";
+import { ExerciseSet } from "./set-tracker";
+import CircularTimerDisplay from "./circular-timer-display";
 import {
   getExerciseLoggingType,
   getExerciseRequirementsText,

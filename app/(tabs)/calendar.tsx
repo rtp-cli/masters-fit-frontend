@@ -28,11 +28,11 @@ import { RegenerationData } from "@/types/calendar.types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
-import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
-import WorkoutEditModal from "@components/WorkoutEditModal";
+import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import WorkoutEditModal from "@/components/workout-edit-modal";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
-import WorkoutBlock from "@components/WorkoutBlock";
-import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
+import WorkoutBlock from "@/components/workout-block";
+import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import {
   calculatePlanDayDuration,
   formatWorkoutDuration,

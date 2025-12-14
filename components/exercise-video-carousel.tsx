@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
-import ExerciseLink from "./ExerciseLink";
+import ExerciseLink from "./exercise-link";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 
 interface ExerciseVideoCarouselProps {

@@ -25,13 +25,13 @@ import {
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
-import ExerciseLink from "@/components/ExerciseLink";
-import ExerciseVideoCarousel from "@/components/ExerciseVideoCarousel";
-import { ExerciseSet } from "@/components/SetTracker";
-import AdaptiveSetTracker from "@/components/AdaptiveSetTracker";
-import CircularTimerDisplay from "@/components/CircularTimerDisplay";
-import CircuitTracker from "@/components/CircuitTracker";
-import CircuitTimer from "@/components/CircuitTimer";
+import ExerciseLink from "@/components/exercise-link";
+import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
+import { ExerciseSet } from "@/components/set-tracker";
+import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
+import CircularTimerDisplay from "@/components/circular-timer-display";
+import CircuitTracker from "@/components/circuit-tracker";
+import CircuitTimer from "@/components/circuit-timer";
 import { colors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
@@ -59,7 +59,7 @@ import {
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useAppDataContext } from "@/contexts/AppDataContext";
 import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
-import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
+import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import {
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
@@ -68,7 +68,7 @@ import { registerForPushNotifications } from "@/lib/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
 import { trackWorkoutStarted } from "@/lib/analytics";
-import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
+import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";

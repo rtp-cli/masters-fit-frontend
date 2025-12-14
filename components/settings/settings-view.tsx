@@ -18,7 +18,7 @@ import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
-import ComingSoonModal from "../ComingSoonModal";
+import ComingSoonModal from "../coming-soon-modal";
 import { useSecretActivation } from "@/hooks/useSecretActivation";
 import * as Haptics from "expo-haptics";
 import { connectHealth, getHealthConnection } from "@/utils/health";

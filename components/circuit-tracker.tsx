@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { colors } from "@/lib/theme";
-import CircularTimerDisplay from "./CircularTimerDisplay";
+import CircularTimerDisplay from "./circular-timer-display";
 import {
   CircuitTrackerProps,
   CircuitExerciseLog,
@@ -20,7 +20,7 @@ import {
 } from "@/types/api/circuit.types";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { getRoundCompleteButtonText } from "@/utils/circuitUtils";
-import CircuitTimer from "./CircuitTimer";
+import CircuitTimer from "./circuit-timer";
 
 // Type alias for circuit actions
 type CircuitActions = UseCircuitSessionReturn["actions"];
