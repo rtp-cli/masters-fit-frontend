@@ -88,7 +88,7 @@ export default function SearchView() {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tabEvents");
+    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:search", handleScrollToTop);
 
     return () => {

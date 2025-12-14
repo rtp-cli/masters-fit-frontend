@@ -93,7 +93,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tabEvents");
+    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:settings", handleScrollToTop);
 
     return () => {

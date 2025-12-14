@@ -250,7 +250,7 @@ export default function DashboardScreen() {
     const handleScrollToTop = () => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
-    const { tabEvents } = require("../../lib/tabEvents");
+    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:dashboard", handleScrollToTop);
     return () => {
       tabEvents.off("scrollToTop:dashboard", handleScrollToTop);
