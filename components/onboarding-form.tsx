@@ -24,7 +24,7 @@ import OnboardingHeader from "./onboarding/ui/onboarding-header";
 import NavigationButtons from "./onboarding/ui/navigation-buttons";
 import PersonalInfoStep from "./onboarding/steps/personal-info-step";
 import FitnessGoalsStep from "./onboarding/steps/fitness-goals-step";
-import PhysicalLimitationsStep from "./onboarding/steps/PhysicalLimitationsStep";
+import PhysicalLimitationsStep from "./onboarding/steps/physical-limitations-step";
 import FitnessLevelStep from "./onboarding/steps/fitness-level-step";
 import WorkoutEnvironmentStep from "./onboarding/steps/workout-environment-step";
 import WorkoutStyleStep from "./onboarding/steps/workout-style-step";

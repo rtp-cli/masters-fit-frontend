@@ -6,7 +6,7 @@ export { useOnboardingController } from "./use-onboarding-controller";
 // Step components
 export { default as PersonalInfoStep } from "./steps/personal-info-step";
 export { default as FitnessGoalsStep } from "./steps/fitness-goals-step";
-export { default as PhysicalLimitationsStep } from "./steps/PhysicalLimitationsStep";
+export { default as PhysicalLimitationsStep } from "./steps/physical-limitations-step";
 export { default as FitnessLevelStep } from "./steps/fitness-level-step";
 export { default as WorkoutEnvironmentStep } from "./steps/workout-environment-step";
 export { default as WorkoutStyleStep } from "./steps/workout-style-step";
