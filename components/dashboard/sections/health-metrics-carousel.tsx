@@ -69,7 +69,7 @@ const HealthMetricsCarousel: React.FC<HealthMetricsCarouselProps> = ({
               title="Calories Consumed"
               value={nutritionCaloriesConsumed}
               iconName="fast-food"
-              iconColor={colors.brand.secondary}
+              iconColor={colors.brand.primary}
               unit="kcal"
             />
           </View>
