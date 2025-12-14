@@ -10,8 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "../../contexts/AuthContext";
-import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAuth } from "../../contexts/auth-context";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import {
   fetchHeartRateSamples,
   fetchCaloriesToday,
@@ -21,11 +21,11 @@ import {
   fetchNutritionCaloriesToday,
   getHealthConnection,
 } from "@utils/health";
-import Header from "@/components/Header";
-import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
+import Header from "@/components/header";
+import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import { generateWorkoutPlanAsync, fetchActiveWorkout } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import {
   WeightAccuracyMetrics,
   WorkoutTypeMetrics,
@@ -52,7 +52,7 @@ import WeightPerformanceSection from "./sections/weight-performance";
 import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
-import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
+import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -250,7 +250,7 @@ export default function DashboardScreen() {
     const handleScrollToTop = () => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
-    const { tabEvents } = require("../../lib/tabEvents");
+    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:dashboard", handleScrollToTop);
     return () => {
       tabEvents.off("scrollToTop:dashboard", handleScrollToTop);

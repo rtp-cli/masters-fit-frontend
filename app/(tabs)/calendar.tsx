@@ -17,8 +17,8 @@ import {
   invalidateActiveWorkoutCache,
 } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
-import { useAppDataContext } from "@contexts/AppDataContext";
-import { useAuth } from "@contexts/AuthContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
 import {
   PlanDayWithBlocks,
   WorkoutWithDetails,
@@ -27,20 +27,20 @@ import {
 import { RegenerationData } from "@/types/calendar.types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
-import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
-import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
-import WorkoutEditModal from "@components/WorkoutEditModal";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
-import WorkoutBlock from "@components/WorkoutBlock";
-import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
+import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import WorkoutEditModal from "@/components/workout-edit-modal";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
+import WorkoutBlock from "@/components/workout-block";
+import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import {
   calculatePlanDayDuration,
   formatWorkoutDuration,
   formatDateAsString,
 } from "../../utils";
 import { colors } from "../../lib/theme";
-import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
-import Header from "@/components/Header";
+import { CalendarSkeleton } from "../../components/skeletons/skeleton-screens";
+import Header from "@/components/header";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -145,7 +145,7 @@ export default function CalendarScreen() {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tabEvents");
+    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:calendar", handleScrollToTop);
 
     return () => {

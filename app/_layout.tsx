@@ -1,15 +1,18 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Platform, View } from "react-native";
-import { AuthProvider, useAuth } from "@contexts/AuthContext";
-import { WorkoutProvider } from "@contexts/WorkoutContext";
-import { AppDataProvider, useAppDataContext } from "@contexts/AppDataContext";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { WorkoutProvider } from "@/contexts/workout-context";
+import {
+  AppDataProvider,
+  useAppDataContext,
+} from "@/contexts/app-data-context";
 import {
   BackgroundJobProvider,
   useBackgroundJobs,
-} from "@contexts/BackgroundJobContext";
-import { WaiverProvider } from "@contexts/WaiverContext";
-import { MixpanelProvider } from "@contexts/MixpanelContext";
+} from "@/contexts/background-job-context";
+import { WaiverProvider } from "@/contexts/waiver-context";
+import { MixpanelProvider } from "@/contexts/mixpanel-context";
 import { useFonts } from "expo-font";
 import {
   Manrope_400Regular,
@@ -18,7 +21,7 @@ import {
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
 import { useEffect, useState } from "react";
-import WarmingUpScreen from "@/components/ui/WarmingUpScreen";
+import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import {
   registerForPushNotifications,

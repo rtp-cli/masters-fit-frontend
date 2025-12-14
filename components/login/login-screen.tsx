@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/auth-context";
 import { colors } from "../../lib/theme";
 
 export const LoginScreen = () => {

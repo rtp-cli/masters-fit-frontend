@@ -12,11 +12,11 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import Header from "@/components/Header";
-import FloatingActionButton from "@components/FloatingActionButton";
+import Header from "@/components/header";
+import FloatingActionButton from "@/components/floating-action-button";
 import { colors } from "@/lib/theme";
-import { useWorkout } from "@/contexts/WorkoutContext";
-import { tabEvents } from "@/lib/tabEvents";
+import { useWorkout } from "@/contexts/workout-context";
+import { tabEvents } from "@/lib/tab-events";
 import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 
 function TabBarIcon({
@@ -187,14 +187,6 @@ export default function TabLayout() {
         {/* Floating Action Button for background jobs */}
         <FloatingActionButton />
       </View>
-      {Platform.OS === "android" && (
-        <View
-          style={{
-            height: insets.bottom ?? 0,
-            backgroundColor: colors.background,
-          }}
-        />
-      )}
     </SafeAreaView>
   );
 }

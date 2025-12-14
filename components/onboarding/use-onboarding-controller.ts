@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "expo-router";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/auth-context";
 import { OnboardingData } from "@lib/types";
 import { RegenerationType } from "@/constants";
 

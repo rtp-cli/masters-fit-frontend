@@ -25,13 +25,13 @@ import {
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
-import ExerciseLink from "@/components/ExerciseLink";
-import ExerciseVideoCarousel from "@/components/ExerciseVideoCarousel";
-import { ExerciseSet } from "@/components/SetTracker";
-import AdaptiveSetTracker from "@/components/AdaptiveSetTracker";
-import CircularTimerDisplay from "@/components/CircularTimerDisplay";
-import CircuitTracker from "@/components/CircuitTracker";
-import CircuitTimer from "@/components/CircuitTimer";
+import ExerciseLink from "@/components/exercise-link";
+import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
+import { ExerciseSet } from "@/components/set-tracker";
+import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
+import CircularTimerDisplay from "@/components/circular-timer-display";
+import CircuitTracker from "@/components/circuit-tracker";
+import CircuitTimer from "@/components/circuit-timer";
 import { colors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
@@ -49,26 +49,26 @@ import {
   isCircuitBlock,
   getLoggingInterface,
   isWarmupCooldownBlock,
-} from "@/utils/circuitUtils";
-import { useCircuitSession } from "@/hooks/useCircuitSession";
+} from "@/utils/circuit-utils";
+import { useCircuitSession } from "@/hooks/use-circuit-session";
 import {
   logCircuitSession,
   logCircuitRound,
   markBlockExercisesComplete,
 } from "@/lib/circuits";
-import { useWorkout } from "@/contexts/WorkoutContext";
-import { useAppDataContext } from "@/contexts/AppDataContext";
-import { WorkoutSkeleton } from "../../components/skeletons/SkeletonScreens";
-import WorkoutRepeatModal from "@/components/WorkoutRepeatModal";
+import { useWorkout } from "@/contexts/workout-context";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
+import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import {
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
 } from "@/lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
-import { useAuth } from "@/contexts/AuthContext";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useAuth } from "@/contexts/auth-context";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { trackWorkoutStarted } from "@/lib/analytics";
-import NoActiveWorkoutCard from "@/components/NoActiveWorkoutCard";
+import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -824,7 +824,7 @@ export default function WorkoutScreen() {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tabEvents");
+    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:workout", handleScrollToTop);
 
     return () => {
@@ -1043,7 +1043,8 @@ export default function WorkoutScreen() {
         } else {
           // All exercises completed, complete the workout
           if (workout?.id) {
-            const completedExerciseCount = exercises.length - skippedExercises.length;
+            const completedExerciseCount =
+              exercises.length - skippedExercises.length;
             const completedBlockCount = workout.blocks.length;
 
             // Get duration for analytics (simple start to end time)
@@ -1132,7 +1133,8 @@ export default function WorkoutScreen() {
         } else {
           // All exercises completed, complete the workout day
           if (workout?.id) {
-            const completedExerciseCount = exercises.length - skippedExercises.length;
+            const completedExerciseCount =
+              exercises.length - skippedExercises.length;
             const completedBlockCount = workout.blocks.length;
 
             // Get duration for analytics (simple start to end time)

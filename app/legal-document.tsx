@@ -19,7 +19,7 @@ import {
   waiverDocument,
   termsDocument,
   privacyDocument,
-} from "@/lib/legalDocuments";
+} from "@/lib/legal-documents";
 
 interface MarkdownSection {
   type: "heading2" | "heading3" | "paragraph" | "list";
