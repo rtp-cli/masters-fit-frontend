@@ -187,14 +187,6 @@ export default function TabLayout() {
         {/* Floating Action Button for background jobs */}
         <FloatingActionButton />
       </View>
-      {Platform.OS === "android" && (
-        <View
-          style={{
-            height: insets.bottom ?? 0,
-            backgroundColor: colors.background,
-          }}
-        />
-      )}
     </SafeAreaView>
   );
 }
