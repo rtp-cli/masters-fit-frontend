@@ -1,7 +1,11 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import CustomSlider from "@/components/ui/slider";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { FITNESS_LEVELS, PreferredDays, IntensityLevels } from "@/types/enums";
+import {
+  FITNESS_LEVELS,
+  PREFERRED_DAYS,
+  INTENSITY_LEVELS,
+} from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
@@ -159,19 +163,19 @@ export default function FitnessLevelStep({
           </View>
         )}
         <View className="flex-row flex-wrap">
-          {Object.entries(PreferredDays).map(([key, value]) => (
+          {Object.entries(PREFERRED_DAYS).map(([key, value]) => (
             <TouchableOpacity
               key={key}
               className={`p-3 rounded-lg mr-2 mb-2 ${
-                formData.availableDays.includes(value)
+                formData.availableDays.includes(value as PREFERRED_DAYS)
                   ? "bg-primary"
                   : "bg-white"
               }`}
-              onPress={() => onToggle("availableDays", value)}
+              onPress={() => onToggle("availableDays", value as PREFERRED_DAYS)}
             >
               <Text
                 className={`font-medium text-sm ${
-                  formData.availableDays.includes(value)
+                  formData.availableDays.includes(value as PREFERRED_DAYS)
                     ? "text-secondary"
                     : "text-neutral-dark-1"
                 }`}
@@ -213,9 +217,10 @@ export default function FitnessLevelStep({
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Preferred Intensity Level
         </Text>
-        {Object.entries(IntensityLevels).map(([key, value]) => {
+        {Object.entries(INTENSITY_LEVELS).map(([key, value]) => {
           const config = getIntensityLevelConfig(key);
-          const isSelected = formData.intensityLevel === value;
+          const isSelected =
+            formData.intensityLevel === (value as INTENSITY_LEVELS);
 
           return (
             <TouchableOpacity
@@ -223,7 +228,9 @@ export default function FitnessLevelStep({
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
                 isSelected ? "bg-primary" : "bg-white"
               }`}
-              onPress={() => onFieldChange("intensityLevel", value)}
+              onPress={() =>
+                onFieldChange("intensityLevel", value as INTENSITY_LEVELS)
+              }
             >
               <IconComponent
                 iconName={config.icon}
