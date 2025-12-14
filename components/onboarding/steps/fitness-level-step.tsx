@@ -3,7 +3,7 @@ import CustomSlider from "@/components/ui/Slider";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { FitnessLevels, PreferredDays, IntensityLevels } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
-import IconComponent from "../ui/IconComponent";
+import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
 import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
 

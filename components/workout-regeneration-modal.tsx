@@ -14,10 +14,10 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import ProfileOverrideForm, { TemporaryOverrides } from "./ProfileOverrideForm";
+import ProfileOverrideForm, { TemporaryOverrides } from "./profile-override-form";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import { getCurrentUser } from "@lib/auth";
-import OnboardingForm, { FormData } from "./OnboardingForm";
+import OnboardingForm, { FormData } from "./onboarding-form";
 import { formatEnumValue } from "./onboarding/utils/formatters";
 import { colors } from "../lib/theme";
 import { useAppDataContext } from "@contexts/AppDataContext";

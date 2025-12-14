@@ -19,16 +19,16 @@ import {
   WorkoutEnvironments,
 } from "@/types/enums";
 import { validateStep } from "./onboarding/utils/validation";
-import { getEquipmentForEnvironment } from "./onboarding/utils/equipmentLogic";
-import OnboardingHeader from "./onboarding/ui/OnboardingHeader";
-import NavigationButtons from "./onboarding/ui/NavigationButtons";
-import PersonalInfoStep from "./onboarding/steps/PersonalInfoStep";
-import FitnessGoalsStep from "./onboarding/steps/FitnessGoalsStep";
+import { getEquipmentForEnvironment } from "./onboarding/utils/equipment-logic";
+import OnboardingHeader from "./onboarding/ui/onboarding-header";
+import NavigationButtons from "./onboarding/ui/navigation-buttons";
+import PersonalInfoStep from "./onboarding/steps/personal-info-step";
+import FitnessGoalsStep from "./onboarding/steps/fitness-goals-step";
 import PhysicalLimitationsStep from "./onboarding/steps/PhysicalLimitationsStep";
-import FitnessLevelStep from "./onboarding/steps/FitnessLevelStep";
-import WorkoutEnvironmentStep from "./onboarding/steps/WorkoutEnvironmentStep";
-import WorkoutStyleStep from "./onboarding/steps/WorkoutStyleStep";
-import HealthConnectStep from "./onboarding/steps/HealthConnectStep";
+import FitnessLevelStep from "./onboarding/steps/fitness-level-step";
+import WorkoutEnvironmentStep from "./onboarding/steps/workout-environment-step";
+import WorkoutStyleStep from "./onboarding/steps/workout-style-step";
+import HealthConnectStep from "./onboarding/steps/health-connect-step";
 
 // Re-export types for backward compatibility
 export type {

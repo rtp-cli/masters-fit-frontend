@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { PreferredStyles } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
-import IconComponent from "../ui/IconComponent";
+import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
 
 interface WorkoutStyleStepProps {
@@ -112,7 +112,7 @@ export default function WorkoutStyleStep({
         <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
           Workout Preferences
         </Text>
-        
+
         {/* Include Warmup Toggle */}
         <View className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-3">
           <View className="flex-1">
@@ -158,44 +158,44 @@ export default function WorkoutStyleStep({
         <Text className="text-sm text-neutral-medium-4 mb-4">
           Select the training styles you enjoy (choose multiple)
         </Text>
-        
-        {Object.entries(PreferredStyles).map(([key, value]) => {
-        const config = getStyleConfig(key);
-        const isSelected = formData.preferredStyles.includes(value);
 
-        return (
-          <TouchableOpacity
-            key={key}
-            className={`p-4 rounded-xl mb-3 flex-row items-center ${
-              isSelected ? "bg-primary" : "bg-white"
-            }`}
-            onPress={() => onToggle("preferredStyles", value)}
-          >
-            <IconComponent
-              iconName={config.icon}
-              color={config.color}
-              backgroundColor={config.bgColor}
-              noMargin={true}
-            />
-            <View className="flex-1 ml-3">
-              <Text
-                className={`font-medium text-sm ${
-                  isSelected ? "text-secondary" : "text-neutral-dark-1"
-                }`}
-              >
-                {formatEnumValue(key)}
-              </Text>
-              <Text
-                className={`text-xs mt-0.5 ${
-                  isSelected ? "text-secondary" : "text-neutral-medium-4"
-                }`}
-              >
-                {config.description}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        );
-      })}
+        {Object.entries(PreferredStyles).map(([key, value]) => {
+          const config = getStyleConfig(key);
+          const isSelected = formData.preferredStyles.includes(value);
+
+          return (
+            <TouchableOpacity
+              key={key}
+              className={`p-4 rounded-xl mb-3 flex-row items-center ${
+                isSelected ? "bg-primary" : "bg-white"
+              }`}
+              onPress={() => onToggle("preferredStyles", value)}
+            >
+              <IconComponent
+                iconName={config.icon}
+                color={config.color}
+                backgroundColor={config.bgColor}
+                noMargin={true}
+              />
+              <View className="flex-1 ml-3">
+                <Text
+                  className={`font-medium text-sm ${
+                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                  }`}
+                >
+                  {formatEnumValue(key)}
+                </Text>
+                <Text
+                  className={`text-xs mt-0.5 ${
+                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                  }`}
+                >
+                  {config.description}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );

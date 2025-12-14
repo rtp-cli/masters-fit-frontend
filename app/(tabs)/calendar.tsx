@@ -27,7 +27,7 @@ import {
 import { RegenerationData } from "@/types/calendar.types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
-import WorkoutRegenerationModal from "@components/WorkoutRegenerationModal";
+import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@components/WorkoutRepeatModal";
 import WorkoutEditModal from "@components/WorkoutEditModal";
 import { useBackgroundJobs } from "@contexts/BackgroundJobContext";

@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@contexts/AuthContext";
 import { useAppDataContext } from "@contexts/AppDataContext";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
-import OnboardingForm, { FormData } from "@components/OnboardingForm";
+import OnboardingForm, { FormData } from "@/components/onboarding-form";
 import { colors } from "../lib/theme";
 
 // TODO: move this to components and use constants from separate file

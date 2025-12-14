@@ -3,7 +3,7 @@ import {} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../../contexts/AuthContext";
-import OnboardingForm from "../../components/OnboardingForm";
+import OnboardingForm from "../onboarding-form";
 import Header from "@components/Header";
 import { useOnboardingController } from "@components/onboarding/use-onboarding-controller";
 

@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { FitnessGoals } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
-import IconComponent from "../ui/IconComponent";
+import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
 
 interface FitnessGoalsStepProps {

@@ -1,7 +1,7 @@
 import { View, Text } from "react-native";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import { OnboardingStep } from "@/types/enums";
-import { getStepConfig } from "../utils/stepConfig";
+import { getStepConfig } from "../utils/step-config";
 
 interface OnboardingHeaderProps {
   currentStep: OnboardingStep;
@@ -20,7 +20,9 @@ export default function OnboardingHeader({
     <View className="px-6 pt-12 pb-6">
       {/* Progress Indicator */}
       <ProgressIndicator
-        currentStep={currentStepIndex !== undefined ? currentStepIndex : currentStep}
+        currentStep={
+          currentStepIndex !== undefined ? currentStepIndex : currentStep
+        }
         totalSteps={totalSteps}
         className="mb-6"
       />

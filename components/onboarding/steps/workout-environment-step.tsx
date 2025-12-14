@@ -4,7 +4,7 @@ import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { WorkoutEnvironments, AvailableEquipment } from "@/types/enums";
 import { colors } from "@/lib/theme";
 import { formatEnumValue } from "../utils/formatters";
-import IconComponent from "../ui/IconComponent";
+import IconComponent from "../ui/icon-component";
 
 interface WorkoutEnvironmentStepProps {
   formData: FormData;
