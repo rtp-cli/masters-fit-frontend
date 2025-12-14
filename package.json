@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "prebuild": "expo prebuild",
     "lint": "eslint .",
+    "generate:api": "openapi-ts --file openapi-ts.config.ts",
     "cleanNodeCache": "rm -rf node_modules/.cache",
     "cleanEASCache": " eas build --clear-cache",
     "cleanExpoCache": "rm -rf ~/.expo",
@@ -22,6 +23,7 @@
     "@expo-google-fonts/inter": "^0.4.1",
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
+    "@hey-api/client-fetch": "^0.13.1",
     "@miblanchard/react-native-slider": "^2.6.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.4",
@@ -66,6 +68,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.3",
+    "@hey-api/openapi-ts": "^0.89.0",
     "@types/expo__vector-icons": "^9.0.1",
     "@types/react": "~19.2.0",
     "@types/react-navigation": "^3.0.8",
