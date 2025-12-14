@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
-import { useDataPreload } from "@hooks/useDataPreload";
+import { useDataPreload } from "@/hooks/use-data-preload";
 import { images } from "@/assets";
 import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 

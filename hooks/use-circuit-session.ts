@@ -12,7 +12,7 @@ import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
 } from "@/types/api/workout.types";
-import { calculateCircuitScore } from "@/utils/circuitUtils";
+import { calculateCircuitScore } from "@/utils/circuit-utils";
 import { logger } from "@/lib/logger";
 
 export function useCircuitSession(
@@ -262,7 +262,8 @@ export function useCircuitSession(
 
           // Determine if we should advance to next round
           // Only AMRAP allows unlimited rounds, all others respect prescribed limits
-          const shouldAdvanceRound = prev.blockType === "amrap" ||
+          const shouldAdvanceRound =
+            prev.blockType === "amrap" ||
             (prev.targetRounds && prev.currentRound < prev.targetRounds);
 
           let newCurrentRound = prev.currentRound;
@@ -323,7 +324,11 @@ export function useCircuitSession(
             // For EMOM, reset the current round exercises for next minute
             // Limit to prescribed minutes (targetRounds)
             const currentRoundIndex = prev.currentRound - 1;
-            if (updatedRounds[currentRoundIndex] && prev.targetRounds && prev.currentRound < prev.targetRounds) {
+            if (
+              updatedRounds[currentRoundIndex] &&
+              prev.targetRounds &&
+              prev.currentRound < prev.targetRounds
+            ) {
               // Reset exercises for next minute while keeping the completed round data
               const currentRoundData = updatedRounds[currentRoundIndex];
               const resetExercises = block.exercises.map(
@@ -356,7 +361,9 @@ export function useCircuitSession(
             // Create next round if it doesn't exist
             if (!updatedRounds[newCurrentRound - 1]) {
               const currentRoundData = updatedRounds[prev.currentRound - 1];
-              updatedRounds.push(createRound(newCurrentRound, block.exercises, currentRoundData));
+              updatedRounds.push(
+                createRound(newCurrentRound, block.exercises, currentRoundData)
+              );
             }
           }
 
@@ -416,12 +423,15 @@ export function useCircuitSession(
 
           // Advance to next round
           const nextRound = prev.currentRound + 1;
-          const shouldCreateNextRound = prev.blockType === "amrap" ||
+          const shouldCreateNextRound =
+            prev.blockType === "amrap" ||
             (prev.targetRounds && nextRound <= prev.targetRounds);
 
           if (shouldCreateNextRound && !updatedRounds[nextRound - 1]) {
             const currentRoundData = updatedRounds[prev.currentRound - 1];
-            updatedRounds.push(createRound(nextRound, block.exercises, currentRoundData));
+            updatedRounds.push(
+              createRound(nextRound, block.exercises, currentRoundData)
+            );
           }
 
           return {

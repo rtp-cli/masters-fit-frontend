@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from "react";
-import { useAppData } from "@hooks/useAppData";
+import { useAppData } from "@/hooks/use-app-data";
 
 // Create context
 const AppDataContext = createContext<ReturnType<typeof useAppData> | undefined>(undefined);

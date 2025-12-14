@@ -11,7 +11,7 @@ import {
   getExerciseLoggingType,
   getExerciseRequirementsText,
   shouldShowWeightInput,
-} from "@/utils/exerciseHelpers";
+} from "@/utils/exercise-helpers";
 
 interface AdaptiveSetTrackerProps {
   exercise: WorkoutBlockWithExercise;

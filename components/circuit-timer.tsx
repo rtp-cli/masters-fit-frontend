@@ -8,7 +8,7 @@ import {
   CircuitTimerProps,
   CircuitTimerState,
 } from "@/types/api/circuit.types";
-import { getCircuitTimerConfig } from "@/utils/circuitUtils";
+import { getCircuitTimerConfig } from "@/utils/circuit-utils";
 
 export default function CircuitTimer({
   blockType,
@@ -100,7 +100,6 @@ export default function CircuitTimer({
       // timerRef.current = setInterval(() => {
       //   const now = Date.now();
       //   let newCurrentTime = timerState.currentTime;
-
       //   if (timerState.startTime) {
       //     const elapsed = Math.floor(
       //       (now - timerState.startTime.getTime()) / 1000
@@ -109,12 +108,10 @@ export default function CircuitTimer({
       //   } else {
       //     newCurrentTime = timerState.currentTime + 1;
       //   }
-
       //   const newState: CircuitTimerState = {
       //     ...timerState,
       //     currentTime: newCurrentTime,
       //   };
-
       //   // Handle specific timer behaviors
       //   if (blockType === "tabata") {
       //     handleTabataLogic(newCurrentTime, newState);
@@ -125,7 +122,6 @@ export default function CircuitTimer({
       //   } else if (blockType === "for_time" && timeCapMinutes) {
       //     handleForTimeLogic(newCurrentTime, newState);
       //   }
-
       //   // Ensure state consistency - don't update if timer was stopped during logic
       //   if (newState.isActive) {
       //     onTimerUpdate(newState);

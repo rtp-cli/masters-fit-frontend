@@ -49,8 +49,8 @@ import {
   isCircuitBlock,
   getLoggingInterface,
   isWarmupCooldownBlock,
-} from "@/utils/circuitUtils";
-import { useCircuitSession } from "@/hooks/useCircuitSession";
+} from "@/utils/circuit-utils";
+import { useCircuitSession } from "@/hooks/use-circuit-session";
 import {
   logCircuitSession,
   logCircuitRound,

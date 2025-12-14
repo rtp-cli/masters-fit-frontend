@@ -19,7 +19,7 @@ import {
   UseCircuitSessionReturn,
 } from "@/types/api/circuit.types";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
-import { getRoundCompleteButtonText } from "@/utils/circuitUtils";
+import { getRoundCompleteButtonText } from "@/utils/circuit-utils";
 import CircuitTimer from "./circuit-timer";
 
 // Type alias for circuit actions

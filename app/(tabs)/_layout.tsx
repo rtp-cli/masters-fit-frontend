@@ -16,7 +16,7 @@ import Header from "@/components/header";
 import FloatingActionButton from "@/components/floating-action-button";
 import { colors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";
-import { tabEvents } from "@/lib/tabEvents";
+import { tabEvents } from "@/lib/tab-events";
 import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 
 function TabBarIcon({
