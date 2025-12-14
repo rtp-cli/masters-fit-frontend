@@ -34,7 +34,6 @@ import {
   formatWorkoutDuration,
   calculatePlanDayDuration,
   formatEquipment,
-  formatMuscleGroups,
 } from "@/utils";
 
 interface WorkoutEditModalProps {

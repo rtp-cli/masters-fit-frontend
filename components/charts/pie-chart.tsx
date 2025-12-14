@@ -1,7 +1,8 @@
 import React from "react";
+import { Text, View } from "react-native";
+import Svg, { Circle, G, Path } from "react-native-svg";
+
 import { colors } from "../../lib/theme";
-import { View, Text } from "react-native";
-import Svg, { Circle, Path, G } from "react-native-svg";
 
 export interface PieChartData {
   label: string;
@@ -191,7 +192,7 @@ export const PieChart: React.FC<PieChartProps> = ({
               return (
                 <View key={index} className="items-center flex-1 px-1">
                   <View
-                    className="w-2.5 h-2.5 rounded-full mb-1"
+                    className="size-2.5 rounded-full mb-1"
                     style={{ backgroundColor: item.color }}
                   />
                   <Text className="text-xs text-text-muted font-medium text-center mb-0.5">

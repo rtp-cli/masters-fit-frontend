@@ -44,6 +44,7 @@ import {
   AvailableEquipment,
   PreferredStyles,
 } from "@/types/enums";
+import { RegenerationType } from "@/constants/global.enum";
 
 interface WorkoutRegenerationModalProps {
   visible: boolean;
@@ -155,8 +156,8 @@ export default function WorkoutRegenerationModal({
             currentProfile.intensityLevel === 1
               ? IntensityLevels.LOW
               : currentProfile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+                ? IntensityLevels.MODERATE
+                : IntensityLevels.HIGH;
         } else {
           profileIntensity = currentProfile.intensityLevel as IntensityLevels;
         }
@@ -229,8 +230,8 @@ export default function WorkoutRegenerationModal({
           formData.intensityLevel === IntensityLevels.LOW
             ? 1
             : formData.intensityLevel === IntensityLevels.MODERATE
-            ? 2
-            : 3,
+              ? 2
+              : 3,
         medicalNotes: formData.medicalNotes,
         includeWarmup: formData.includeWarmup ?? true,
         includeCooldown: formData.includeCooldown ?? true,
@@ -254,7 +255,9 @@ export default function WorkoutRegenerationModal({
       onClose();
       setIsGeneratingWorkout(
         true,
-        selectedType === "week" ? "weekly" : "daily"
+        selectedType === "week"
+          ? RegenerationType.Weekly
+          : RegenerationType.Daily
       );
 
       if (selectedType === "week") {
@@ -483,8 +486,8 @@ export default function WorkoutRegenerationModal({
           currentProfile.intensityLevel === 1
             ? IntensityLevels.LOW
             : currentProfile.intensityLevel === 2
-            ? IntensityLevels.MODERATE
-            : IntensityLevels.HIGH;
+              ? IntensityLevels.MODERATE
+              : IntensityLevels.HIGH;
       } else {
         currentIntensity = currentProfile.intensityLevel as IntensityLevels;
       }
@@ -498,8 +501,8 @@ export default function WorkoutRegenerationModal({
         overrides.intensity === IntensityLevels.LOW
           ? "Low"
           : overrides.intensity === IntensityLevels.MODERATE
-          ? "Moderate"
-          : "High";
+            ? "Moderate"
+            : "High";
       overrideDescriptions.push(`Intensity: ${intensityLabel}`);
     }
 
@@ -519,24 +522,24 @@ export default function WorkoutRegenerationModal({
         return style === PreferredStyles.HIIT
           ? "HIIT"
           : style === PreferredStyles.STRENGTH
-          ? "Strength"
-          : style === PreferredStyles.CARDIO
-          ? "Cardio"
-          : style === PreferredStyles.REHAB
-          ? "Rehab"
-          : style === PreferredStyles.CROSSFIT
-          ? "CrossFit"
-          : style === PreferredStyles.FUNCTIONAL
-          ? "Functional"
-          : style === PreferredStyles.PILATES
-          ? "Pilates"
-          : style === PreferredStyles.YOGA
-          ? "Yoga"
-          : style === PreferredStyles.BALANCE
-          ? "Balance"
-          : style === PreferredStyles.MOBILITY
-          ? "Mobility"
-          : style;
+            ? "Strength"
+            : style === PreferredStyles.CARDIO
+              ? "Cardio"
+              : style === PreferredStyles.REHAB
+                ? "Rehab"
+                : style === PreferredStyles.CROSSFIT
+                  ? "CrossFit"
+                  : style === PreferredStyles.FUNCTIONAL
+                    ? "Functional"
+                    : style === PreferredStyles.PILATES
+                      ? "Pilates"
+                      : style === PreferredStyles.YOGA
+                        ? "Yoga"
+                        : style === PreferredStyles.BALANCE
+                          ? "Balance"
+                          : style === PreferredStyles.MOBILITY
+                            ? "Mobility"
+                            : style;
       });
       overrideDescriptions.push(`Styles: ${styleLabels.join(", ")}`);
     }
@@ -560,8 +563,8 @@ export default function WorkoutRegenerationModal({
         overrides.environment === WorkoutEnvironments.HOME_GYM
           ? "Home Gym"
           : overrides.environment === WorkoutEnvironments.COMMERCIAL_GYM
-          ? "Commercial Gym"
-          : "Bodyweight Only";
+            ? "Commercial Gym"
+            : "Bodyweight Only";
       overrideDescriptions.push(`Environment: ${environmentLabel}`);
     }
 
@@ -673,8 +676,8 @@ export default function WorkoutRegenerationModal({
           profile.intensityLevel === 1
             ? IntensityLevels.LOW
             : profile.intensityLevel === 2
-            ? IntensityLevels.MODERATE
-            : IntensityLevels.HIGH;
+              ? IntensityLevels.MODERATE
+              : IntensityLevels.HIGH;
       } else {
         intensityLevel = profile.intensityLevel as IntensityLevels;
       }
@@ -991,12 +994,12 @@ export default function WorkoutRegenerationModal({
                   {isRestDay && selectedType === "day"
                     ? "What kind of workout would you like for this rest day?"
                     : isRestDay
-                    ? "Tell us what you'd like to change about your weekly workout plan:"
-                    : noActiveWorkoutDay
-                    ? "Tell us what you'd like to include in your next week's workout plan:"
-                    : `Tell us why you want to regenerate this ${
-                        selectedType === "day" ? "day's" : "week's"
-                      } workout plan, and what you would like to change:`}
+                      ? "Tell us what you'd like to change about your weekly workout plan:"
+                      : noActiveWorkoutDay
+                        ? "Tell us what you'd like to include in your next week's workout plan:"
+                        : `Tell us why you want to regenerate this ${
+                            selectedType === "day" ? "day's" : "week's"
+                          } workout plan, and what you would like to change:`}
                 </Text>
                 <TextInput
                   className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"

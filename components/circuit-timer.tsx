@@ -497,8 +497,8 @@ export default function CircuitTimer({
               borderTopColor: isRunning
                 ? colors.brand.primary
                 : timerState.isActive
-                ? colors.brand.primary
-                : colors.neutral.medium[2],
+                  ? colors.brand.primary
+                  : colors.neutral.medium[2],
               transform: [
                 {
                   rotate: `${-90 + progress * 3.6}deg`,
@@ -515,8 +515,8 @@ export default function CircuitTimer({
                 color: isRunning
                   ? colors.text.primary
                   : timerState.isActive
-                  ? colors.text.primary
-                  : colors.text.muted,
+                    ? colors.text.primary
+                    : colors.text.muted,
               }}
             >
               {formatTime(displayTime)}
@@ -549,10 +549,10 @@ export default function CircuitTimer({
             {blockType === "tabata"
               ? `Round ${timerState.currentInterval}/8`
               : blockType === "emom"
-              ? `Minute ${timerState.currentInterval}${
-                  rounds ? `/${rounds}` : ""
-                }`
-              : `Interval ${timerState.currentInterval}`}
+                ? `Minute ${timerState.currentInterval}${
+                    rounds ? `/${rounds}` : ""
+                  }`
+                : `Interval ${timerState.currentInterval}`}
           </Text>
         )}
       </View>

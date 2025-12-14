@@ -1,13 +1,14 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+
+import { colors } from "../lib/theme";
 import {
-  WorkoutBlockWithExercises,
   getBlockTypeDisplayName,
-  WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercises,
 } from "../types/api/workout.types";
 import { formatEquipment, formatWorkoutDuration } from "../utils";
-import { colors } from "../lib/theme";
 
 interface WorkoutBlockProps {
   block: WorkoutBlockWithExercises;
@@ -21,7 +22,6 @@ interface WorkoutBlockProps {
 
 export default function WorkoutBlock({
   block,
-  blockIndex,
   isExpanded = true,
   onToggleExpanded,
   showDetails = true,
@@ -126,7 +126,7 @@ export default function WorkoutBlock({
         disabled={!onToggleExpanded}
       >
         <View className="flex-row items-center">
-          <View className="w-8 h-8 rounded-full items-center justify-center mr-3">
+          <View className="size-8 rounded-full items-center justify-center mr-3">
             <Ionicons
               name={getBlockIcon(block.blockType) as any}
               size={16}
@@ -183,7 +183,7 @@ export default function WorkoutBlock({
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1">
                       <View className="flex-row items-center mb-1">
-                        <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-3">
+                        <View className="size-6 rounded-full bg-gray-100 items-center justify-center mr-3">
                           <Text className="text-xs font-bold text-gray-600">
                             {exerciseIndex + 1}
                           </Text>
@@ -243,12 +243,16 @@ export default function WorkoutBlock({
                     {isWorkoutVariant && (
                       <View className="ml-2">
                         <View
-                          className={`w-6 h-6 rounded-full ${
+                          className={`size-6 rounded-full ${
                             exercise.completed ? "bg-green-500" : "bg-gray-200"
                           } items-center justify-center`}
                         >
                           {exercise.completed && (
-                            <Ionicons name="checkmark" size={14} color="white" />
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color="white"
+                            />
                           )}
                         </View>
                       </View>
@@ -267,7 +271,7 @@ export default function WorkoutBlock({
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1">
                       <View className="flex-row items-center mb-1">
-                        <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-3">
+                        <View className="size-6 rounded-full bg-gray-100 items-center justify-center mr-3">
                           <Text className="text-xs font-bold text-gray-600">
                             {exerciseIndex + 1}
                           </Text>
@@ -327,12 +331,16 @@ export default function WorkoutBlock({
                     {isWorkoutVariant && (
                       <View className="ml-2">
                         <View
-                          className={`w-6 h-6 rounded-full ${
+                          className={`size-6 rounded-full ${
                             exercise.completed ? "bg-green-500" : "bg-gray-200"
                           } items-center justify-center`}
                         >
                           {exercise.completed && (
-                            <Ionicons name="checkmark" size={14} color="white" />
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color="white"
+                            />
                           )}
                         </View>
                       </View>

@@ -5,14 +5,12 @@ import {
   TouchableOpacity,
   Alert,
   GestureResponderEvent,
-  Platform,
 } from "react-native";
 import { useNavigation, NavigationState } from "@react-navigation/native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import Header from "@/components/header";
 import FloatingActionButton from "@/components/floating-action-button";
 import { colors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";

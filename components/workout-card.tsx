@@ -1,10 +1,11 @@
-import React from "react";
-import { colors } from "../lib/theme";
-import { View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Text from "./text";
-import Card from "./card";
+import React from "react";
+import { TouchableOpacity, View } from "react-native";
+
+import { colors } from "../lib/theme";
 import { formatDuration, getIntensityText } from "../utils";
+import Card from "./card";
+import Text from "./text";
 
 interface Workout {
   id: number;

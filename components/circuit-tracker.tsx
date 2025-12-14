@@ -9,9 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
 import { colors } from "@/lib/theme";
-import CircularTimerDisplay from "./circular-timer-display";
 import {
   CircuitTrackerProps,
   CircuitExerciseLog,
@@ -783,9 +781,9 @@ export default function CircuitTracker({
                   block.blockType === "amrap"
                     ? handleCompleteRound
                     : !sessionData.targetRounds ||
-                      sessionData.currentRound >= sessionData.targetRounds
-                    ? handleCompleteCircuit
-                    : handleCompleteRound
+                        sessionData.currentRound >= sessionData.targetRounds
+                      ? handleCompleteCircuit
+                      : handleCompleteRound
                 }
               >
                 <Text className={`text-sm font-semibold text-white`}>

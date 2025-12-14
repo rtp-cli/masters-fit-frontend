@@ -1,12 +1,13 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  WorkoutBlockWithExercises,
-  getBlockTypeDisplayName,
-  ExerciseSessionData,
-} from "../types/api/workout.types";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+
 import { colors } from "../lib/theme";
+import {
+  type ExerciseSessionData,
+  getBlockTypeDisplayName,
+  type WorkoutBlockWithExercises,
+} from "../types/api/workout.types";
 
 interface WorkoutBlockProgressProps {
   block: WorkoutBlockWithExercises;
@@ -23,7 +24,6 @@ export default function WorkoutBlockProgress({
   exerciseData,
   currentExerciseIndex,
   onExercisePress,
-  variant = "workout",
 }: WorkoutBlockProgressProps) {
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
 
@@ -119,7 +119,7 @@ export default function WorkoutBlockProgress({
       <View className="bg-brand-light-2 p-4 rounded-t-xl">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
-            <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center mr-3">
+            <View className="size-8 rounded-full bg-white/20 items-center justify-center mr-3">
               <Ionicons
                 name={getBlockIcon(block.blockType) as any}
                 size={16}
@@ -198,7 +198,7 @@ export default function WorkoutBlockProgress({
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-1 flex-row items-center">
-                  <View className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center mr-3">
+                  <View className="size-8 rounded-full bg-gray-100 items-center justify-center mr-3">
                     <Text className="text-xs font-bold text-gray-600">
                       {exerciseIndex + 1}
                     </Text>

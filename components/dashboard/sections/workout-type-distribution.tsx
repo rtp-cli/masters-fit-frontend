@@ -92,8 +92,8 @@ const WorkoutTypeDistributionSection: React.FC<
           {filter === "3M"
             ? "Last 3 months"
             : filter === "1M"
-            ? "Last 1 month"
-            : "Last 1 week"}
+              ? "Last 1 month"
+              : "Last 1 week"}
           )
         </Text>
       </View>

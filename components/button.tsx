@@ -1,12 +1,13 @@
 import React from "react";
 import {
-  TouchableOpacity,
-  Text,
   ActivityIndicator,
-  TouchableOpacityProps,
-  ViewStyle,
-  TextStyle,
+  Text,
+  type TextStyle,
+  TouchableOpacity,
+  type TouchableOpacityProps,
+  type ViewStyle,
 } from "react-native";
+
 import { colors } from "../lib/theme";
 
 type ButtonVariant =

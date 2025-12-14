@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import PagerView from "react-native-pager-view";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import PagerView from "react-native-pager-view";
+
 import { colors } from "../../../lib/theme";
 
 type HealthMetricsCarouselProps = {

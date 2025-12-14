@@ -1,7 +1,8 @@
 import React from "react";
-import { colors } from "../../lib/theme";
-import { View, Text, Dimensions } from "react-native";
+import { Dimensions, Text, View } from "react-native";
 import { LineChart as RNLineChart } from "react-native-chart-kit";
+
+import { colors } from "../../lib/theme";
 
 export interface LineChartData {
   label: string;
@@ -21,7 +22,6 @@ export const LineChart: React.FC<LineChartProps> = ({
   data,
   height = 200,
   color = colors.brand.primary,
-  showValues = true,
   showLabels = true,
 }) => {
   if (!data || data.length === 0) {
@@ -40,7 +40,6 @@ export const LineChart: React.FC<LineChartProps> = ({
   // Transform data for react-native-chart-kit
   const values = data.map((item) => item.value);
   const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
 
   // Calculate a reasonable baseline (10% below min value, but not below 0)
   const baseline = Math.max(0, Math.floor(minValue * 0.9));

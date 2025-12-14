@@ -29,9 +29,7 @@ import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
 import { ExerciseSet } from "@/components/set-tracker";
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
-import CircularTimerDisplay from "@/components/circular-timer-display";
 import CircuitTracker from "@/components/circuit-tracker";
-import CircuitTimer from "@/components/circuit-timer";
 import { colors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
@@ -785,7 +783,7 @@ export default function WorkoutScreen() {
           shouldShowList: false,
           shouldPlaySound: true, // Keep the sound
           shouldSetBadge: false,
-        } as any),
+        }) as any,
     });
 
     const requestPermissions = async () => {
@@ -1961,8 +1959,8 @@ export default function WorkoutScreen() {
                         isCurrent
                           ? "bg-brand-light-1 border border-brand-light-1"
                           : isCompleted || isSkipped
-                          ? "bg-brand-light-1 border border-brand-light-1"
-                          : "bg-background border border-neutral-light-2"
+                            ? "bg-brand-light-1 border border-brand-light-1"
+                            : "bg-background border border-neutral-light-2"
                       }`}
                     >
                       <View
@@ -2089,8 +2087,8 @@ export default function WorkoutScreen() {
                 {isCurrentBlockCircuit
                   ? "Complete Circuit"
                   : isCurrentBlockWarmupCooldown
-                  ? "Complete"
-                  : "Complete"}
+                    ? "Complete"
+                    : "Complete"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -2105,10 +2103,12 @@ export default function WorkoutScreen() {
               {isCurrentBlockCircuit
                 ? "Complete Circuit"
                 : isCurrentBlockWarmupCooldown
-                ? `Complete ${
-                    currentBlock?.blockType === "warmup" ? "Warmup" : "Cooldown"
-                  }`
-                : "Complete Exercise"}
+                  ? `Complete ${
+                      currentBlock?.blockType === "warmup"
+                        ? "Warmup"
+                        : "Cooldown"
+                    }`
+                  : "Complete Exercise"}
             </Text>
             <Text className="text-base text-text-secondary text-center mb-6 leading-6">
               {isCurrentBlockCircuit
@@ -2116,14 +2116,14 @@ export default function WorkoutScreen() {
                     currentBlock?.blockName || "Circuit Block"
                   }"? All rounds and exercises will be logged.`
                 : isCurrentBlockWarmupCooldown
-                ? `Mark "${
-                    currentExercise?.exercise.name
-                  }" as complete and move to the next ${
-                    currentExerciseIndex < exercises.length - 1
-                      ? "exercise"
-                      : "phase"
-                  }?`
-                : `Mark "${currentExercise?.exercise.name}" as complete? Your progress will be saved.`}
+                  ? `Mark "${
+                      currentExercise?.exercise.name
+                    }" as complete and move to the next ${
+                      currentExerciseIndex < exercises.length - 1
+                        ? "exercise"
+                        : "phase"
+                    }?`
+                  : `Mark "${currentExercise?.exercise.name}" as complete? Your progress will be saved.`}
             </Text>
 
             <View className="flex-row gap-3">

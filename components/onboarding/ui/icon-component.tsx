@@ -1,6 +1,6 @@
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { View } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface IconComponentProps {
   iconName: string;

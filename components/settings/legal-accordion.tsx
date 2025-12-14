@@ -12,7 +12,7 @@ export default function LegalAccordion() {
     router.push({
       pathname: "/legal-document",
       params: { type },
-    });
+    } as any);
   };
 
   return (

@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { colors } from "../lib/theme";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
   Modal,
   TextInput,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
+import { colors } from "../lib/theme";
 import Text from "./text";
 
 interface Exercise {
@@ -48,7 +49,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
     if (!url) return "unknown";
 
     try {
-      const urlObj = new URL(url);
+      const _urlObj = new URL(url);
 
       // Check for YouTube URLs
       const youtubePatterns = [
@@ -177,7 +178,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
         <View className="flex-row items-center justify-between px-md pt-md pb-3 border-b border-neutral-medium-1">
           <TouchableOpacity
             onPress={onClose}
-            className="w-10 h-10 items-center justify-center"
+            className="size-10 items-center justify-center"
           >
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
@@ -208,7 +209,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             </Text>
             <View className="relative">
               <TextInput
-                className="border border-neutral-medium-1 rounded-lg px-md py-3 text-base text-text-primary min-h-[48px] pr-12"
+                className="border border-neutral-medium-1 rounded-lg px-md py-3 text-base text-text-primary min-h-3xl pr-12"
                 value={link}
                 onChangeText={handleLinkChange}
                 placeholder="https://youtube.com/watch?v=... or https://example.com/image.jpg"

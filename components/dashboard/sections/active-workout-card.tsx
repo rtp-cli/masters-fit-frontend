@@ -6,10 +6,8 @@ import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import { formatNumber, formatWorkoutDuration } from "../../../utils";
 import {
   TodayWorkout,
-  PlanDayWithBlocks,
   PlanDayWithExercises,
   WorkoutBlockWithExercises,
-  WorkoutBlockWithExercise,
 } from "@/types/api";
 
 type ActiveWorkoutCardProps = {

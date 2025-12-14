@@ -1,6 +1,7 @@
-import React from "react";
-import { View, Text } from "react-native";
 import { Slider } from "@miblanchard/react-native-slider";
+import React from "react";
+import { Text, View } from "react-native";
+
 import { colors } from "../../lib/theme";
 
 interface CustomSliderProps {
@@ -38,8 +39,8 @@ export default function CustomSlider({
 
   // Debug logging for all sliders to compare
   const range = maximumValue - minimumValue;
-  const position = ((value - minimumValue) / range) * 100;
-  const expectedPosition = 50; // What we expect for center
+  const _position = ((value - minimumValue) / range) * 100;
+  const _expectedPosition = 50; // What we expect for center
 
   return (
     <View className={`mb-6 ${className}`}>

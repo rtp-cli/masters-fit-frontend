@@ -23,7 +23,7 @@ import {
   PlanDayWithBlocks,
   WorkoutWithDetails,
   WorkoutBlockWithExercises,
-} from "../types";
+} from "@/types/api";
 import { RegenerationData } from "@/types/calendar.types";
 import { getCurrentUser } from "@lib/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,6 +41,7 @@ import {
 import { colors } from "../../lib/theme";
 import { CalendarSkeleton } from "../../components/skeletons/skeleton-screens";
 import Header from "@/components/header";
+import { RegenerationType } from "@/constants/global.enum";
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -173,7 +174,9 @@ export default function CalendarScreen() {
       // Show global generating modal with correct type
       setIsGeneratingWorkout(
         true,
-        regenerateType === "day" ? "daily" : "weekly"
+        regenerateType === "day"
+          ? RegenerationType.Daily
+          : RegenerationType.Weekly
       );
       setShowRegenerationModal(false);
 

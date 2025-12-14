@@ -32,8 +32,8 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
           {weightPerformanceFilter === "3M"
             ? "Last 3 months"
             : weightPerformanceFilter === "1M"
-            ? "Last 1 month"
-            : "Last 1 week"}
+              ? "Last 1 month"
+              : "Last 1 week"}
           )
         </Text>
       </View>

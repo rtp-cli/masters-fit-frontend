@@ -16,11 +16,17 @@ type StrengthProgressSectionProps = {
   onChangeFilter: (filter: "1W" | "1M" | "3M") => void;
 };
 
-const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({ data, filter, onChangeFilter }) => {
+const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
+  data,
+  filter,
+  onChangeFilter,
+}) => {
   if (!data || data.length === 0) return null;
 
-  const latestAvg = data.length > 0 ? Math.round(data[data.length - 1]?.avgWeight || 0) : 0;
-  const peakWeight = data.length > 0 ? Math.max(...data.map((d) => d.maxWeight)) : 0;
+  const latestAvg =
+    data.length > 0 ? Math.round(data[data.length - 1]?.avgWeight || 0) : 0;
+  const peakWeight =
+    data.length > 0 ? Math.max(...data.map((d) => d.maxWeight)) : 0;
   const growth = (() => {
     if (data.length < 2) return 0;
     const first = data[0].avgWeight;
@@ -31,9 +37,17 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({ data,
   return (
     <View className="px-4 mb-6">
       <View className="px-4">
-        <Text className="text-base font-semibold text-text-primary mb-1">Strength Progress</Text>
+        <Text className="text-base font-semibold text-text-primary mb-1">
+          Strength Progress
+        </Text>
         <Text className="text-xs text-text-muted mb-3">
-          Your weight progression over time ({filter === "3M" ? "Last 3 months" : filter === "1M" ? "Last 1 month" : "Last 1 week"})
+          Your weight progression over time (
+          {filter === "3M"
+            ? "Last 3 months"
+            : filter === "1M"
+              ? "Last 1 month"
+              : "Last 1 week"}
+          )
         </Text>
       </View>
 
@@ -45,7 +59,11 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({ data,
               className={`px-3 py-1 rounded-md ${filter === f ? "bg-primary" : "bg-transparent"}`}
               onPress={() => onChangeFilter(f as any)}
             >
-              <Text className={`text-xs font-medium ${filter === f ? "text-text-primary" : "text-text-muted"}`}>{f}</Text>
+              <Text
+                className={`text-xs font-medium ${filter === f ? "text-text-primary" : "text-text-muted"}`}
+              >
+                {f}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -60,7 +78,11 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({ data,
               if (totalPoints <= 3) {
                 displayLabel = item.label;
               } else if (totalPoints <= 7) {
-                if (index === 0 || index === Math.floor(totalPoints / 2) || index === totalPoints - 1) {
+                if (
+                  index === 0 ||
+                  index === Math.floor(totalPoints / 2) ||
+                  index === totalPoints - 1
+                ) {
                   displayLabel = item.label;
                 }
               } else {
@@ -74,7 +96,11 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({ data,
                   displayLabel = item.label;
                 }
               }
-              return { label: displayLabel, value: item.avgWeight, date: item.date };
+              return {
+                label: displayLabel,
+                value: item.avgWeight,
+                date: item.date,
+              };
             })}
             height={200}
             color={colors.brand.dark[1]}
@@ -85,11 +111,15 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({ data,
 
         <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
           <View className="items-center">
-            <Text className="text-base font-bold text-text-primary">{latestAvg} lbs</Text>
+            <Text className="text-base font-bold text-text-primary">
+              {latestAvg} lbs
+            </Text>
             <Text className="text-xs text-text-muted">Latest Avg</Text>
           </View>
           <View className="items-center">
-            <Text className="text-base font-bold text-accent">{peakWeight} lbs</Text>
+            <Text className="text-base font-bold text-accent">
+              {peakWeight} lbs
+            </Text>
             <Text className="text-xs text-text-muted">Peak Weight</Text>
           </View>
           <View className="items-center">

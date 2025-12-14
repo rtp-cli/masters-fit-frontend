@@ -1,12 +1,13 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  View,
-  Text,
   Modal,
+  Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { colors } from "../lib/theme";
 
 interface ComingSoonModalProps {
@@ -27,7 +28,7 @@ export default function ComingSoonModal({
           <TouchableWithoutFeedback>
             <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
               {/* Icon */}
-              <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
+              <View className="size-16 rounded-full bg-primary/10 items-center justify-center mb-4">
                 <Ionicons name={icon} size={32} color={colors.brand.primary} />
               </View>
 

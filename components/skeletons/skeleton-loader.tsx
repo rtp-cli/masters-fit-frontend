@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, ViewProps, DimensionValue, Animated } from "react-native";
+import { Animated, type DimensionValue, type ViewProps } from "react-native";
 
 interface SkeletonLoaderProps extends ViewProps {
   width?: DimensionValue;
