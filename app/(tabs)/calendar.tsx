@@ -40,7 +40,7 @@ import {
 } from "../../utils";
 import { colors } from "../../lib/theme";
 import { CalendarSkeleton } from "../../components/skeletons/SkeletonScreens";
-import Header from "@/components/Header";
+import Header from "@/components/header";
 
 export default function CalendarScreen() {
   const router = useRouter();

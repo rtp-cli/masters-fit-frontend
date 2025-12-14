@@ -12,7 +12,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import Header from "@/components/Header";
+import Header from "@/components/header";
 import FloatingActionButton from "@components/FloatingActionButton";
 import { colors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/WorkoutContext";

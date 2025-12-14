@@ -21,7 +21,7 @@ import {
   fetchNutritionCaloriesToday,
   getHealthConnection,
 } from "@utils/health";
-import Header from "@/components/Header";
+import Header from "@/components/header";
 import { SkeletonLoader } from "@/components/skeletons/SkeletonLoader";
 import { generateWorkoutPlanAsync, fetchActiveWorkout } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";

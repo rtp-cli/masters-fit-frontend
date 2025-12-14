@@ -15,7 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
-import Header from "@components/Header";
+import Header from "@/components/header";
 
 export const VerifyScreen = () => {
   const router = useRouter();

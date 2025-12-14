@@ -1,7 +1,7 @@
 import { Modal, View, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
-import SearchView from "./SearchView";
+import SearchView from "./search-view";
 
 interface SearchModalProps {
   visible: boolean;
