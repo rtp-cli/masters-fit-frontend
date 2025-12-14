@@ -14,7 +14,7 @@ import {
 import {
   OnboardingStep,
   FITNESS_LEVELS,
-  IntensityLevels,
+  INTENSITY_LEVELS,
   WORKOUT_ENVIRONMENTS,
   GENDER,
 } from "@/types/enums";
@@ -86,7 +86,7 @@ export default function OnboardingForm({
     preferredStyles: [],
     availableDays: [],
     workoutDuration: 30,
-    intensityLevel: IntensityLevels.MODERATE,
+    intensityLevel: INTENSITY_LEVELS.MODERATE,
     medicalNotes: "",
     includeWarmup: true,
     includeCooldown: true,

@@ -23,17 +23,8 @@ import {
   AVAILABLE_EQUIPMENT,
   PREFERRED_STYLES,
   PREFERRED_DAYS,
+  INTENSITY_LEVELS,
 } from "@/types/enums/fitness.enums";
-
-// TODO: move this to components and use constants from separate file
-
-// Import enums directly from OnboardingForm since they're defined there
-
-enum IntensityLevels {
-  LOW = "low",
-  MODERATE = "moderate",
-  HIGH = "high",
-}
 
 export default function ProfileEditScreen() {
   const { user } = useAuth();
@@ -70,29 +61,29 @@ export default function ProfileEditScreen() {
   // Convert profile data to form data format
   const convertProfileToFormData = (profile: Profile): FormData => {
     // Handle intensity level conversion
-    let intensityLevel = IntensityLevels.MODERATE;
+    let intensityLevel = INTENSITY_LEVELS.MODERATE;
     if (profile.intensityLevel) {
       if (typeof profile.intensityLevel === "number") {
         intensityLevel =
           profile.intensityLevel === 1
-            ? IntensityLevels.LOW
+            ? INTENSITY_LEVELS.LOW
             : profile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+              ? INTENSITY_LEVELS.MODERATE
+              : INTENSITY_LEVELS.HIGH;
       } else {
         // Handle string values
         switch (profile.intensityLevel.toLowerCase()) {
           case "low":
-            intensityLevel = IntensityLevels.LOW;
+            intensityLevel = INTENSITY_LEVELS.LOW;
             break;
           case "moderate":
-            intensityLevel = IntensityLevels.MODERATE;
+            intensityLevel = INTENSITY_LEVELS.MODERATE;
             break;
           case "high":
-            intensityLevel = IntensityLevels.HIGH;
+            intensityLevel = INTENSITY_LEVELS.HIGH;
             break;
           default:
-            intensityLevel = IntensityLevels.MODERATE;
+            intensityLevel = INTENSITY_LEVELS.MODERATE;
         }
       }
     }

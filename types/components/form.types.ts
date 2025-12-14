@@ -3,7 +3,7 @@ import {
   type FITNESS_GOALS,
   type FITNESS_LEVELS,
   type GENDER,
-  type IntensityLevels,
+  type INTENSITY_LEVELS,
   type PHYSICAL_LIMITATIONS,
   type PREFERRED_DAYS,
   type PREFERRED_STYLES,
@@ -25,7 +25,7 @@ export interface FormData {
   preferredStyles: PREFERRED_STYLES[];
   availableDays: PREFERRED_DAYS[];
   workoutDuration: number;
-  intensityLevel: IntensityLevels;
+  intensityLevel: INTENSITY_LEVELS;
   medicalNotes?: string;
   includeWarmup?: boolean;
   includeCooldown?: boolean;

@@ -20,7 +20,7 @@ export enum FITNESS_LEVELS {
   ADVANCED = "advanced",
 }
 
-export enum IntensityLevels {
+export enum INTENSITY_LEVELS {
   LOW = "low",
   MODERATE = "moderate",
   HIGH = "high",

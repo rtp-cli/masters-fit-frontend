@@ -37,12 +37,12 @@ import {
   GENDER,
   FITNESS_GOALS,
   FITNESS_LEVELS,
-  IntensityLevels,
   WORKOUT_ENVIRONMENTS,
   PREFERRED_DAYS,
   PHYSICAL_LIMITATIONS,
   AVAILABLE_EQUIPMENT,
   PREFERRED_STYLES,
+  INTENSITY_LEVELS,
 } from "@/types/enums";
 import { RegenerationType } from "@/constants/global.enum";
 
@@ -113,7 +113,7 @@ export default function WorkoutRegenerationModal({
   const [temporaryOverrides, setTemporaryOverrides] =
     useState<TemporaryOverrides>({
       duration: 30,
-      intensity: IntensityLevels.MODERATE,
+      intensity: INTENSITY_LEVELS.MODERATE,
       styles: [],
       environment: WORKOUT_ENVIRONMENTS.HOME_GYM,
       equipment: [],
@@ -149,17 +149,17 @@ export default function WorkoutRegenerationModal({
   useEffect(() => {
     if (currentProfile && visible) {
       // Convert profile data to temporary overrides with defaults
-      let profileIntensity = IntensityLevels.MODERATE;
+      let profileIntensity = INTENSITY_LEVELS.MODERATE;
       if (currentProfile.intensityLevel) {
         if (typeof currentProfile.intensityLevel === "number") {
           profileIntensity =
             currentProfile.intensityLevel === 1
-              ? IntensityLevels.LOW
+              ? INTENSITY_LEVELS.LOW
               : currentProfile.intensityLevel === 2
-                ? IntensityLevels.MODERATE
-                : IntensityLevels.HIGH;
+                ? INTENSITY_LEVELS.MODERATE
+                : INTENSITY_LEVELS.HIGH;
         } else {
-          profileIntensity = currentProfile.intensityLevel as IntensityLevels;
+          profileIntensity = currentProfile.intensityLevel as INTENSITY_LEVELS;
         }
       }
 
@@ -227,9 +227,9 @@ export default function WorkoutRegenerationModal({
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
         intensityLevel:
-          formData.intensityLevel === IntensityLevels.LOW
+          formData.intensityLevel === INTENSITY_LEVELS.LOW
             ? 1
-            : formData.intensityLevel === IntensityLevels.MODERATE
+            : formData.intensityLevel === INTENSITY_LEVELS.MODERATE
               ? 2
               : 3,
         medicalNotes: formData.medicalNotes,
@@ -351,7 +351,7 @@ export default function WorkoutRegenerationModal({
       availableDays: partialFormData.availableDays || [],
       workoutDuration: partialFormData.workoutDuration || 30,
       intensityLevel:
-        partialFormData.intensityLevel || IntensityLevels.MODERATE,
+        partialFormData.intensityLevel || INTENSITY_LEVELS.MODERATE,
       medicalNotes: partialFormData.medicalNotes || "",
       includeWarmup: partialFormData.includeWarmup ?? true,
       includeCooldown: partialFormData.includeCooldown ?? true,
@@ -479,17 +479,17 @@ export default function WorkoutRegenerationModal({
     }
 
     // Check intensity override
-    let currentIntensity = IntensityLevels.MODERATE;
+    let currentIntensity = INTENSITY_LEVELS.MODERATE;
     if (currentProfile.intensityLevel) {
       if (typeof currentProfile.intensityLevel === "number") {
         currentIntensity =
           currentProfile.intensityLevel === 1
-            ? IntensityLevels.LOW
+            ? INTENSITY_LEVELS.LOW
             : currentProfile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+              ? INTENSITY_LEVELS.MODERATE
+              : INTENSITY_LEVELS.HIGH;
       } else {
-        currentIntensity = currentProfile.intensityLevel as IntensityLevels;
+        currentIntensity = currentProfile.intensityLevel as INTENSITY_LEVELS;
       }
     }
 
@@ -498,9 +498,9 @@ export default function WorkoutRegenerationModal({
       overrides.intensity !== currentIntensity
     ) {
       const intensityLabel =
-        overrides.intensity === IntensityLevels.LOW
+        overrides.intensity === INTENSITY_LEVELS.LOW
           ? "Low"
-          : overrides.intensity === IntensityLevels.MODERATE
+          : overrides.intensity === INTENSITY_LEVELS.MODERATE
             ? "Moderate"
             : "High";
       overrideDescriptions.push(`Intensity: ${intensityLabel}`);
@@ -669,17 +669,17 @@ export default function WorkoutRegenerationModal({
     profile: UserProfile
   ): Partial<FormData> => {
     // Handle intensity level conversion
-    let intensityLevel = IntensityLevels.MODERATE;
+    let intensityLevel = INTENSITY_LEVELS.MODERATE;
     if (profile.intensityLevel) {
       if (typeof profile.intensityLevel === "number") {
         intensityLevel =
           profile.intensityLevel === 1
-            ? IntensityLevels.LOW
+            ? INTENSITY_LEVELS.LOW
             : profile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+              ? INTENSITY_LEVELS.MODERATE
+              : INTENSITY_LEVELS.HIGH;
       } else {
-        intensityLevel = profile.intensityLevel as IntensityLevels;
+        intensityLevel = profile.intensityLevel as INTENSITY_LEVELS;
       }
     }
 
