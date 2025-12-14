@@ -22,21 +22,12 @@ import {
   WORKOUT_ENVIRONMENTS,
   AVAILABLE_EQUIPMENT,
   PREFERRED_STYLES,
+  PREFERRED_DAYS,
 } from "@/types/enums/fitness.enums";
 
 // TODO: move this to components and use constants from separate file
 
 // Import enums directly from OnboardingForm since they're defined there
-
-enum PreferredDays {
-  MONDAY = "monday",
-  TUESDAY = "tuesday",
-  WEDNESDAY = "wednesday",
-  THURSDAY = "thursday",
-  FRIDAY = "friday",
-  SATURDAY = "saturday",
-  SUNDAY = "sunday",
-}
 
 enum IntensityLevels {
   LOW = "low",
@@ -205,7 +196,7 @@ export default function ProfileEditScreen() {
       ),
       availableDays: convertStringArrayToEnum(
         profile.availableDays,
-        PreferredDays
+        PREFERRED_DAYS
       ),
       workoutDuration: profile.workoutDuration || 30,
       intensityLevel: intensityLevel,
@@ -240,7 +231,7 @@ export default function ProfileEditScreen() {
         workoutStyles: formData.preferredStyles.map((s: PREFERRED_STYLES) =>
           s.toString()
         ),
-        availableDays: formData.availableDays.map((d: PreferredDays) =>
+        availableDays: formData.availableDays.map((d: PREFERRED_DAYS) =>
           d.toString()
         ),
         workoutDuration: formData.workoutDuration,

@@ -32,7 +32,7 @@ export enum WORKOUT_ENVIRONMENTS {
   BODYWEIGHT_ONLY = "bodyweight_only",
 }
 
-export enum PreferredDays {
+export enum PREFERRED_DAYS {
   MONDAY = "monday",
   TUESDAY = "tuesday",
   WEDNESDAY = "wednesday",

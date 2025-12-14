@@ -5,8 +5,8 @@ import {
   type GENDER,
   type IntensityLevels,
   type PHYSICAL_LIMITATIONS,
+  type PREFERRED_DAYS,
   type PREFERRED_STYLES,
-  type PreferredDays,
   type WORKOUT_ENVIRONMENTS,
 } from "../enums/fitness.enums";
 
@@ -23,7 +23,7 @@ export interface FormData {
   equipment?: AVAILABLE_EQUIPMENT[];
   otherEquipment?: string;
   preferredStyles: PREFERRED_STYLES[];
-  availableDays: PreferredDays[];
+  availableDays: PREFERRED_DAYS[];
   workoutDuration: number;
   intensityLevel: IntensityLevels;
   medicalNotes?: string;
