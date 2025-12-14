@@ -18,7 +18,7 @@ import {
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
 import { useEffect, useState } from "react";
-import WarmingUpScreen from "@/components/ui/WarmingUpScreen";
+import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import {
   registerForPushNotifications,

@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import CustomSlider from "@/components/ui/Slider";
+import CustomSlider from "@/components/ui/slider";
 import { FormData } from "@/types/components";
 import { Gender } from "@/types/enums";
 import { colors } from "@/lib/theme";

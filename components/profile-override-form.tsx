@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
-import CustomSlider from "@/components/ui/Slider";
+import CustomSlider from "@/components/ui/slider";
 import IconComponent from "./onboarding/ui/icon-component";
 import { formatEnumValue } from "./onboarding/utils/formatters";
 import { colors } from "../lib/theme";

@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import CustomSlider from "@/components/ui/Slider";
+import CustomSlider from "@/components/ui/slider";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { FitnessLevels, PreferredDays, IntensityLevels } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";

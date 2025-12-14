@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
-import WarmingUpScreen from "@/components/ui/WarmingUpScreen";
+import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { useDataPreload } from "@hooks/useDataPreload";
 import { images } from "@/assets";
 import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
@@ -148,7 +148,6 @@ export default function GetStarted() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="dark" />
-
 
       <View className="flex-1 px-6 justify-between pb-12">
         {/* Hero Section with Home Image */}
