@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { PhysicalLimitations } from "@/types/enums";
+import { PHYSICAL_LIMITATIONS } from "@/types/enums/fitness.enums";
 import { colors } from "@/lib/theme";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
@@ -159,7 +159,7 @@ export default function PhysicalLimitationsStep({
       keyboardShouldPersistTaps="handled"
       ref={scrollViewRef}
     >
-      {Object.entries(PhysicalLimitations).map(([key, value]) => {
+      {Object.entries(PHYSICAL_LIMITATIONS).map(([key, value]) => {
         const config = getLimitationConfig(key);
         const isSelected = formData.limitations?.includes(value) || false;
 

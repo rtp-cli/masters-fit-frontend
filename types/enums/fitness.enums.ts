@@ -1,9 +1,9 @@
-export enum Gender {
+export enum GENDER {
   MALE = "male",
   FEMALE = "female",
 }
 
-export enum FitnessGoals {
+export enum FITNESS_GOALS {
   GENERAL_FITNESS = "general_fitness",
   FAT_LOSS = "fat_loss",
   ENDURANCE = "endurance",
@@ -14,7 +14,7 @@ export enum FitnessGoals {
   RECOVERY = "recovery",
 }
 
-export enum FitnessLevels {
+export enum FITNESS_LEVELS {
   BEGINNER = "beginner",
   INTERMEDIATE = "intermediate",
   ADVANCED = "advanced",
@@ -26,7 +26,7 @@ export enum IntensityLevels {
   HIGH = "high",
 }
 
-export enum WorkoutEnvironments {
+export enum WORKOUT_ENVIRONMENTS {
   HOME_GYM = "home_gym",
   COMMERCIAL_GYM = "commercial_gym",
   BODYWEIGHT_ONLY = "bodyweight_only",
@@ -42,7 +42,7 @@ export enum PreferredDays {
   SUNDAY = "sunday",
 }
 
-export enum PhysicalLimitations {
+export enum PHYSICAL_LIMITATIONS {
   KNEE_PAIN = "knee_pain",
   SHOULDER_PAIN = "shoulder_pain",
   LOWER_BACK_PAIN = "lower_back_pain",
@@ -61,7 +61,7 @@ export enum PhysicalLimitations {
   BREATHING_ISSUES = "breathing_issues",
 }
 
-export enum AvailableEquipment {
+export enum AVAILABLE_EQUIPMENT {
   BARBELLS = "barbells",
   BENCH = "bench",
   INCLINE_DECLINE_BENCH = "incline_decline_bench",
@@ -83,7 +83,7 @@ export enum AvailableEquipment {
   FOAM_ROLLER = "foam_roller",
 }
 
-export enum PreferredStyles {
+export enum PREFERRED_STYLES {
   HIIT = "HIIT",
   STRENGTH = "strength",
   CARDIO = "cardio",

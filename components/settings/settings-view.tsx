@@ -750,7 +750,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                   router.push({
                     pathname: "/legal-document",
                     params: { type: "terms" },
-                  })
+                  } as any)
                 }
               >
                 <View className="flex-row items-center flex-1">
@@ -776,7 +776,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                   router.push({
                     pathname: "/legal-document",
                     params: { type: "privacy" },
-                  })
+                  } as any)
                 }
               >
                 <View className="flex-row items-center flex-1">
@@ -802,7 +802,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                   router.push({
                     pathname: "/legal-document",
                     params: { type: "waiver" },
-                  })
+                  } as any)
                 }
               >
                 <View className="flex-row items-center flex-1">
@@ -856,14 +856,14 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                   tapCount == 0
                     ? "normal"
                     : tapCount == 1
-                    ? "100"
-                    : tapCount == 2
-                    ? "200"
-                    : tapCount == 3
-                    ? "300"
-                    : tapCount == 4
-                    ? "400"
-                    : "500",
+                      ? "100"
+                      : tapCount == 2
+                        ? "200"
+                        : tapCount == 3
+                          ? "300"
+                          : tapCount == 4
+                            ? "400"
+                            : "500",
               }}
             >
               MastersFit v1.0.0

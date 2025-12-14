@@ -13,10 +13,10 @@ import {
 } from "@/types/components";
 import {
   OnboardingStep,
-  Gender,
-  FitnessLevels,
+  FITNESS_LEVELS,
   IntensityLevels,
-  WorkoutEnvironments,
+  WORKOUT_ENVIRONMENTS,
+  GENDER,
 } from "@/types/enums";
 import { validateStep } from "./onboarding/utils/validation";
 import { getEquipmentForEnvironment } from "./onboarding/utils/equipment-logic";
@@ -77,10 +77,10 @@ export default function OnboardingForm({
     age: 40,
     height: 170,
     weight: 150,
-    gender: Gender.MALE,
+    gender: GENDER.MALE,
     goals: [],
     limitations: [],
-    fitnessLevel: FitnessLevels.BEGINNER,
+    fitnessLevel: FITNESS_LEVELS.BEGINNER,
     equipment: [],
     otherEquipment: "",
     preferredStyles: [],
@@ -105,7 +105,7 @@ export default function OnboardingForm({
     // Auto-assign equipment based on environment selection
     if (field === "environment") {
       updates.equipment = getEquipmentForEnvironment(
-        value as WorkoutEnvironments
+        value as WORKOUT_ENVIRONMENTS
       );
     }
 

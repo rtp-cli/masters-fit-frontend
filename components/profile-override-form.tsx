@@ -6,18 +6,18 @@ import { formatEnumValue } from "./onboarding/utils/formatters";
 import { colors } from "../lib/theme";
 import {
   IntensityLevels,
-  WorkoutEnvironments,
-  AvailableEquipment,
-  PreferredStyles,
+  WORKOUT_ENVIRONMENTS,
+  AVAILABLE_EQUIPMENT,
+  PREFERRED_STYLES,
 } from "@/types/enums";
 
 // Interface for temporary overrides (not saved to profile)
 export interface TemporaryOverrides {
   duration?: number;
   intensity?: IntensityLevels;
-  styles?: PreferredStyles[];
-  environment?: WorkoutEnvironments;
-  equipment?: AvailableEquipment[];
+  styles?: PREFERRED_STYLES[];
+  environment?: WORKOUT_ENVIRONMENTS;
+  equipment?: AVAILABLE_EQUIPMENT[];
   otherEquipment?: string;
   includeWarmup?: boolean;
   includeCooldown?: boolean;
@@ -386,7 +386,7 @@ export default function ProfileOverrideForm({
         <Text className="text-sm text-neutral-medium-4 mb-4">
           Select preferred styles for this workout (choose multiple)
         </Text>
-        {Object.entries(PreferredStyles).map(([key, value]) => {
+        {Object.entries(PREFERRED_STYLES).map(([key, value]) => {
           const isSelected = overrides.styles?.includes(value) || false;
           const config = getStyleConfig(key);
 
@@ -436,7 +436,7 @@ export default function ProfileOverrideForm({
         <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
           Workout Environment
         </Text>
-        {Object.entries(WorkoutEnvironments).map(([key, value]) => {
+        {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
           const isSelected = overrides.environment === value;
           const config = getEnvironmentConfig(key);
 
@@ -475,7 +475,7 @@ export default function ProfileOverrideForm({
       </View>
 
       {/* Equipment Selection - Only show for HOME_GYM */}
-      {overrides.environment === WorkoutEnvironments.HOME_GYM && (
+      {overrides.environment === WORKOUT_ENVIRONMENTS.HOME_GYM && (
         <View className="mb-6">
           <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
             Available Equipment
@@ -484,7 +484,7 @@ export default function ProfileOverrideForm({
             {/* First manually order the basic weights equipment */}
             {["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].map((key) => {
               const value =
-                AvailableEquipment[key as keyof typeof AvailableEquipment];
+                AVAILABLE_EQUIPMENT[key as keyof typeof AVAILABLE_EQUIPMENT];
               const config = getEquipmentConfig(key);
               const isSelected = overrides.equipment?.includes(value) || false;
 
@@ -524,7 +524,7 @@ export default function ProfileOverrideForm({
             })}
 
             {/* Then render the rest of the equipment */}
-            {Object.entries(AvailableEquipment)
+            {Object.entries(AVAILABLE_EQUIPMENT)
               .filter(
                 ([key]) =>
                   !["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].includes(key)

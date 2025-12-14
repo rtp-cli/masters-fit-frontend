@@ -1,5 +1,5 @@
 import { FormData } from "@/types/components";
-import { OnboardingStep, WorkoutEnvironments } from "@/types/enums";
+import { OnboardingStep, WORKOUT_ENVIRONMENTS } from "@/types/enums";
 
 // Form validation helper
 export const validateField = (field: string, value: any): string => {
@@ -83,7 +83,7 @@ export const validateStep = (
       }
       // Only validate equipment for HOME_GYM environment
       if (
-        formData.environment === WorkoutEnvironments.HOME_GYM &&
+        formData.environment === WORKOUT_ENVIRONMENTS.HOME_GYM &&
         (!formData.equipment || formData.equipment.length === 0)
       ) {
         newErrors.equipment =
