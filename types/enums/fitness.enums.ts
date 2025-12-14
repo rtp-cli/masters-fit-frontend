@@ -96,7 +96,7 @@ export enum PREFERRED_STYLES {
   MOBILITY = "mobility",
 }
 
-export enum OnboardingStep {
+export enum ONBOARDING_STEP {
   PERSONAL_INFO = 0,
   FITNESS_GOALS = 1,
   PHYSICAL_LIMITATIONS = 2,

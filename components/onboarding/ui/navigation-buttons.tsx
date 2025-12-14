@@ -1,9 +1,9 @@
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import { OnboardingStep } from "@/types/enums";
+import { ONBOARDING_STEP } from "@/types/enums";
 import { colors } from "@/lib/theme";
 
 interface NavigationButtonsProps {
-  currentStep: OnboardingStep;
+  currentStep: ONBOARDING_STEP;
   isLoading: boolean;
   submitButtonText?: string;
   onNext: () => void;
@@ -24,13 +24,13 @@ export default function NavigationButtons({
   totalSteps,
 }: NavigationButtonsProps) {
   // Use index-based logic if provided, fallback to absolute step logic
-  const isLastStep = totalSteps !== undefined && currentStepIndex !== undefined 
-    ? currentStepIndex === totalSteps - 1
-    : currentStep === OnboardingStep.WORKOUT_STYLE;
-    
-  const isFirstStep = currentStepIndex !== undefined 
-    ? currentStepIndex === 0
-    : currentStep === 0;
+  const isLastStep =
+    totalSteps !== undefined && currentStepIndex !== undefined
+      ? currentStepIndex === totalSteps - 1
+      : currentStep === ONBOARDING_STEP.WORKOUT_STYLE;
+
+  const isFirstStep =
+    currentStepIndex !== undefined ? currentStepIndex === 0 : currentStep === 0;
 
   return (
     <View className="px-6 pb-8 pt-4">

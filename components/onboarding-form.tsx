@@ -12,7 +12,7 @@ import {
   ArrayValue,
 } from "@/types/components";
 import {
-  OnboardingStep,
+  ONBOARDING_STEP,
   FITNESS_LEVELS,
   INTENSITY_LEVELS,
   WORKOUT_ENVIRONMENTS,
@@ -51,15 +51,15 @@ export default function OnboardingForm({
   const scrollRef = useRef<ScrollView | null>(null);
 
   // Create dynamic step flow based on excludePersonalInfo
-  const getAvailableSteps = (): OnboardingStep[] => {
+  const getAvailableSteps = (): ONBOARDING_STEP[] => {
     const allSteps = [
-      OnboardingStep.PERSONAL_INFO,
-      OnboardingStep.FITNESS_GOALS,
-      OnboardingStep.PHYSICAL_LIMITATIONS,
-      OnboardingStep.FITNESS_LEVEL,
-      OnboardingStep.WORKOUT_ENVIRONMENT,
-      OnboardingStep.HEALTH_CONNECT,
-      OnboardingStep.WORKOUT_STYLE,
+      ONBOARDING_STEP.PERSONAL_INFO,
+      ONBOARDING_STEP.FITNESS_GOALS,
+      ONBOARDING_STEP.PHYSICAL_LIMITATIONS,
+      ONBOARDING_STEP.FITNESS_LEVEL,
+      ONBOARDING_STEP.WORKOUT_ENVIRONMENT,
+      ONBOARDING_STEP.HEALTH_CONNECT,
+      ONBOARDING_STEP.WORKOUT_STYLE,
     ];
 
     return excludePersonalInfo
@@ -173,7 +173,7 @@ export default function OnboardingForm({
   // Render the current step content
   const renderStepContent = () => {
     switch (currentStep) {
-      case OnboardingStep.PERSONAL_INFO:
+      case ONBOARDING_STEP.PERSONAL_INFO:
         return (
           <PersonalInfoStep
             formData={formData}
@@ -181,14 +181,14 @@ export default function OnboardingForm({
             onFieldChange={handleChange}
           />
         );
-      case OnboardingStep.FITNESS_GOALS:
+      case ONBOARDING_STEP.FITNESS_GOALS:
         return (
           <FitnessGoalsStep
             formData={formData}
             onToggle={handleMultiSelectToggle}
           />
         );
-      case OnboardingStep.PHYSICAL_LIMITATIONS:
+      case ONBOARDING_STEP.PHYSICAL_LIMITATIONS:
         return (
           <PhysicalLimitationsStep
             formData={formData}
@@ -197,7 +197,7 @@ export default function OnboardingForm({
             scrollViewRef={scrollRef}
           />
         );
-      case OnboardingStep.FITNESS_LEVEL:
+      case ONBOARDING_STEP.FITNESS_LEVEL:
         return (
           <FitnessLevelStep
             formData={formData}
@@ -206,7 +206,7 @@ export default function OnboardingForm({
             onToggle={handleMultiSelectToggle}
           />
         );
-      case OnboardingStep.WORKOUT_ENVIRONMENT:
+      case ONBOARDING_STEP.WORKOUT_ENVIRONMENT:
         return (
           <WorkoutEnvironmentStep
             formData={formData}
@@ -215,9 +215,9 @@ export default function OnboardingForm({
             onToggle={handleMultiSelectToggle}
           />
         );
-      case OnboardingStep.HEALTH_CONNECT:
+      case ONBOARDING_STEP.HEALTH_CONNECT:
         return <HealthConnectStep />;
-      case OnboardingStep.WORKOUT_STYLE:
+      case ONBOARDING_STEP.WORKOUT_STYLE:
         return (
           <WorkoutStyleStep
             formData={formData}
