@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "expo-router";
 import { useAuth } from "@contexts/AuthContext";
 import { colors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
-import SettingsModal from "./settings/SettingsModal";
+import SettingsModal from "./settings/settings-modal";
 
 interface HeaderProps {
   workoutTitle?: string;

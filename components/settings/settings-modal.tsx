@@ -1,5 +1,5 @@
 import { Modal, View, TouchableOpacity, Text } from "react-native";
-import SettingsView from "./SettingsView";
+import SettingsView from "./settings-view";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
 
