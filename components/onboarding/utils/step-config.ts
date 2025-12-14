@@ -1,4 +1,4 @@
-import { OnboardingStep } from "@/types/enums";
+import { ONBOARDING_STEP } from "@/types/enums";
 
 export interface StepConfig {
   title: string;
@@ -7,21 +7,21 @@ export interface StepConfig {
 }
 
 // Get step configuration - matching exact titles from images
-export const getStepConfig = (currentStep: OnboardingStep): StepConfig => {
+export const getStepConfig = (currentStep: ONBOARDING_STEP): StepConfig => {
   switch (currentStep) {
-    case OnboardingStep.PERSONAL_INFO:
+    case ONBOARDING_STEP.PERSONAL_INFO:
       return {
         title: "Personal Information",
         description:
           "Tell us a bit about yourself so we can create a personalized fitness plan just for you. At MastersFit, your privacy matters - we'll keep your information secure and never share or sell it to third-parties.",
       };
-    case OnboardingStep.FITNESS_GOALS:
+    case ONBOARDING_STEP.FITNESS_GOALS:
       return {
         title: "Fitness Goals",
         description:
           "What do you want to achieve? Select all goals that apply to you.",
       };
-    case OnboardingStep.PHYSICAL_LIMITATIONS:
+    case ONBOARDING_STEP.PHYSICAL_LIMITATIONS:
       return {
         title: "Own Your Journey",
         description:
@@ -29,25 +29,25 @@ export const getStepConfig = (currentStep: OnboardingStep): StepConfig => {
         disclaimer:
           "Before starting any new fitness program, check with your doctor, especially if you have existing health conditions.",
       };
-    case OnboardingStep.FITNESS_LEVEL:
+    case ONBOARDING_STEP.FITNESS_LEVEL:
       return {
         title: "Let's Get Moving!",
         description:
           "Tell us about your fitness level and when you're available to workout. Whether you're just starting out or leveling up, we'll build powerful workouts that fit your goals and schedule.",
       };
-    case OnboardingStep.WORKOUT_ENVIRONMENT:
+    case ONBOARDING_STEP.WORKOUT_ENVIRONMENT:
       return {
         title: "Workout Environment & Equipment",
         description:
           "Where will you workout and what equipment do you have access to?",
       };
-    case OnboardingStep.HEALTH_CONNECT:
+    case ONBOARDING_STEP.HEALTH_CONNECT:
       return {
         title: "Connect Health",
         description:
           "Connect Apple Health or Health Connect to sync steps, calories, heart rate, and workouts.",
       };
-    case OnboardingStep.WORKOUT_STYLE:
+    case ONBOARDING_STEP.WORKOUT_STYLE:
       return {
         title: "Workout Preferences",
         description:

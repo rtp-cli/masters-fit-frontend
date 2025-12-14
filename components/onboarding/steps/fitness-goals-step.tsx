@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { FitnessGoals } from "@/types/enums";
+import { FITNESS_GOALS } from "@/types/enums/fitness.enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
@@ -85,7 +85,7 @@ export default function FitnessGoalsStep({
 }: FitnessGoalsStepProps) {
   return (
     <View className="flex-1 px-6 pb-6">
-      {Object.entries(FitnessGoals).map(([key, value]) => {
+      {Object.entries(FITNESS_GOALS).map(([key, value]) => {
         const config = getGoalConfig(key);
         const isSelected = formData.goals?.includes(value) || false;
 

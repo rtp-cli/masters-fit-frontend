@@ -1,10 +1,10 @@
 import { View, Text } from "react-native";
 import ProgressIndicator from "@/components/progressive-indicator";
-import { OnboardingStep } from "@/types/enums";
+import { ONBOARDING_STEP } from "@/types/enums";
 import { getStepConfig } from "../utils/step-config";
 
 interface OnboardingHeaderProps {
-  currentStep: OnboardingStep;
+  currentStep: ONBOARDING_STEP;
   totalSteps: number;
   currentStepIndex?: number;
 }

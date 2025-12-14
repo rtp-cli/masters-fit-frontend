@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { PreferredStyles } from "@/types/enums";
+import { PREFERRED_STYLES } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
@@ -159,7 +159,7 @@ export default function WorkoutStyleStep({
           Select the training styles you enjoy (choose multiple)
         </Text>
 
-        {Object.entries(PreferredStyles).map(([key, value]) => {
+        {Object.entries(PREFERRED_STYLES).map(([key, value]) => {
           const config = getStyleConfig(key);
           const isSelected = formData.preferredStyles.includes(value);
 

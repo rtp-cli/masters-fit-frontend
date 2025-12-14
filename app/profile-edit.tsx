@@ -14,107 +14,17 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@/components/onboarding-form";
 import { colors } from "../lib/theme";
-
-// TODO: move this to components and use constants from separate file
-
-// Import enums directly from OnboardingForm since they're defined there
-enum Gender {
-  MALE = "male",
-  FEMALE = "female",
-}
-
-enum FitnessGoals {
-  GENERAL_FITNESS = "general_fitness",
-  FAT_LOSS = "fat_loss",
-  ENDURANCE = "endurance",
-  MUSCLE_GAIN = "muscle_gain",
-  STRENGTH = "strength",
-  MOBILITY_FLEXIBILITY = "mobility_flexibility",
-  BALANCE = "balance",
-  RECOVERY = "recovery",
-}
-
-enum PhysicalLimitations {
-  KNEE_PAIN = "knee_pain",
-  SHOULDER_PAIN = "shoulder_pain",
-  LOWER_BACK_PAIN = "lower_back_pain",
-  NECK_PAIN = "neck_pain",
-  HIP_PAIN = "hip_pain",
-  ANKLE_INSTABILITY = "ankle_instability",
-  WRIST_PAIN = "wrist_pain",
-  ELBOW_PAIN = "elbow_pain",
-  ARTHRITIS = "arthritis",
-  OSTEOPOROSIS = "osteoporosis",
-  SCIATICA = "sciatica",
-  LIMITED_RANGE_OF_MOTION = "limited_range_of_motion",
-  POST_SURGERY_RECOVERY = "post_surgery_recovery",
-  BALANCE_ISSUES = "balance_issues",
-  CHRONIC_FATIGUE = "chronic_fatigue",
-  BREATHING_ISSUES = "breathing_issues",
-}
-
-enum FitnessLevels {
-  BEGINNER = "beginner",
-  INTERMEDIATE = "intermediate",
-  ADVANCED = "advanced",
-}
-
-enum WorkoutEnvironments {
-  HOME_GYM = "home_gym",
-  COMMERCIAL_GYM = "commercial_gym",
-  BODYWEIGHT_ONLY = "bodyweight_only",
-}
-
-enum AvailableEquipment {
-  BARBELLS = "barbells",
-  BENCH = "bench",
-  INCLINE_DECLINE_BENCH = "incline_decline_bench",
-  PULL_UP_BAR = "pull_up_bar",
-  BIKE = "bike",
-  MEDICINE_BALLS = "medicine_balls",
-  PLYO_BOX = "plyo_box",
-  RINGS = "rings",
-  RESISTANCE_BANDS = "resistance_bands",
-  STABILITY_BALL = "stability_ball",
-  DUMBBELLS = "dumbbells",
-  KETTLEBELLS = "kettlebells",
-  SQUAT_RACK = "squat_rack",
-  DIP_BAR = "dip_bar",
-  ROWING_MACHINE = "rowing_machine",
-  SLAM_BALLS = "slam_balls",
-  CABLE_MACHINE = "cable_machine",
-  JUMP_ROPE = "jump_rope",
-  FOAM_ROLLER = "foam_roller",
-}
-
-enum PreferredStyles {
-  HIIT = "HIIT",
-  STRENGTH = "strength",
-  CARDIO = "cardio",
-  REHAB = "rehab",
-  CROSSFIT = "crossfit",
-  FUNCTIONAL = "functional",
-  PILATES = "pilates",
-  YOGA = "yoga",
-  BALANCE = "balance",
-  MOBILITY = "mobility",
-}
-
-enum PreferredDays {
-  MONDAY = "monday",
-  TUESDAY = "tuesday",
-  WEDNESDAY = "wednesday",
-  THURSDAY = "thursday",
-  FRIDAY = "friday",
-  SATURDAY = "saturday",
-  SUNDAY = "sunday",
-}
-
-enum IntensityLevels {
-  LOW = "low",
-  MODERATE = "moderate",
-  HIGH = "high",
-}
+import {
+  FITNESS_GOALS,
+  FITNESS_LEVELS,
+  GENDER,
+  PHYSICAL_LIMITATIONS,
+  WORKOUT_ENVIRONMENTS,
+  AVAILABLE_EQUIPMENT,
+  PREFERRED_STYLES,
+  PREFERRED_DAYS,
+  INTENSITY_LEVELS,
+} from "@/types/enums/fitness.enums";
 
 export default function ProfileEditScreen() {
   const { user } = useAuth();
@@ -151,89 +61,89 @@ export default function ProfileEditScreen() {
   // Convert profile data to form data format
   const convertProfileToFormData = (profile: Profile): FormData => {
     // Handle intensity level conversion
-    let intensityLevel = IntensityLevels.MODERATE;
+    let intensityLevel = INTENSITY_LEVELS.MODERATE;
     if (profile.intensityLevel) {
       if (typeof profile.intensityLevel === "number") {
         intensityLevel =
           profile.intensityLevel === 1
-            ? IntensityLevels.LOW
+            ? INTENSITY_LEVELS.LOW
             : profile.intensityLevel === 2
-            ? IntensityLevels.MODERATE
-            : IntensityLevels.HIGH;
+              ? INTENSITY_LEVELS.MODERATE
+              : INTENSITY_LEVELS.HIGH;
       } else {
         // Handle string values
         switch (profile.intensityLevel.toLowerCase()) {
           case "low":
-            intensityLevel = IntensityLevels.LOW;
+            intensityLevel = INTENSITY_LEVELS.LOW;
             break;
           case "moderate":
-            intensityLevel = IntensityLevels.MODERATE;
+            intensityLevel = INTENSITY_LEVELS.MODERATE;
             break;
           case "high":
-            intensityLevel = IntensityLevels.HIGH;
+            intensityLevel = INTENSITY_LEVELS.HIGH;
             break;
           default:
-            intensityLevel = IntensityLevels.MODERATE;
+            intensityLevel = INTENSITY_LEVELS.MODERATE;
         }
       }
     }
 
     // Handle environment - convert from string to enum if needed
-    let environment = WorkoutEnvironments.HOME_GYM;
+    let environment = WORKOUT_ENVIRONMENTS.HOME_GYM;
     if (profile.environment) {
       if (Array.isArray(profile.environment)) {
-        environment = profile.environment[0] as WorkoutEnvironments;
+        environment = profile.environment[0] as WORKOUT_ENVIRONMENTS;
       } else {
         // Map string values to enum (handle both old and new values)
         switch (profile.environment.toLowerCase()) {
           case "home":
           case "home_gym":
-            environment = WorkoutEnvironments.HOME_GYM;
+            environment = WORKOUT_ENVIRONMENTS.HOME_GYM;
             break;
           case "gym":
           case "commercial_gym":
-            environment = WorkoutEnvironments.COMMERCIAL_GYM;
+            environment = WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM;
             break;
           case "hybrid":
           case "bodyweight_only":
-            environment = WorkoutEnvironments.BODYWEIGHT_ONLY;
+            environment = WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY;
             break;
           default:
-            environment = WorkoutEnvironments.HOME_GYM;
+            environment = WORKOUT_ENVIRONMENTS.HOME_GYM;
         }
       }
     }
 
     // Handle gender conversion
-    let gender = Gender.MALE;
+    let gender = GENDER.MALE;
     if (profile.gender) {
       switch (profile.gender.toLowerCase()) {
-        case "male":
-          gender = Gender.MALE;
+        case GENDER.MALE:
+          gender = GENDER.MALE;
           break;
-        case "female":
-          gender = Gender.FEMALE;
+        case GENDER.FEMALE:
+          gender = GENDER.FEMALE;
           break;
         default:
-          gender = Gender.FEMALE;
+          gender = GENDER.FEMALE;
       }
     }
 
     // Handle fitness level conversion
-    let fitnessLevel = FitnessLevels.BEGINNER;
+    let fitnessLevel = FITNESS_LEVELS.BEGINNER;
     if (profile.fitnessLevel) {
       switch (profile.fitnessLevel.toLowerCase()) {
         case "beginner":
-          fitnessLevel = FitnessLevels.BEGINNER;
+          fitnessLevel = FITNESS_LEVELS.BEGINNER;
           break;
         case "intermediate":
-          fitnessLevel = FitnessLevels.INTERMEDIATE;
+          fitnessLevel = FITNESS_LEVELS.INTERMEDIATE;
           break;
         case "advanced":
-          fitnessLevel = FitnessLevels.ADVANCED;
+          fitnessLevel = FITNESS_LEVELS.ADVANCED;
           break;
         default:
-          fitnessLevel = FitnessLevels.BEGINNER;
+          fitnessLevel = FITNESS_LEVELS.BEGINNER;
       }
     }
 
@@ -259,25 +169,25 @@ export default function ProfileEditScreen() {
       height: profile.height || 170,
       weight: profile.weight || 70,
       gender: gender,
-      goals: convertStringArrayToEnum(profile.goals, FitnessGoals),
+      goals: convertStringArrayToEnum(profile.goals, FITNESS_GOALS),
       limitations: convertStringArrayToEnum(
         profile.limitations,
-        PhysicalLimitations
+        PHYSICAL_LIMITATIONS
       ),
       fitnessLevel: fitnessLevel,
       environment: environment,
       equipment: convertStringArrayToEnum(
         profile.equipment,
-        AvailableEquipment
+        AVAILABLE_EQUIPMENT
       ),
       otherEquipment: profile.otherEquipment || "",
       preferredStyles: convertStringArrayToEnum(
         profile.preferredStyles,
-        PreferredStyles
+        PREFERRED_STYLES
       ),
       availableDays: convertStringArrayToEnum(
         profile.availableDays,
-        PreferredDays
+        PREFERRED_DAYS
       ),
       workoutDuration: profile.workoutDuration || 30,
       intensityLevel: intensityLevel,
@@ -298,20 +208,21 @@ export default function ProfileEditScreen() {
         height: formData.height,
         weight: formData.weight,
         gender: formData.gender.toString(),
-        goals: formData.goals.map((g: FitnessGoals) => g.toString()),
+        goals: formData.goals.map((g: FITNESS_GOALS) => g.toString()),
         limitations:
-          formData.limitations?.map((l: PhysicalLimitations) => l.toString()) ||
-          [],
+          formData.limitations?.map((l: PHYSICAL_LIMITATIONS) =>
+            l.toString()
+          ) || [],
         fitnessLevel: formData.fitnessLevel.toString(),
         environment: formData.environment!.toString(),
         equipment:
-          formData.equipment?.map((e: AvailableEquipment) => e.toString()) ||
+          formData.equipment?.map((e: AVAILABLE_EQUIPMENT) => e.toString()) ||
           [],
         otherEquipment: formData.otherEquipment || "",
-        workoutStyles: formData.preferredStyles.map((s: PreferredStyles) =>
+        workoutStyles: formData.preferredStyles.map((s: PREFERRED_STYLES) =>
           s.toString()
         ),
-        availableDays: formData.availableDays.map((d: PreferredDays) =>
+        availableDays: formData.availableDays.map((d: PREFERRED_DAYS) =>
           d.toString()
         ),
         workoutDuration: formData.workoutDuration,

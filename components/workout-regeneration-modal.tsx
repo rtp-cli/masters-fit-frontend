@@ -34,15 +34,15 @@ import {
 import { Profile as UserProfile } from "@/types/api";
 
 import {
-  Gender,
-  FitnessGoals,
-  FitnessLevels,
-  IntensityLevels,
-  WorkoutEnvironments,
-  PreferredDays,
-  PhysicalLimitations,
-  AvailableEquipment,
-  PreferredStyles,
+  GENDER,
+  FITNESS_GOALS,
+  FITNESS_LEVELS,
+  WORKOUT_ENVIRONMENTS,
+  PREFERRED_DAYS,
+  PHYSICAL_LIMITATIONS,
+  AVAILABLE_EQUIPMENT,
+  PREFERRED_STYLES,
+  INTENSITY_LEVELS,
 } from "@/types/enums";
 import { RegenerationType } from "@/constants/global.enum";
 
@@ -113,9 +113,9 @@ export default function WorkoutRegenerationModal({
   const [temporaryOverrides, setTemporaryOverrides] =
     useState<TemporaryOverrides>({
       duration: 30,
-      intensity: IntensityLevels.MODERATE,
+      intensity: INTENSITY_LEVELS.MODERATE,
       styles: [],
-      environment: WorkoutEnvironments.HOME_GYM,
+      environment: WORKOUT_ENVIRONMENTS.HOME_GYM,
       equipment: [],
       otherEquipment: "",
       includeWarmup: true,
@@ -149,37 +149,37 @@ export default function WorkoutRegenerationModal({
   useEffect(() => {
     if (currentProfile && visible) {
       // Convert profile data to temporary overrides with defaults
-      let profileIntensity = IntensityLevels.MODERATE;
+      let profileIntensity = INTENSITY_LEVELS.MODERATE;
       if (currentProfile.intensityLevel) {
         if (typeof currentProfile.intensityLevel === "number") {
           profileIntensity =
             currentProfile.intensityLevel === 1
-              ? IntensityLevels.LOW
+              ? INTENSITY_LEVELS.LOW
               : currentProfile.intensityLevel === 2
-                ? IntensityLevels.MODERATE
-                : IntensityLevels.HIGH;
+                ? INTENSITY_LEVELS.MODERATE
+                : INTENSITY_LEVELS.HIGH;
         } else {
-          profileIntensity = currentProfile.intensityLevel as IntensityLevels;
+          profileIntensity = currentProfile.intensityLevel as INTENSITY_LEVELS;
         }
       }
 
-      let profileEnvironment = WorkoutEnvironments.HOME_GYM;
+      let profileEnvironment = WORKOUT_ENVIRONMENTS.HOME_GYM;
       if (currentProfile.environment) {
         if (Array.isArray(currentProfile.environment)) {
           profileEnvironment = currentProfile
-            .environment[0] as WorkoutEnvironments;
+            .environment[0] as WORKOUT_ENVIRONMENTS;
         } else {
           profileEnvironment =
-            currentProfile.environment as WorkoutEnvironments;
+            currentProfile.environment as WORKOUT_ENVIRONMENTS;
         }
       }
 
       setTemporaryOverrides({
         duration: currentProfile.workoutDuration || 30,
         intensity: profileIntensity,
-        styles: (currentProfile.preferredStyles as PreferredStyles[]) || [],
+        styles: (currentProfile.preferredStyles as PREFERRED_STYLES[]) || [],
         environment: profileEnvironment,
-        equipment: (currentProfile.equipment as AvailableEquipment[]) || [],
+        equipment: (currentProfile.equipment as AVAILABLE_EQUIPMENT[]) || [],
         otherEquipment: currentProfile.otherEquipment || "",
         includeWarmup: currentProfile.includeWarmup ?? true,
         includeCooldown: currentProfile.includeCooldown ?? true,
@@ -227,9 +227,9 @@ export default function WorkoutRegenerationModal({
         availableDays: formData.availableDays.map((d) => d.toString()),
         workoutDuration: formData.workoutDuration,
         intensityLevel:
-          formData.intensityLevel === IntensityLevels.LOW
+          formData.intensityLevel === INTENSITY_LEVELS.LOW
             ? 1
-            : formData.intensityLevel === IntensityLevels.MODERATE
+            : formData.intensityLevel === INTENSITY_LEVELS.MODERATE
               ? 2
               : 3,
         medicalNotes: formData.medicalNotes,
@@ -340,18 +340,18 @@ export default function WorkoutRegenerationModal({
       age: partialFormData.age || 25,
       height: partialFormData.height || 170,
       weight: partialFormData.weight || 70,
-      gender: partialFormData.gender || Gender.MALE,
+      gender: partialFormData.gender || GENDER.MALE,
       goals: partialFormData.goals || [],
       limitations: partialFormData.limitations || [],
-      fitnessLevel: partialFormData.fitnessLevel || FitnessLevels.BEGINNER,
-      environment: partialFormData.environment || WorkoutEnvironments.HOME_GYM,
+      fitnessLevel: partialFormData.fitnessLevel || FITNESS_LEVELS.BEGINNER,
+      environment: partialFormData.environment || WORKOUT_ENVIRONMENTS.HOME_GYM,
       equipment: partialFormData.equipment || [],
       otherEquipment: partialFormData.otherEquipment || "",
       preferredStyles: partialFormData.preferredStyles || [],
       availableDays: partialFormData.availableDays || [],
       workoutDuration: partialFormData.workoutDuration || 30,
       intensityLevel:
-        partialFormData.intensityLevel || IntensityLevels.MODERATE,
+        partialFormData.intensityLevel || INTENSITY_LEVELS.MODERATE,
       medicalNotes: partialFormData.medicalNotes || "",
       includeWarmup: partialFormData.includeWarmup ?? true,
       includeCooldown: partialFormData.includeCooldown ?? true,
@@ -479,17 +479,17 @@ export default function WorkoutRegenerationModal({
     }
 
     // Check intensity override
-    let currentIntensity = IntensityLevels.MODERATE;
+    let currentIntensity = INTENSITY_LEVELS.MODERATE;
     if (currentProfile.intensityLevel) {
       if (typeof currentProfile.intensityLevel === "number") {
         currentIntensity =
           currentProfile.intensityLevel === 1
-            ? IntensityLevels.LOW
+            ? INTENSITY_LEVELS.LOW
             : currentProfile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+              ? INTENSITY_LEVELS.MODERATE
+              : INTENSITY_LEVELS.HIGH;
       } else {
-        currentIntensity = currentProfile.intensityLevel as IntensityLevels;
+        currentIntensity = currentProfile.intensityLevel as INTENSITY_LEVELS;
       }
     }
 
@@ -498,9 +498,9 @@ export default function WorkoutRegenerationModal({
       overrides.intensity !== currentIntensity
     ) {
       const intensityLabel =
-        overrides.intensity === IntensityLevels.LOW
+        overrides.intensity === INTENSITY_LEVELS.LOW
           ? "Low"
-          : overrides.intensity === IntensityLevels.MODERATE
+          : overrides.intensity === INTENSITY_LEVELS.MODERATE
             ? "Moderate"
             : "High";
       overrideDescriptions.push(`Intensity: ${intensityLabel}`);
@@ -508,7 +508,7 @@ export default function WorkoutRegenerationModal({
 
     // Check styles override
     const currentStyles =
-      (currentProfile.preferredStyles as PreferredStyles[]) || [];
+      (currentProfile.preferredStyles as PREFERRED_STYLES[]) || [];
     const newStyles = overrides.styles || [];
 
     // Compare arrays to see if they're different
@@ -519,25 +519,25 @@ export default function WorkoutRegenerationModal({
 
     if (stylesChanged && newStyles.length > 0) {
       const styleLabels = newStyles.map((style) => {
-        return style === PreferredStyles.HIIT
+        return style === PREFERRED_STYLES.HIIT
           ? "HIIT"
-          : style === PreferredStyles.STRENGTH
+          : style === PREFERRED_STYLES.STRENGTH
             ? "Strength"
-            : style === PreferredStyles.CARDIO
+            : style === PREFERRED_STYLES.CARDIO
               ? "Cardio"
-              : style === PreferredStyles.REHAB
+              : style === PREFERRED_STYLES.REHAB
                 ? "Rehab"
-                : style === PreferredStyles.CROSSFIT
+                : style === PREFERRED_STYLES.CROSSFIT
                   ? "CrossFit"
-                  : style === PreferredStyles.FUNCTIONAL
+                  : style === PREFERRED_STYLES.FUNCTIONAL
                     ? "Functional"
-                    : style === PreferredStyles.PILATES
+                    : style === PREFERRED_STYLES.PILATES
                       ? "Pilates"
-                      : style === PreferredStyles.YOGA
+                      : style === PREFERRED_STYLES.YOGA
                         ? "Yoga"
-                        : style === PreferredStyles.BALANCE
+                        : style === PREFERRED_STYLES.BALANCE
                           ? "Balance"
-                          : style === PreferredStyles.MOBILITY
+                          : style === PREFERRED_STYLES.MOBILITY
                             ? "Mobility"
                             : style;
       });
@@ -545,13 +545,13 @@ export default function WorkoutRegenerationModal({
     }
 
     // Check environment override
-    let currentEnvironment = WorkoutEnvironments.HOME_GYM;
+    let currentEnvironment = WORKOUT_ENVIRONMENTS.HOME_GYM;
     if (currentProfile.environment) {
       if (Array.isArray(currentProfile.environment)) {
         currentEnvironment = currentProfile
-          .environment[0] as WorkoutEnvironments;
+          .environment[0] as WORKOUT_ENVIRONMENTS;
       } else {
-        currentEnvironment = currentProfile.environment as WorkoutEnvironments;
+        currentEnvironment = currentProfile.environment as WORKOUT_ENVIRONMENTS;
       }
     }
 
@@ -560,18 +560,18 @@ export default function WorkoutRegenerationModal({
       overrides.environment !== currentEnvironment
     ) {
       const environmentLabel =
-        overrides.environment === WorkoutEnvironments.HOME_GYM
+        overrides.environment === WORKOUT_ENVIRONMENTS.HOME_GYM
           ? "Home Gym"
-          : overrides.environment === WorkoutEnvironments.COMMERCIAL_GYM
+          : overrides.environment === WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM
             ? "Commercial Gym"
             : "Bodyweight Only";
       overrideDescriptions.push(`Environment: ${environmentLabel}`);
     }
 
     // Check equipment overrides (only for HOME_GYM)
-    if (overrides.environment === WorkoutEnvironments.HOME_GYM) {
+    if (overrides.environment === WORKOUT_ENVIRONMENTS.HOME_GYM) {
       const currentEquipment =
-        (currentProfile.equipment as AvailableEquipment[]) || [];
+        (currentProfile.equipment as AVAILABLE_EQUIPMENT[]) || [];
       const newEquipment = overrides.equipment || [];
 
       // Compare arrays to see if they're different
@@ -669,27 +669,27 @@ export default function WorkoutRegenerationModal({
     profile: UserProfile
   ): Partial<FormData> => {
     // Handle intensity level conversion
-    let intensityLevel = IntensityLevels.MODERATE;
+    let intensityLevel = INTENSITY_LEVELS.MODERATE;
     if (profile.intensityLevel) {
       if (typeof profile.intensityLevel === "number") {
         intensityLevel =
           profile.intensityLevel === 1
-            ? IntensityLevels.LOW
+            ? INTENSITY_LEVELS.LOW
             : profile.intensityLevel === 2
-              ? IntensityLevels.MODERATE
-              : IntensityLevels.HIGH;
+              ? INTENSITY_LEVELS.MODERATE
+              : INTENSITY_LEVELS.HIGH;
       } else {
-        intensityLevel = profile.intensityLevel as IntensityLevels;
+        intensityLevel = profile.intensityLevel as INTENSITY_LEVELS;
       }
     }
 
     // Handle environment - convert from string to enum if needed
-    let environment = WorkoutEnvironments.HOME_GYM;
+    let environment = WORKOUT_ENVIRONMENTS.HOME_GYM;
     if (profile.environment) {
       if (Array.isArray(profile.environment)) {
-        environment = profile.environment[0] as WorkoutEnvironments;
+        environment = profile.environment[0] as WORKOUT_ENVIRONMENTS;
       } else {
-        environment = profile.environment as WorkoutEnvironments;
+        environment = profile.environment as WORKOUT_ENVIRONMENTS;
       }
     }
 
@@ -698,16 +698,16 @@ export default function WorkoutRegenerationModal({
       age: profile.age || 25,
       height: profile.height || 170,
       weight: profile.weight || 70,
-      gender: (profile.gender as Gender) || Gender.MALE,
-      goals: (profile.goals as FitnessGoals[]) || [],
-      limitations: (profile.limitations as PhysicalLimitations[]) || [],
+      gender: (profile.gender as GENDER) || GENDER.MALE,
+      goals: (profile.goals as FITNESS_GOALS[]) || [],
+      limitations: (profile.limitations as PHYSICAL_LIMITATIONS[]) || [],
       fitnessLevel:
-        (profile.fitnessLevel as FitnessLevels) || FitnessLevels.BEGINNER,
+        (profile.fitnessLevel as FITNESS_LEVELS) || FITNESS_LEVELS.BEGINNER,
       environment: environment,
-      equipment: (profile.equipment as AvailableEquipment[]) || [],
+      equipment: (profile.equipment as AVAILABLE_EQUIPMENT[]) || [],
       otherEquipment: profile.otherEquipment || "",
-      preferredStyles: (profile.preferredStyles as PreferredStyles[]) || [],
-      availableDays: (profile.availableDays as PreferredDays[]) || [],
+      preferredStyles: (profile.preferredStyles as PREFERRED_STYLES[]) || [],
+      availableDays: (profile.availableDays as PREFERRED_DAYS[]) || [],
       workoutDuration: profile.workoutDuration || 30,
       intensityLevel: intensityLevel,
       medicalNotes: profile.medicalNotes || "",

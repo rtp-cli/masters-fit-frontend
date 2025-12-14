@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomSlider from "@/components/ui/slider";
 import { FormData } from "@/types/components";
-import { Gender } from "@/types/enums";
+import { GENDER } from "@/types/enums/fitness.enums";
 import { colors } from "@/lib/theme";
 import {
   convertCmToInches,
@@ -50,13 +50,13 @@ export default function PersonalInfoStep({
         <View className="flex-row justify-between">
           <TouchableOpacity
             className={`flex-1 p-4 rounded-xl items-center mx-1 ${
-              formData.gender === Gender.MALE ? "bg-primary" : "bg-white"
+              formData.gender === GENDER.MALE ? "bg-primary" : "bg-white"
             }`}
-            onPress={() => onFieldChange("gender", Gender.MALE)}
+            onPress={() => onFieldChange("gender", GENDER.MALE)}
           >
             <View
               className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
-                formData.gender === Gender.MALE
+                formData.gender === GENDER.MALE
                   ? "bg-white"
                   : "bg-neutral-light-2"
               }`}
@@ -65,7 +65,7 @@ export default function PersonalInfoStep({
                 name="male"
                 size={14}
                 color={
-                  formData.gender === Gender.MALE
+                  formData.gender === GENDER.MALE
                     ? colors.brand.primary
                     : colors.text.muted
                 }
@@ -73,7 +73,7 @@ export default function PersonalInfoStep({
             </View>
             <Text
               className={`font-medium text-xs ${
-                formData.gender === Gender.MALE
+                formData.gender === GENDER.MALE
                   ? "text-secondary"
                   : "text-neutral-dark-1"
               }`}
@@ -84,13 +84,13 @@ export default function PersonalInfoStep({
 
           <TouchableOpacity
             className={`flex-1 p-4 rounded-xl items-center mx-1 ${
-              formData.gender === Gender.FEMALE ? "bg-primary" : "bg-white"
+              formData.gender === GENDER.FEMALE ? "bg-primary" : "bg-white"
             }`}
-            onPress={() => onFieldChange("gender", Gender.FEMALE)}
+            onPress={() => onFieldChange("gender", GENDER.FEMALE)}
           >
             <View
               className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
-                formData.gender === Gender.FEMALE
+                formData.gender === GENDER.FEMALE
                   ? "bg-white"
                   : "bg-neutral-light-2"
               }`}
@@ -99,7 +99,7 @@ export default function PersonalInfoStep({
                 name="female"
                 size={14}
                 color={
-                  formData.gender === Gender.FEMALE
+                  formData.gender === GENDER.FEMALE
                     ? colors.brand.primary
                     : colors.text.muted
                 }
@@ -107,7 +107,7 @@ export default function PersonalInfoStep({
             </View>
             <Text
               className={`font-medium text-xs ${
-                formData.gender === Gender.FEMALE
+                formData.gender === GENDER.FEMALE
                   ? "text-secondary"
                   : "text-neutral-dark-1"
               }`}

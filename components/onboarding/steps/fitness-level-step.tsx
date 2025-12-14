@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import CustomSlider from "@/components/ui/slider";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { FitnessLevels, PreferredDays, IntensityLevels } from "@/types/enums";
+import { FITNESS_LEVELS, PreferredDays, IntensityLevels } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 import { colors } from "@/lib/theme";
@@ -98,7 +98,7 @@ export default function FitnessLevelStep({
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Current Fitness Level
         </Text>
-        {Object.entries(FitnessLevels).map(([key, value]) => {
+        {Object.entries(FITNESS_LEVELS).map(([key, value]) => {
           const config = getFitnessLevelConfig(key);
           const isSelected = formData.fitnessLevel === value;
 

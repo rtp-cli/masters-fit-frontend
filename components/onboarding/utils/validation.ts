@@ -1,5 +1,5 @@
 import { FormData } from "@/types/components";
-import { OnboardingStep, WorkoutEnvironments } from "@/types/enums";
+import { ONBOARDING_STEP, WORKOUT_ENVIRONMENTS } from "@/types/enums";
 
 // Form validation helper
 export const validateField = (field: string, value: any): string => {
@@ -24,13 +24,13 @@ export const validateField = (field: string, value: any): string => {
 
 // Validate current step
 export const validateStep = (
-  currentStep: OnboardingStep,
+  currentStep: ONBOARDING_STEP,
   formData: FormData
 ): { isValid: boolean; errors: Record<string, string> } => {
   const newErrors: Record<string, string> = {};
 
   switch (currentStep) {
-    case OnboardingStep.PERSONAL_INFO:
+    case ONBOARDING_STEP.PERSONAL_INFO:
       if (!formData.age) newErrors.age = "Age is required";
       if (!formData.height) newErrors.height = "Height is required";
       if (!formData.weight) newErrors.weight = "Weight is required";
@@ -51,17 +51,17 @@ export const validateStep = (
       }
       break;
 
-    case OnboardingStep.FITNESS_GOALS:
+    case ONBOARDING_STEP.FITNESS_GOALS:
       if (formData.goals.length === 0) {
         newErrors.goals = "Please select at least one fitness goal";
       }
       break;
 
-    case OnboardingStep.PHYSICAL_LIMITATIONS:
+    case ONBOARDING_STEP.PHYSICAL_LIMITATIONS:
       // Physical limitations are optional, no validation required
       break;
 
-    case OnboardingStep.FITNESS_LEVEL:
+    case ONBOARDING_STEP.FITNESS_LEVEL:
       if (!formData.fitnessLevel) {
         newErrors.fitnessLevel = "Please select your fitness level";
       }
@@ -76,14 +76,14 @@ export const validateStep = (
       }
       break;
 
-    case OnboardingStep.WORKOUT_ENVIRONMENT:
+    case ONBOARDING_STEP.WORKOUT_ENVIRONMENT:
       // Environment is now required - user must make a selection
       if (!formData.environment) {
         newErrors.environment = "Please select a workout environment";
       }
       // Only validate equipment for HOME_GYM environment
       if (
-        formData.environment === WorkoutEnvironments.HOME_GYM &&
+        formData.environment === WORKOUT_ENVIRONMENTS.HOME_GYM &&
         (!formData.equipment || formData.equipment.length === 0)
       ) {
         newErrors.equipment =
@@ -91,11 +91,11 @@ export const validateStep = (
       }
       break;
 
-    case OnboardingStep.HEALTH_CONNECT:
+    case ONBOARDING_STEP.HEALTH_CONNECT:
       // Health connection is optional; no validation needed.
       break;
 
-    case OnboardingStep.WORKOUT_STYLE:
+    case ONBOARDING_STEP.WORKOUT_STYLE:
       if (formData.preferredStyles.length === 0) {
         newErrors.preferredStyles = "Please select at least one workout style";
       }

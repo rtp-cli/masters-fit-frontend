@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { WorkoutEnvironments, AvailableEquipment } from "@/types/enums";
+import { WORKOUT_ENVIRONMENTS, AVAILABLE_EQUIPMENT } from "@/types/enums";
 import { colors } from "@/lib/theme";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
@@ -190,7 +189,7 @@ export default function WorkoutEnvironmentStep({
           Workout Environment
         </Text>
         <View className="flex-row justify-between space-x-2">
-          {Object.entries(WorkoutEnvironments).map(([key, value]) => {
+          {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
             const config = getEnvironmentConfig(key);
             return (
               <TouchableOpacity
@@ -237,7 +236,7 @@ export default function WorkoutEnvironmentStep({
       </View>
 
       {/* Equipment Selection - Only show for HOME_GYM */}
-      {formData.environment === WorkoutEnvironments.HOME_GYM && (
+      {formData.environment === WORKOUT_ENVIRONMENTS.HOME_GYM && (
         <View className="mb-6">
           <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
             Available Equipment
@@ -246,7 +245,7 @@ export default function WorkoutEnvironmentStep({
             {/* First manually order the basic weights equipment */}
             {["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].map((key) => {
               const value =
-                AvailableEquipment[key as keyof typeof AvailableEquipment];
+                AVAILABLE_EQUIPMENT[key as keyof typeof AVAILABLE_EQUIPMENT];
               const config = getEquipmentConfig(key);
               const isSelected = formData.equipment?.includes(value) || false;
 
@@ -280,7 +279,7 @@ export default function WorkoutEnvironmentStep({
             })}
 
             {/* Then render the rest of the equipment */}
-            {Object.entries(AvailableEquipment)
+            {Object.entries(AVAILABLE_EQUIPMENT)
               .filter(
                 ([key]) =>
                   !["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].includes(key)

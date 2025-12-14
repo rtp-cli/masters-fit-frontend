@@ -1,13 +1,13 @@
 import {
-  Gender,
-  FitnessGoals,
-  FitnessLevels,
-  IntensityLevels,
-  WorkoutEnvironments,
-  PreferredDays,
-  PhysicalLimitations,
-  AvailableEquipment,
-  PreferredStyles,
+  type AVAILABLE_EQUIPMENT,
+  type FITNESS_GOALS,
+  type FITNESS_LEVELS,
+  type GENDER,
+  type INTENSITY_LEVELS,
+  type PHYSICAL_LIMITATIONS,
+  type PREFERRED_DAYS,
+  type PREFERRED_STYLES,
+  type WORKOUT_ENVIRONMENTS,
 } from "../enums/fitness.enums";
 
 export interface FormData {
@@ -15,17 +15,17 @@ export interface FormData {
   age: number;
   height: number;
   weight: number;
-  gender: Gender;
-  goals: FitnessGoals[];
-  limitations?: PhysicalLimitations[];
-  fitnessLevel: FitnessLevels;
-  environment?: WorkoutEnvironments;
-  equipment?: AvailableEquipment[];
+  gender: GENDER;
+  goals: FITNESS_GOALS[];
+  limitations?: PHYSICAL_LIMITATIONS[];
+  fitnessLevel: FITNESS_LEVELS;
+  environment?: WORKOUT_ENVIRONMENTS;
+  equipment?: AVAILABLE_EQUIPMENT[];
   otherEquipment?: string;
-  preferredStyles: PreferredStyles[];
-  availableDays: PreferredDays[];
+  preferredStyles: PREFERRED_STYLES[];
+  availableDays: PREFERRED_DAYS[];
   workoutDuration: number;
-  intensityLevel: IntensityLevels;
+  intensityLevel: INTENSITY_LEVELS;
   medicalNotes?: string;
   includeWarmup?: boolean;
   includeCooldown?: boolean;
