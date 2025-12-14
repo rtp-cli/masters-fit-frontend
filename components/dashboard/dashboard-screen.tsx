@@ -10,8 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "../../contexts/AuthContext";
-import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAuth } from "../../contexts/auth-context";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import {
   fetchHeartRateSamples,
   fetchCaloriesToday,
@@ -25,7 +25,7 @@ import Header from "@/components/header";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import { generateWorkoutPlanAsync, fetchActiveWorkout } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import {
   WeightAccuracyMetrics,
   WorkoutTypeMetrics,

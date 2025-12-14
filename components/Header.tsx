@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
-import { useAuth } from "@contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { colors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
 import SettingsModal from "./settings/settings-modal";

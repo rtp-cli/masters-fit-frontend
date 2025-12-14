@@ -9,8 +9,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@contexts/AuthContext";
-import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAuth } from "@/contexts/auth-context";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@/components/onboarding-form";
 import { colors } from "../lib/theme";

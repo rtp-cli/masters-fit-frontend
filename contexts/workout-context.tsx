@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { trackWorkoutAbandoned } from "@/lib/analytics";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 
 // Workout abandonment tracking data
 interface WorkoutAbandonmentData {

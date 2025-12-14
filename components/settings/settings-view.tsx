@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "expo-router";
-import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";

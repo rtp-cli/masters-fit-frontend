@@ -14,7 +14,7 @@ import { WebView } from "react-native-webview";
 import Text from "./text";
 import { images } from "@/assets";
 import { trackVideoEngagement } from "@/lib/analytics";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 
 interface ExerciseLinkProps {
   link: string | null | undefined;

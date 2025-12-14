@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { getWaiverStatusAPI, setWaiverRedirectCallback } from "@/lib/api";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./auth-context";
 import { useRouter, usePathname } from "expo-router";
 import { logger } from "@/lib/logger";
 
@@ -57,11 +57,15 @@ export function WaiverProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const redirectToWaiver = () => {
       // Only redirect if NOT already on waiver page
-      if (pathname !== "/(auth)/waiver" && !pathname.includes('/waiver')) {
-        console.log("[WaiverContext] API intercepted waiver requirement, redirecting");
+      if (pathname !== "/(auth)/waiver" && !pathname.includes("/waiver")) {
+        console.log(
+          "[WaiverContext] API intercepted waiver requirement, redirecting"
+        );
         router.replace("/(auth)/waiver");
       } else {
-        console.log("[WaiverContext] Already on waiver page, skipping redirect");
+        console.log(
+          "[WaiverContext] Already on waiver page, skipping redirect"
+        );
       }
     };
 
@@ -81,7 +85,7 @@ export function WaiverProvider({ children }: { children: ReactNode }) {
     }
 
     // Skip check if already on waiver page
-    if (pathname === "/(auth)/waiver" || pathname.includes('/waiver')) {
+    if (pathname === "/(auth)/waiver" || pathname.includes("/waiver")) {
       console.log("[WaiverContext] On waiver page, skipping status check");
       return;
     }
@@ -141,12 +145,17 @@ export function WaiverProvider({ children }: { children: ReactNode }) {
       console.log(`[WaiverContext] App state changed to: ${nextAppState}`);
 
       if (nextAppState === "active") {
-        console.log("[WaiverContext] App became active, checking waiver status");
+        console.log(
+          "[WaiverContext] App became active, checking waiver status"
+        );
         checkWaiverStatus();
       }
     };
 
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
 
     return () => {
       subscription?.remove();

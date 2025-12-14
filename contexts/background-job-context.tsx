@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getJobStatus, invalidateActiveWorkoutCache } from "@lib/workouts";
-import { useAuth } from "@contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { TIMEOUTS, LIMITS } from "@/constants";
 
 export interface BackgroundJob {
@@ -360,7 +360,10 @@ export function BackgroundJobProvider({
 
     // Poll immediately, then every 5 seconds
     pollJobStatus();
-    pollIntervalRef.current = setInterval(pollJobStatus, TIMEOUTS.POLL_INTERVAL);
+    pollIntervalRef.current = setInterval(
+      pollJobStatus,
+      TIMEOUTS.POLL_INTERVAL
+    );
   }, [pollJobStatus]);
 
   const stopPolling = useCallback(() => {
@@ -373,7 +376,9 @@ export function BackgroundJobProvider({
   // Helper function to manage bounded processed completions set
   const addProcessedCompletion = useCallback((jobId: number) => {
     // If we're at max capacity, remove the oldest entries
-    if (processedCompletionsRef.current.size >= LIMITS.MAX_PROCESSED_COMPLETIONS) {
+    if (
+      processedCompletionsRef.current.size >= LIMITS.MAX_PROCESSED_COMPLETIONS
+    ) {
       // Convert Set to Array, take only the recent half, convert back to Set
       const completionsArray = Array.from(processedCompletionsRef.current);
       const recentCompletions = completionsArray.slice(

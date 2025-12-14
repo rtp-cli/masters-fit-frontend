@@ -8,7 +8,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { colors } from "@/lib/theme";
 import { images } from "@/assets";
 

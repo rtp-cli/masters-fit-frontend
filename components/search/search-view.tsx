@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { useAuth } from "@contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseLinkModal from "@/components/exercise-link-modal";
 import {
@@ -27,7 +27,7 @@ import {
   DateSearchWorkoutBlock,
   DateSearchExercise,
 } from "@/types/api/search.types";
-import { useAppDataContext } from "@contexts/AppDataContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { updateExerciseLink } from "@lib/exercises";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 

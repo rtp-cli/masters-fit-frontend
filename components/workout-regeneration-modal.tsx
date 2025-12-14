@@ -14,15 +14,17 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import ProfileOverrideForm, { TemporaryOverrides } from "./profile-override-form";
+import ProfileOverrideForm, {
+  TemporaryOverrides,
+} from "./profile-override-form";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./onboarding-form";
 import { formatEnumValue } from "./onboarding/utils/formatters";
 import { colors } from "../lib/theme";
-import { useAppDataContext } from "@contexts/AppDataContext";
-import { useAuth } from "@contexts/AuthContext";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
 import {
   regenerateWorkoutPlanAsync,

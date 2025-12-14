@@ -17,7 +17,7 @@ import { getCurrentUser } from "@lib/auth";
 import { colors } from "@lib/theme";
 import { formatDate, formatDateAsString } from "@utils/index";
 import type { PreviousWorkout } from "@/types/api/workout.types";
-import { useAuth } from "@contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "expo-router";
 
 interface WorkoutRepeatModalProps {
@@ -81,7 +81,7 @@ export default function WorkoutRepeatModal({
 
     try {
       setRepeating(true);
-      setIsGeneratingWorkout(true, 'repeat');
+      setIsGeneratingWorkout(true, "repeat");
       onClose(); // Close modal immediately to show global generating screen
 
       const user = await getCurrentUser();

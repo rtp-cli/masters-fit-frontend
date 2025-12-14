@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { API_URL } from "@/config";
 import { saveUserToSecureStorage } from "@/lib/auth";
 import { CURRENT_WAIVER_VERSION, isWaiverUpdate } from "@/constants/waiver";

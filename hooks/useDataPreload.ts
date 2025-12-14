@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { useAppDataContext } from "@contexts/AppDataContext";
-import { useAuth } from "@contexts/AuthContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
 
 export const useDataPreload = () => {
   const { user } = useAuth();
@@ -13,10 +13,8 @@ export const useDataPreload = () => {
     }
 
     try {
-
       // Use the centralized refresh function to load all data
       await refresh.refreshAll();
-      
     } catch (error) {
       console.error("Data preload failed:", error);
     }

@@ -16,8 +16,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
-import { useAppDataContext } from "@/contexts/AppDataContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
 import { replaceExercise } from "@/lib/workouts";
 import {
   PlanDayWithBlocks,

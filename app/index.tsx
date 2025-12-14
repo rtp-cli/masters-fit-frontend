@@ -3,7 +3,7 @@ import { colors } from "@/lib/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, usePathname } from "expo-router";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";

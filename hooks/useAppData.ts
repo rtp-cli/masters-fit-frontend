@@ -7,7 +7,7 @@ import {
   searchExerciseAPI,
   searchExercisesAPI,
 } from "@lib/search";
-import { useAuth } from "@contexts/AuthContext";
+import { useAuth } from "@/contexts/auth-context";
 import {
   DashboardMetrics,
   DashboardFilters,

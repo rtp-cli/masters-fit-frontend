@@ -17,8 +17,8 @@ import {
   invalidateActiveWorkoutCache,
 } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
-import { useAppDataContext } from "@contexts/AppDataContext";
-import { useAuth } from "@contexts/AuthContext";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
 import {
   PlanDayWithBlocks,
   WorkoutWithDetails,
@@ -30,7 +30,7 @@ import { Ionicons } from "@expo/vector-icons";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import WorkoutBlock from "@/components/workout-block";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import {

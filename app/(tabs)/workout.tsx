@@ -56,8 +56,8 @@ import {
   logCircuitRound,
   markBlockExercisesComplete,
 } from "@/lib/circuits";
-import { useWorkout } from "@/contexts/WorkoutContext";
-import { useAppDataContext } from "@/contexts/AppDataContext";
+import { useWorkout } from "@/contexts/workout-context";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import {
@@ -65,8 +65,8 @@ import {
   invalidateActiveWorkoutCache,
 } from "@/lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
-import { useAuth } from "@/contexts/AuthContext";
-import { useBackgroundJobs } from "@contexts/BackgroundJobContext";
+import { useAuth } from "@/contexts/auth-context";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { trackWorkoutStarted } from "@/lib/analytics";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import * as Haptics from "expo-haptics";
