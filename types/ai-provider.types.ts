@@ -1,7 +1,7 @@
-export enum AIProvider {
-  ANTHROPIC = 'anthropic',
-  OPENAI = 'openai',
-  GOOGLE = 'google'
+export enum AI_PROVIDER {
+  ANTHROPIC = "anthropic",
+  OPENAI = "openai",
+  GOOGLE = "google",
 }
 
 export interface ModelConfig {
@@ -9,7 +9,7 @@ export interface ModelConfig {
   name: string;
   displayName: string;
   maxTokens: number;
-  costTier: 'low' | 'medium' | 'high';
+  costTier: "low" | "medium" | "high";
   description: string;
 }
 
@@ -22,18 +22,16 @@ export interface ProviderInfo {
 
 export interface ProviderAvailabilityResponse {
   success: boolean;
-  providers: {
-    [key in AIProvider]: ProviderInfo;
-  };
+  providers: Record<AI_PROVIDER, ProviderInfo>;
 }
 
 export interface UpdateProviderRequest {
-  provider: AIProvider;
+  provider: AI_PROVIDER;
   model: string;
 }
 
 export interface UserProviderResponse {
   success: boolean;
-  provider: AIProvider;
+  provider: AI_PROVIDER;
   model: string;
 }

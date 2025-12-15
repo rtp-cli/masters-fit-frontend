@@ -3,7 +3,7 @@ import {
   ProviderAvailabilityResponse,
   UpdateProviderRequest,
   UserProviderResponse,
-  AIProvider,
+  AI_PROVIDER,
 } from "@/types/ai-provider.types";
 
 export const getAvailableProviders =
@@ -13,7 +13,7 @@ export const getAvailableProviders =
 
 export const updateUserProvider = async (
   userId: number,
-  provider: AIProvider,
+  provider: AI_PROVIDER,
   model: string
 ): Promise<{ success: boolean }> => {
   return apiRequest<{ success: boolean }>(

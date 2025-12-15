@@ -20,7 +20,7 @@ import {
   getUserProvider,
 } from "@/lib/ai-provider";
 import {
-  AIProvider,
+  AI_PROVIDER,
   ProviderInfo,
   UserProviderResponse,
   ProviderAvailabilityResponse,
@@ -32,31 +32,31 @@ export default function AIProviderSelectionPage() {
   const router = useRouter();
 
   // Local component state
-  const [currentProvider, setCurrentProvider] = useState<AIProvider>(
-    AIProvider.ANTHROPIC
+  const [currentProvider, setCurrentProvider] = useState<AI_PROVIDER>(
+    AI_PROVIDER.ANTHROPIC as AI_PROVIDER
   );
   const [currentModel, setCurrentModel] = useState<string>(
     "claude-sonnet-4-20250514"
   );
   // Start with empty - no assumptions about what should be available
   const [availableProviders, setAvailableProviders] = useState<{
-    [key in AIProvider]: ProviderInfo;
-  }>({} as { [key in AIProvider]: ProviderInfo });
+    [key in AI_PROVIDER]: ProviderInfo;
+  }>({} as { [key in AI_PROVIDER]: ProviderInfo });
   const [isLoading, setIsLoading] = useState(true);
   const [switching, setSwitching] = useState<{
-    provider: AIProvider;
+    provider: AI_PROVIDER;
     model: string;
   } | null>(null);
   const [expandedProviders, setExpandedProviders] = useState<
-    Record<AIProvider, boolean>
+    Record<AI_PROVIDER, boolean>
   >({
-    [AIProvider.ANTHROPIC]: false,
-    [AIProvider.OPENAI]: false,
-    [AIProvider.GOOGLE]: false,
+    [AI_PROVIDER.ANTHROPIC]: false,
+    [AI_PROVIDER.OPENAI]: false,
+    [AI_PROVIDER.GOOGLE]: false,
   });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingSwitch, setPendingSwitch] = useState<{
-    provider: AIProvider;
+    provider: AI_PROVIDER;
     model: string;
     providerInfo: any;
     modelInfo: any;
@@ -106,7 +106,7 @@ export default function AIProviderSelectionPage() {
   };
 
   const switchProvider = async (
-    provider: AIProvider,
+    provider: AI_PROVIDER,
     model: string
   ): Promise<boolean> => {
     if (!user?.id) return false;
@@ -138,7 +138,7 @@ export default function AIProviderSelectionPage() {
     }
   };
 
-  const handleProviderSwitch = async (provider: AIProvider, model: string) => {
+  const handleProviderSwitch = async (provider: AI_PROVIDER, model: string) => {
     if (provider === currentProvider && model === currentModel) return;
 
     const providerInfo = availableProviders[provider];
@@ -188,21 +188,21 @@ export default function AIProviderSelectionPage() {
   };
 
   const getProviderIcon = (
-    provider: AIProvider
+    provider: AI_PROVIDER
   ): keyof typeof Ionicons.glyphMap => {
     switch (provider) {
-      case AIProvider.ANTHROPIC:
+      case AI_PROVIDER.ANTHROPIC:
         return "infinite";
-      case AIProvider.OPENAI:
+      case AI_PROVIDER.OPENAI:
         return "flash";
-      case AIProvider.GOOGLE:
+      case AI_PROVIDER.GOOGLE:
         return "search";
       default:
         return "hardware-chip";
     }
   };
 
-  const toggleProvider = (provider: AIProvider) => {
+  const toggleProvider = (provider: AI_PROVIDER) => {
     setExpandedProviders((prev) => {
       const isCurrentlyExpanded = prev[provider];
 
@@ -216,9 +216,9 @@ export default function AIProviderSelectionPage() {
 
       // If clicking on a collapsed provider, expand it and collapse all others
       return {
-        [AIProvider.ANTHROPIC]: false,
-        [AIProvider.OPENAI]: false,
-        [AIProvider.GOOGLE]: false,
+        [AI_PROVIDER.ANTHROPIC]: false,
+        [AI_PROVIDER.OPENAI]: false,
+        [AI_PROVIDER.GOOGLE]: false,
         [provider]: true,
       };
     });
@@ -339,7 +339,7 @@ export default function AIProviderSelectionPage() {
           </View>
 
           {Object.entries(availableProviders).map(([provider, info]) => {
-            const providerKey = provider as AIProvider;
+            const providerKey = provider as AI_PROVIDER;
             // Backend already filtered to only available providers
             // But double-check the available flag just in case
             if (!info.available) return null;
