@@ -22,23 +22,23 @@ interface FitnessLevelStepProps {
 }
 
 // Fitness level configuration helper
-const getFitnessLevelConfig = (levelKey: string) => {
+const getFitnessLevelConfig = (levelKey: FITNESS_LEVELS) => {
   switch (levelKey) {
-    case "BEGINNER":
+    case FITNESS_LEVELS.BEGINNER:
       return {
         icon: "walk-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
         description: "New to fitness or returning after a long break",
       };
-    case "INTERMEDIATE":
+    case FITNESS_LEVELS.INTERMEDIATE:
       return {
         icon: "fitness-outline",
         color: colors.brand.secondary,
         bgColor: "bg-yellow-100",
         description: "Consistent exercise for 6+ months",
       };
-    case "ADVANCED":
+    case FITNESS_LEVELS.ADVANCED:
       return {
         icon: "flame-outline",
         color: colors.brand.secondary,
@@ -56,23 +56,23 @@ const getFitnessLevelConfig = (levelKey: string) => {
 };
 
 // Intensity level configuration helper
-const getIntensityLevelConfig = (intensityKey: string) => {
+const getIntensityLevelConfig = (intensityKey: INTENSITY_LEVELS) => {
   switch (intensityKey) {
-    case "LOW":
+    case INTENSITY_LEVELS.LOW:
       return {
         icon: "walk-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
         description: "Light, comfortable pace",
       };
-    case "MODERATE":
+    case INTENSITY_LEVELS.MODERATE:
       return {
         icon: "fitness-outline",
         color: colors.brand.secondary,
         bgColor: "bg-yellow-100",
         description: "Moderate challenge, can still talk",
       };
-    case "HIGH":
+    case INTENSITY_LEVELS.HIGH:
       return {
         icon: "flash-outline",
         color: colors.brand.secondary,
@@ -102,13 +102,13 @@ export default function FitnessLevelStep({
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Current Fitness Level
         </Text>
-        {Object.entries(FITNESS_LEVELS).map(([key, value]) => {
-          const config = getFitnessLevelConfig(key);
+        {Object.values(FITNESS_LEVELS).map((value) => {
+          const config = getFitnessLevelConfig(value);
           const isSelected = formData.fitnessLevel === value;
 
           return (
             <TouchableOpacity
-              key={key}
+              key={value}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
                 isSelected ? "bg-primary" : "bg-white"
               }`}
@@ -125,7 +125,7 @@ export default function FitnessLevelStep({
                     isSelected ? "text-secondary" : "text-neutral-dark-1"
                   }`}
                 >
-                  {formatEnumValue(key)}
+                  {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs ${
@@ -167,20 +167,20 @@ export default function FitnessLevelStep({
             <TouchableOpacity
               key={key}
               className={`p-3 rounded-lg mr-2 mb-2 ${
-                formData.availableDays.includes(value as PREFERRED_DAYS)
+                formData.availableDays.includes(value)
                   ? "bg-primary"
                   : "bg-white"
               }`}
-              onPress={() => onToggle("availableDays", value as PREFERRED_DAYS)}
+              onPress={() => onToggle("availableDays", value)}
             >
               <Text
                 className={`font-medium text-sm ${
-                  formData.availableDays.includes(value as PREFERRED_DAYS)
+                  formData.availableDays.includes(value)
                     ? "text-secondary"
                     : "text-neutral-dark-1"
                 }`}
               >
-                {formatEnumValue(key)}
+                {formatEnumValue(value)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -218,9 +218,8 @@ export default function FitnessLevelStep({
           Preferred Intensity Level
         </Text>
         {Object.entries(INTENSITY_LEVELS).map(([key, value]) => {
-          const config = getIntensityLevelConfig(key);
-          const isSelected =
-            formData.intensityLevel === (value as INTENSITY_LEVELS);
+          const config = getIntensityLevelConfig(value);
+          const isSelected = formData.intensityLevel === value;
 
           return (
             <TouchableOpacity
@@ -228,9 +227,7 @@ export default function FitnessLevelStep({
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
                 isSelected ? "bg-primary" : "bg-white"
               }`}
-              onPress={() =>
-                onFieldChange("intensityLevel", value as INTENSITY_LEVELS)
-              }
+              onPress={() => onFieldChange("intensityLevel", value)}
             >
               <IconComponent
                 iconName={config.icon}

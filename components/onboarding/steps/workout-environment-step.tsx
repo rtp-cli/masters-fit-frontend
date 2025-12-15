@@ -16,23 +16,23 @@ interface WorkoutEnvironmentStepProps {
 }
 
 // Helper function to get environment configuration
-const getEnvironmentConfig = (envKey: string) => {
+const getEnvironmentConfig = (envKey: WORKOUT_ENVIRONMENTS) => {
   switch (envKey) {
-    case "COMMERCIAL_GYM":
+    case WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM:
       return {
         icon: "business-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
         description: "Full gym with all equipment available",
       };
-    case "HOME_GYM":
+    case WORKOUT_ENVIRONMENTS.HOME_GYM:
       return {
         icon: "home-outline",
         color: colors.brand.secondary,
         bgColor: "bg-purple-100",
         description: "Personal home gym setup",
       };
-    case "BODYWEIGHT_ONLY":
+    case WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
@@ -50,117 +50,117 @@ const getEnvironmentConfig = (envKey: string) => {
 };
 
 // Helper function to get equipment configuration
-const getEquipmentConfig = (equipKey: string) => {
+const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
   switch (equipKey) {
-    case "BARBELLS":
+    case AVAILABLE_EQUIPMENT.BARBELLS:
       return {
         icon: "barbell-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
       };
-    case "DUMBBELLS":
+    case AVAILABLE_EQUIPMENT.DUMBBELLS:
       return {
         icon: "barbell-outline",
         color: colors.brand.secondary,
         bgColor: "bg-red-100",
       };
-    case "KETTLEBELLS":
+    case AVAILABLE_EQUIPMENT.KETTLEBELLS:
       return {
         icon: "barbell-outline",
         color: colors.brand.secondary,
         bgColor: "bg-orange-100",
       };
-    case "BENCH":
+    case AVAILABLE_EQUIPMENT.BENCH:
       return {
         icon: "remove-outline",
         color: colors.brand.secondary,
         bgColor: "bg-pink-100",
       };
-    case "INCLINE_DECLINE_BENCH":
+    case AVAILABLE_EQUIPMENT.INCLINE_DECLINE_BENCH:
       return {
         icon: "remove-outline",
         color: colors.brand.secondary,
         bgColor: "bg-yellow-100",
       };
-    case "PULL_UP_BAR":
+    case AVAILABLE_EQUIPMENT.PULL_UP_BAR:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-indigo-100",
       };
-    case "BIKE":
+    case AVAILABLE_EQUIPMENT.BIKE:
       return {
         icon: "bicycle-outline",
         color: colors.brand.secondary,
         bgColor: "bg-red-100",
       };
-    case "MEDICINE_BALLS":
+    case AVAILABLE_EQUIPMENT.MEDICINE_BALLS:
       return {
         icon: "basketball-outline",
         color: colors.brand.secondary,
         bgColor: "bg-indigo-100",
       };
-    case "PLYO_BOX":
+    case AVAILABLE_EQUIPMENT.PLYO_BOX:
       return {
         icon: "apps-outline",
         color: colors.brand.secondary,
         bgColor: "bg-pink-100",
       };
-    case "RINGS":
+    case AVAILABLE_EQUIPMENT.RINGS:
       return {
         icon: "radio-button-off-outline",
         color: colors.brand.secondary,
         bgColor: "bg-yellow-100",
       };
-    case "RESISTANCE_BANDS":
+    case AVAILABLE_EQUIPMENT.RESISTANCE_BANDS:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-purple-100",
       };
-    case "STABILITY_BALL":
+    case AVAILABLE_EQUIPMENT.STABILITY_BALL:
       return {
         icon: "radio-button-off-outline",
         color: colors.brand.secondary,
         bgColor: "bg-teal-100",
       };
-    case "SQUAT_RACK":
+    case AVAILABLE_EQUIPMENT.SQUAT_RACK:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-teal-100",
       };
-    case "DIP_BAR":
+    case AVAILABLE_EQUIPMENT.DIP_BAR:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
       };
-    case "ROWING_MACHINE":
+    case AVAILABLE_EQUIPMENT.ROWING_MACHINE:
       return {
         icon: "boat-outline",
         color: colors.brand.secondary,
         bgColor: "bg-orange-100",
       };
-    case "SLAM_BALLS":
+    case AVAILABLE_EQUIPMENT.SLAM_BALLS:
       return {
         icon: "basketball-outline",
         color: colors.brand.secondary,
         bgColor: "bg-red-100",
       };
-    case "CABLE_MACHINE":
+    case AVAILABLE_EQUIPMENT.CABLE_MACHINE:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
       };
-    case "JUMP_ROPE":
+    case AVAILABLE_EQUIPMENT.JUMP_ROPE:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-purple-100",
       };
-    case "FOAM_ROLLER":
+    case AVAILABLE_EQUIPMENT.FOAM_ROLLER:
       return {
         icon: "radio-button-off-outline",
         color: colors.brand.secondary,
@@ -190,7 +190,7 @@ export default function WorkoutEnvironmentStep({
         </Text>
         <View className="flex-row justify-between space-x-2">
           {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
-            const config = getEnvironmentConfig(key);
+            const config = getEnvironmentConfig(value);
             return (
               <TouchableOpacity
                 key={key}
@@ -213,7 +213,7 @@ export default function WorkoutEnvironmentStep({
                       : "text-neutral-dark-1"
                   }`}
                 >
-                  {formatEnumValue(key)}
+                  {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs text-center mt-1 ${
@@ -246,7 +246,7 @@ export default function WorkoutEnvironmentStep({
             {["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].map((key) => {
               const value =
                 AVAILABLE_EQUIPMENT[key as keyof typeof AVAILABLE_EQUIPMENT];
-              const config = getEquipmentConfig(key);
+              const config = getEquipmentConfig(value);
               const isSelected = formData.equipment?.includes(value) || false;
 
               return (
@@ -285,7 +285,7 @@ export default function WorkoutEnvironmentStep({
                   !["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].includes(key)
               )
               .map(([key, value]) => {
-                const config = getEquipmentConfig(key);
+                const config = getEquipmentConfig(value);
                 const isSelected = formData.equipment?.includes(value) || false;
 
                 return (

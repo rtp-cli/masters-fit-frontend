@@ -11,58 +11,58 @@ interface FitnessGoalsStepProps {
 }
 
 // Goal configuration helper
-const getGoalConfig = (goalKey: string) => {
+const getGoalConfig = (goalKey: FITNESS_GOALS) => {
   switch (goalKey) {
-    case "GENERAL_FITNESS":
+    case FITNESS_GOALS.GENERAL_FITNESS:
       return {
         icon: "checkmark-outline",
         bgColor: "bg-green-100",
         color: colors.brand.secondary,
         description: "Overall health and fitness improvement",
       };
-    case "FAT_LOSS":
+    case FITNESS_GOALS.FAT_LOSS:
       return {
         icon: "fitness-outline",
         bgColor: "bg-red-100",
         color: colors.brand.secondary,
         description: "Reduce body fat and improve composition",
       };
-    case "ENDURANCE":
+    case FITNESS_GOALS.ENDURANCE:
       return {
         icon: "heart-outline",
         bgColor: "bg-orange-100",
         color: colors.brand.secondary,
         description: "Improve stamina and cardiovascular health",
       };
-    case "MUSCLE_GAIN":
+    case FITNESS_GOALS.MUSCLE_GAIN:
       return {
         icon: "fitness-outline",
         bgColor: "bg-purple-100",
         color: colors.brand.secondary,
         description: "Build lean muscle mass and strength",
       };
-    case "STRENGTH":
+    case FITNESS_GOALS.STRENGTH:
       return {
         icon: "barbell-outline",
         bgColor: "bg-blue-100",
         color: colors.brand.secondary,
         description: "Build muscle and increase strength",
       };
-    case "MOBILITY_FLEXIBILITY":
+    case FITNESS_GOALS.MOBILITY_FLEXIBILITY:
       return {
         icon: "body-outline",
         bgColor: "bg-pink-100",
         color: colors.brand.secondary,
         description: "Improve flexibility and joint health",
       };
-    case "BALANCE":
+    case FITNESS_GOALS.BALANCE:
       return {
         icon: "analytics-outline",
         bgColor: "bg-yellow-100",
         color: colors.brand.secondary,
         description: "Improve stability and coordination",
       };
-    case "RECOVERY":
+    case FITNESS_GOALS.RECOVERY:
       return {
         icon: "medical-outline",
         bgColor: "bg-teal-100",
@@ -86,7 +86,7 @@ export default function FitnessGoalsStep({
   return (
     <View className="flex-1 px-6 pb-6">
       {Object.entries(FITNESS_GOALS).map(([key, value]) => {
-        const config = getGoalConfig(key);
+        const config = getGoalConfig(value);
         const isSelected = formData.goals?.includes(value) || false;
 
         return (
@@ -108,7 +108,7 @@ export default function FitnessGoalsStep({
                   isSelected ? "text-secondary" : "text-neutral-dark-1"
                 }`}
               >
-                {formatEnumValue(key)}
+                {formatEnumValue(value)}
               </Text>
               <Text
                 className={`text-xs ${

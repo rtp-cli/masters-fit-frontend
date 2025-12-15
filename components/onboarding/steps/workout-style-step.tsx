@@ -18,72 +18,72 @@ interface StyleConfig {
   description: string;
 }
 
-const getStyleConfig = (styleKey: string): StyleConfig => {
+const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
   switch (styleKey) {
-    case "HIIT":
+    case PREFERRED_STYLES.HIIT:
       return {
         icon: "flash-outline",
         color: colors.brand.secondary,
         bgColor: "bg-red-100",
         description: "High-intensity interval training",
       };
-    case "STRENGTH":
+    case PREFERRED_STYLES.STRENGTH:
       return {
         icon: "barbell-outline",
         color: colors.brand.secondary,
         bgColor: "bg-blue-100",
         description: "Build muscle and increase strength",
       };
-    case "CARDIO":
+    case PREFERRED_STYLES.CARDIO:
       return {
         icon: "heart-outline",
         color: colors.brand.secondary,
         bgColor: "bg-green-100",
         description: "Improve cardiovascular health",
       };
-    case "REHAB":
+    case PREFERRED_STYLES.REHAB:
       return {
         icon: "medkit-outline",
         color: colors.brand.secondary,
         bgColor: "bg-purple-100",
         description: "Recovery and rehabilitation",
       };
-    case "CROSSFIT":
+    case PREFERRED_STYLES.CROSSFIT:
       return {
         icon: "stopwatch-outline",
         color: colors.brand.secondary,
         bgColor: "bg-orange-100",
         description: "High-intensity functional training",
       };
-    case "FUNCTIONAL":
+    case PREFERRED_STYLES.FUNCTIONAL:
       return {
         icon: "body-outline",
         color: colors.brand.secondary,
         bgColor: "bg-yellow-100",
         description: "Real-world movement patterns",
       };
-    case "PILATES":
+    case PREFERRED_STYLES.PILATES:
       return {
         icon: "accessibility-outline",
         color: colors.brand.secondary,
         bgColor: "bg-pink-100",
         description: "Core strength and flexibility",
       };
-    case "YOGA":
+    case PREFERRED_STYLES.YOGA:
       return {
         icon: "leaf-outline",
         color: colors.brand.secondary,
         bgColor: "bg-teal-100",
         description: "Mind-body connection and flexibility",
       };
-    case "BALANCE":
+    case PREFERRED_STYLES.BALANCE:
       return {
         icon: "infinite-outline",
         color: colors.brand.secondary,
         bgColor: "bg-indigo-100",
         description: "Stability and coordination training",
       };
-    case "MOBILITY":
+    case PREFERRED_STYLES.MOBILITY:
       return {
         icon: "move-outline",
         color: colors.brand.secondary,
@@ -160,7 +160,7 @@ export default function WorkoutStyleStep({
         </Text>
 
         {Object.entries(PREFERRED_STYLES).map(([key, value]) => {
-          const config = getStyleConfig(key);
+          const config = getStyleConfig(value);
           const isSelected = formData.preferredStyles.includes(value);
 
           return (
@@ -183,7 +183,7 @@ export default function WorkoutStyleStep({
                     isSelected ? "text-secondary" : "text-neutral-dark-1"
                   }`}
                 >
-                  {formatEnumValue(key)}
+                  {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${
