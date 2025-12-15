@@ -3,11 +3,12 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { PieChart } from "@/components/charts/pie-chart";
 import { colors } from "../../../lib/theme";
 import { WeightAccuracyMetrics } from "@/types/api";
+import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 type WeightPerformanceSectionProps = {
   filteredWeightAccuracy: WeightAccuracyMetrics | null;
-  weightPerformanceFilter: "1W" | "1M" | "3M";
-  onChangeFilter: (filter: "1W" | "1M" | "3M") => void;
+  weightPerformanceFilter: TIME_RANGE_FILTER;
+  onChangeFilter: (filter: TIME_RANGE_FILTER) => void;
 };
 
 const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
@@ -29,9 +30,9 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           How you're progressing with your planned weights (
-          {weightPerformanceFilter === "3M"
+          {weightPerformanceFilter === TIME_RANGE_FILTER.THREE_MONTHS
             ? "Last 3 months"
-            : weightPerformanceFilter === "1M"
+            : weightPerformanceFilter === TIME_RANGE_FILTER.ONE_MONTH
               ? "Last 1 month"
               : "Last 1 week"}
           )
@@ -40,7 +41,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
 
       <View className="items-center mb-4">
         <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-          {["1W", "1M", "3M"].map((filter) => (
+          {Object.values(TIME_RANGE_FILTER).map((filter) => (
             <TouchableOpacity
               key={filter}
               className={`px-3 py-1 rounded-md ${
@@ -142,7 +143,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
               className="mt-2"
             >
               <Text className="text-sm text-primary font-medium">
-                View all data (3M)
+                View all data ({TIME_RANGE_FILTER.THREE_MONTHS})
               </Text>
             </TouchableOpacity>
           </View>

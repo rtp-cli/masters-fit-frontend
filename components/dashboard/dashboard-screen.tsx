@@ -53,6 +53,7 @@ import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -80,15 +81,15 @@ export default function DashboardScreen() {
   const [healthLoading, setHealthLoading] = useState(false);
   const [healthError, setHealthError] = useState<string | null>(null);
 
-  const [strengthFilter, setStrengthFilter] = useState<"1W" | "1M" | "3M">(
-    "3M"
+  const [strengthFilter, setStrengthFilter] = useState<TIME_RANGE_FILTER>(
+    TIME_RANGE_FILTER.THREE_MONTHS
   );
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState<
-    "1W" | "1M" | "3M"
-  >("1M");
+    TIME_RANGE_FILTER
+  >(TIME_RANGE_FILTER.ONE_MONTH);
   const [weightPerformanceFilter, setWeightPerformanceFilter] = useState<
-    "1W" | "1M" | "3M"
-  >("1M");
+    TIME_RANGE_FILTER
+  >(TIME_RANGE_FILTER.ONE_MONTH);
 
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
@@ -289,7 +290,7 @@ export default function DashboardScreen() {
 
   const filterDataByDateRange = <T extends { date: string }>(
     data: T[],
-    filter: "1W" | "1M" | "3M"
+    filter: TIME_RANGE_FILTER
   ): T[] => {
     if (!data || data.length === 0) return data;
     const sortedData = [...data].sort(
@@ -299,13 +300,13 @@ export default function DashboardScreen() {
     today.setHours(23, 59, 59, 999);
     let cutoffDate = new Date(today);
     switch (filter) {
-      case "1W":
+      case TIME_RANGE_FILTER.ONE_WEEK:
         cutoffDate.setDate(today.getDate() - 7);
         break;
-      case "1M":
+      case TIME_RANGE_FILTER.ONE_MONTH:
         cutoffDate.setDate(today.getDate() - 30);
         break;
-      case "3M":
+      case TIME_RANGE_FILTER.THREE_MONTHS:
         cutoffDate.setDate(today.getDate() - 90);
         break;
       default:
@@ -332,7 +333,7 @@ export default function DashboardScreen() {
       lowerWeight: number;
       label: string;
     }[],
-    filter: "1W" | "1M" | "3M"
+    filter: TIME_RANGE_FILTER
   ): WeightAccuracyMetrics | null => {
     if (!data || data.length === 0) return null;
     const filteredData = filterDataByDateRange(data, filter);
@@ -403,7 +404,7 @@ export default function DashboardScreen() {
       }[];
       label: string;
     }[],
-    filter: "1W" | "1M" | "3M"
+    filter: TIME_RANGE_FILTER
   ): WorkoutTypeMetrics | null => {
     if (!data || data.length === 0) return null;
     const filteredData = filterDataByDateRange(data, filter);

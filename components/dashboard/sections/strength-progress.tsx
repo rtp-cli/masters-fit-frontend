@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { LineChart } from "@/components/charts/line-chart";
 import { colors } from "../../../lib/theme";
+import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 type StrengthProgressItem = {
   date: string;
@@ -12,8 +13,8 @@ type StrengthProgressItem = {
 
 type StrengthProgressSectionProps = {
   data: StrengthProgressItem[];
-  filter: "1W" | "1M" | "3M";
-  onChangeFilter: (filter: "1W" | "1M" | "3M") => void;
+  filter: TIME_RANGE_FILTER;
+  onChangeFilter: (filter: TIME_RANGE_FILTER) => void;
 };
 
 const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
@@ -42,9 +43,9 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           Your weight progression over time (
-          {filter === "3M"
+          {filter === TIME_RANGE_FILTER.THREE_MONTHS
             ? "Last 3 months"
-            : filter === "1M"
+            : filter === TIME_RANGE_FILTER.ONE_MONTH
               ? "Last 1 month"
               : "Last 1 week"}
           )
@@ -53,7 +54,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
 
       <View className="items-center mb-4">
         <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-          {["1W", "1M", "3M"].map((f) => (
+          {Object.values(TIME_RANGE_FILTER).map((f) => (
             <TouchableOpacity
               key={f}
               className={`px-3 py-1 rounded-md ${filter === f ? "bg-primary" : "bg-transparent"}`}

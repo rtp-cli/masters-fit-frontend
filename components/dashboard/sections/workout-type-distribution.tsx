@@ -1,13 +1,13 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { PieChart } from "@/components/charts/pie-chart";
-import { DONUT_COLORS } from "@/constants";
+import { DONUT_COLORS, TIME_RANGE_FILTER } from "@/constants";
 import { WorkoutTypeMetrics } from "@/types/api";
 
 type WorkoutTypeDistributionSectionProps = {
   metrics: WorkoutTypeMetrics | null;
-  filter: "1W" | "1M" | "3M";
-  onChangeFilter: (filter: "1W" | "1M" | "3M") => void;
+  filter: TIME_RANGE_FILTER;
+  onChangeFilter: (filter: TIME_RANGE_FILTER) => void;
 };
 
 const WorkoutTypeDistributionSection: React.FC<
@@ -89,9 +89,9 @@ const WorkoutTypeDistributionSection: React.FC<
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           Types of exercises you've been completing (
-          {filter === "3M"
+          {filter === TIME_RANGE_FILTER.THREE_MONTHS
             ? "Last 3 months"
-            : filter === "1M"
+            : filter === TIME_RANGE_FILTER.ONE_MONTH
               ? "Last 1 month"
               : "Last 1 week"}
           )
@@ -100,7 +100,7 @@ const WorkoutTypeDistributionSection: React.FC<
 
       <View className="items-center mb-4">
         <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-          {["1W", "1M", "3M"].map((f) => (
+          {Object.values(TIME_RANGE_FILTER).map((f) => (
             <TouchableOpacity
               key={f}
               className={`px-3 py-1 rounded-md ${
