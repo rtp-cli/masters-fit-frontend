@@ -1,5 +1,3 @@
-import { ViewStyle, TextStyle } from "react-native";
-
 // Brand Colors (from the provided design)
 export const colors = {
   brand: {
