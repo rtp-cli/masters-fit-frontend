@@ -32,13 +32,14 @@ export const LoginScreen = () => {
     setIsLoading(true);
     try {
       const response = await checkEmail(email.trim().toLowerCase());
-
       if (response.success) {
         if (response.needsOnboarding) {
           // Show name field for signup
-          setShowNameField(true);
+          if (!response.user) {
+            setShowNameField(true);
+            return;
+          }
           setIsLoading(false);
-          return;
         }
         // Existing user, proceed with login
         setIsSigningUp(false);

@@ -47,7 +47,7 @@ interface AuthContextType {
   triggerWorkoutReady: () => void;
   checkEmail: (
     email: string
-  ) => Promise<{ success: boolean; needsOnboarding?: boolean }>;
+  ) => Promise<{ success: boolean; user?: User; needsOnboarding?: boolean }>;
   signup: (params: {
     email: string;
     name: string;
@@ -139,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return {
         success: result.success,
+        user: result.user,
         needsOnboarding: result.needsOnboarding,
       };
     } catch (error) {
