@@ -9,7 +9,7 @@ const getApiUrl = (): string => {
       return `http://192.168.1.170:5001/api`;
     } else if (Platform.OS === "ios") {
       // For iOS simulator, use localhost
-      return `http://localhost:5001/api`;
+      return `http://localhost:5000/api`;
     }
     // Default development API URL
     return "http://localhost:5001/api";

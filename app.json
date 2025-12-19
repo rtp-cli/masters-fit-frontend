@@ -6,9 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mastersfit.ai",
@@ -19,8 +17,8 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSHealthShareUsageDescription": "This app reads your step count to show daily activity metrics.",
-        "NSHealthUpdateUsageDescription": "This app writes fitness data to help track your progress."
+        "NSHealthShareUsageDescription": "MastersFit needs access to your health data including steps, heart rate, workout sessions, calories burned, and nutrition to provide personalized fitness insights and track your progress.",
+        "NSHealthUpdateUsageDescription": "MastersFit may write step count and workout data to HealthKit to help track your fitness progress and maintain accurate health records."
       }
     },
     "notification": {
@@ -62,12 +60,13 @@
       [
         "react-native-health",
         {
-          "healthSharePermission": "MastersFit reads your step count to show daily activity.",
-          "healthUpdatePermission": "MastersFit may write step counts to help track progress.",
+          "healthSharePermission": "MastersFit reads your health data including steps, heart rate, workouts, calories, and nutrition to provide personalized fitness insights.",
+          "healthUpdatePermission": "MastersFit may write step counts and workout data to HealthKit to help track your fitness progress.",
           "isClinicalDataEnabled": false
         }
       ],
       "./plugins/healthconnect",
+      "./plugins/healthkit",
       [
         "expo-build-properties",
         {

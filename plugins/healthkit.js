@@ -6,7 +6,7 @@ module.exports = function withHealthKit(config) {
       entitlements: {
         ...config.ios?.entitlements,
         "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": ["all"]
+        "com.apple.developer.healthkit.background-delivery": true
       }
     }
   };
