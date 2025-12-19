@@ -17,21 +17,22 @@ type HealthMetricsProps = {
 type HealthMetricItemProps = {
   value: number | null;
   iconName: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
   unit?: string;
 };
 
 const HealthMetricItem: React.FC<HealthMetricItemProps> = ({
   value,
   iconName,
-  iconColor,
   unit,
 }) => (
   <View className="items-center">
-    <View className="size-12 rounded-full bg-white items-center justify-center shadow-sm mb-1">
-      <Ionicons name={iconName} size={24} color={iconColor} />
+    <View
+      className="size-11 rounded-full items-center justify-center"
+      style={{ backgroundColor: colors.brand.light[1] }}
+    >
+      <Ionicons name={iconName} size={20} color={colors.brand.dark[2]} />
     </View>
-    <Text className="text-sm font-semibold text-text-primary mt-1">
+    <Text className="text-sm font-semibold text-text-primary mt-1.5">
       {value}
       {unit ? ` ${unit}` : ""}
     </Text>
@@ -51,29 +52,25 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
     {
       key: "steps",
       value: stepsCount,
-      iconName: "walk",
-      iconColor: colors.brand.primary,
+      iconName: "footsteps",
       unit: "steps",
     },
     {
       key: "heart-rate",
       value: maxHeartRate,
       iconName: "heart",
-      iconColor: colors.danger,
       unit: "bpm",
     },
     {
       key: "calories-consumed",
       value: nutritionCaloriesConsumed,
-      iconName: "fast-food",
-      iconColor: colors.brand.primary,
+      iconName: "restaurant",
       unit: "kcal",
     },
     {
       key: "calories-burned",
       value: caloriesBurned,
       iconName: "flame",
-      iconColor: colors.brand.dark[1],
       unit: "kcal",
     },
   ];
@@ -82,7 +79,7 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
 
   if (!healthReady) {
     return (
-      <View className="px-4 mb-4">
+      <View className="px-4 mb-8">
         <TouchableOpacity
           className="bg-secondary rounded-xl py-3 px-4 flex-row items-center justify-center"
           onPress={onConnect}
@@ -108,14 +105,13 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
   }
 
   return (
-    <View className="px-4 mb-4">
+    <View className="px-4 mb-8">
       <View className="flex-row justify-around items-center">
         {visibleMetrics.map((metric) => (
           <HealthMetricItem
             key={metric.key}
             value={metric.value}
             iconName={metric.iconName}
-            iconColor={metric.iconColor}
             unit={metric.unit}
           />
         ))}

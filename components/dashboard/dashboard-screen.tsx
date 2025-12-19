@@ -882,18 +882,6 @@ export default function DashboardScreen() {
           })}
         />
 
-        <View className="px-5 mb-6">
-          <View className="flex-row items-center justify-between">
-            {weeklySummary && weeklySummary.streak > 0 && (
-              <View className="flex-row items-center bg-primary/10 px-3 py-2 rounded-full">
-                <Text className="text-sm font-bold text-secondary ml-2">
-                  {weeklySummary.streak} day streak
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
         <ActiveWorkoutCard
           workoutInfo={
             workoutInfo
@@ -914,6 +902,7 @@ export default function DashboardScreen() {
         {weeklySummary && (
           <WeeklyProgressSection
             weeklyProgressData={weeklyProgressData as any}
+            streak={weeklySummary?.streak || 0}
           />
         )}
 

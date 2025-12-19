@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
 
@@ -10,24 +11,37 @@ type WeeklyProgressItem = {
   status: "rest" | "upcoming" | "incomplete" | "partial" | "complete";
   isToday: boolean;
   isFuture: boolean;
+  streak: number;
 };
 
 type WeeklyProgressSectionProps = {
   weeklyProgressData: WeeklyProgressItem[];
+  streak: number;
 };
 
 const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
   weeklyProgressData,
+  streak,
 }) => {
   return (
     <View className="px-4 mb-6">
-      <View className="px-4">
-        <Text className="text-base font-semibold text-text-primary mb-1">
-          Weekly Progress
-        </Text>
-        <Text className="text-xs text-text-muted mb-4">
-          Your workout completion for this week
-        </Text>
+      <View className="flex-row justify-between items-center px-4 mb-4">
+        <View>
+          <Text className="text-base font-semibold text-text-primary">
+            Weekly Progress
+          </Text>
+          <Text className="text-xs text-text-muted mt-1">
+            Your workout completion for this week
+          </Text>
+        </View>
+        {streak > 0 && (
+          <View className="flex-row items-center px-3 py-1.5 rounded-full">
+            <Ionicons name="flame" size={14} color={colors.brand.secondary} />
+            <Text className="text-sm font-bold text-secondary ml-1">
+              {streak} day streak
+            </Text>
+          </View>
+        )}
       </View>
       <View className="bg-white rounded-2xl px-4 pt-5">
         <View className="mb-4">
