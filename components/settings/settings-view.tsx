@@ -686,15 +686,30 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
           {healthConnected && (
             <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="checkmark-circle"
-                  size={18}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-sm font-semibold text-text-primary ml-2">
-                  Health Connected
-                </Text>
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={colors.brand.primary}
+                  />
+                  <Text className="text-sm font-semibold text-text-primary ml-2">
+                    Health Connected
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  className="bg-secondary/20 px-3 py-1.5 rounded-lg"
+                  onPress={handleConnectHealth}
+                  disabled={healthLoading}
+                >
+                  {healthLoading ? (
+                    <ActivityIndicator size="small" color={colors.brand.secondary} />
+                  ) : (
+                    <Text className="text-xs font-semibold text-secondary">
+                      Update Permissions
+                    </Text>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
           )}

@@ -31,7 +31,7 @@ const HealthMetricCard: React.FC<HealthMetricCardProps> = ({
   iconColor,
   unit,
 }) => (
-  <View className="flex-1 flex-row items-center justify-around bg-white rounded-2xl gap-8 shadow-rn-sm mx-2 my-1">
+  <View className="flex-1 flex-row items-center justify-around bg-white rounded-2xl gap-8 mx-2 my-1">
     <View className="flex-row items-center justify-center">
       <Ionicons name={iconName} size={32} color={iconColor} />
       <Text className="text-lg font-semibold text-text-primary mt-2">
@@ -53,46 +53,67 @@ const HealthMetricsCarousel: React.FC<HealthMetricsCarouselProps> = ({
   healthLoading,
   onConnect,
 }) => {
+  const allMetrics: (HealthMetricCardProps & { key: string })[] = [
+    {
+      key: "steps",
+      title: "Steps",
+      value: stepsCount,
+      iconName: "walk",
+      iconColor: colors.brand.primary,
+    },
+    {
+      key: "calories-consumed",
+      title: "Calories Consumed",
+      value: nutritionCaloriesConsumed,
+      iconName: "fast-food",
+      iconColor: colors.brand.primary,
+      unit: "kcal",
+    },
+    {
+      key: "calories-burned",
+      title: "Calories Burned",
+      value: caloriesBurned,
+      iconName: "flame",
+      iconColor: colors.brand.dark[1],
+      unit: "kcal",
+    },
+    {
+      key: "heart-rate",
+      title: "Max Heart Rate",
+      value: maxHeartRate,
+      iconName: "heart",
+      iconColor: colors.danger,
+      unit: "bpm",
+    },
+  ];
+
+  const visibleMetrics = allMetrics.filter((metric) => metric.value !== null);
+
   return (
     <View className="px-2 mb-4 relative">
       <GestureHandlerRootView>
-        <PagerView style={{ height: 100 }} initialPage={0}>
-          <View key="0">
-            <HealthMetricCard
-              title="Steps"
-              value={stepsCount}
-              iconName="walk"
-              iconColor={colors.brand.primary}
-            />
+        {visibleMetrics.length > 0 ? (
+          <PagerView style={{ height: 100 }} initialPage={0}>
+            {visibleMetrics.map((metric) => (
+              <View key={metric.key}>
+                <HealthMetricCard
+                  title={metric.title}
+                  value={metric.value}
+                  iconName={metric.iconName}
+                  iconColor={metric.iconColor}
+                  unit={metric.unit}
+                />
+              </View>
+            ))}
+          </PagerView>
+        ) : (
+          <View
+            style={{ height: 100 }}
+            className="items-center justify-center bg-white rounded-2xl mx-2"
+          >
+            <Text className="text-text-muted">No health data available</Text>
           </View>
-          <View key="1">
-            <HealthMetricCard
-              title="Calories Consumed"
-              value={nutritionCaloriesConsumed}
-              iconName="fast-food"
-              iconColor={colors.brand.primary}
-              unit="kcal"
-            />
-          </View>
-          <View key="2">
-            <HealthMetricCard
-              title="Calories Burned"
-              value={caloriesBurned}
-              iconName="flame"
-              iconColor={colors.brand.dark[1]}
-              unit="kcal"
-            />
-          </View>
-          <View key="3">
-            <HealthMetricCard
-              title="Max Heart Rate"
-              value={maxHeartRate}
-              iconName="heart"
-              iconColor={colors.danger}
-              unit="bpm"
-            />
-          </View>
-        </PagerView>
+        )}
         {!healthReady && (
           <TouchableOpacity
             className="absolute right-3 top-3 bg-secondary rounded-xl px-4 py-2 items-center"

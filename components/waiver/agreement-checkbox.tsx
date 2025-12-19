@@ -8,13 +8,21 @@ interface AgreementCheckboxProps {
   onToggle: () => void;
 }
 
-export default function AgreementCheckbox({ isAgreed, onToggle }: AgreementCheckboxProps) {
+export default function AgreementCheckbox({
+  isAgreed,
+  onToggle,
+}: AgreementCheckboxProps) {
   return (
     <View className="px-6 mb-6">
-      <TouchableOpacity onPress={onToggle} className="flex-row items-center bg-white rounded-xl p-4 shadow-sm">
+      <TouchableOpacity
+        onPress={onToggle}
+        className="flex-row items-center bg-white rounded-xl p-4"
+      >
         <View
           className={`w-6 h-6 rounded-md border-2 mr-3 items-center justify-center ${
-            isAgreed ? "bg-brand-primary border-brand-primary" : "bg-white border-neutral-medium-2"
+            isAgreed
+              ? "bg-brand-primary border-brand-primary"
+              : "bg-white border-neutral-medium-2"
           }`}
           style={
             isAgreed
@@ -28,7 +36,8 @@ export default function AgreementCheckbox({ isAgreed, onToggle }: AgreementCheck
           {isAgreed && <Ionicons name="checkmark" size={16} color="white" />}
         </View>
         <Text className="flex-1 text-base text-text-primary">
-          I have read and accept all legal agreements (v{CURRENT_WAIVER_VERSION})
+          I have read and accept all legal agreements (v{CURRENT_WAIVER_VERSION}
+          )
         </Text>
       </TouchableOpacity>
     </View>

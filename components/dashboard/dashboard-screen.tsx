@@ -264,16 +264,16 @@ export default function DashboardScreen() {
       setHealthLoading(true);
       try {
         const steps = await fetchStepsTodayAPI();
-        setStepsCount(steps);
+        setStepsCount(Math.round(steps));
         const { max, avg } = await fetchHeartRateSamples();
-        setMaxHeartRate(max);
-        setAvgHeartRate(avg);
+        setMaxHeartRate(max !== null ? Math.round(max) : null);
+        setAvgHeartRate(avg !== null ? Math.round(avg) : null);
         const calories = await fetchCaloriesToday();
-        setCaloriesBurned(calories);
+        setCaloriesBurned(calories !== null ? Math.round(calories) : null);
         const nutritionCalories = await fetchNutritionCaloriesToday();
-        setNutritionCaloriesConsumed(nutritionCalories);
+        setNutritionCaloriesConsumed(nutritionCalories !== null ? Math.round(nutritionCalories) : null);
         const duration = await fetchWorkoutDuration();
-        setWorkoutDuration(duration);
+        setWorkoutDuration(duration !== null ? Math.round(duration) : null);
       } catch (error) {
         setHealthError("Failed to fetch health data.");
       } finally {

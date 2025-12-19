@@ -60,8 +60,12 @@ export async function connectHealth(): Promise<boolean> {
           perms.Steps,
           perms.FlightsClimbed,
           perms.DistanceWalkingRunning,
+          perms.HeartRate,
+          perms.ActiveEnergyBurned,
+          perms.Workout,
+          perms.EnergyConsumed,
         ],
-        write: [perms.Steps],
+        write: [],
       },
     };
 
