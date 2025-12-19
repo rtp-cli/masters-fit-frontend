@@ -84,12 +84,11 @@ export default function DashboardScreen() {
   const [strengthFilter, setStrengthFilter] = useState<TIME_RANGE_FILTER>(
     TIME_RANGE_FILTER.THREE_MONTHS
   );
-  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<
-    TIME_RANGE_FILTER
-  >(TIME_RANGE_FILTER.ONE_MONTH);
-  const [weightPerformanceFilter, setWeightPerformanceFilter] = useState<
-    TIME_RANGE_FILTER
-  >(TIME_RANGE_FILTER.ONE_MONTH);
+  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<TIME_RANGE_FILTER>(
+    TIME_RANGE_FILTER.ONE_MONTH
+  );
+  const [weightPerformanceFilter, setWeightPerformanceFilter] =
+    useState<TIME_RANGE_FILTER>(TIME_RANGE_FILTER.ONE_MONTH);
 
   const [weightProgressionData, setWeightProgressionData] = useState<
     { date: string; avgWeight: number; maxWeight: number; label: string }[]
@@ -258,30 +257,33 @@ export default function DashboardScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    const getHealthData = async () => {
-      if (!healthReady) return;
-      setHealthLoading(true);
-      try {
-        const steps = await fetchStepsTodayAPI();
-        setStepsCount(Math.round(steps));
-        const { max, avg } = await fetchHeartRateSamples();
-        setMaxHeartRate(max !== null ? Math.round(max) : null);
-        setAvgHeartRate(avg !== null ? Math.round(avg) : null);
-        const calories = await fetchCaloriesToday();
-        setCaloriesBurned(calories !== null ? Math.round(calories) : null);
-        const nutritionCalories = await fetchNutritionCaloriesToday();
-        setNutritionCaloriesConsumed(nutritionCalories !== null ? Math.round(nutritionCalories) : null);
-        const duration = await fetchWorkoutDuration();
-        setWorkoutDuration(duration !== null ? Math.round(duration) : null);
-      } catch (error) {
-        setHealthError("Failed to fetch health data.");
-      } finally {
-        setHealthLoading(false);
-      }
-    };
-    getHealthData();
+  const fetchHealthData = useCallback(async () => {
+    if (!healthReady) return;
+    setHealthLoading(true);
+    try {
+      const steps = await fetchStepsTodayAPI();
+      setStepsCount(Math.round(steps));
+      const { max, avg } = await fetchHeartRateSamples();
+      setMaxHeartRate(max !== null ? Math.round(max) : null);
+      setAvgHeartRate(avg !== null ? Math.round(avg) : null);
+      const calories = await fetchCaloriesToday();
+      setCaloriesBurned(calories !== null ? Math.round(calories) : null);
+      const nutritionCalories = await fetchNutritionCaloriesToday();
+      setNutritionCaloriesConsumed(
+        nutritionCalories !== null ? Math.round(nutritionCalories) : null
+      );
+      const duration = await fetchWorkoutDuration();
+      setWorkoutDuration(duration !== null ? Math.round(duration) : null);
+    } catch (error) {
+      setHealthError("Failed to fetch health data.");
+    } finally {
+      setHealthLoading(false);
+    }
   }, [healthReady]);
+
+  useEffect(() => {
+    fetchHealthData();
+  }, [fetchHealthData]);
 
   const calculateWideDataRange = () => ({
     startDate: "2020-01-01",
@@ -586,6 +588,7 @@ export default function DashboardScreen() {
       };
       refreshAllData(refreshDateRange);
       fetchTodaysWorkout();
+      fetchHealthData();
     }
   };
 
@@ -891,18 +894,6 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {healthReady && (
-          <HealthMetricsCarousel
-            stepsCount={stepsCount}
-            nutritionCaloriesConsumed={nutritionCaloriesConsumed}
-            caloriesBurned={caloriesBurned}
-            maxHeartRate={maxHeartRate}
-            healthReady={healthReady}
-            healthLoading={healthLoading}
-            onConnect={handleConnectHealth}
-          />
-        )}
-
         <ActiveWorkoutCard
           workoutInfo={
             workoutInfo
@@ -923,6 +914,18 @@ export default function DashboardScreen() {
         {weeklySummary && (
           <WeeklyProgressSection
             weeklyProgressData={weeklyProgressData as any}
+          />
+        )}
+
+        {healthReady && (
+          <HealthMetricsCarousel
+            stepsCount={stepsCount}
+            nutritionCaloriesConsumed={nutritionCaloriesConsumed}
+            caloriesBurned={caloriesBurned}
+            maxHeartRate={maxHeartRate}
+            healthReady={healthReady}
+            healthLoading={healthLoading}
+            onConnect={handleConnectHealth}
           />
         )}
 
