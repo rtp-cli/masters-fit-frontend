@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -32,6 +32,7 @@ import {
   generateRestDayWorkoutAsync,
 } from "@lib/workouts";
 import { Profile as UserProfile } from "@/types/api";
+import { setPaywallCallback, PaywallError } from "@/lib/api";
 
 import {
   GENDER,
@@ -130,6 +131,24 @@ export default function WorkoutRegenerationModal({
 
   // Background job tracking
   const { addJob } = useBackgroundJobs();
+
+  // Track paywall errors to suppress generic alerts
+  const paywallErrorOccurredRef = useRef(false);
+
+  // Set up paywall callback
+  useEffect(() => {
+    setPaywallCallback(() => {
+      paywallErrorOccurredRef.current = true;
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        paywallErrorOccurredRef.current = false;
+      }, 1000);
+    });
+
+    return () => {
+      setPaywallCallback(() => {});
+    };
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -307,18 +326,27 @@ export default function WorkoutRegenerationModal({
               onClose();
               onSuccess?.();
             } else {
+              // Only show alert if it's not a paywall error
+              if (!paywallErrorOccurredRef.current) {
+                Alert.alert(
+                  "Daily Regeneration Failed",
+                  "Unable to start daily workout regeneration. Please check your connection and try again.",
+                  [{ text: "OK" }]
+                );
+              }
+            }
+          } catch (error) {
+            // Only show alert if it's not a paywall error
+            if (
+              !paywallErrorOccurredRef.current &&
+              !(error instanceof PaywallError)
+            ) {
               Alert.alert(
-                "Daily Regeneration Failed",
-                "Unable to start daily workout regeneration. Please check your connection and try again.",
+                "Daily Regeneration Error",
+                "An error occurred while starting daily workout regeneration. Please try again.",
                 [{ text: "OK" }]
               );
             }
-          } catch (error) {
-            Alert.alert(
-              "Daily Regeneration Error",
-              "An error occurred while starting daily workout regeneration. Please try again.",
-              [{ text: "OK" }]
-            );
           }
         }
       }
@@ -440,21 +468,30 @@ export default function WorkoutRegenerationModal({
               // Success callback
               onSuccess?.();
             } else {
-              Alert.alert(
-                "Daily Regeneration Failed",
-                "Unable to start daily workout regeneration. Please check your connection and try again.",
-                [{ text: "OK" }]
-              );
+              // Only show alert if it's not a paywall error
+              if (!paywallErrorOccurredRef.current) {
+                Alert.alert(
+                  "Daily Regeneration Failed",
+                  "Unable to start daily workout regeneration. Please check your connection and try again.",
+                  [{ text: "OK" }]
+                );
+              }
             }
           }
         }
       }
     } catch (error) {
-      Alert.alert(
-        "Regeneration Error",
-        "An error occurred while starting regeneration. Please try again.",
-        [{ text: "OK" }]
-      );
+      // Only show alert if it's not a paywall error
+      if (
+        !paywallErrorOccurredRef.current &&
+        !(error instanceof PaywallError)
+      ) {
+        Alert.alert(
+          "Regeneration Error",
+          "An error occurred while starting regeneration. Please try again.",
+          [{ text: "OK" }]
+        );
+      }
     }
   };
 
