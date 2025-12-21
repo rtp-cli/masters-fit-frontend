@@ -1,4 +1,4 @@
-import { apiRequest } from "./api";
+import { apiRequest, PaywallError } from "./api";
 import { getCurrentUser } from "./auth";
 import { formatDateAsString, getTodayString } from "../utils";
 import { TIMEOUTS, LIMITS } from "@/constants";
@@ -26,7 +26,6 @@ let activeWorkoutCache: {
   timestamp: number;
   workout: PlanDayWithBlocks | null;
 } | null = null;
-
 
 // Simple event system for workout data updates
 const workoutUpdateListeners: Array<() => void> = [];
@@ -959,6 +958,11 @@ export async function regenerateWorkoutPlanAsync(
       throw new Error("Failed to start async workout regeneration");
     }
   } catch (error) {
+    // Don't log PaywallError as a regular error - the paywall modal will handle it
+    if (error instanceof PaywallError) {
+      // Paywall callback has already been triggered, just return null
+      return null;
+    }
     console.error("Error starting async workout regeneration:", error);
     return null;
   }
@@ -993,6 +997,11 @@ export async function regenerateDailyWorkoutAsync(
       throw new Error("Failed to start async daily workout regeneration");
     }
   } catch (error) {
+    // Don't log PaywallError as a regular error - the paywall modal will handle it
+    if (error instanceof PaywallError) {
+      // Paywall callback has already been triggered, just return null
+      return null;
+    }
     console.error("Error starting async daily workout regeneration:", error);
     return null;
   }
@@ -1033,6 +1042,11 @@ export async function generateRestDayWorkoutAsync(
       throw new Error("Failed to start rest day workout generation");
     }
   } catch (error) {
+    // Don't log PaywallError as a regular error - the paywall modal will handle it
+    if (error instanceof PaywallError) {
+      // Paywall callback has already been triggered, just return null
+      return null;
+    }
     console.error("Error starting rest day workout generation:", error);
     return null;
   }
