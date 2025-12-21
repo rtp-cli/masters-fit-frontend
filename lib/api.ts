@@ -9,8 +9,41 @@ let waiverRedirectCallback: (() => void) | null = null;
 // Callback for handling auth failures (set by AuthContext)
 let authFailureCallback: (() => void) | null = null;
 
+// Callback for handling paywall (set by PaywallContext or component)
+let paywallCallback:
+  | ((paywallData: { type: string; message: string; limits: any }) => void)
+  | null = null;
+
+export function setPaywallCallback(
+  callback: (paywallData: {
+    type: string;
+    message: string;
+    limits: any;
+  }) => void
+) {
+  paywallCallback = callback;
+}
+
 // Race condition protection for refresh token
 let refreshInProgress = false;
+
+// Custom error class for paywall errors
+export class PaywallError extends Error {
+  public paywallData: {
+    type: string;
+    message: string;
+    limits: any;
+  };
+
+  constructor(
+    message: string,
+    paywallData: { type: string; message: string; limits: any }
+  ) {
+    super(message);
+    this.name = "PaywallError";
+    this.paywallData = paywallData;
+  }
+}
 
 export function setWaiverRedirectCallback(callback: () => void) {
   waiverRedirectCallback = callback;
@@ -182,11 +215,23 @@ export async function apiRequest<T>(
   // Get the auth token
   const token = await getAuthToken();
 
-  const headers: HeadersInit = {
+  // Build headers - ensure Authorization is not overridden by options.headers
+  const baseHeaders: HeadersInit = {
     "Content-Type": "application/json",
     Accept: "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  // Add Authorization header if token exists
+  if (token) {
+    baseHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  // Merge with options.headers, but ensure Authorization takes precedence
+  const headers: HeadersInit = {
+    ...baseHeaders,
     ...options.headers,
+    // Always use our Authorization header if we have a token
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
   const config: RequestInit = {
@@ -200,12 +245,28 @@ export async function apiRequest<T>(
   try {
     logger.apiRequest(endpoint, method);
 
+    // Log auth token presence for debugging (don't log the actual token)
+    if (__DEV__) {
+      const authHeader = (headers as Record<string, string>).Authorization;
+      console.log(
+        `[API] ${method} ${endpoint} - Token present: ${!!token}, Has Auth header: ${!!authHeader}`
+      );
+    }
+
     const response = await fetch(url, config);
     const duration = Date.now() - startTime;
 
     // Handle HTTP errors
     if (!response.ok) {
       let errorData = await response.json().catch(() => ({}));
+
+      // Debug: Log the raw error response
+      if (__DEV__ && response.status === 403) {
+        console.log(
+          "[PAYWALL] Raw 403 error response:",
+          JSON.stringify(errorData, null, 2)
+        );
+      }
 
       // Handle double-encoded JSON in error responses
       if (errorData.error && typeof errorData.error === "string") {
@@ -238,16 +299,83 @@ export async function apiRequest<T>(
         }
       }
 
+      // Handle paywall (HTTP 403 with paywall info) - check before waiver
+      // Accept any paywall type (subscription_required, weekly_limit_exceeded, daily_limit_exceeded, etc.)
+      const isPaywallError =
+        response.status === 403 &&
+        errorData.paywall &&
+        typeof errorData.paywall === "object" &&
+        errorData.paywall.type &&
+        errorData.paywall.message;
+
+      if (isPaywallError) {
+        console.log("[PAYWALL] Paywall error detected:", {
+          endpoint,
+          status: response.status,
+          paywallData: errorData.paywall,
+          hasCallback: !!paywallCallback,
+        });
+
+        logger.info("Paywall requirement detected from error response", {
+          operation: "apiRequest",
+          metadata: {
+            endpoint,
+            status: response.status,
+            paywallType: errorData.paywall?.type,
+            limits: errorData.paywall?.limits,
+          },
+        });
+
+        // Trigger paywall callback with paywall data synchronously
+        if (paywallCallback && errorData.paywall) {
+          const paywallData = {
+            type: errorData.paywall.type,
+            message: errorData.paywall.message,
+            limits: errorData.paywall.limits || {},
+          };
+
+          console.log(
+            "[PAYWALL] Triggering paywall callback with data:",
+            paywallData
+          );
+          try {
+            paywallCallback(paywallData);
+            console.log("[PAYWALL] Paywall callback executed successfully");
+          } catch (callbackError) {
+            console.error(
+              "[PAYWALL] Error in paywall callback:",
+              callbackError
+            );
+          }
+        } else {
+          console.warn(
+            "[PAYWALL] No paywall callback registered or missing paywall data"
+          );
+        }
+
+        // Throw PaywallError instead of generic error - this will skip all error logging below
+        throw new PaywallError(
+          errorData.message || errorData.error || "Subscription required",
+          {
+            type: errorData.paywall.type,
+            message: errorData.paywall.message,
+            limits: errorData.paywall.limits || {},
+          }
+        );
+      }
+
       // Enhanced waiver detection for other status codes and error messages
+      // Only check for waiver if it's not a paywall error
       const isWaiverError =
-        response.status === 403 || // Forbidden - might be waiver-related
-        response.status === 428 || // Precondition Required
-        (errorData.message &&
-          /waiver|liability|acceptance required/i.test(errorData.message)) ||
-        (errorData.error &&
-          /waiver|liability|acceptance required/i.test(errorData.error)) ||
-        errorData.code === "WAIVER_REQUIRED" ||
-        errorData.type === "WAIVER_ERROR";
+        !isPaywallError &&
+        (response.status === 403 || // Forbidden - might be waiver-related
+          response.status === 428 || // Precondition Required
+          (errorData.message &&
+            /waiver|liability|acceptance required/i.test(errorData.message)) ||
+          (errorData.error &&
+            /waiver|liability|acceptance required/i.test(errorData.error)) ||
+          errorData.code === "WAIVER_REQUIRED" ||
+          errorData.type === "WAIVER_ERROR");
 
       if (isWaiverError) {
         logger.info("Waiver requirement detected from error response", {
@@ -270,21 +398,61 @@ export async function apiRequest<T>(
 
       // Handle unauthorized (HTTP 401) - try refresh before logout
       if (response.status === 401 && token) {
+        console.log(
+          `[API] 401 Unauthorized for ${endpoint}, attempting token refresh...`
+        );
         const refreshSuccess = await refreshAccessToken();
 
         if (refreshSuccess) {
+          // Get the new token after refresh
+          const newToken = await getAuthToken();
+          console.log(
+            `[API] Token refreshed successfully, retrying ${endpoint} with new token`
+          );
+
+          if (!newToken) {
+            console.error(
+              `[API] Token refresh reported success but no token found!`
+            );
+            await handleAuthFailure();
+            throw new Error("Session expired - token refresh failed");
+          }
+
           // Retry the original request with the new token
+          // Create new options to ensure fresh headers with new token
+          const retryBaseHeaders: HeadersInit = {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${newToken}`,
+          };
+
+          const retryOptions: RequestInit = {
+            ...options,
+            headers: {
+              ...retryBaseHeaders,
+              // Merge with any existing headers from options, but Authorization takes precedence
+              ...(options.headers || {}),
+              Authorization: `Bearer ${newToken}`, // Ensure new token is used
+            },
+          };
+
           const retryStartTime = Date.now();
-          const retryResponse = await apiRequest<T>(endpoint, options);
+          const retryResponse = await apiRequest<T>(endpoint, retryOptions);
           const retryDuration = Date.now() - retryStartTime;
+          console.log(
+            `[API] Retry successful for ${endpoint} after ${retryDuration}ms`
+          );
 
           return retryResponse;
         } else {
+          console.error(`[API] Token refresh failed for ${endpoint}`);
           await handleAuthFailure();
           throw new Error("Session expired - user logged out");
         }
       }
 
+      // If we reach here, it's not a paywall, waiver, or 401 error
+      // Log and throw the error
       console.error(
         `[API] ${response.status} Error Response:`,
         JSON.stringify(errorData, null, 2)
@@ -306,6 +474,11 @@ export async function apiRequest<T>(
     logger.apiRequest(endpoint, method, duration);
     return data;
   } catch (error) {
+    // Don't log PaywallErrors - they're handled by the paywall modal
+    if (error instanceof PaywallError) {
+      throw error; // Re-throw without logging
+    }
+
     if (!(error instanceof Error && error.message.includes("HTTP error"))) {
       // Only log network/unexpected errors, not HTTP errors (already logged above)
       logger.apiError(endpoint, error, method);
@@ -515,5 +688,75 @@ export async function completeOnboardingAPI(
     }
 
     return { success: false };
+  }
+}
+
+/**
+ * Fetch subscription plans from the backend
+ */
+export async function fetchSubscriptionPlans(): Promise<{
+  success: boolean;
+  plans: Array<{
+    id: number;
+    planId: string;
+    name: string;
+    description: string | null;
+    billingPeriod: "monthly" | "annual";
+    priceUsd: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    // This is a public endpoint, so we don't need auth
+    const response = await fetch(`${API_URL}/subscriptions/plans`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(
+        "[API] Failed to fetch subscription plans:",
+        response.status,
+        errorData
+      );
+      return {
+        success: false,
+        plans: [],
+        error: errorData.message || `HTTP error ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+
+    if (!data.success || !Array.isArray(data.plans)) {
+      console.error("[API] Invalid subscription plans response:", data);
+      return {
+        success: false,
+        plans: [],
+        error: "Invalid response format",
+      };
+    }
+
+    return {
+      success: true,
+      plans: data.plans,
+    };
+  } catch (error) {
+    console.error("[API] Error fetching subscription plans:", error);
+    return {
+      success: false,
+      plans: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch subscription plans",
+    };
   }
 }
