@@ -32,6 +32,7 @@ import "../global.css";
 import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
 import { colors } from "@/lib/theme";
+import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
 
 // Inner component that can access auth context
 function AppContent() {
@@ -248,7 +249,14 @@ function AppContent() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="network-logger"
+          options={{
+            presentation: "modal",
+          }}
+        />
       </Stack>
+      <FloatingNetworkLoggerButton />
     </View>
   );
 }
