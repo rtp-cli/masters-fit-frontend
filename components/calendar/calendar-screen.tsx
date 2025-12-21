@@ -22,10 +22,12 @@ import {
 } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { getCurrentUser } from "@lib/auth";
+import { setPaywallCallback } from "@/lib/api";
 import Header from "@/components/header";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
 import { colors } from "../../lib/theme";
@@ -34,6 +36,7 @@ import {
   PlanDayWithBlocks,
   WorkoutWithDetails,
   WorkoutBlockWithExercises,
+  SubscriptionPlan,
 } from "@/types/api";
 import { RegenerationData } from "@/types/calendar.types";
 import CalendarViewSection from "./sections/calendar-view";
@@ -73,6 +76,42 @@ export default function CalendarScreen() {
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
+  const [showPaymentWall, setShowPaymentWall] = useState(false);
+  const [paywallData, setPaywallData] = useState<{
+    type: string;
+    message: string;
+    limits: any;
+  } | null>(null);
+  const paywallErrorOccurredRef = useRef(false);
+
+  // Set up paywall callback
+  useEffect(() => {
+    console.log("[CALENDAR] Setting up paywall callback");
+    setPaywallCallback((data) => {
+      console.log("[CALENDAR] Paywall callback triggered with data:", data);
+      paywallErrorOccurredRef.current = true;
+      setPaywallData(data);
+      setShowPaymentWall(true);
+      console.log(
+        "[CALENDAR] Payment wall state updated - showPaymentWall:",
+        true
+      );
+      // Reset the flag after a short delay to allow state to update
+      setTimeout(() => {
+        paywallErrorOccurredRef.current = false;
+      }, 1000);
+    });
+
+    return () => {
+      setPaywallCallback(() => {});
+    };
+  }, []);
+
+  // Debug: Log when showPaymentWall changes
+  useEffect(() => {
+    console.log("[CALENDAR] showPaymentWall changed:", showPaymentWall);
+    console.log("[CALENDAR] paywallData:", paywallData);
+  }, [showPaymentWall, paywallData]);
 
   const workoutPlan = useMemo(() => {
     if (!workoutData) {
@@ -188,11 +227,6 @@ export default function CalendarScreen() {
           router.replace("/(tabs)/dashboard");
         } else {
           setIsGeneratingWorkout(false);
-          Alert.alert(
-            "Daily Regeneration Failed",
-            "Unable to start daily workout regeneration. Please check your connection and try again.",
-            [{ text: "OK" }]
-          );
         }
       } else {
         const apiData = {
@@ -214,20 +248,26 @@ export default function CalendarScreen() {
           router.replace("/(tabs)/dashboard");
         } else {
           setIsGeneratingWorkout(false);
-          Alert.alert(
-            "Regeneration Failed",
-            "Unable to start workout regeneration. Please check your connection and try again.",
-            [{ text: "OK" }]
-          );
+          // Don't show alert if paywall error occurred (modal is already showing)
+          if (!paywallErrorOccurredRef.current) {
+            Alert.alert(
+              "Regeneration Failed",
+              "Unable to start workout regeneration. Please check your connection and try again.",
+              [{ text: "OK" }]
+            );
+          }
         }
       }
     } catch (err) {
       setIsGeneratingWorkout(false);
-      Alert.alert(
-        "Regeneration Error",
-        "An error occurred while starting regeneration. Please try again.",
-        [{ text: "OK" }]
-      );
+      // Don't show alert if paywall error occurred (modal is already showing)
+      if (!paywallErrorOccurredRef.current) {
+        Alert.alert(
+          "Regeneration Error",
+          "An error occurred while starting regeneration. Please try again.",
+          [{ text: "OK" }]
+        );
+      }
     }
   };
 
@@ -577,6 +617,28 @@ export default function CalendarScreen() {
         planDay={selectedPlanDay}
         onSuccess={() => {
           refreshWorkout();
+        }}
+      />
+
+      <PaymentWallModal
+        visible={showPaymentWall}
+        onClose={() => {
+          console.log("[CALENDAR] Closing payment wall modal");
+          setShowPaymentWall(false);
+          setPaywallData(null);
+        }}
+        paywallData={
+          paywallData || {
+            type: "subscription_required",
+            message:
+              "A subscription is required to generate new workout plans.",
+            limits: {},
+          }
+        }
+        onPlanSelect={(plan: SubscriptionPlan) => {
+          // In the future, this will trigger RevenueCat purchase flow
+          console.log("Plan selected for purchase:", plan.planId);
+          // TODO: Integrate RevenueCat purchase flow here
         }}
       />
     </View>
