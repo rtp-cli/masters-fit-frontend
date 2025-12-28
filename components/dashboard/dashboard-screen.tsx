@@ -6,6 +6,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -53,6 +54,7 @@ import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 export default function DashboardScreen() {
@@ -126,6 +128,7 @@ export default function DashboardScreen() {
 
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showPaywallTest, setShowPaywallTest] = useState(false);
 
   const {
     data: {
@@ -882,6 +885,26 @@ export default function DashboardScreen() {
           })}
         />
 
+        {/* DEV ONLY: Test RevenueCat Paywall Button */}
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={() => setShowPaywallTest(true)}
+            style={{
+              backgroundColor: "#FF6B6B",
+              marginHorizontal: 20,
+              marginBottom: 16,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "700", fontSize: 14 }}>
+              🧪 Test RevenueCat Paywall
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <ActiveWorkoutCard
           workoutInfo={
             workoutInfo
@@ -950,6 +973,23 @@ export default function DashboardScreen() {
         onClose={() => setShowRepeatModal(false)}
         onSuccess={handleRepeatWorkoutSuccess}
       />
+
+      {/* DEV ONLY: Test RevenueCat Paywall Modal */}
+      {__DEV__ && (
+        <PaymentWallModal
+          visible={showPaywallTest}
+          onClose={() => setShowPaywallTest(false)}
+          paywallData={{
+            type: "subscription_required",
+            message:
+              "Testing RevenueCat integration. Select a plan to test the purchase flow.",
+          }}
+          onPurchaseSuccess={() => {
+            Alert.alert("Success", "Purchase completed successfully!");
+            setShowPaywallTest(false);
+          }}
+        />
+      )}
     </View>
   );
 }

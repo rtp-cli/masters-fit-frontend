@@ -3,12 +3,14 @@ import { TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
+import { useSecretActivation } from "@/hooks/use-secret-activation";
 
 export function FloatingNetworkLoggerButton() {
   const router = useRouter();
+  const { isDebugModeActivated } = useSecretActivation();
 
-  // Only show in development mode
-  if (!__DEV__) {
+  // Show in development mode OR when debug mode is activated via secret tap
+  if (!__DEV__ && !isDebugModeActivated) {
     return null;
   }
 
