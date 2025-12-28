@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Platform, View } from "react-native";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { WorkoutProvider } from "@/contexts/workout-context";
 import {
@@ -33,7 +34,6 @@ import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
 import { colors } from "@/lib/theme";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 // Inner component that can access auth context
 function AppContent() {
@@ -77,6 +77,21 @@ function AppContent() {
 
   useEffect(() => {
     ensureHealthConnectInitialized();
+  }, []);
+
+  // Initialize RevenueCat
+  useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === "ios") {
+      Purchases.configure({
+        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+      });
+    } else if (Platform.OS === "android") {
+      Purchases.configure({
+        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
+      });
+    }
   }, []);
 
   // State to track notification-triggered refreshes

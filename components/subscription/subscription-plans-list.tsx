@@ -1,57 +1,90 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SubscriptionPlan } from "@/types/api";
+import { PurchasesPackage, PACKAGE_TYPE } from "react-native-purchases";
 import { colors } from "@/lib/theme";
 
 interface SubscriptionPlansListProps {
-  plans: SubscriptionPlan[];
-  selectedPlanId?: string;
-  onPlanSelect: (plan: SubscriptionPlan) => void;
+  packages: PurchasesPackage[];
+  selectedPackageId?: string;
+  onPackageSelect: (pkg: PurchasesPackage) => void;
 }
 
 export default function SubscriptionPlansList({
-  plans,
-  selectedPlanId,
-  onPlanSelect,
+  packages,
+  selectedPackageId,
+  onPackageSelect,
 }: SubscriptionPlansListProps) {
-  const formatPrice = (price: number, billingPeriod: string) => {
-    const formattedPrice = price.toFixed(2);
-    const period = billingPeriod === "annual" ? "year" : "month";
-    return `$${formattedPrice}/${period}`;
+  // Helper to determine if a package is annual
+  const isAnnualPackage = (pkg: PurchasesPackage): boolean => {
+    return (
+      pkg.packageType === PACKAGE_TYPE.ANNUAL ||
+      pkg.identifier.toLowerCase().includes("annual") ||
+      pkg.identifier.toLowerCase().includes("yearly")
+    );
   };
 
+  // Helper to determine if a package is monthly
+  const isMonthlyPackage = (pkg: PurchasesPackage): boolean => {
+    return (
+      pkg.packageType === PACKAGE_TYPE.MONTHLY ||
+      pkg.identifier.toLowerCase().includes("monthly")
+    );
+  };
+
+  // Calculate savings between monthly and annual
   const calculateAnnualSavings = (
-    monthlyPrice: number,
-    annualPrice: number
+    monthlyPkg: PurchasesPackage | undefined,
+    annualPkg: PurchasesPackage | undefined
   ) => {
+    if (!monthlyPkg || !annualPkg) return null;
+
+    const monthlyPrice = monthlyPkg.product.price;
+    const annualPrice = annualPkg.product.price;
     const monthlyYearly = monthlyPrice * 12;
     const savings = monthlyYearly - annualPrice;
     const savingsPercent = Math.round((savings / monthlyYearly) * 100);
+
     return { savings, savingsPercent };
   };
 
-  // Separate monthly and annual plans
-  const monthlyPlans = plans.filter((p) => p.billingPeriod === "monthly");
-  const annualPlans = plans.filter((p) => p.billingPeriod === "annual");
+  // Separate monthly and annual packages
+  const monthlyPackages = packages.filter(isMonthlyPackage);
+  const annualPackages = packages.filter(isAnnualPackage);
+  const otherPackages = packages.filter(
+    (p) => !isMonthlyPackage(p) && !isAnnualPackage(p)
+  );
 
   // Calculate savings if both exist
-  const savingsInfo =
-    monthlyPlans.length > 0 && annualPlans.length > 0
-      ? calculateAnnualSavings(
-          monthlyPlans[0].priceUsd,
-          annualPlans[0].priceUsd
-        )
-      : null;
+  const savingsInfo = calculateAnnualSavings(
+    monthlyPackages[0],
+    annualPackages[0]
+  );
 
-  const renderPlan = (plan: SubscriptionPlan, isAnnual: boolean = false) => {
-    const isSelected = selectedPlanId === plan.planId;
+  // Get product description with period
+  const getPeriodDescription = (pkg: PurchasesPackage): string => {
+    if (isAnnualPackage(pkg)) return "per year";
+    if (isMonthlyPackage(pkg)) return "per month";
+
+    // Try to get from subscription period
+    const period = pkg.product.subscriptionPeriod;
+    if (period) {
+      if (period.includes("year") || period.includes("Y")) return "per year";
+      if (period.includes("month") || period.includes("M")) return "per month";
+      if (period.includes("week") || period.includes("W")) return "per week";
+    }
+
+    return "";
+  };
+
+  const renderPackage = (pkg: PurchasesPackage, isAnnual: boolean = false) => {
+    const isSelected = selectedPackageId === pkg.identifier;
     const isPopular = isAnnual && savingsInfo && savingsInfo.savingsPercent > 0;
 
     return (
       <TouchableOpacity
-        key={plan.id}
-        onPress={() => onPlanSelect(plan)}
+        key={pkg.identifier}
+        onPress={() => onPackageSelect(pkg)}
         style={[
           styles.planCard,
           isSelected && styles.planCardSelected,
@@ -69,9 +102,13 @@ export default function SubscriptionPlansList({
 
         <View style={styles.planHeader}>
           <View style={styles.planHeaderLeft}>
-            <Text style={styles.planName}>{plan.name}</Text>
-            {plan.description && (
-              <Text style={styles.planDescription}>{plan.description}</Text>
+            <Text style={styles.planName}>
+              {pkg.product.title || pkg.identifier}
+            </Text>
+            {pkg.product.description && (
+              <Text style={styles.planDescription}>
+                {pkg.product.description}
+              </Text>
             )}
           </View>
           {isSelected && (
@@ -85,11 +122,13 @@ export default function SubscriptionPlansList({
 
         <View style={styles.planPriceContainer}>
           <Text style={styles.planPrice}>
-            {formatPrice(plan.priceUsd, plan.billingPeriod)}
+            {pkg.product.priceString}
+            <Text style={styles.planPeriod}> {getPeriodDescription(pkg)}</Text>
           </Text>
           {isAnnual && savingsInfo && savingsInfo.savings > 0 && (
             <Text style={styles.planSavings}>
-              Save ${savingsInfo.savings.toFixed(2)}/year
+              Save {pkg.product.currencyCode} {savingsInfo.savings.toFixed(2)}
+              /year
             </Text>
           )}
         </View>
@@ -128,15 +167,24 @@ export default function SubscriptionPlansList({
 
   return (
     <View style={styles.container}>
-      {annualPlans.length > 0 && (
+      {/* Annual packages first (usually better value) */}
+      {annualPackages.length > 0 && (
         <View style={styles.planSection}>
-          {annualPlans.map((plan) => renderPlan(plan, true))}
+          {annualPackages.map((pkg) => renderPackage(pkg, true))}
         </View>
       )}
 
-      {monthlyPlans.length > 0 && (
+      {/* Monthly packages */}
+      {monthlyPackages.length > 0 && (
         <View style={styles.planSection}>
-          {monthlyPlans.map((plan) => renderPlan(plan, false))}
+          {monthlyPackages.map((pkg) => renderPackage(pkg, false))}
+        </View>
+      )}
+
+      {/* Other packages (weekly, lifetime, etc.) */}
+      {otherPackages.length > 0 && (
+        <View style={styles.planSection}>
+          {otherPackages.map((pkg) => renderPackage(pkg, false))}
         </View>
       )}
     </View>
@@ -155,7 +203,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: colors.neutral.medium[1],
     position: "relative",
   },
   planCardSelected: {
@@ -208,6 +256,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text.primary,
     marginBottom: 4,
+  },
+  planPeriod: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: colors.text.secondary,
   },
   planSavings: {
     fontSize: 14,

@@ -8,11 +8,13 @@ import {
   ActivityIndicator,
   StyleSheet,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { PurchasesPackage } from "react-native-purchases";
 import { colors } from "@/lib/theme";
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
-import { SubscriptionPlan, PaywallLimits } from "@/types/api";
+import { PaywallLimits } from "@/types/api";
 import SubscriptionPlansList from "./subscription-plans-list";
 
 interface PaymentWallModalProps {
@@ -23,26 +25,79 @@ interface PaymentWallModalProps {
     message: string;
     limits?: PaywallLimits;
   };
-  onPlanSelect?: (plan: SubscriptionPlan) => void;
+  onPurchaseSuccess?: () => void;
 }
 
 export default function PaymentWallModal({
   visible,
   onClose,
   paywallData,
-  onPlanSelect,
+  onPurchaseSuccess,
 }: PaymentWallModalProps) {
-  const { plans, isLoading, error, refetch } = useSubscriptionPlans();
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
-    null
-  );
+  const {
+    packages,
+    isLoading,
+    error,
+    isPurchasing,
+    purchasePackage,
+    restorePurchases,
+    refetch,
+  } = useSubscriptionPlans();
+  const [selectedPackage, setSelectedPackage] =
+    useState<PurchasesPackage | null>(null);
 
-  const handlePlanSelect = (plan: SubscriptionPlan) => {
-    setSelectedPlan(plan);
-    onPlanSelect?.(plan);
-    // In the future, this will trigger RevenueCat purchase flow
-    // For now, just log it
-    console.log("Plan selected:", plan.planId);
+  const handlePackageSelect = (pkg: PurchasesPackage) => {
+    setSelectedPackage(pkg);
+  };
+
+  const handlePurchase = async () => {
+    if (!selectedPackage) {
+      Alert.alert("Select a Plan", "Please select a subscription plan first.");
+      return;
+    }
+
+    const success = await purchasePackage(selectedPackage);
+
+    if (success) {
+      Alert.alert(
+        "Success!",
+        "Your subscription is now active. Enjoy unlimited access!",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              onPurchaseSuccess?.();
+              onClose();
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  const handleRestore = async () => {
+    const success = await restorePurchases();
+
+    if (success) {
+      Alert.alert(
+        "Purchases Restored",
+        "Your previous purchases have been restored.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              onPurchaseSuccess?.();
+              onClose();
+            },
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        "No Purchases Found",
+        "We couldn't find any previous purchases to restore."
+      );
+    }
   };
 
   return (
@@ -57,7 +112,11 @@ export default function PaymentWallModal({
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <Text style={styles.headerTitle}>Subscription</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeButton}
+            disabled={isPurchasing}
+          >
             <Ionicons name="close" size={28} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
@@ -78,7 +137,7 @@ export default function PaymentWallModal({
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Subscription Required</Text>
+          <Text style={styles.title}>Unlock Premium</Text>
 
           {/* Message */}
           <Text style={styles.message}>{paywallData.message}</Text>
@@ -106,7 +165,7 @@ export default function PaymentWallModal({
                   <Text style={styles.retryButtonText}>Retry</Text>
                 </TouchableOpacity>
               </View>
-            ) : plans.length === 0 ? (
+            ) : packages.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
                   No subscription plans available at this time.
@@ -114,18 +173,52 @@ export default function PaymentWallModal({
               </View>
             ) : (
               <SubscriptionPlansList
-                plans={plans}
-                selectedPlanId={selectedPlan?.planId}
-                onPlanSelect={handlePlanSelect}
+                packages={packages}
+                selectedPackageId={selectedPackage?.identifier}
+                onPackageSelect={handlePackageSelect}
               />
             )}
           </View>
+
+          {/* Subscribe Button */}
+          {packages.length > 0 && (
+            <TouchableOpacity
+              style={[
+                styles.subscribeButton,
+                (!selectedPackage || isPurchasing) &&
+                  styles.subscribeButtonDisabled,
+              ]}
+              onPress={handlePurchase}
+              disabled={!selectedPackage || isPurchasing}
+              activeOpacity={0.8}
+            >
+              {isPurchasing ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.subscribeButtonText}>
+                  {selectedPackage
+                    ? `Subscribe for ${selectedPackage.product.priceString}`
+                    : "Select a Plan"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {/* Restore Purchases */}
+          <TouchableOpacity
+            style={styles.restoreButton}
+            onPress={handleRestore}
+            disabled={isPurchasing}
+          >
+            <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+          </TouchableOpacity>
 
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               You can continue using your existing workout plans without a
-              subscription.
+              subscription. Subscription automatically renews unless canceled at
+              least 24 hours before the end of the current period.
             </Text>
           </View>
         </ScrollView>
@@ -149,7 +242,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E0E0E0",
   },
   headerSpacer: {
-    width: 36, // Same width as close button for centering
+    width: 36,
   },
   headerTitle: {
     fontSize: 18,
@@ -194,17 +287,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 16,
   },
-  limitsContainer: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 24,
-  },
-  limitsText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: "center",
-  },
   plansContainer: {
     marginBottom: 16,
   },
@@ -246,6 +328,32 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: "center",
   },
+  subscribeButton: {
+    backgroundColor: colors.brand.primary,
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  subscribeButtonDisabled: {
+    backgroundColor: colors.brand.primary + "60",
+  },
+  subscribeButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  restoreButton: {
+    paddingVertical: 12,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  restoreButtonText: {
+    color: colors.brand.primary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   footer: {
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
@@ -255,5 +363,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.muted,
     textAlign: "center",
+    lineHeight: 18,
   },
 });
