@@ -75,7 +75,7 @@ export default function Header({
                   <Text className="text-lg font-bold text-text-primary">
                     Hey {user?.name || "User"}!
                   </Text>
-                  {!isPro && (
+                  {isPro && (
                     <TouchableOpacity
                       onPress={() => setSubscriptionDetailsVisible(true)}
                       style={styles.proBadge}
