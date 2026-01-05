@@ -15,12 +15,20 @@ import { StatusBar } from "expo-status-bar";
 import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
+import { CustomDialog } from "@/components/ui";
 
 export const VerifyScreen = () => {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState(["", "", "", ""]);
-  const { isLoading, requestNewCode, verifyCode } = useVerifyController();
+  const {
+    isLoading,
+    requestNewCode,
+    verifyCode,
+    dialogVisible,
+    dialogConfig,
+    setDialogVisible,
+  } = useVerifyController();
 
   const inputs = useRef<TextInput[]>([]);
   const hiddenInputRef = useRef<TextInput>(null);
@@ -195,6 +203,19 @@ export const VerifyScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </SafeAreaView>
   );
 };
