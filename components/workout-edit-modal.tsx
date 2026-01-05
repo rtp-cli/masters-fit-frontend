@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -35,6 +34,7 @@ import {
   calculatePlanDayDuration,
   formatEquipment,
 } from "@/utils";
+import { CustomDialog, DialogButton } from "./ui";
 
 interface WorkoutEditModalProps {
   visible: boolean;
@@ -82,6 +82,14 @@ export default function WorkoutEditModal({
     null
   );
   const [showFilters, setShowFilters] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Temporary filter states for the modal
   const [tempEquipment, setTempEquipment] = useState<string[]>([]);
@@ -245,12 +253,30 @@ export default function WorkoutEditModal({
         setSearchResults(result.exercises);
       } else {
         setSearchResults([]);
-        Alert.alert("Error", "Failed to search exercises. Please try again.");
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to search exercises. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
       console.error("Search exercises error:", error);
       setSearchResults([]);
-      Alert.alert("Error", "Failed to search exercises. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to search exercises. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setSearching(false);
     }
@@ -303,11 +329,29 @@ export default function WorkoutEditModal({
         // Trigger refresh of workout data in background
         refreshWorkout();
       } else {
-        Alert.alert("Error", "Failed to replace exercise. Please try again.");
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to replace exercise. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
       console.error("Error replacing exercise:", error);
-      Alert.alert("Error", "Failed to replace exercise. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to replace exercise. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setReplacing(false);
     }
@@ -373,15 +417,20 @@ export default function WorkoutEditModal({
       // This will be done in Phase 4
 
       await refreshWorkout();
-      Alert.alert("Success", "Workout updated successfully!", [
-        {
+      setDialogConfig({
+        title: "Success",
+        description: "Workout updated successfully!",
+        primaryButton: {
           text: "OK",
           onPress: () => {
+            setDialogVisible(false);
             onClose();
             onSuccess?.();
           },
         },
-      ]);
+        icon: "checkmark-circle",
+      });
+      setDialogVisible(true);
     } catch (error) {
       onError?.("Failed to save changes. Please try again.");
     } finally {
@@ -398,14 +447,23 @@ export default function WorkoutEditModal({
     }
 
     if (modifiedExercises.size > 0) {
-      Alert.alert(
-        "Discard Changes",
-        "Are you sure you want to discard your changes?",
-        [
-          { text: "Keep Editing", style: "cancel" },
-          { text: "Discard", style: "destructive", onPress: onClose },
-        ]
-      );
+      setDialogConfig({
+        title: "Discard Changes",
+        description: "Are you sure you want to discard your changes?",
+        secondaryButton: {
+          text: "Keep Editing",
+          onPress: () => setDialogVisible(false),
+        },
+        primaryButton: {
+          text: "Discard",
+          onPress: () => {
+            setDialogVisible(false);
+            onClose();
+          },
+        },
+        icon: "warning",
+      });
+      setDialogVisible(true);
     } else {
       onClose();
     }
@@ -1309,6 +1367,19 @@ export default function WorkoutEditModal({
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </Modal>
   );
 }
