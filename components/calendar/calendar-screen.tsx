@@ -3,13 +3,13 @@ import {
   View,
   Text,
   ScrollView,
-  Alert,
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
 import { DateData } from "react-native-calendars";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
@@ -28,6 +28,7 @@ import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
 import { colors } from "../../lib/theme";
@@ -83,6 +84,14 @@ export default function CalendarScreen() {
     limits: any;
   } | null>(null);
   const paywallErrorOccurredRef = useRef(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Set up paywall callback
   useEffect(() => {
@@ -250,11 +259,17 @@ export default function CalendarScreen() {
           setIsGeneratingWorkout(false);
           // Don't show alert if paywall error occurred (modal is already showing)
           if (!paywallErrorOccurredRef.current) {
-            Alert.alert(
-              "Regeneration Failed",
-              "Unable to start workout regeneration. Please check your connection and try again.",
-              [{ text: "OK" }]
-            );
+            setDialogConfig({
+              title: "Regeneration Failed",
+              description:
+                "Unable to start workout regeneration. Please check your connection and try again.",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
+              },
+              icon: "alert-circle",
+            });
+            setDialogVisible(true);
           }
         }
       }
@@ -262,11 +277,17 @@ export default function CalendarScreen() {
       setIsGeneratingWorkout(false);
       // Don't show alert if paywall error occurred (modal is already showing)
       if (!paywallErrorOccurredRef.current) {
-        Alert.alert(
-          "Regeneration Error",
-          "An error occurred while starting regeneration. Please try again.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Regeneration Error",
+          description:
+            "An error occurred while starting regeneration. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     }
   };
@@ -280,11 +301,17 @@ export default function CalendarScreen() {
     if (!user?.id) return;
 
     if (isGenerating) {
-      Alert.alert(
-        "Generation in Progress",
-        "A workout is already being generated. Please wait for it to complete.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation in Progress",
+        description:
+          "A workout is already being generated. Please wait for it to complete.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "information-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
@@ -296,18 +323,30 @@ export default function CalendarScreen() {
         await addJob(result.jobId, "generation");
         router.replace("/(tabs)/dashboard");
       } else {
-        Alert.alert(
-          "Generation Failed",
-          "Unable to start workout generation. Please check your connection and try again.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Generation Failed",
+          description:
+            "Unable to start workout generation. Please check your connection and try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert(
-        "Generation Error",
-        "An error occurred while starting workout generation. Please try again.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation Error",
+        description:
+          "An error occurred while starting workout generation. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -641,6 +680,19 @@ export default function CalendarScreen() {
           // TODO: Integrate RevenueCat purchase flow here
         }}
       />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }

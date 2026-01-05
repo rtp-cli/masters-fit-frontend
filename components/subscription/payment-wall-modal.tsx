@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PurchasesPackage } from "react-native-purchases";
@@ -15,6 +14,7 @@ import { colors } from "@/lib/theme";
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
 import { PaywallLimits } from "@/types/api";
 import SubscriptionPlansList from "./subscription-plans-list";
+import { CustomDialog, DialogButton } from "../ui";
 
 interface PaymentWallModalProps {
   visible: boolean;
@@ -44,6 +44,14 @@ export default function PaymentWallModal({
   } = useSubscriptionPlans();
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   const handlePackageSelect = (pkg: PurchasesPackage) => {
     setSelectedPackage(pkg);
@@ -51,26 +59,36 @@ export default function PaymentWallModal({
 
   const handlePurchase = async () => {
     if (!selectedPackage) {
-      Alert.alert("Select a Plan", "Please select a subscription plan first.");
+      setDialogConfig({
+        title: "Select a Plan",
+        description: "Please select a subscription plan first.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "information-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
     const success = await purchasePackage(selectedPackage);
 
     if (success) {
-      Alert.alert(
-        "Success!",
-        "Your subscription is now active. Enjoy unlimited access!",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              onPurchaseSuccess?.();
-              onClose();
-            },
+      setDialogConfig({
+        title: "Success!",
+        description: "Your subscription is now active. Enjoy unlimited access!",
+        primaryButton: {
+          text: "OK",
+          onPress: () => {
+            setDialogVisible(false);
+            onPurchaseSuccess?.();
+            onClose();
           },
-        ]
-      );
+        },
+        icon: "checkmark-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -78,24 +96,31 @@ export default function PaymentWallModal({
     const success = await restorePurchases();
 
     if (success) {
-      Alert.alert(
-        "Purchases Restored",
-        "Your previous purchases have been restored.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              onPurchaseSuccess?.();
-              onClose();
-            },
+      setDialogConfig({
+        title: "Purchases Restored",
+        description: "Your previous purchases have been restored.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => {
+            setDialogVisible(false);
+            onPurchaseSuccess?.();
+            onClose();
           },
-        ]
-      );
+        },
+        icon: "checkmark-circle",
+      });
+      setDialogVisible(true);
     } else {
-      Alert.alert(
-        "No Purchases Found",
-        "We couldn't find any previous purchases to restore."
-      );
+      setDialogConfig({
+        title: "No Purchases Found",
+        description: "We couldn't find any previous purchases to restore.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -234,6 +259,19 @@ export default function PaymentWallModal({
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </Modal>
   );
 }
