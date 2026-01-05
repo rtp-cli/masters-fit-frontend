@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   ScrollView,
 } from "react-native";
@@ -67,58 +66,75 @@ export default function SubscriptionDetailsModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className="flex-1 bg-white">
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerSpacer} />
-          <Text style={styles.headerTitle}>Subscription Details</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+          <View className="w-9" />
+          <Text className="text-lg font-semibold text-text-primary">
+            Subscription Details
+          </Text>
+          <TouchableOpacity
+            onPress={onClose}
+            className="w-9 h-9 items-center justify-center"
+          >
             <Ionicons name="close" size={28} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingTop: 24,
+            paddingBottom: 40,
+          }}
         >
           {/* Pro Badge */}
-          <View style={styles.badgeContainer}>
-            <View style={styles.proBadge}>
+          <View className="items-center mb-8">
+            <View className="flex-row items-center bg-primary/10 px-5 py-3 rounded-3xl gap-2">
               <Ionicons name="star" size={24} color="#FFD700" />
-              <Text style={styles.proBadgeText}>PRO</Text>
+              <Text className="text-lg font-bold text-primary tracking-wide">
+                PRO
+              </Text>
             </View>
           </View>
 
           {/* Subscription Info */}
-          <View style={styles.section}>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Plan</Text>
-              <Text style={styles.value}>
+          <View className="mb-8">
+            <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
+              <Text className="text-sm text-text-secondary">Plan</Text>
+              <Text className="text-sm font-semibold text-text-primary">
                 {getProductName(productIdentifier)}
               </Text>
             </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Status</Text>
-              <View style={styles.statusContainer}>
-                <View style={styles.activeDot} />
-                <Text style={styles.statusText}>Active</Text>
+            <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
+              <Text className="text-sm text-text-secondary">Status</Text>
+              <View className="flex-row items-center gap-1.5">
+                <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <Text className="text-sm font-semibold text-[#10B981]">
+                  Active
+                </Text>
               </View>
             </View>
 
             {expirationDate && (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
+              <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
+                <Text className="text-sm text-text-secondary">
                   {willRenew ? "Renews on" : "Expires on"}
                 </Text>
-                <Text style={styles.value}>{formatDate(expirationDate)}</Text>
+                <Text className="text-sm font-semibold text-text-primary">
+                  {formatDate(expirationDate)}
+                </Text>
               </View>
             )}
 
             {activeEntitlement.periodType && (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Billing Period</Text>
-                <Text style={styles.value}>
+              <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
+                <Text className="text-sm text-text-secondary">
+                  Billing Period
+                </Text>
+                <Text className="text-sm font-semibold text-text-primary">
                   {activeEntitlement.periodType === "NORMAL"
                     ? "Subscription"
                     : activeEntitlement.periodType.charAt(0).toUpperCase() +
@@ -129,47 +145,53 @@ export default function SubscriptionDetailsModal({
           </View>
 
           {/* Features */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Premium Benefits</Text>
-            <View style={styles.featuresList}>
-              <View style={styles.featureRow}>
+          <View className="mb-8">
+            <Text className="text-lg font-semibold text-text-primary mb-4">
+              Premium Benefits
+            </Text>
+            <View className="gap-3">
+              <View className="flex-row items-center gap-3">
                 <Ionicons
                   name="checkmark-circle"
                   size={20}
                   color={colors.brand.primary}
                 />
-                <Text style={styles.featureText}>
+                <Text className="text-sm text-text-secondary flex-1">
                   Unlimited workout regenerations
                 </Text>
               </View>
-              <View style={styles.featureRow}>
+              <View className="flex-row items-center gap-3">
                 <Ionicons
                   name="checkmark-circle"
                   size={20}
                   color={colors.brand.primary}
                 />
-                <Text style={styles.featureText}>Priority AI processing</Text>
+                <Text className="text-sm text-text-secondary flex-1">
+                  Priority AI processing
+                </Text>
               </View>
-              <View style={styles.featureRow}>
+              <View className="flex-row items-center gap-3">
                 <Ionicons
                   name="checkmark-circle"
                   size={20}
                   color={colors.brand.primary}
                 />
-                <Text style={styles.featureText}>Advanced analytics</Text>
+                <Text className="text-sm text-text-secondary flex-1">
+                  Advanced analytics
+                </Text>
               </View>
             </View>
           </View>
 
           {/* Footer Note */}
           {willRenew && (
-            <View style={styles.footerNote}>
+            <View className="flex-row items-start bg-neutral-light-1 p-3 rounded-lg gap-2 mt-2">
               <Ionicons
                 name="information-circle-outline"
                 size={16}
                 color={colors.text.muted}
               />
-              <Text style={styles.footerText}>
+              <Text className="text-xs text-text-muted flex-1 leading-[18px]">
                 Your subscription will automatically renew. You can manage or
                 cancel your subscription in your device settings.
               </Text>
@@ -180,130 +202,3 @@ export default function SubscriptionDetailsModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  headerSpacer: {
-    width: 36,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text.primary,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  badgeContainer: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  proBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: `${colors.brand.primary}15`,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    gap: 8,
-  },
-  proBadgeText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.brand.primary,
-    letterSpacing: 1,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  label: {
-    fontSize: 14,
-    color: colors.text.secondary,
-  },
-  value: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text.primary,
-  },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#10B981",
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#10B981",
-  },
-  featuresList: {
-    gap: 12,
-  },
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  featureText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  footerNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#F5F5F5",
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-    marginTop: 8,
-  },
-  footerText: {
-    fontSize: 12,
-    color: colors.text.muted,
-    flex: 1,
-    lineHeight: 18,
-  },
-});
