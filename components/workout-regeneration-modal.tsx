@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,6 +32,7 @@ import {
 } from "@lib/workouts";
 import { Profile as UserProfile } from "@/types/api";
 import { setPaywallCallback, PaywallError } from "@/lib/api";
+import { CustomDialog, DialogButton } from "./ui";
 
 import {
   GENDER,
@@ -134,6 +134,14 @@ export default function WorkoutRegenerationModal({
 
   // Track paywall errors to suppress generic alerts
   const paywallErrorOccurredRef = useRef(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Set up paywall callback
   useEffect(() => {
@@ -328,11 +336,17 @@ export default function WorkoutRegenerationModal({
             } else {
               // Only show alert if it's not a paywall error
               if (!paywallErrorOccurredRef.current) {
-                Alert.alert(
-                  "Daily Regeneration Failed",
-                  "Unable to start daily workout regeneration. Please check your connection and try again.",
-                  [{ text: "OK" }]
-                );
+                setDialogConfig({
+                  title: "Daily Regeneration Failed",
+                  description:
+                    "Unable to start daily workout regeneration. Please check your connection and try again.",
+                  primaryButton: {
+                    text: "OK",
+                    onPress: () => setDialogVisible(false),
+                  },
+                  icon: "alert-circle",
+                });
+                setDialogVisible(true);
               }
             }
           } catch (error) {
@@ -341,11 +355,17 @@ export default function WorkoutRegenerationModal({
               !paywallErrorOccurredRef.current &&
               !(error instanceof PaywallError)
             ) {
-              Alert.alert(
-                "Daily Regeneration Error",
-                "An error occurred while starting daily workout regeneration. Please try again.",
-                [{ text: "OK" }]
-              );
+              setDialogConfig({
+                title: "Daily Regeneration Error",
+                description:
+                  "An error occurred while starting daily workout regeneration. Please try again.",
+                primaryButton: {
+                  text: "OK",
+                  onPress: () => setDialogVisible(false),
+                },
+                icon: "alert-circle",
+              });
+              setDialogVisible(true);
             }
           }
         }
@@ -441,11 +461,17 @@ export default function WorkoutRegenerationModal({
               // Success callback
               onSuccess?.();
             } else {
-              Alert.alert(
-                "Rest Day Workout Failed",
-                "Unable to start rest day workout generation. Please check your connection and try again.",
-                [{ text: "OK" }]
-              );
+              setDialogConfig({
+                title: "Rest Day Workout Failed",
+                description:
+                  "Unable to start rest day workout generation. Please check your connection and try again.",
+                primaryButton: {
+                  text: "OK",
+                  onPress: () => setDialogVisible(false),
+                },
+                icon: "alert-circle",
+              });
+              setDialogVisible(true);
             }
           } else if (selectedPlanDay) {
             // Regular daily regeneration
@@ -470,11 +496,17 @@ export default function WorkoutRegenerationModal({
             } else {
               // Only show alert if it's not a paywall error
               if (!paywallErrorOccurredRef.current) {
-                Alert.alert(
-                  "Daily Regeneration Failed",
-                  "Unable to start daily workout regeneration. Please check your connection and try again.",
-                  [{ text: "OK" }]
-                );
+                setDialogConfig({
+                  title: "Daily Regeneration Failed",
+                  description:
+                    "Unable to start daily workout regeneration. Please check your connection and try again.",
+                  primaryButton: {
+                    text: "OK",
+                    onPress: () => setDialogVisible(false),
+                  },
+                  icon: "alert-circle",
+                });
+                setDialogVisible(true);
               }
             }
           }
@@ -486,11 +518,17 @@ export default function WorkoutRegenerationModal({
         !paywallErrorOccurredRef.current &&
         !(error instanceof PaywallError)
       ) {
-        Alert.alert(
-          "Regeneration Error",
-          "An error occurred while starting regeneration. Please try again.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Regeneration Error",
+          description:
+            "An error occurred while starting regeneration. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     }
   };
@@ -1126,6 +1164,19 @@ export default function WorkoutRegenerationModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </Modal>
   );
 }
