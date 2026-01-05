@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@/components/onboarding-form";
+import { CustomDialog, DialogButton } from "@/components/ui";
 import { colors } from "../lib/theme";
 import {
   FITNESS_GOALS,
@@ -37,6 +32,14 @@ export default function ProfileEditScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Load user profile data
   useEffect(() => {
@@ -47,7 +50,16 @@ export default function ProfileEditScreen() {
         setProfile(profileData);
       } catch (error) {
         console.error("Error loading profile:", error);
-        Alert.alert("Error", "Failed to load your profile data");
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to load your profile data",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       } finally {
         setLoading(false);
       }
@@ -238,39 +250,57 @@ export default function ProfileEditScreen() {
       if (updatedProfile) {
         // Refresh profile data after successful update
         await refreshProfile();
-        Alert.alert("Success", "Your profile has been updated successfully!", [
-          {
+        setDialogConfig({
+          title: "Success",
+          description: "Your profile has been updated successfully!",
+          primaryButton: {
             text: "OK",
-            onPress: () => router.back(),
+            onPress: () => {
+              setDialogVisible(false);
+              router.back();
+            },
           },
-        ]);
+          icon: "checkmark-circle",
+        });
+        setDialogVisible(true);
       } else {
         throw new Error("Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update your profile. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to update your profile. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      "Discard Changes?",
-      "Are you sure you want to discard your changes?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    setDialogConfig({
+      title: "Discard Changes?",
+      description: "Are you sure you want to discard your changes?",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Discard",
+        onPress: () => {
+          setDialogVisible(false);
+          router.back();
         },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => router.back(),
-        },
-      ]
-    );
+      },
+      icon: "warning",
+    });
+    setDialogVisible(true);
   };
 
   if (loading) {
@@ -319,6 +349,19 @@ export default function ProfileEditScreen() {
         submitButtonText="Save Changes"
         showNavigation={true}
       />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </SafeAreaView>
   );
 }
