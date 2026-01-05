@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -19,6 +18,8 @@ import { formatDate, formatDateAsString } from "@utils/index";
 import type { PreviousWorkout } from "@/types/api/workout.types";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "expo-router";
+import { CustomDialog } from "@/components/ui";
+import type { DialogButton } from "@/components/ui";
 
 interface WorkoutRepeatModalProps {
   visible: boolean;
@@ -44,6 +45,14 @@ export default function WorkoutRepeatModal({
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const { setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
   const router = useRouter();
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -59,7 +68,16 @@ export default function WorkoutRepeatModal({
       setLoading(true);
       const user = await getCurrentUser();
       if (!user) {
-        Alert.alert("Error", "User not found. Please log in again.");
+        setDialogConfig({
+          title: "Error",
+          description: "User not found. Please log in again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
         return;
       }
 
@@ -67,10 +85,16 @@ export default function WorkoutRepeatModal({
       setPreviousWorkouts(workouts || []);
     } catch (error) {
       console.error("Error loading previous workouts:", error);
-      Alert.alert(
-        "Error",
-        "Failed to load previous workouts. Please try again."
-      );
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to load previous workouts. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setLoading(false);
     }
@@ -87,7 +111,16 @@ export default function WorkoutRepeatModal({
       const user = await getCurrentUser();
       if (!user) {
         setIsGeneratingWorkout(false);
-        Alert.alert("Error", "User not found. Please log in again.");
+        setDialogConfig({
+          title: "Error",
+          description: "User not found. Please log in again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
         return;
       }
 
@@ -113,10 +146,17 @@ export default function WorkoutRepeatModal({
     } catch (error) {
       console.error("Error repeating workout:", error);
       setIsGeneratingWorkout(false);
-      Alert.alert(
-        "Error",
-        "Failed to repeat the workout. Please try again or generate a new workout."
-      );
+      setDialogConfig({
+        title: "Error",
+        description:
+          "Failed to repeat the workout. Please try again or generate a new workout.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setRepeating(false);
     }
@@ -554,6 +594,19 @@ export default function WorkoutRepeatModal({
           </View>
         )}
       </View>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </Modal>
   );
 }
