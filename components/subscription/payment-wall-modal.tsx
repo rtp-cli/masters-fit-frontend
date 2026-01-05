@@ -6,7 +6,6 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
-  StyleSheet,
   SafeAreaView,
   Alert,
 } from "react-native";
@@ -107,14 +106,12 @@ export default function PaymentWallModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className="flex-1 bg-white">
         {/* Header with Close Button */}
-        <View style={styles.header}>
-          <View style={styles.headerSpacer} />
-          <Text style={styles.headerTitle}>Subscription</Text>
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            className="w-9 h-9 items-center justify-center"
             disabled={isPurchasing}
           >
             <Ionicons name="close" size={28} color={colors.text.primary} />
@@ -122,13 +119,17 @@ export default function PaymentWallModal({
         </View>
 
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingTop: 24,
+            paddingBottom: 40,
+          }}
           showsVerticalScrollIndicator={true}
           bounces={true}
         >
           {/* Icon */}
-          <View style={styles.iconContainer}>
+          <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center self-center mb-4">
             <Ionicons
               name="lock-closed"
               size={32}
@@ -137,37 +138,47 @@ export default function PaymentWallModal({
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Unlock Premium</Text>
+          <Text className="text-2xl font-bold text-text-primary text-center mb-3">
+            Unlock Premium
+          </Text>
 
           {/* Message */}
-          <Text style={styles.message}>{paywallData.message}</Text>
+          <Text className="text-base text-text-secondary text-center leading-6 mb-4">
+            {paywallData.message}
+          </Text>
 
           {/* Subscription Plans */}
-          <View style={styles.plansContainer}>
+          <View className="mb-4">
             {isLoading ? (
-              <View style={styles.loadingContainer}>
+              <View className="py-8 items-center">
                 <ActivityIndicator size="large" color={colors.brand.primary} />
-                <Text style={styles.loadingText}>Loading plans...</Text>
+                <Text className="mt-4 text-sm text-text-secondary">
+                  Loading plans...
+                </Text>
               </View>
             ) : error ? (
-              <View style={styles.errorContainer}>
+              <View className="py-8 items-center">
                 <Ionicons
                   name="alert-circle"
                   size={48}
                   color={colors.brand.secondary}
                   style={{ marginBottom: 12 }}
                 />
-                <Text style={styles.errorText}>{error}</Text>
+                <Text className="text-sm text-text-secondary text-center mb-4">
+                  {error}
+                </Text>
                 <TouchableOpacity
                   onPress={() => refetch()}
-                  style={styles.retryButton}
+                  className="bg-primary rounded-xl py-3 px-6"
                 >
-                  <Text style={styles.retryButtonText}>Retry</Text>
+                  <Text className="text-white font-semibold text-sm">
+                    Retry
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : packages.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
+              <View className="py-8">
+                <Text className="text-sm text-text-secondary text-center">
                   No subscription plans available at this time.
                 </Text>
               </View>
@@ -183,11 +194,9 @@ export default function PaymentWallModal({
           {/* Subscribe Button */}
           {packages.length > 0 && (
             <TouchableOpacity
-              style={[
-                styles.subscribeButton,
-                (!selectedPackage || isPurchasing) &&
-                  styles.subscribeButtonDisabled,
-              ]}
+              className={`bg-primary rounded-2xl py-[18px] items-center justify-center mb-3 ${
+                !selectedPackage || isPurchasing ? "opacity-60" : ""
+              }`}
               onPress={handlePurchase}
               disabled={!selectedPackage || isPurchasing}
               activeOpacity={0.8}
@@ -195,7 +204,7 @@ export default function PaymentWallModal({
               {isPurchasing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.subscribeButtonText}>
+                <Text className="text-white text-lg font-bold">
                   {selectedPackage
                     ? `Subscribe for ${selectedPackage.product.priceString}`
                     : "Select a Plan"}
@@ -206,16 +215,18 @@ export default function PaymentWallModal({
 
           {/* Restore Purchases */}
           <TouchableOpacity
-            style={styles.restoreButton}
+            className="py-3 items-center mb-4"
             onPress={handleRestore}
             disabled={isPurchasing}
           >
-            <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+            <Text className="text-primary text-sm font-semibold">
+              Restore Purchases
+            </Text>
           </TouchableOpacity>
 
           {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
+          <View className="border-t border-neutral-light-2 pt-4">
+            <Text className="text-xs text-text-muted text-center leading-[18px]">
               You can continue using your existing workout plans without a
               subscription. Subscription automatically renews unless canceled at
               least 24 hours before the end of the current period.
@@ -226,143 +237,3 @@ export default function PaymentWallModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  headerSpacer: {
-    width: 36,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text.primary,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: `${colors.brand.primary}15`,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text.primary,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  message: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 16,
-  },
-  plansContainer: {
-    marginBottom: 16,
-  },
-  loadingContainer: {
-    paddingVertical: 32,
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: colors.text.secondary,
-  },
-  errorContainer: {
-    paddingVertical: 32,
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: colors.brand.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  retryButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  emptyContainer: {
-    paddingVertical: 32,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: "center",
-  },
-  subscribeButton: {
-    backgroundColor: colors.brand.primary,
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  subscribeButtonDisabled: {
-    backgroundColor: colors.brand.primary + "60",
-  },
-  subscribeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  restoreButton: {
-    paddingVertical: 12,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  restoreButtonText: {
-    color: colors.brand.primary,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    paddingTop: 16,
-  },
-  footerText: {
-    fontSize: 12,
-    color: colors.text.muted,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-});
