@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { TouchableOpacity, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/lib/theme";
@@ -16,7 +16,20 @@ export function FloatingNetworkLoggerButton() {
 
   return (
     <TouchableOpacity
-      style={styles.fab}
+      className="absolute right-6 bottom-[152px] w-14 h-14 rounded-full bg-primary items-center justify-center z-[9999]"
+      style={{
+        ...Platform.select({
+          ios: {
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4.65,
+          },
+          android: {
+            elevation: 8,
+          },
+        }),
+      }}
       onPress={() => router.push("/network-logger")}
       activeOpacity={0.8}
     >
@@ -24,34 +37,3 @@ export function FloatingNetworkLoggerButton() {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  fab: {
-    position: "absolute",
-    right: 24,
-    bottom: 152,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.brand.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    zIndex: 9999,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0.3,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-});
