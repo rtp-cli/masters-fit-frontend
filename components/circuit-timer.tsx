@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -9,6 +9,7 @@ import {
   CircuitTimerState,
 } from "@/types/api/circuit.types";
 import { getCircuitTimerConfig } from "@/utils/circuit-utils";
+import { CustomDialog } from "@/components/ui";
 
 export default function CircuitTimer({
   blockType,
@@ -22,6 +23,7 @@ export default function CircuitTimer({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedMinuteRef = useRef<number>(0);
   const timerConfig = getCircuitTimerConfig(blockType);
+  const [resetDialogVisible, setResetDialogVisible] = useState(false);
 
   // Calculate display time based on timer type
   const getDisplayTime = () => {
@@ -406,32 +408,23 @@ export default function CircuitTimer({
 
   const handleReset = () => {
     if (disabled) return;
+    setResetDialogVisible(true);
+  };
 
-    Alert.alert(
-      "Reset Timer",
-      "Are you sure you want to reset the timer? This will clear your current progress.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: () => {
-            const newState: CircuitTimerState = {
-              currentTime: 0,
-              isActive: false,
-              isPaused: false,
-              startTime: undefined,
-              pausedAt: undefined,
-              totalPausedTime: 0,
-              currentInterval: undefined,
-              isWorkPhase: undefined,
-            };
-            onTimerUpdate(newState);
-            onTimerEvent?.("reset");
-          },
-        },
-      ]
-    );
+  const confirmReset = () => {
+    const newState: CircuitTimerState = {
+      currentTime: 0,
+      isActive: false,
+      isPaused: false,
+      startTime: undefined,
+      pausedAt: undefined,
+      totalPausedTime: 0,
+      currentInterval: undefined,
+      isWorkPhase: undefined,
+    };
+    onTimerUpdate(newState);
+    onTimerEvent?.("reset");
+    setResetDialogVisible(false);
   };
 
   const displayTime = getDisplayTime();
@@ -623,6 +616,23 @@ export default function CircuitTimer({
           </Text>
         </TouchableOpacity>
       )}
+
+      {/* Reset Confirmation Dialog */}
+      <CustomDialog
+        visible={resetDialogVisible}
+        onClose={() => setResetDialogVisible(false)}
+        title="Reset Timer"
+        description="Are you sure you want to reset the timer? This will clear your current progress."
+        secondaryButton={{
+          text: "Cancel",
+          onPress: () => setResetDialogVisible(false),
+        }}
+        primaryButton={{
+          text: "Reset",
+          onPress: confirmReset,
+        }}
+        icon="warning"
+      />
     </View>
   );
 }
