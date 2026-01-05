@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   ScrollView,
   Modal,
@@ -26,6 +25,7 @@ import {
   ProviderAvailabilityResponse,
 } from "@/types/ai-provider.types";
 import { logger } from "@/lib/logger";
+import { CustomDialog, DialogButton } from "@/components/ui";
 
 export default function AIProviderSelectionPage() {
   const { user } = useAuth();
@@ -60,6 +60,14 @@ export default function AIProviderSelectionPage() {
     model: string;
     providerInfo: any;
     modelInfo: any;
+  } | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
 
   // Load data on mount
@@ -166,15 +174,27 @@ export default function AIProviderSelectionPage() {
     setPendingSwitch(null);
 
     if (success) {
-      Alert.alert(
-        "Success",
-        `Successfully switched to ${providerInfo.displayName} - ${modelInfo?.displayName}`,
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Success",
+        description: `Successfully switched to ${providerInfo.displayName} - ${modelInfo?.displayName}`,
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "checkmark-circle",
+      });
+      setDialogVisible(true);
     } else {
-      Alert.alert("Error", "Failed to switch AI provider. Please try again.", [
-        { text: "OK" },
-      ]);
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to switch AI provider. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -522,6 +542,19 @@ export default function AIProviderSelectionPage() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </SafeAreaView>
   );
 }
