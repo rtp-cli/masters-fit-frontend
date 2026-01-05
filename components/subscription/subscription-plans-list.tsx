@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PurchasesPackage, PACKAGE_TYPE } from "react-native-purchases";
 import { colors } from "@/lib/theme";
@@ -85,28 +85,30 @@ export default function SubscriptionPlansList({
       <TouchableOpacity
         key={pkg.identifier}
         onPress={() => onPackageSelect(pkg)}
-        style={[
-          styles.planCard,
-          isSelected && styles.planCardSelected,
-          isPopular && styles.planCardPopular,
-        ]}
+        className={`bg-background rounded-2xl p-5 border-2 relative ${
+          isSelected
+            ? "border-primary bg-primary/10"
+            : isPopular
+              ? "border-primary"
+              : "border-neutral-light-2"
+        }`}
         activeOpacity={0.7}
       >
         {isPopular && (
-          <View style={styles.popularBadge}>
-            <Text style={styles.popularBadgeText}>
+          <View className="absolute -top-2.5 right-5 bg-primary px-3 py-1 rounded-xl z-10">
+            <Text className="text-white text-xs font-bold">
               Save {savingsInfo?.savingsPercent}%
             </Text>
           </View>
         )}
 
-        <View style={styles.planHeader}>
-          <View style={styles.planHeaderLeft}>
-            <Text style={styles.planName}>
+        <View className="flex-row justify-between items-start mb-3">
+          <View className="flex-1">
+            <Text className="text-xl font-bold text-text-primary mb-1">
               {pkg.product.title || pkg.identifier}
             </Text>
             {pkg.product.description && (
-              <Text style={styles.planDescription}>
+              <Text className="text-sm text-text-secondary leading-5">
                 {pkg.product.description}
               </Text>
             )}
@@ -120,45 +122,52 @@ export default function SubscriptionPlansList({
           )}
         </View>
 
-        <View style={styles.planPriceContainer}>
-          <Text style={styles.planPrice}>
+        <View className="mb-4">
+          <Text className="text-[32px] font-bold text-text-primary mb-1">
             {pkg.product.priceString}
-            <Text style={styles.planPeriod}> {getPeriodDescription(pkg)}</Text>
+            <Text className="text-base font-normal text-text-secondary">
+              {" "}
+              {getPeriodDescription(pkg)}
+            </Text>
           </Text>
           {isAnnual && savingsInfo && savingsInfo.savings > 0 && (
-            <Text style={styles.planSavings}>
+            <Text className="text-sm text-primary font-semibold">
               Save {pkg.product.currencyCode} {savingsInfo.savings.toFixed(2)}
               /year
             </Text>
           )}
         </View>
 
-        <View style={styles.planFeatures}>
-          <View style={styles.featureRow}>
+        <View className="gap-2">
+          <View className="flex-row items-center gap-2">
             <Ionicons
               name="checkmark-circle"
               size={16}
               color={colors.brand.primary}
             />
-            <Text style={styles.featureText}>
+            <Text className="text-sm text-text-secondary flex-1">
               Unlimited workout regenerations
             </Text>
           </View>
-          <View style={styles.featureRow}>
+          <View className="flex-row items-center gap-2">
             <Ionicons
               name="checkmark-circle"
               size={16}
               color={colors.brand.primary}
             />
-            <Text style={styles.featureText}>Priority AI processing</Text>
+            <Text className="text-sm text-text-secondary flex-1">
+              Priority AI processing
+            </Text>
           </View>
-          <View style={styles.featureRow}>
+          <View className="flex-row items-center gap-2">
             <Ionicons
               name="checkmark-circle"
               size={16}
               color={colors.brand.primary}
             />
-            <Text style={styles.featureText}>Advanced analytics</Text>
+            <Text className="text-sm text-text-secondary flex-1">
+              Advanced analytics
+            </Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -166,118 +175,27 @@ export default function SubscriptionPlansList({
   };
 
   return (
-    <View style={styles.container}>
+    <View className="gap-3">
       {/* Annual packages first (usually better value) */}
       {annualPackages.length > 0 && (
-        <View style={styles.planSection}>
+        <View className="gap-3">
           {annualPackages.map((pkg) => renderPackage(pkg, true))}
         </View>
       )}
 
       {/* Monthly packages */}
       {monthlyPackages.length > 0 && (
-        <View style={styles.planSection}>
+        <View className="gap-3">
           {monthlyPackages.map((pkg) => renderPackage(pkg, false))}
         </View>
       )}
 
       {/* Other packages (weekly, lifetime, etc.) */}
       {otherPackages.length > 0 && (
-        <View style={styles.planSection}>
+        <View className="gap-3">
           {otherPackages.map((pkg) => renderPackage(pkg, false))}
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  planSection: {
-    gap: 12,
-  },
-  planCard: {
-    backgroundColor: colors.background,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: colors.neutral.medium[1],
-    position: "relative",
-  },
-  planCardSelected: {
-    borderColor: colors.brand.primary,
-    backgroundColor: colors.brand.primary + "10",
-  },
-  planCardPopular: {
-    borderColor: colors.brand.primary,
-  },
-  popularBadge: {
-    position: "absolute",
-    top: -10,
-    right: 20,
-    backgroundColor: colors.brand.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 1,
-  },
-  popularBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  planHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  planHeaderLeft: {
-    flex: 1,
-  },
-  planName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text.primary,
-    marginBottom: 4,
-  },
-  planDescription: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 20,
-  },
-  planPriceContainer: {
-    marginBottom: 16,
-  },
-  planPrice: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: colors.text.primary,
-    marginBottom: 4,
-  },
-  planPeriod: {
-    fontSize: 16,
-    fontWeight: "400",
-    color: colors.text.secondary,
-  },
-  planSavings: {
-    fontSize: 14,
-    color: colors.brand.primary,
-    fontWeight: "600",
-  },
-  planFeatures: {
-    gap: 8,
-  },
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  featureText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    flex: 1,
-  },
-});
