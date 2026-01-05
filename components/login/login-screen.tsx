@@ -5,14 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/auth-context";
 import { colors } from "../../lib/theme";
+import { CustomDialog, DialogButton } from "../../components/ui";
 
 export const LoginScreen = () => {
   const router = useRouter();
@@ -23,10 +24,27 @@ export const LoginScreen = () => {
   const [showNameField, setShowNameField] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   const handleContinue = async () => {
     if (!email.trim()) {
-      Alert.alert("Error", "Please enter your email address");
+      setDialogConfig({
+        title: "Error",
+        description: "Please enter your email address",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
       return;
     }
     setIsLoading(true);
@@ -53,13 +71,40 @@ export const LoginScreen = () => {
             )}`
           );
         } else {
-          Alert.alert("Error", "Failed to login. Please try again.");
+          setDialogConfig({
+            title: "Error",
+            description: "Failed to login. Please try again.",
+            primaryButton: {
+              text: "OK",
+              onPress: () => setDialogVisible(false),
+            },
+            icon: "alert-circle",
+          });
+          setDialogVisible(true);
         }
       } else {
-        Alert.alert("Error", "Something went wrong. Please try again.");
+        setDialogConfig({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to process your request. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to process your request. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +112,16 @@ export const LoginScreen = () => {
 
   const handleSignup = async () => {
     if (!name.trim()) {
-      Alert.alert("Error", "Please enter your name");
+      setDialogConfig({
+        title: "Error",
+        description: "Please enter your name",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
@@ -86,10 +140,28 @@ export const LoginScreen = () => {
           )}`
         );
       } else {
-        Alert.alert("Error", "Failed to sign up. Please try again.");
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to sign up. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to sign up. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to sign up. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setIsLoading(false);
     }
@@ -181,6 +253,19 @@ export const LoginScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </SafeAreaView>
   );
 };
