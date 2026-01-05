@@ -7,10 +7,21 @@ import AgreementCheckbox from "@/components/waiver/agreement-checkbox";
 import DocumentLinks from "@/components/waiver/document-links";
 import BottomActions from "@/components/waiver/bottom-actions";
 import { useWaiverController } from "@/components/waiver/use-waiver-controller";
+import { CustomDialog } from "@/components/ui";
 
 export default function WaiverScreen() {
-  const { isAgreed, isLoading, isUpdate, toggleAgree, viewDocument, handleCancel, handleAgree } =
-    useWaiverController();
+  const {
+    isAgreed,
+    isLoading,
+    isUpdate,
+    toggleAgree,
+    viewDocument,
+    handleCancel,
+    handleAgree,
+    dialogVisible,
+    dialogConfig,
+    setDialogVisible,
+  } = useWaiverController();
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -32,6 +43,19 @@ export default function WaiverScreen() {
         onCancel={handleCancel}
         onContinue={handleAgree}
       />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </SafeAreaView>
   );
 }
