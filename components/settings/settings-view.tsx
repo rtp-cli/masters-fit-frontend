@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
@@ -25,6 +24,7 @@ import { useSecretActivation } from "@/hooks/use-secret-activation";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import * as Haptics from "expo-haptics";
 import { connectHealth, getHealthConnection } from "@/utils/health";
+import { CustomDialog, DialogButton } from "../ui";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -81,6 +81,16 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     visible: false,
     icon: "information-circle-outline",
   });
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Use profile data from the centralized store
   const profile = profileData;
@@ -158,11 +168,17 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await activateDebugMode();
       setDebugTapCount(0);
-      Alert.alert(
-        "🧪 Debug Mode Activated",
-        "Developer tools are now available. You can access network logger and test features.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "🧪 Debug Mode Activated",
+        description:
+          "Developer tools are now available. You can access network logger and test features.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "checkmark-circle",
+      });
+      setDialogVisible(true);
     } else if (newTapCount >= 7) {
       // Getting close, provide stronger feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -177,23 +193,26 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
   // Deactivate debug mode handler
   const handleDeactivateDebugMode = async () => {
-    Alert.alert(
-      "Deactivate Debug Mode",
-      "Are you sure you want to turn off developer tools?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Deactivate",
-          style: "destructive",
-          onPress: async () => {
-            await deactivateDebugMode();
-            await Haptics.notificationAsync(
-              Haptics.NotificationFeedbackType.Success
-            );
-          },
+    setDialogConfig({
+      title: "Deactivate Debug Mode",
+      description: "Are you sure you want to turn off developer tools?",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Deactivate",
+        onPress: async () => {
+          setDialogVisible(false);
+          await deactivateDebugMode();
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success
+          );
         },
-      ]
-    );
+      },
+      icon: "warning",
+    });
+    setDialogVisible(true);
   };
 
   useEffect(() => {
@@ -290,25 +309,24 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
   // Handle logout
   const handleLogout = async () => {
-    Alert.alert(
-      "Confirm Logout",
-      "Are you sure you want to log out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    setDialogConfig({
+      title: "Confirm Logout",
+      description: "Are you sure you want to log out?",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Logout",
+        onPress: async () => {
+          setDialogVisible(false);
+          await logout();
+          router.replace("/");
         },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            await logout();
-            router.replace("/");
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+      },
+      icon: "log-out-outline",
+    });
+    setDialogVisible(true);
   };
 
   // Format available days for display
@@ -1149,8 +1167,19 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             "Testing RevenueCat integration. Select a plan to test the purchase flow.",
         }}
         onPurchaseSuccess={() => {
-          Alert.alert("Success", "Purchase completed successfully!");
-          setShowPaywallTest(false);
+          setDialogConfig({
+            title: "Success",
+            description: "Purchase completed successfully!",
+            primaryButton: {
+              text: "OK",
+              onPress: () => {
+                setDialogVisible(false);
+                setShowPaywallTest(false);
+              },
+            },
+            icon: "checkmark-circle",
+          });
+          setDialogVisible(true);
         }}
       />
 
@@ -1159,6 +1188,19 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         visible={showSubscriptionDetails}
         onClose={() => setShowSubscriptionDetails(false)}
       />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }
