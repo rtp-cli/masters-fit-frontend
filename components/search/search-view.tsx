@@ -5,7 +5,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   Platform,
   Modal,
 } from "react-native";
@@ -32,6 +31,8 @@ import { updateExerciseLink } from "@lib/exercises";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 
 import { colors } from "@/lib/theme";
+import { CustomDialog } from "@/components/ui";
+import type { DialogButton } from "@/components/ui";
 
 type SearchType = "date" | "exercise" | "general";
 
@@ -73,6 +74,16 @@ export default function SearchView() {
     id: number;
     name: string;
     link?: string;
+  } | null>(null);
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
 
   // Scroll to top when tab is focused
@@ -143,7 +154,16 @@ export default function SearchView() {
       }
     } catch (error) {
       console.error("Date search error:", error);
-      Alert.alert("Error", "Failed to search by date. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to search by date. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       // Loading state is handled by useAppData
     }
@@ -183,7 +203,16 @@ export default function SearchView() {
       }
     } catch (error) {
       console.error("Exercise search error:", error);
-      Alert.alert("Error", "Failed to search exercises. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to search exercises. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       // Loading state is handled by useAppData
     }
@@ -223,10 +252,16 @@ export default function SearchView() {
       }
     } catch (error) {
       console.error("Exercise search error:", error);
-      Alert.alert(
-        "Error",
-        "Failed to load exercise details. Please try again."
-      );
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to load exercise details. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       // Loading state is handled by useAppData
     }
@@ -293,13 +328,40 @@ export default function SearchView() {
           )
         );
 
-        Alert.alert("Success", "Exercise link updated successfully");
+        setDialogConfig({
+          title: "Success",
+          description: "Exercise link updated successfully",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "checkmark-circle",
+        });
+        setDialogVisible(true);
       } else {
-        Alert.alert("Error", result.error || "Failed to update exercise link");
+        setDialogConfig({
+          title: "Error",
+          description: result.error || "Failed to update exercise link",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
       console.error("Error updating exercise link:", error);
-      Alert.alert("Error", "Failed to update exercise link");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to update exercise link",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -1115,16 +1177,16 @@ export default function SearchView() {
                                           exercise?.completed === true
                                             ? "bg-brand-primary"
                                             : exercise?.completed === false
-                                            ? "bg-red-700"
-                                            : "bg-yellow-700"
+                                              ? "bg-red-700"
+                                              : "bg-yellow-700"
                                         }`}
                                       >
                                         <Text className="text-xs font-semibold text-white">
                                           {exercise?.completed === true
                                             ? "Done"
                                             : exercise?.completed === false
-                                            ? "Not Done"
-                                            : "Pending"}
+                                              ? "Not Done"
+                                              : "Pending"}
                                         </Text>
                                       </View>
                                       <Ionicons
@@ -1268,16 +1330,16 @@ export default function SearchView() {
                                     exercise?.completed === true
                                       ? "bg-brand-primary"
                                       : exercise?.completed === false
-                                      ? "bg-red-700"
-                                      : "bg-yellow-700"
+                                        ? "bg-red-700"
+                                        : "bg-yellow-700"
                                   }`}
                                 >
                                   <Text className="text-xs font-semibold text-white">
                                     {exercise?.completed === true
                                       ? "Done"
                                       : exercise?.completed === false
-                                      ? "Not Done"
-                                      : "Pending"}
+                                        ? "Not Done"
+                                        : "Pending"}
                                   </Text>
                                 </View>
                                 <Ionicons
@@ -1534,6 +1596,19 @@ export default function SearchView() {
         onClose={handleCloseLinkModal}
         onSave={handleSaveExerciseLink}
       />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }

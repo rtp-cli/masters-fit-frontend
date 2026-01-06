@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -12,35 +12,18 @@ export default function NetworkLoggerScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <StatusBar style="dark" backgroundColor={colors.background} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.brand.secondary} />
+      <View className="flex-row items-center px-4 py-3 border-b border-neutral-medium-1">
+        <TouchableOpacity onPress={() => router.back()} className="p-2">
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={colors.brand.secondary}
+          />
         </TouchableOpacity>
       </View>
       <NetworkLogger theme="light" />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral.medium[1],
-  },
-  backButton: {
-    padding: 8,
-  },
-});

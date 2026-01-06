@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   ActivityIndicator,
   TextInput,
@@ -71,6 +70,8 @@ import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import { AppState } from "react-native";
+import { CustomDialog } from "@/components/ui";
+import type { DialogButton } from "@/components/ui";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -98,11 +99,13 @@ function CircuitLoggingInterface({
   workout,
   isWorkoutStarted,
   circuitSession,
+  onError,
 }: {
   block: WorkoutBlockWithExercises;
   workout: PlanDayWithBlocks;
   isWorkoutStarted: boolean;
   circuitSession: ReturnType<typeof useCircuitSession> | null;
+  onError: (title: string, description: string) => void;
 }) {
   if (!circuitSession) {
     return null; // Don't render if no circuit session
@@ -123,7 +126,7 @@ function CircuitLoggingInterface({
     try {
       await logCircuitRound(workout.workoutId, block.id, roundData);
     } catch (error) {
-      Alert.alert("Error", "Failed to log round. Please try again.");
+      onError("Error", "Failed to log round. Please try again.");
     }
   };
 
@@ -133,7 +136,7 @@ function CircuitLoggingInterface({
       await logCircuitSession(workout.workoutId, sessionData);
     } catch (error) {
       console.error("Error completing circuit:", error);
-      Alert.alert("Error", "Failed to complete circuit. Please try again.");
+      onError("Error", "Failed to complete circuit. Please try again.");
     }
   };
 
@@ -232,6 +235,30 @@ export default function WorkoutScreen() {
 
   // New modal states for repeat workout
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
+
+  // Helper function to show error dialog
+  const showErrorDialog = useCallback((title: string, description: string) => {
+    setDialogConfig({
+      title,
+      description,
+      primaryButton: {
+        text: "OK",
+        onPress: () => setDialogVisible(false),
+      },
+      icon: "alert-circle",
+    });
+    setDialogVisible(true);
+  }, []);
 
   // Rest timer state
   const [isRestTimerActive, setIsRestTimerActive] = useState(false);
@@ -727,11 +754,17 @@ export default function WorkoutScreen() {
 
     // Simple prevention using the isGenerating flag
     if (isGenerating) {
-      Alert.alert(
-        "Generation in Progress",
-        "A workout is already being generated. Please wait for it to complete.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation in Progress",
+        description:
+          "A workout is already being generated. Please wait for it to complete.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "information-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
@@ -751,18 +784,30 @@ export default function WorkoutScreen() {
         router.replace("/");
       } else {
         // Only show error alerts for actual failures
-        Alert.alert(
-          "Generation Failed",
-          "Unable to start workout generation. Please check your connection and try again.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Generation Failed",
+          description:
+            "Unable to start workout generation. Please check your connection and try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert(
-        "Generation Error",
-        "An error occurred while starting workout generation. Please try again.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation Error",
+        description:
+          "An error occurred while starting workout generation. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -1176,11 +1221,17 @@ export default function WorkoutScreen() {
         (!currentExercise.reps || currentExercise.reps === 0);
 
       if (!hasSets && !hasDuration && !isDurationBasedExercise) {
-        Alert.alert(
-          "No Progress Logged",
-          "Please log your exercise progress before completing this exercise.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "No Progress Logged",
+          description:
+            "Please log your exercise progress before completing this exercise.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
         return;
       }
 
@@ -1255,11 +1306,16 @@ export default function WorkoutScreen() {
         setIsWorkoutCompleted(true);
         setWorkoutInProgress(false); // Notify context that workout ended
 
-        Alert.alert(
-          "Workout Complete!",
-          "Congratulations! You've completed today's workout.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Workout Complete!",
+          description: "Congratulations! You've completed today's workout.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "checkmark-circle",
+        });
+        setDialogVisible(true);
       }
 
       setShowCompleteModal(false);
@@ -1270,12 +1326,18 @@ export default function WorkoutScreen() {
           : "Error completing exercise:",
         err
       );
-      Alert.alert(
-        "Error",
-        isCurrentBlockCircuit
+      setDialogConfig({
+        title: "Error",
+        description: isCurrentBlockCircuit
           ? "Failed to complete circuit. Please try again."
-          : "Failed to complete exercise. Please try again."
-      );
+          : "Failed to complete exercise. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setIsCompletingExercise(false);
     }
@@ -1345,16 +1407,32 @@ export default function WorkoutScreen() {
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
           setWorkoutInProgress(false);
-          Alert.alert("Workout Complete!", "You've finished today's workout.", [
-            { text: "OK" },
-          ]);
+          setDialogConfig({
+            title: "Workout Complete!",
+            description: "You've finished today's workout.",
+            primaryButton: {
+              text: "OK",
+              onPress: () => setDialogVisible(false),
+            },
+            icon: "checkmark-circle",
+          });
+          setDialogVisible(true);
         }
       }
 
       setShowSkipModal(false);
     } catch (err) {
       console.error("Error skipping exercise:", err);
-      Alert.alert("Error", "Failed to skip exercise. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to skip exercise. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setIsSkippingExercise(false);
     }
@@ -1920,6 +1998,7 @@ export default function WorkoutScreen() {
                 workout={workout}
                 isWorkoutStarted={isWorkoutStarted}
                 circuitSession={circuitSession}
+                onError={showErrorDialog}
               />
             </View>
           ) : null}
@@ -2286,6 +2365,19 @@ export default function WorkoutScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }

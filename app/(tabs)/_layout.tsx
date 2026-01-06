@@ -1,11 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  View,
-  TouchableOpacity,
-  Alert,
-  GestureResponderEvent,
-} from "react-native";
+import React, { useState, useRef } from "react";
+import { View, TouchableOpacity, GestureResponderEvent } from "react-native";
 import { useNavigation, NavigationState } from "@react-navigation/native";
 import {
   SafeAreaView,
@@ -16,6 +12,7 @@ import { colors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";
 import { tabEvents } from "@/lib/tab-events";
 import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { CustomDialog } from "@/components/ui";
 
 function TabBarIcon({
   name,
@@ -47,24 +44,13 @@ function DisabledTabButton({
 }) {
   const { abandonWorkout } = useWorkout();
   const navigation = useNavigation();
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const pendingEventRef = useRef<GestureResponderEvent | null>(null);
 
   const handlePress = (e: GestureResponderEvent) => {
     if (disabled) {
-      Alert.alert(
-        "Workout In Progress",
-        "You have a workout in progress. Leaving will require you to start the workout over again.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Leave Anyway",
-            style: "destructive",
-            onPress: () => {
-              abandonWorkout("navigation");
-              onPress?.(e);
-            },
-          },
-        ]
-      );
+      pendingEventRef.current = e;
+      setDialogVisible(true);
     } else {
       // Check if we're already on this tab
       const currentRoute = (navigation.getState() as NavigationState).routes[
@@ -82,16 +68,48 @@ function DisabledTabButton({
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {children}
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        onPress={handlePress}
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {children}
+      </TouchableOpacity>
+
+      <CustomDialog
+        visible={dialogVisible}
+        onClose={() => {
+          setDialogVisible(false);
+          pendingEventRef.current = null;
+        }}
+        title="Workout In Progress"
+        description="You have a workout in progress. Leaving will require you to start the workout over again."
+        secondaryButton={{
+          text: "Cancel",
+          onPress: () => {
+            setDialogVisible(false);
+            pendingEventRef.current = null;
+          },
+        }}
+        primaryButton={{
+          text: "Leave Anyway",
+          onPress: () => {
+            setDialogVisible(false);
+            abandonWorkout("navigation");
+            const event = pendingEventRef.current;
+            pendingEventRef.current = null;
+            if (event && onPress) {
+              onPress(event);
+            }
+          },
+        }}
+        icon="warning"
+      />
+    </>
   );
 }
 

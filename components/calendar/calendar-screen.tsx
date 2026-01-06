@@ -3,13 +3,13 @@ import {
   View,
   Text,
   ScrollView,
-  Alert,
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
 import { DateData } from "react-native-calendars";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
@@ -22,10 +22,13 @@ import {
 } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { getCurrentUser } from "@lib/auth";
+import { setPaywallCallback } from "@/lib/api";
 import Header from "@/components/header";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
 import { colors } from "../../lib/theme";
@@ -34,6 +37,7 @@ import {
   PlanDayWithBlocks,
   WorkoutWithDetails,
   WorkoutBlockWithExercises,
+  SubscriptionPlan,
 } from "@/types/api";
 import { RegenerationData } from "@/types/calendar.types";
 import CalendarViewSection from "./sections/calendar-view";
@@ -73,6 +77,50 @@ export default function CalendarScreen() {
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
+  const [showPaymentWall, setShowPaymentWall] = useState(false);
+  const [paywallData, setPaywallData] = useState<{
+    type: string;
+    message: string;
+    limits: any;
+  } | null>(null);
+  const paywallErrorOccurredRef = useRef(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
+
+  // Set up paywall callback
+  useEffect(() => {
+    console.log("[CALENDAR] Setting up paywall callback");
+    setPaywallCallback((data) => {
+      console.log("[CALENDAR] Paywall callback triggered with data:", data);
+      paywallErrorOccurredRef.current = true;
+      setPaywallData(data);
+      setShowPaymentWall(true);
+      console.log(
+        "[CALENDAR] Payment wall state updated - showPaymentWall:",
+        true
+      );
+      // Reset the flag after a short delay to allow state to update
+      setTimeout(() => {
+        paywallErrorOccurredRef.current = false;
+      }, 1000);
+    });
+
+    return () => {
+      setPaywallCallback(() => {});
+    };
+  }, []);
+
+  // Debug: Log when showPaymentWall changes
+  useEffect(() => {
+    console.log("[CALENDAR] showPaymentWall changed:", showPaymentWall);
+    console.log("[CALENDAR] paywallData:", paywallData);
+  }, [showPaymentWall, paywallData]);
 
   const workoutPlan = useMemo(() => {
     if (!workoutData) {
@@ -188,11 +236,6 @@ export default function CalendarScreen() {
           router.replace("/(tabs)/dashboard");
         } else {
           setIsGeneratingWorkout(false);
-          Alert.alert(
-            "Daily Regeneration Failed",
-            "Unable to start daily workout regeneration. Please check your connection and try again.",
-            [{ text: "OK" }]
-          );
         }
       } else {
         const apiData = {
@@ -214,20 +257,38 @@ export default function CalendarScreen() {
           router.replace("/(tabs)/dashboard");
         } else {
           setIsGeneratingWorkout(false);
-          Alert.alert(
-            "Regeneration Failed",
-            "Unable to start workout regeneration. Please check your connection and try again.",
-            [{ text: "OK" }]
-          );
+          // Don't show alert if paywall error occurred (modal is already showing)
+          if (!paywallErrorOccurredRef.current) {
+            setDialogConfig({
+              title: "Regeneration Failed",
+              description:
+                "Unable to start workout regeneration. Please check your connection and try again.",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
+              },
+              icon: "alert-circle",
+            });
+            setDialogVisible(true);
+          }
         }
       }
     } catch (err) {
       setIsGeneratingWorkout(false);
-      Alert.alert(
-        "Regeneration Error",
-        "An error occurred while starting regeneration. Please try again.",
-        [{ text: "OK" }]
-      );
+      // Don't show alert if paywall error occurred (modal is already showing)
+      if (!paywallErrorOccurredRef.current) {
+        setDialogConfig({
+          title: "Regeneration Error",
+          description:
+            "An error occurred while starting regeneration. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
+      }
     }
   };
 
@@ -240,11 +301,17 @@ export default function CalendarScreen() {
     if (!user?.id) return;
 
     if (isGenerating) {
-      Alert.alert(
-        "Generation in Progress",
-        "A workout is already being generated. Please wait for it to complete.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation in Progress",
+        description:
+          "A workout is already being generated. Please wait for it to complete.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "information-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
@@ -256,18 +323,30 @@ export default function CalendarScreen() {
         await addJob(result.jobId, "generation");
         router.replace("/(tabs)/dashboard");
       } else {
-        Alert.alert(
-          "Generation Failed",
-          "Unable to start workout generation. Please check your connection and try again.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Generation Failed",
+          description:
+            "Unable to start workout generation. Please check your connection and try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert(
-        "Generation Error",
-        "An error occurred while starting workout generation. Please try again.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation Error",
+        description:
+          "An error occurred while starting workout generation. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -579,6 +658,41 @@ export default function CalendarScreen() {
           refreshWorkout();
         }}
       />
+
+      <PaymentWallModal
+        visible={showPaymentWall}
+        onClose={() => {
+          console.log("[CALENDAR] Closing payment wall modal");
+          setShowPaymentWall(false);
+          setPaywallData(null);
+        }}
+        paywallData={
+          paywallData || {
+            type: "subscription_required",
+            message:
+              "A subscription is required to generate new workout plans.",
+            limits: {},
+          }
+        }
+        onPlanSelect={(plan: SubscriptionPlan) => {
+          // In the future, this will trigger RevenueCat purchase flow
+          console.log("Plan selected for purchase:", plan.planId);
+          // TODO: Integrate RevenueCat purchase flow here
+        }}
+      />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }

@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
@@ -19,9 +18,13 @@ import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../coming-soon-modal";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import SubscriptionDetailsModal from "@/components/subscription/subscription-details-modal";
 import { useSecretActivation } from "@/hooks/use-secret-activation";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import * as Haptics from "expo-haptics";
 import { connectHealth, getHealthConnection } from "@/utils/health";
+import { CustomDialog, DialogButton } from "../ui";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -50,7 +53,25 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
   // Secret activation state
   const [tapCount, setTapCount] = useState(0);
   const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null);
-  const { isSecretActivated, activateSecret } = useSecretActivation();
+  const [debugTapCount, setDebugTapCount] = useState(0);
+  const [debugTapTimeout, setDebugTapTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
+  const {
+    isSecretActivated,
+    activateSecret,
+    isDebugModeActivated,
+    activateDebugMode,
+    deactivateDebugMode,
+  } = useSecretActivation();
+
+  // Paywall test modal state
+  const [showPaywallTest, setShowPaywallTest] = useState(false);
+  const [showSubscriptionDetails, setShowSubscriptionDetails] = useState(false);
+
+  // Subscription status
+  const { isPro, activeEntitlement, productIdentifier, expirationDate } =
+    useSubscriptionStatus();
 
   // Coming Soon modals state
   const [comingSoonModal, setComingSoonModal] = useState<{
@@ -60,6 +81,16 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     visible: false,
     icon: "information-circle-outline",
   });
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Use profile data from the centralized store
   const profile = profileData;
@@ -109,6 +140,80 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       }
     };
   }, [tapTimeout]);
+
+  // Cleanup debug tap timeout
+  useEffect(() => {
+    return () => {
+      if (debugTapTimeout) {
+        clearTimeout(debugTapTimeout);
+      }
+    };
+  }, [debugTapTimeout]);
+
+  // Debug mode activation handler (10 taps on "App Settings")
+  const handleDebugTap = async () => {
+    // Clear existing timeout
+    if (debugTapTimeout) {
+      clearTimeout(debugTapTimeout);
+    }
+
+    const newTapCount = debugTapCount + 1;
+    setDebugTapCount(newTapCount);
+
+    // Provide haptic feedback
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (newTapCount >= 10) {
+      // Success! Activate debug mode
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await activateDebugMode();
+      setDebugTapCount(0);
+      setDialogConfig({
+        title: "🧪 Debug Mode Activated",
+        description:
+          "Developer tools are now available. You can access network logger and test features.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "checkmark-circle",
+      });
+      setDialogVisible(true);
+    } else if (newTapCount >= 7) {
+      // Getting close, provide stronger feedback
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    // Set timeout to reset tap count after 2 seconds
+    const timeout = setTimeout(() => {
+      setDebugTapCount(0);
+    }, 2000);
+    setDebugTapTimeout(timeout);
+  };
+
+  // Deactivate debug mode handler
+  const handleDeactivateDebugMode = async () => {
+    setDialogConfig({
+      title: "Deactivate Debug Mode",
+      description: "Are you sure you want to turn off developer tools?",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Deactivate",
+        onPress: async () => {
+          setDialogVisible(false);
+          await deactivateDebugMode();
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success
+          );
+        },
+      },
+      icon: "warning",
+    });
+    setDialogVisible(true);
+  };
 
   useEffect(() => {
     // Only fetch if we don't have profile data yet
@@ -204,25 +309,24 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
   // Handle logout
   const handleLogout = async () => {
-    Alert.alert(
-      "Confirm Logout",
-      "Are you sure you want to log out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    setDialogConfig({
+      title: "Confirm Logout",
+      description: "Are you sure you want to log out?",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Logout",
+        onPress: async () => {
+          setDialogVisible(false);
+          await logout();
+          router.replace("/");
         },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            await logout();
-            router.replace("/");
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+      },
+      icon: "log-out-outline",
+    });
+    setDialogVisible(true);
   };
 
   // Format available days for display
@@ -641,11 +745,75 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           </View>
         )}
 
+        {/* Subscription Section */}
+        <View className="mx-6 mb-6 bg-white rounded-xl overflow-hidden">
+          <Text className="text-base font-semibold text-text-primary p-4 pb-2">
+            Subscription
+          </Text>
+
+          {isPro && activeEntitlement ? (
+            <TouchableOpacity
+              className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
+              onPress={() => setShowSubscriptionDetails(true)}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center flex-1">
+                <View className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg mr-3">
+                  <Ionicons name="star" size={16} color="#FFD700" />
+                  <Text className="text-sm font-bold text-primary ml-1.5">
+                    PRO
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-text-primary">
+                    {productIdentifier
+                      ?.replace(/_/g, " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+                      "Premium Subscription"}
+                  </Text>
+                  {expirationDate && (
+                    <Text className="text-xs text-text-muted mt-0.5">
+                      {activeEntitlement.willRenew ? "Renews" : "Expires"}{" "}
+                      {expirationDate.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.neutral.medium[3]}
+              />
+            </TouchableOpacity>
+          ) : (
+            <View className="px-4 py-3 border-t border-neutral-light-2">
+              <Text className="text-sm text-text-secondary">
+                No active subscription
+              </Text>
+            </View>
+          )}
+        </View>
+
         {/* App Settings */}
         <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-          <Text className="text-base font-semibold text-text-primary p-4 pb-2">
-            App Settings
-          </Text>
+          <TouchableOpacity
+            onPress={handleDebugTap}
+            activeOpacity={0.7}
+            hitSlop={{ top: 5, bottom: 5, left: 10, right: 10 }}
+          >
+            <Text
+              className="text-base font-semibold text-text-primary p-4 pb-2"
+              style={{
+                opacity: debugTapCount > 0 ? 0.7 + debugTapCount * 0.03 : 1,
+              }}
+            >
+              App Settings{debugTapCount >= 7 ? ` (${10 - debugTapCount})` : ""}
+            </Text>
+          </TouchableOpacity>
 
           {!healthConnected && (
             <View className="px-4 py-3 border-t border-neutral-light-2">
@@ -703,7 +871,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                   disabled={healthLoading}
                 >
                   {healthLoading ? (
-                    <ActivityIndicator size="small" color={colors.brand.secondary} />
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand.secondary}
+                    />
                   ) : (
                     <Text className="text-xs font-semibold text-secondary">
                       Update Permissions
@@ -840,6 +1011,98 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           )}
         </View>
 
+        {/* Debug Mode Section - Only visible when debug mode is activated */}
+        {(isDebugModeActivated || __DEV__) && (
+          <View className="mx-6 mb-6 bg-amber-50 rounded-xl overflow-hidden border border-amber-200">
+            <View className="flex-row items-center p-4 pb-2">
+              <Ionicons name="construct" size={18} color="#D97706" />
+              <Text className="text-base font-semibold text-amber-700 ml-2">
+                Developer Tools
+              </Text>
+              {!__DEV__ && (
+                <View className="ml-auto bg-amber-200 px-2 py-0.5 rounded">
+                  <Text className="text-xs text-amber-800 font-medium">
+                    DEBUG
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Test RevenueCat Paywall */}
+            <TouchableOpacity
+              className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
+              onPress={() => setShowPaywallTest(true)}
+            >
+              <View className="flex-row items-center flex-1">
+                <Ionicons name="card-outline" size={20} color="#D97706" />
+                <Text className="text-sm text-amber-800 ml-3">
+                  Test RevenueCat Paywall
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#D97706" />
+            </TouchableOpacity>
+
+            {/* Network Logger */}
+            <TouchableOpacity
+              className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
+              onPress={() => {
+                if (onClose) onClose();
+                router.push("/network-logger");
+              }}
+            >
+              <View className="flex-row items-center flex-1">
+                <Ionicons name="bug-outline" size={20} color="#D97706" />
+                <Text className="text-sm text-amber-800 ml-3">
+                  Network Logger
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#D97706" />
+            </TouchableOpacity>
+
+            {/* AI Provider Selection (if secret activated) */}
+            {isSecretActivated && (
+              <TouchableOpacity
+                className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
+                onPress={() => {
+                  if (onClose) onClose();
+                  router.push("/ai-provider-selection");
+                }}
+              >
+                <View className="flex-row items-center flex-1">
+                  <Ionicons
+                    name="hardware-chip-outline"
+                    size={20}
+                    color="#D97706"
+                  />
+                  <Text className="text-sm text-amber-800 ml-3">
+                    AI Provider Selection
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#D97706" />
+              </TouchableOpacity>
+            )}
+
+            {/* Deactivate Debug Mode (only in production) */}
+            {!__DEV__ && isDebugModeActivated && (
+              <TouchableOpacity
+                className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
+                onPress={handleDeactivateDebugMode}
+              >
+                <View className="flex-row items-center flex-1">
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={20}
+                    color="#DC2626"
+                  />
+                  <Text className="text-sm text-red-600 ml-3">
+                    Deactivate Debug Mode
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         {/* Logout Button */}
         <View className="px-6 mb-4">
           <TouchableOpacity
@@ -893,6 +1156,51 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         onClose={hideComingSoonModal}
         icon={comingSoonModal.icon}
       />
+
+      {/* RevenueCat Paywall Test Modal */}
+      <PaymentWallModal
+        visible={showPaywallTest}
+        onClose={() => setShowPaywallTest(false)}
+        paywallData={{
+          type: "subscription_required",
+          message:
+            "Testing RevenueCat integration. Select a plan to test the purchase flow.",
+        }}
+        onPurchaseSuccess={() => {
+          setDialogConfig({
+            title: "Success",
+            description: "Purchase completed successfully!",
+            primaryButton: {
+              text: "OK",
+              onPress: () => {
+                setDialogVisible(false);
+                setShowPaywallTest(false);
+              },
+            },
+            icon: "checkmark-circle",
+          });
+          setDialogVisible(true);
+        }}
+      />
+
+      {/* Subscription Details Modal */}
+      <SubscriptionDetailsModal
+        visible={showSubscriptionDetails}
+        onClose={() => setShowSubscriptionDetails(false)}
+      />
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }

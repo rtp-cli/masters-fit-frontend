@@ -135,6 +135,11 @@ class Logger {
   }
 
   apiError(endpoint: string, error: unknown, method: string = "GET") {
+    // Don't log PaywallErrors - they're handled by the paywall modal
+    if (error instanceof Error && error.name === "PaywallError") {
+      return; // Silently skip logging paywall errors
+    }
+
     const errorContext: LogContext = {
       endpoint,
       method,

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth-context";
 import { API_URL } from "@/config";
 import { saveUserToSecureStorage } from "@/lib/auth";
 import { CURRENT_WAIVER_VERSION, isWaiverUpdate } from "@/constants/waiver";
+import { DialogButton } from "@/components/ui";
 
 export function useWaiverController() {
   const router = useRouter();
@@ -13,6 +14,14 @@ export function useWaiverController() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   const isUpdate = isWaiverUpdate(user?.waiverVersion || null);
 
@@ -40,40 +49,59 @@ export function useWaiverController() {
   );
 
   const handleCancel = useCallback(() => {
-    Alert.alert(
-      "Exit Application",
-      "You must accept the waiver to use MastersFit. Exiting will log you out.",
-      [
-        { text: "Stay", style: "cancel" },
-        {
-          text: "Log Out",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await logout();
-              router.replace("/");
-            } catch (error) {
-              console.error("Error during logout:", error);
-              router.replace("/");
-            }
-          },
+    setDialogConfig({
+      title: "Exit Application",
+      description:
+        "You must accept the waiver to use MastersFit. Exiting will log you out.",
+      secondaryButton: {
+        text: "Stay",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Log Out",
+        onPress: async () => {
+          setDialogVisible(false);
+          try {
+            await logout();
+            router.replace("/");
+          } catch (error) {
+            console.error("Error during logout:", error);
+            router.replace("/");
+          }
         },
-      ],
-      { cancelable: true }
-    );
+      },
+      icon: "warning",
+    });
+    setDialogVisible(true);
   }, [logout, router]);
 
   const handleAgree = useCallback(async () => {
     if (!isAgreed) {
-      Alert.alert(
-        "Agreement Required",
-        "Please check the box to agree to the Waiver of Liability & Terms & Conditions before continuing."
-      );
+      setDialogConfig({
+        title: "Agreement Required",
+        description:
+          "Please check the box to agree to the Waiver of Liability & Terms & Conditions before continuing.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
     if (!user || !token) {
-      Alert.alert("Error", "Please log in first to accept the waiver.");
+      setDialogConfig({
+        title: "Error",
+        description: "Please log in first to accept the waiver.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
@@ -111,7 +139,16 @@ export function useWaiverController() {
       }
     } catch (error) {
       console.error("Error accepting waiver:", error);
-      Alert.alert("Error", "Failed to save your agreement. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to save your agreement. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setIsLoading(false);
     }
@@ -122,6 +159,9 @@ export function useWaiverController() {
     isAgreed,
     isLoading,
     isUpdate,
+    dialogVisible,
+    dialogConfig,
+    setDialogVisible,
     // actions
     toggleAgree,
     viewDocument,

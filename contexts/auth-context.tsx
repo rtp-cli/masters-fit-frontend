@@ -23,6 +23,7 @@ import { logger } from "../lib/logger";
 import { setAuthFailureCallback } from "../lib/api";
 import { trackAppOpened, AnalyticsUtils } from "@/lib/analytics";
 import * as Application from "expo-application";
+import Purchases from "react-native-purchases";
 
 import { RegenerationType } from "../constants";
 
@@ -72,6 +73,39 @@ export function useAuth() {
   return context;
 }
 
+// Helper function to identify user with RevenueCat
+const identifyUserWithRevenueCat = async (userId: number | string) => {
+  try {
+    const userIdString = userId.toString();
+    const { customerInfo } = await Purchases.logIn(userIdString);
+    logger.info("User identified with RevenueCat", {
+      userId: userIdString,
+      activeEntitlements: Object.keys(customerInfo.entitlements.active),
+    });
+    return customerInfo;
+  } catch (error) {
+    logger.error("Failed to identify user with RevenueCat", {
+      error: error instanceof Error ? error.message : String(error),
+      userId: userId.toString(),
+    });
+    return null;
+  }
+};
+
+// Helper function to log out user from RevenueCat
+const logOutFromRevenueCat = async () => {
+  try {
+    const customerInfo = await Purchases.logOut();
+    logger.info("User logged out from RevenueCat");
+    return customerInfo;
+  } catch (error) {
+    logger.error("Failed to log out from RevenueCat", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+};
+
 // Provider component that wraps the app
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -104,6 +138,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           logger.debug("User authenticated, profile handled by backend", {
             userId: storedUser.id,
           });
+
+          // Identify user with RevenueCat for subscription management
+          await identifyUserWithRevenueCat(storedUser.id);
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -250,6 +287,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       invalidateActiveWorkoutCache();
       await clearAllData();
 
+      // Log out from RevenueCat to clear subscription identity
+      await logOutFromRevenueCat();
+
       // User data clearing now handled by backend on logout
 
       setUser(null);
@@ -292,13 +332,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout, router]);
 
   // Update user data
-  const setUserData = (userData: User | null) => {
+  const setUserData = async (userData: User | null) => {
     setUser(userData);
     // Also save to SecureStore to maintain consistency
     if (userData) {
       saveUserToSecureStorage(userData);
       // User profile tracking now handled by backend
       logger.debug("User data updated, profile tracking handled by backend");
+
+      // Identify user with RevenueCat when user data is set
+      await identifyUserWithRevenueCat(userData.id);
     }
   };
 

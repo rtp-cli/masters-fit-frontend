@@ -5,7 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Alert,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -53,7 +53,11 @@ import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
+import { CustomDialog } from "@/components/ui";
+import type { DialogButton } from "@/components/ui";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -126,6 +130,15 @@ export default function DashboardScreen() {
 
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showPaywallTest, setShowPaywallTest] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   const {
     data: {
@@ -595,11 +608,17 @@ export default function DashboardScreen() {
   const handleGenerateNewWorkout = async () => {
     if (!user?.id) return;
     if (isGenerating) {
-      Alert.alert(
-        "Generation in Progress",
-        "A workout is already being generated. Please wait for it to complete.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation in Progress",
+        description:
+          "A workout is already being generated. Please wait for it to complete.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "information-circle",
+      });
+      setDialogVisible(true);
       return;
     }
     try {
@@ -608,18 +627,30 @@ export default function DashboardScreen() {
       if (result?.success && result.jobId) {
         await addJob(result.jobId, "generation");
       } else {
-        Alert.alert(
-          "Generation Failed",
-          "Unable to start workout generation. Please check your connection and try again.",
-          [{ text: "OK" }]
-        );
+        setDialogConfig({
+          title: "Generation Failed",
+          description:
+            "Unable to start workout generation. Please check your connection and try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert(
-        "Generation Error",
-        "An error occurred while starting workout generation. Please try again.",
-        [{ text: "OK" }]
-      );
+      setDialogConfig({
+        title: "Generation Error",
+        description:
+          "An error occurred while starting workout generation. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
   };
 
@@ -882,6 +913,26 @@ export default function DashboardScreen() {
           })}
         />
 
+        {/* DEV ONLY: Test RevenueCat Paywall Button */}
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={() => setShowPaywallTest(true)}
+            style={{
+              backgroundColor: "#FF6B6B",
+              marginHorizontal: 20,
+              marginBottom: 16,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "700", fontSize: 14 }}>
+              🧪 Test RevenueCat Paywall
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <ActiveWorkoutCard
           workoutInfo={
             workoutInfo
@@ -950,6 +1001,47 @@ export default function DashboardScreen() {
         onClose={() => setShowRepeatModal(false)}
         onSuccess={handleRepeatWorkoutSuccess}
       />
+
+      {/* DEV ONLY: Test RevenueCat Paywall Modal */}
+      {__DEV__ && (
+        <PaymentWallModal
+          visible={showPaywallTest}
+          onClose={() => setShowPaywallTest(false)}
+          paywallData={{
+            type: "subscription_required",
+            message:
+              "Testing RevenueCat integration. Select a plan to test the purchase flow.",
+          }}
+          onPurchaseSuccess={() => {
+            setDialogConfig({
+              title: "Success",
+              description: "Purchase completed successfully!",
+              primaryButton: {
+                text: "OK",
+                onPress: () => {
+                  setDialogVisible(false);
+                  setShowPaywallTest(false);
+                },
+              },
+              icon: "checkmark-circle",
+            });
+            setDialogVisible(true);
+          }}
+        />
+      )}
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </View>
   );
 }

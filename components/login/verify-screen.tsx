@@ -15,15 +15,25 @@ import { StatusBar } from "expo-status-bar";
 import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../lib/theme";
+import { CustomDialog } from "@/components/ui";
 
 export const VerifyScreen = () => {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState(["", "", "", ""]);
-  const { isLoading, requestNewCode, verifyCode } = useVerifyController();
+  const {
+    isLoading,
+    requestNewCode,
+    verifyCode,
+    dialogVisible,
+    dialogConfig,
+    setDialogVisible,
+  } = useVerifyController();
 
   const inputs = useRef<TextInput[]>([]);
   const hiddenInputRef = useRef<TextInput>(null);
+  const isVerifyingRef = useRef(false);
+  const lastVerifiedCodeRef = useRef<string>("");
 
   // Redirect if no email
   useEffect(() => {
@@ -34,16 +44,20 @@ export const VerifyScreen = () => {
 
   // Handle autofill from hidden input
   const handleHiddenInputChange = (text: string) => {
-    if (text.length === 4) {
+    // Prevent re-verification of the same code
+    if (
+      text.length === 4 &&
+      !isVerifyingRef.current &&
+      !isLoading &&
+      text !== lastVerifiedCodeRef.current
+    ) {
       const digits = text.split("");
       setOtp(digits);
 
       // Auto-submit if we have 4 digits
-      if (!isLoading) {
-        setTimeout(() => {
-          handleVerifyWithCode(text);
-        }, 100);
-      }
+      setTimeout(() => {
+        handleVerifyWithCode(text);
+      }, 100);
     }
   };
 
@@ -63,9 +77,14 @@ export const VerifyScreen = () => {
     if (text && index === 3) {
       const completeCode = [...newOtp];
       completeCode[index] = text.slice(-1);
-      if (completeCode.every((digit) => digit !== "") && !isLoading) {
+      const code = completeCode.join("");
+      if (
+        completeCode.every((digit) => digit !== "") &&
+        !isLoading &&
+        !isVerifyingRef.current &&
+        code !== lastVerifiedCodeRef.current
+      ) {
         setTimeout(() => {
-          const code = completeCode.join("");
           handleVerifyWithCode(code);
         }, 100);
       }
@@ -92,17 +111,50 @@ export const VerifyScreen = () => {
   };
 
   const handleVerifyWithCode = async (code: string) => {
-    if (!email) return;
-    const res = await verifyCode(email as string, code);
-    if (!res.success) {
-      // Reset OTP on failure to match previous UX
-      setOtp(["", "", "", ""]);
+    if (!email || isVerifyingRef.current) return;
+
+    // Prevent re-verification of the same code
+    if (code === lastVerifiedCodeRef.current) {
+      return;
+    }
+
+    isVerifyingRef.current = true;
+    lastVerifiedCodeRef.current = code;
+
+    try {
+      const res = await verifyCode(email as string, code);
+      if (!res.success) {
+        // Reset OTP on failure to match previous UX
+        setOtp(["", "", "", ""]);
+        // Clear hidden input to prevent re-triggering
+        if (hiddenInputRef.current) {
+          hiddenInputRef.current.setNativeProps({ text: "" });
+        }
+        // Clear the last verified code after a delay to allow new attempts
+        setTimeout(() => {
+          lastVerifiedCodeRef.current = "";
+        }, 1000);
+      } else {
+        // Clear on success as well since user will navigate away
+        lastVerifiedCodeRef.current = "";
+      }
+    } finally {
+      // Reset the flag after a delay to prevent immediate re-submission
+      setTimeout(() => {
+        isVerifyingRef.current = false;
+      }, 500);
     }
   };
 
   const handleVerify = async () => {
     const code = otp.join("");
-    await handleVerifyWithCode(code);
+    if (
+      code.length === 4 &&
+      !isVerifyingRef.current &&
+      code !== lastVerifiedCodeRef.current
+    ) {
+      await handleVerifyWithCode(code);
+    }
   };
 
   const handleGoBack = () => {
@@ -195,6 +247,19 @@ export const VerifyScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Custom Dialog */}
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </SafeAreaView>
   );
 };

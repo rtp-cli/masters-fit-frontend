@@ -4,7 +4,6 @@ import {
   View,
   Image,
   TouchableOpacity,
-  Alert,
   Linking,
   Dimensions,
   ViewStyle,
@@ -15,6 +14,7 @@ import Text from "./text";
 import { images } from "@/assets";
 import { trackVideoEngagement } from "@/lib/analytics";
 import { useAuth } from "@/contexts/auth-context";
+import { CustomDialog, DialogButton } from "./ui";
 
 interface ExerciseLinkProps {
   link: string | null | undefined;
@@ -47,6 +47,14 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   const [useFallback, setUseFallback] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const { user } = useAuth();
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   // Reset image error and fallback when exercise name changes
   useEffect(() => {
@@ -168,11 +176,45 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
       if (supported) {
         await Linking.openURL(link);
       } else {
-        Alert.alert("Error", "Unable to open this link");
+        setDialogConfig({
+          title: "Error",
+          description: "Unable to open this link",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to open link");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to open link",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     }
+  };
+
+  // Helper to render dialog
+  const renderDialog = () => {
+    if (!dialogConfig) return null;
+    return (
+      <CustomDialog
+        visible={dialogVisible}
+        onClose={() => setDialogVisible(false)}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        primaryButton={dialogConfig.primaryButton}
+        secondaryButton={dialogConfig.secondaryButton}
+        icon={dialogConfig.icon}
+      />
+    );
   };
 
   if (!link) {
@@ -183,38 +225,41 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         : getExerciseImageUrl(exerciseName, 800, 600);
 
       return (
-        <View className="relative h-80">
-          {!imageError ? (
-            <Image
-              source={imageUrl}
-              className="w-full h-full"
-              resizeMode="cover"
-              onError={(error) => {
-                if (!useFallback) {
-                  setUseFallback(true);
-                } else {
-                  setImageError(true);
-                }
-              }}
-            />
-          ) : (
-            <View className="bg-neutral-light-2 h-full items-center justify-center">
-              <Ionicons
-                name="videocam-outline"
-                size={48}
-                color={colors.text.muted}
+        <>
+          <View className="relative h-80">
+            {!imageError ? (
+              <Image
+                source={imageUrl}
+                className="w-full h-full"
+                resizeMode="cover"
+                onError={(error) => {
+                  if (!useFallback) {
+                    setUseFallback(true);
+                  } else {
+                    setImageError(true);
+                  }
+                }}
               />
-              <Text
-                variant="body"
-                color={colors.text.muted}
-                className="mt-3 text-center"
-              >
-                No video demonstration available
-              </Text>
-            </View>
-          )}
-          <View className="absolute inset-0 bg-black/20" />
-        </View>
+            ) : (
+              <View className="bg-neutral-light-2 h-full items-center justify-center">
+                <Ionicons
+                  name="videocam-outline"
+                  size={48}
+                  color={colors.text.muted}
+                />
+                <Text
+                  variant="body"
+                  color={colors.text.muted}
+                  className="mt-3 text-center"
+                >
+                  No video demonstration available
+                </Text>
+              </View>
+            )}
+            <View className="absolute inset-0 bg-black/20" />
+          </View>
+          {renderDialog()}
+        </>
       );
     }
 
@@ -223,40 +268,43 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
       : getExerciseImageUrl(exerciseName, 600, 400);
 
     return (
-      <View className={`my-2 ${style ? "" : ""}`}>
-        <View className="relative rounded-lg overflow-hidden">
-          {!imageError ? (
-            <Image
-              source={imageUrl}
-              className="w-full h-48"
-              resizeMode="cover"
-              onError={(error) => {
-                if (!useFallback) {
-                  setUseFallback(true);
-                } else {
-                  setImageError(true);
-                }
-              }}
-            />
-          ) : (
-            <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
-              <Ionicons
-                name="videocam-outline"
-                size={32}
-                color={colors.text.muted}
+      <>
+        <View className={`my-2 ${style ? "" : ""}`}>
+          <View className="relative rounded-lg overflow-hidden">
+            {!imageError ? (
+              <Image
+                source={imageUrl}
+                className="w-full h-48"
+                resizeMode="cover"
+                onError={(error) => {
+                  if (!useFallback) {
+                    setUseFallback(true);
+                  } else {
+                    setImageError(true);
+                  }
+                }}
               />
-              <Text
-                variant="bodySmall"
-                color={colors.text.muted}
-                className="mt-2 text-center"
-              >
-                No video demonstration available
-              </Text>
-            </View>
-          )}
-          <View className="absolute inset-0 bg-black/10" />
+            ) : (
+              <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
+                <Ionicons
+                  name="videocam-outline"
+                  size={32}
+                  color={colors.text.muted}
+                />
+                <Text
+                  variant="bodySmall"
+                  color={colors.text.muted}
+                  className="mt-2 text-center"
+                >
+                  No video demonstration available
+                </Text>
+              </View>
+            )}
+            <View className="absolute inset-0 bg-black/10" />
+          </View>
         </View>
-      </View>
+        {renderDialog()}
+      </>
     );
   }
 
@@ -270,38 +318,41 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         : getExerciseImageUrl(exerciseName, 800, 600);
 
       return (
-        <View className="relative h-80">
-          {!imageError ? (
-            <Image
-              source={imageUrl}
-              className="w-full h-full"
-              resizeMode="cover"
-              onError={(error) => {
-                if (!useFallback) {
-                  setUseFallback(true);
-                } else {
-                  setImageError(true);
-                }
-              }}
-            />
-          ) : (
-            <View className="bg-neutral-light-2 h-full items-center justify-center">
-              <Ionicons
-                name="videocam-outline"
-                size={48}
-                color={colors.text.muted}
+        <>
+          <View className="relative h-80">
+            {!imageError ? (
+              <Image
+                source={imageUrl}
+                className="w-full h-full"
+                resizeMode="cover"
+                onError={(error) => {
+                  if (!useFallback) {
+                    setUseFallback(true);
+                  } else {
+                    setImageError(true);
+                  }
+                }}
               />
-              <Text
-                variant="body"
-                color={colors.text.muted}
-                className="mt-3 text-center"
-              >
-                No video demonstration available
-              </Text>
-            </View>
-          )}
-          <View className="absolute inset-0 bg-black/20" />
-        </View>
+            ) : (
+              <View className="bg-neutral-light-2 h-full items-center justify-center">
+                <Ionicons
+                  name="videocam-outline"
+                  size={48}
+                  color={colors.text.muted}
+                />
+                <Text
+                  variant="body"
+                  color={colors.text.muted}
+                  className="mt-3 text-center"
+                >
+                  No video demonstration available
+                </Text>
+              </View>
+            )}
+            <View className="absolute inset-0 bg-black/20" />
+          </View>
+          {renderDialog()}
+        </>
       );
     }
 
@@ -310,40 +361,43 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
       : getExerciseImageUrl(exerciseName, 600, 400);
 
     return (
-      <View className={`my-2 ${style ? "" : ""}`}>
-        <View className="relative rounded-lg overflow-hidden">
-          {!imageError ? (
-            <Image
-              source={imageUrl}
-              className="w-full h-48"
-              resizeMode="cover"
-              onError={(error) => {
-                if (!useFallback) {
-                  setUseFallback(true);
-                } else {
-                  setImageError(true);
-                }
-              }}
-            />
-          ) : (
-            <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
-              <Ionicons
-                name="videocam-outline"
-                size={32}
-                color={colors.text.muted}
+      <>
+        <View className={`my-2 ${style ? "" : ""}`}>
+          <View className="relative rounded-lg overflow-hidden">
+            {!imageError ? (
+              <Image
+                source={imageUrl}
+                className="w-full h-48"
+                resizeMode="cover"
+                onError={(error) => {
+                  if (!useFallback) {
+                    setUseFallback(true);
+                  } else {
+                    setImageError(true);
+                  }
+                }}
               />
-              <Text
-                variant="bodySmall"
-                color={colors.text.muted}
-                className="mt-2 text-center"
-              >
-                No video demonstration available
-              </Text>
-            </View>
-          )}
-          <View className="absolute inset-0 bg-black/10" />
+            ) : (
+              <View className="bg-neutral-light-1 rounded-lg border border-dashed border-neutral-medium-1 p-8 items-center justify-center h-48">
+                <Ionicons
+                  name="videocam-outline"
+                  size={32}
+                  color={colors.text.muted}
+                />
+                <Text
+                  variant="bodySmall"
+                  color={colors.text.muted}
+                  className="mt-2 text-center"
+                >
+                  No video demonstration available
+                </Text>
+              </View>
+            )}
+            <View className="absolute inset-0 bg-black/10" />
+          </View>
         </View>
-      </View>
+        {renderDialog()}
+      </>
     );
   }
 
@@ -356,8 +410,99 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     if (showVideo) {
       if (variant === "hero") {
         return (
-          <View className="relative h-80">
-            <View className="h-full bg-black">
+          <>
+            <View className="relative h-80">
+              <View className="h-full bg-black">
+                {!webViewError ? (
+                  <WebView
+                    source={{ uri: linkInfo.embedUrl! }}
+                    className="flex-1"
+                    allowsInlineMediaPlayback
+                    mediaPlaybackRequiresUserAction={false}
+                    javaScriptEnabled
+                    domStorageEnabled
+                    onError={() => setWebViewError(true)}
+                  />
+                ) : (
+                  <View className="flex-1 bg-red-50 items-center justify-center">
+                    <Ionicons
+                      name="warning"
+                      size={48}
+                      color={colors.brand.primary}
+                    />
+                    <Text
+                      variant="body"
+                      color={colors.brand.primary}
+                      className="mt-3 text-center"
+                    >
+                      Failed to load video
+                    </Text>
+                    <TouchableOpacity
+                      className="mt-4 bg-primary px-6 py-3 rounded-lg"
+                      onPress={handleOpenInBrowser}
+                    >
+                      <Text
+                        variant="body"
+                        color={colors.brand.primary}
+                        weight="semibold"
+                      >
+                        Open in Browser
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              <TouchableOpacity
+                className="absolute top-4 right-4 bg-black/60 rounded-full w-10 h-10 items-center justify-center"
+                onPress={() => setShowVideo(false)}
+              >
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={colors.background}
+                />
+              </TouchableOpacity>
+            </View>
+            {renderDialog()}
+          </>
+        );
+      }
+
+      return (
+        <>
+          <View className={`my-2 ${style ? "" : ""}`}>
+            <View className="flex-row items-center justify-between py-2 px-1">
+              <View className="flex-row items-center flex-1">
+                <Ionicons
+                  name="logo-youtube"
+                  size={16}
+                  color={colors.brand.primary}
+                />
+                <Text
+                  variant="bodySmall"
+                  color={colors.text.primary}
+                  className="ml-1.5 flex-1"
+                >
+                  {exerciseName} - Demonstration
+                </Text>
+              </View>
+              <TouchableOpacity
+                className="p-1"
+                onPress={() => setShowVideo(false)}
+              >
+                <Ionicons
+                  name="chevron-up"
+                  size={16}
+                  color={colors.text.muted}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View
+              className="rounded-lg overflow-hidden bg-black"
+              style={{ height: videoHeight }}
+            >
               {!webViewError ? (
                 <WebView
                   source={{ uri: linkInfo.embedUrl! }}
@@ -372,183 +517,108 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
                 <View className="flex-1 bg-red-50 items-center justify-center">
                   <Ionicons
                     name="warning"
-                    size={48}
+                    size={32}
                     color={colors.brand.primary}
                   />
                   <Text
-                    variant="body"
+                    variant="bodySmall"
                     color={colors.brand.primary}
-                    className="mt-3 text-center"
+                    className="mt-1 text-center"
                   >
                     Failed to load video
                   </Text>
                   <TouchableOpacity
-                    className="mt-4 bg-primary px-6 py-3 rounded-lg"
+                    className="mt-2 py-1 px-2"
                     onPress={handleOpenInBrowser}
                   >
-                    <Text
-                      variant="body"
-                      color={colors.brand.primary}
-                      weight="semibold"
-                    >
+                    <Text variant="bodySmall" color={colors.brand.primary}>
                       Open in Browser
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
             </View>
-
-            <TouchableOpacity
-              className="absolute top-4 right-4 bg-black/60 rounded-full w-10 h-10 items-center justify-center"
-              onPress={() => setShowVideo(false)}
-            >
-              <Ionicons
-                name="chevron-down"
-                size={20}
-                color={colors.background}
-              />
-            </TouchableOpacity>
           </View>
-        );
-      }
-
-      return (
-        <View className={`my-2 ${style ? "" : ""}`}>
-          <View className="flex-row items-center justify-between py-2 px-1">
-            <View className="flex-row items-center flex-1">
-              <Ionicons
-                name="logo-youtube"
-                size={16}
-                color={colors.brand.primary}
-              />
-              <Text
-                variant="bodySmall"
-                color={colors.text.primary}
-                className="ml-1.5 flex-1"
-              >
-                {exerciseName} - Demonstration
-              </Text>
-            </View>
-            <TouchableOpacity
-              className="p-1"
-              onPress={() => setShowVideo(false)}
-            >
-              <Ionicons name="chevron-up" size={16} color={colors.text.muted} />
-            </TouchableOpacity>
-          </View>
-
-          <View
-            className="rounded-lg overflow-hidden bg-black"
-            style={{ height: videoHeight }}
-          >
-            {!webViewError ? (
-              <WebView
-                source={{ uri: linkInfo.embedUrl! }}
-                className="flex-1"
-                allowsInlineMediaPlayback
-                mediaPlaybackRequiresUserAction={false}
-                javaScriptEnabled
-                domStorageEnabled
-                onError={() => setWebViewError(true)}
-              />
-            ) : (
-              <View className="flex-1 bg-red-50 items-center justify-center">
-                <Ionicons
-                  name="warning"
-                  size={32}
-                  color={colors.brand.primary}
-                />
-                <Text
-                  variant="bodySmall"
-                  color={colors.brand.primary}
-                  className="mt-1 text-center"
-                >
-                  Failed to load video
-                </Text>
-                <TouchableOpacity
-                  className="mt-2 py-1 px-2"
-                  onPress={handleOpenInBrowser}
-                >
-                  <Text variant="bodySmall" color={colors.brand.primary}>
-                    Open in Browser
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
+          {renderDialog()}
+        </>
       );
     }
 
     // Show thumbnail
     if (variant === "hero") {
       return (
-        <TouchableOpacity
-          className="relative h-80"
-          onPress={async () => {
-            // Track video engagement when thumbnail is tapped
-            if (exerciseId && exerciseName && link) {
-              trackVideoEngagement({
-                exercise_id: exerciseId,
-                exercise_name: exerciseName,
-                video_url: link,
-              }).catch(console.warn);
-            }
-            setShowVideo(true);
-          }}
-        >
-          <Image
-            source={{ uri: linkInfo.thumbnailUrl }}
-            className="w-full h-full"
-            resizeMode="cover"
-            onError={() => {
-              // Fallback to generic placeholder if thumbnail fails
-              setImageError(true);
+        <>
+          <TouchableOpacity
+            className="relative h-80"
+            onPress={async () => {
+              // Track video engagement when thumbnail is tapped
+              if (exerciseId && exerciseName && link) {
+                trackVideoEngagement({
+                  exercise_id: exerciseId,
+                  exercise_name: exerciseName,
+                  video_url: link,
+                }).catch(console.warn);
+              }
+              setShowVideo(true);
             }}
-          />
-          {/* Play button overlay */}
-          <View className="absolute inset-0 bg-black/20 items-center justify-center">
-            <View className="bg-red-600 rounded-full w-20 h-20 items-center justify-center">
-              <Ionicons name="play" size={32} color="white" />
+          >
+            <Image
+              source={{ uri: linkInfo.thumbnailUrl }}
+              className="w-full h-full"
+              resizeMode="cover"
+              onError={() => {
+                // Fallback to generic placeholder if thumbnail fails
+                setImageError(true);
+              }}
+            />
+            {/* Play button overlay */}
+            <View className="absolute inset-0 bg-black/20 items-center justify-center">
+              <View className="bg-red-600 rounded-full w-20 h-20 items-center justify-center">
+                <Ionicons name="play" size={32} color="white" />
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+          {renderDialog()}
+        </>
       );
     }
 
     return (
-      <View className={`my-2 ${style ? "" : ""}`}>
-        <TouchableOpacity
-          className="relative rounded-lg overflow-hidden"
-          onPress={async () => {
-            // Track video engagement when thumbnail is tapped
-            if (exerciseId && exerciseName && link) {
-              trackVideoEngagement({
-                exercise_id: exerciseId,
-                exercise_name: exerciseName,
-                video_url: link,
-              }).catch(console.warn);
-            }
-            setShowVideo(true);
-          }}
-        >
-          <Image
-            source={{ uri: linkInfo.thumbnailUrl }}
-            className="w-full h-48"
-            resizeMode="cover"
-            onError={() => {
-              // Fallback to generic placeholder if thumbnail fails
-              setImageError(true);
+      <>
+        <View className={`my-2 ${style ? "" : ""}`}>
+          <TouchableOpacity
+            className="relative rounded-lg overflow-hidden"
+            onPress={async () => {
+              // Track video engagement when thumbnail is tapped
+              if (exerciseId && exerciseName && link) {
+                trackVideoEngagement({
+                  exercise_id: exerciseId,
+                  exercise_name: exerciseName,
+                  video_url: link,
+                }).catch(console.warn);
+              }
+              setShowVideo(true);
             }}
-          />
-          {/* Play button overlay */}
-          <View className="absolute inset-0 bg-black/20 items-center justify-center">
-            <View className="bg-red-600 rounded-full w-16 h-16 items-center justify-center">
-              <Ionicons name="play" size={24} color="white" />
+          >
+            <Image
+              source={{ uri: linkInfo.thumbnailUrl }}
+              className="w-full h-48"
+              resizeMode="cover"
+              onError={() => {
+                // Fallback to generic placeholder if thumbnail fails
+                setImageError(true);
+              }}
+            />
+            {/* Play button overlay */}
+            <View className="absolute inset-0 bg-black/20 items-center justify-center">
+              <View className="bg-red-600 rounded-full w-16 h-16 items-center justify-center">
+                <Ionicons name="play" size={24} color="white" />
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
-      </View>
+          </TouchableOpacity>
+        </View>
+        {renderDialog()}
+      </>
     );
   }
 

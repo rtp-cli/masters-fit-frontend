@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   TextInput,
   TouchableOpacity,
@@ -11,6 +10,7 @@ import {
 
 import { colors } from "../lib/theme";
 import Text from "./text";
+import { CustomDialog, type DialogButton } from "./ui";
 
 interface Exercise {
   id: number;
@@ -34,6 +34,14 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   const [link, setLink] = useState("");
   const [linkType, setLinkType] = useState<"youtube" | "unknown">("unknown");
   const [isLoading, setIsLoading] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    title: string;
+    description: string;
+    primaryButton: DialogButton;
+    secondaryButton?: DialogButton;
+    icon?: keyof typeof Ionicons.glyphMap;
+  } | null>(null);
 
   useEffect(() => {
     if (exercise?.link) {
@@ -103,7 +111,16 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   const handleSave = async () => {
     const validation = validateLink(link);
     if (!validation.isValid) {
-      Alert.alert("Invalid Link", validation.error || "Please check your link");
+      setDialogConfig({
+        title: "Invalid Link",
+        description: validation.error || "Please check your link",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
       return;
     }
 
@@ -112,38 +129,56 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
       await onSave(exercise!.id, link.trim() || null);
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to save exercise link. Please try again.");
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to save exercise link. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRemoveLink = async () => {
-    Alert.alert(
-      "Remove Link",
-      "Are you sure you want to remove this exercise link?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              await onSave(exercise!.id, null);
-              onClose();
-            } catch (error) {
-              Alert.alert(
-                "Error",
-                "Failed to remove exercise link. Please try again."
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
+    setDialogConfig({
+      title: "Remove Link",
+      description: "Are you sure you want to remove this exercise link?",
+      primaryButton: {
+        text: "Remove",
+        onPress: async () => {
+          setDialogVisible(false);
+          setIsLoading(true);
+          try {
+            await onSave(exercise!.id, null);
+            onClose();
+          } catch (error) {
+            setDialogConfig({
+              title: "Error",
+              description: "Failed to remove exercise link. Please try again.",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
+              },
+              icon: "alert-circle",
+            });
+            setDialogVisible(true);
+          } finally {
+            setIsLoading(false);
+          }
         },
-      ]
-    );
+      },
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      icon: "warning",
+    });
+    setDialogVisible(true);
   };
 
   const getLinkTypeIcon = () => {
@@ -330,6 +365,17 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
           </View>
         </View>
       </View>
+      {dialogConfig && (
+        <CustomDialog
+          visible={dialogVisible}
+          onClose={() => setDialogVisible(false)}
+          title={dialogConfig.title}
+          description={dialogConfig.description}
+          primaryButton={dialogConfig.primaryButton}
+          secondaryButton={dialogConfig.secondaryButton}
+          icon={dialogConfig.icon}
+        />
+      )}
     </Modal>
   );
 };

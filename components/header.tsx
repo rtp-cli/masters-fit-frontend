@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { colors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
 import SettingsModal from "./settings/settings-modal";
+import SubscriptionDetailsModal from "./subscription/subscription-details-modal";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 
 interface HeaderProps {
   workoutTitle?: string;
@@ -27,6 +29,11 @@ export default function Header({
   // Modal state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+  const [subscriptionDetailsVisible, setSubscriptionDetailsVisible] =
+    useState(false);
+
+  // Subscription status
+  const { isPro } = useSubscriptionStatus();
 
   // Determine which header to show based on current route
   const isDashboard = pathname === "/" || pathname.includes("dashboard");
@@ -62,21 +69,47 @@ export default function Header({
         {/* Left side - Title */}
         <View className="flex-1">
           {isDashboard && (
-            <View>
-              <Text className="text-lg font-bold text-text-primary">
-                Hey {user?.name || "User"}!
-              </Text>
-              {currentDate && (
-                <Text className="text-sm text-text-muted mt-1">
-                  {currentDate}
-                </Text>
-              )}
+            <View className="flex-row items-center gap-2">
+              <View className="flex-1">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-lg font-bold text-text-primary">
+                    Hey {user?.name || "User"}!
+                  </Text>
+                  {isPro && (
+                    <TouchableOpacity
+                      onPress={() => setSubscriptionDetailsVisible(true)}
+                      style={styles.proBadge}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="star" size={14} color="#FFD700" />
+                      <Text style={styles.proBadgeText}>PRO</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {currentDate && (
+                  <Text className="text-sm text-text-muted mt-1">
+                    {currentDate}
+                  </Text>
+                )}
+              </View>
             </View>
           )}
           {isCalendar && (
-            <Text className="text-lg font-bold text-text-primary">
-              {workoutTitle || "Workout Calendar"}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-lg font-bold text-text-primary">
+                {workoutTitle || "Workout Calendar"}
+              </Text>
+              {isPro && (
+                <TouchableOpacity
+                  onPress={() => setSubscriptionDetailsVisible(true)}
+                  style={styles.proBadge}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="star" size={14} color="#FFD700" />
+                  <Text style={styles.proBadgeText}>PRO</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
 
@@ -107,6 +140,28 @@ export default function Header({
         visible={settingsModalVisible}
         onClose={() => setSettingsModalVisible(false)}
       />
+      <SubscriptionDetailsModal
+        visible={subscriptionDetailsVisible}
+        onClose={() => setSubscriptionDetailsVisible(false)}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  proBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${colors.brand.primary}15`,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  proBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.brand.primary,
+    letterSpacing: 0.5,
+  },
+});
