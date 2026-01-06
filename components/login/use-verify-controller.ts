@@ -165,12 +165,17 @@ export function useVerifyController() {
               text: "New Code",
               onPress: () => {
                 setDialogVisible(false);
-                requestNewCode(email);
+                // Small delay to ensure dialog closes before making API call
+                setTimeout(() => {
+                  requestNewCode(email);
+                }, 100);
               },
             },
             secondaryButton: {
               text: "Try Again",
-              onPress: () => setDialogVisible(false),
+              onPress: () => {
+                setDialogVisible(false);
+              },
             },
             icon: "alert-circle",
           });
