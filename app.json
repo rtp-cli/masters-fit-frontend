@@ -18,7 +18,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSHealthShareUsageDescription": "MastersFit needs access to your health data including steps, heart rate, workout sessions, calories burned, and nutrition to provide personalized fitness insights and track your progress.",
-        "NSHealthUpdateUsageDescription": "MastersFit may write step count and workout data to HealthKit to help track your fitness progress and maintain accurate health records."
+        "NSHealthUpdateUsageDescription": "MastersFit may write step count and workout data to HealthKit to help track your fitness progress and maintain accurate health records.",
+        "NSUserTrackingUsageDescription": "MastersFit uses tracking to provide personalized fitness insights and improve your workout experience. Your data helps us deliver better recommendations and track your progress."
       }
     },
     "notification": {
@@ -57,6 +58,7 @@
       "expo-font",
       "expo-health-connect",
       "expo-notifications",
+      "expo-tracking-transparency",
       [
         "react-native-health",
         {

@@ -8,6 +8,7 @@ import {
   signupAPI,
   generateAuthCodeAPI,
   refreshTokenAPI,
+  deleteAccountAPI,
 } from "./api";
 
 // List of all keys used in SecureStore
@@ -293,5 +294,30 @@ export async function resetAuthState(): Promise<void> {
   } catch (error) {
     console.error("Error resetting auth state:", error);
     throw error;
+  }
+}
+
+/**
+ * Delete user account
+ */
+export async function deleteAccount(): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const result = await deleteAccountAPI();
+    if (result.success) {
+      // Clear all local data after successful account deletion
+      await clearAllData();
+    }
+    return result;
+  } catch (error) {
+    console.error("Delete account error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete account",
+    };
   }
 }

@@ -38,7 +38,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const router = useRouter();
   const {
     data: { profileData },
@@ -92,6 +92,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     primaryButton: DialogButton;
     secondaryButton?: DialogButton;
     icon?: keyof typeof Ionicons.glyphMap;
+    iconColor?: string;
   } | null>(null);
 
   // Use profile data from the centralized store
@@ -297,6 +298,54 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     setDialogVisible(true);
   };
 
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    setDialogConfig({
+      title: "Delete Account",
+      description:
+        "Are you sure you want to delete your account? This action cannot be undone. All your data, including workouts, progress, and subscription information, will be permanently deleted.",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Delete Account",
+        onPress: async () => {
+          setDialogVisible(false);
+          const result = await deleteAccount();
+          if (result.success) {
+            // Close settings modal first
+            if (onClose) {
+              onClose();
+            }
+            // Wait for modal to close and auth state to clear, then redirect to login
+            setTimeout(() => {
+              router.replace("/(auth)/login");
+            }, 300);
+          } else {
+            // Show error message
+            setDialogConfig({
+              title: "Deletion Failed",
+              description:
+                result.error ||
+                "Failed to delete your account. Please try again or contact support.",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
+              },
+              icon: "alert-circle",
+              iconColor: "#EF4444",
+            });
+            setDialogVisible(true);
+          }
+        },
+      },
+      icon: "trash-outline",
+      iconColor: "#EF4444",
+    });
+    setDialogVisible(true);
+  };
+
   if (loading.profileLoading && !profile) {
     return <SettingsSkeleton />;
   }
@@ -428,7 +477,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         />
 
         {/* Logout Button */}
-        <LogoutSection onLogout={handleLogout} />
+        <LogoutSection
+          onLogout={handleLogout}
+          onDeleteAccount={handleDeleteAccount}
+        />
 
         {/* Version Info */}
         <AppVersionSection tapCount={tapCount} onTap={handleVersionTap} />
@@ -483,6 +535,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           primaryButton={dialogConfig.primaryButton}
           secondaryButton={dialogConfig.secondaryButton}
           icon={dialogConfig.icon}
+          iconColor={dialogConfig.iconColor}
         />
       )}
     </View>
