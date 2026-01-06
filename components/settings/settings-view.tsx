@@ -4,17 +4,13 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Switch,
   RefreshControl,
-  ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "expo-router";
 import { useAppDataContext } from "@/contexts/app-data-context";
-import { formatEnumValue, getIntensityText } from "@utils/index";
-import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { colors } from "../../lib/theme";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../coming-soon-modal";
@@ -23,8 +19,19 @@ import SubscriptionDetailsModal from "@/components/subscription/subscription-det
 import { useSecretActivation } from "@/hooks/use-secret-activation";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import * as Haptics from "expo-haptics";
-import { connectHealth, getHealthConnection } from "@/utils/health";
 import { CustomDialog, DialogButton } from "../ui";
+import ProfileSection from "./profile-section";
+import AppSettingsSection from "./app-settings-section";
+import DeveloperToolsSection from "./developer-tools-section";
+import PersonalInformationSection from "./personal-information-section";
+import FitnessGoalsSection from "./fitness-goals-section";
+import PreferredWorkoutTypesSection from "./preferred-workout-types-section";
+import EquipmentSection from "./equipment-section";
+import WeeklyScheduleSection from "./weekly-schedule-section";
+import HealthInformationSection from "./health-information-section";
+import SubscriptionSection from "./subscription-section";
+import LogoutSection from "./logout-section";
+import AppVersionSection from "./app-version-section";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -44,11 +51,15 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
   // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
-  const [legalExpanded, setLegalExpanded] = useState(false);
-  const [healthConnected, setHealthConnected] = useState(false);
-  const [healthLoading, setHealthLoading] = useState(false);
-  const [healthError, setHealthError] = useState<string | null>(null);
+
+  // Coming Soon modals state
+  const [comingSoonModal, setComingSoonModal] = useState<{
+    visible: boolean;
+    icon: keyof typeof Ionicons.glyphMap;
+  }>({
+    visible: false,
+    icon: "information-circle-outline",
+  });
 
   // Secret activation state
   const [tapCount, setTapCount] = useState(0);
@@ -72,15 +83,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
   // Subscription status
   const { isPro, activeEntitlement, productIdentifier, expirationDate } =
     useSubscriptionStatus();
-
-  // Coming Soon modals state
-  const [comingSoonModal, setComingSoonModal] = useState<{
-    visible: boolean;
-    icon: keyof typeof Ionicons.glyphMap;
-  }>({
-    visible: false,
-    icon: "information-circle-outline",
-  });
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -222,40 +224,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     }
   }, [user?.id, profileData]);
 
-  // Health connect status
-  const loadHealthStatus = useCallback(async () => {
-    try {
-      const connected = await getHealthConnection();
-      setHealthConnected(connected);
-      if (connected) setHealthError(null);
-    } catch {
-      setHealthConnected(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadHealthStatus();
-  }, [loadHealthStatus]);
-
-  const handleConnectHealth = useCallback(async () => {
-    setHealthError(null);
-    setHealthLoading(true);
-    try {
-      const granted = await connectHealth();
-      if (granted) {
-        setHealthConnected(true);
-      } else {
-        setHealthConnected(false);
-        setHealthError("Health permissions not granted");
-      }
-    } catch (err: any) {
-      setHealthConnected(false);
-      setHealthError(err?.message || "Unable to connect health right now.");
-    } finally {
-      setHealthLoading(false);
-    }
-  }, []);
-
   // Show coming soon modal
   const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
     setComingSoonModal({
@@ -329,100 +297,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     setDialogVisible(true);
   };
 
-  // Format available days for display
-  const formatAvailableDays = (days: string[] | undefined) => {
-    if (!days || days.length === 0) return [];
-    const dayMap: { [key: string]: string } = {
-      monday: "M",
-      tuesday: "T",
-      wednesday: "W",
-      thursday: "T",
-      friday: "F",
-      saturday: "S",
-      sunday: "S",
-    };
-
-    return [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ].map((day, index) => ({
-      day: dayMap[day],
-      active: days.includes(day),
-      index,
-    }));
-  };
-
-  // Get user initials
-  const getUserInitials = () => {
-    if (user?.name) {
-      return user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    return "U";
-  };
-
-  // Get fitness level display
-  const getFitnessLevelDisplay = (level: string | undefined) => {
-    if (!level) return "Not specified";
-    return formatEnumValue(level);
-  };
-
-  // Handle environment display with robust error handling
-  const getEnvironmentDisplay = (environment: string | undefined | null) => {
-    if (!environment || environment === "") return "Not specified";
-    try {
-      return formatEnumValue(environment);
-    } catch (error) {
-      console.error("Environment formatting error:", error);
-      return environment;
-    }
-  };
-
-  // Get intensity level display with robust error handling
-  const getIntensityLevelDisplay = (
-    level: string | number | undefined | null
-  ) => {
-    if (!level || level === "") return "Not specified";
-
-    try {
-      // Handle string intensity levels ("low", "moderate", "high") - primary case
-      if (typeof level === "string") {
-        // Handle legacy numeric strings like "3" -> convert to proper text
-        if (level === "1") return "Low";
-        if (level === "2") return "Moderate";
-        if (level === "3") return "High";
-
-        // Handle proper enum strings
-        return formatEnumValue(level);
-      }
-
-      // Handle numeric intensity levels (1-5 scale) - fallback for legacy data
-      if (typeof level === "number") {
-        if (level <= 3) {
-          // Convert 1-3 scale to proper enum values
-          return level === 1 ? "Low" : level === 2 ? "Moderate" : "High";
-        } else {
-          // Use 1-5 scale
-          return getIntensityText(level);
-        }
-      }
-    } catch (error) {
-      console.error("Intensity level formatting error:", error);
-      return String(level);
-    }
-
-    return "Not specified";
-  };
-
   if (loading.profileLoading && !profile) {
     return <SettingsSkeleton />;
   }
@@ -440,19 +314,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         }
       >
         {/* Profile Section */}
-        <View className="items-center px-6 mb-6">
-          <View className="w-20 h-20 rounded-full bg-primary items-center justify-center mb-4">
-            <Text className="text-3xl font-bold text-white">
-              {getUserInitials()}
-            </Text>
-          </View>
-          <Text className="text-xl font-bold text-text-primary">
-            {user?.name || "User"}
-          </Text>
-          <Text className="text-sm text-text-muted mt-1">
-            {user?.email || "No email provided"}
-          </Text>
-        </View>
+        <ProfileSection user={user} />
 
         {/* Quick Actions */}
         <View className="px-6 mb-6">
@@ -508,646 +370,68 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         </View>
 
         {/* Personal Information */}
-        {profile && (
-          <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
-            <Text className="text-base font-semibold text-text-primary p-4 pb-2">
-              Personal Information
-            </Text>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">Age</Text>
-                <Text className="text-sm text-text-muted">
-                  {profile.age ? `${profile.age} years` : "Not specified"}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">Height</Text>
-                <Text className="text-sm text-text-muted">
-                  {profile.height
-                    ? formatHeight(profile.height)
-                    : "Not specified"}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">Weight</Text>
-                <Text className="text-sm text-text-muted">
-                  {profile.weight ? `${profile.weight} lbs` : "Not specified"}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">Gender</Text>
-                <Text className="text-sm text-text-muted">
-                  {profile.gender
-                    ? formatEnumValue(profile.gender)
-                    : "Not specified"}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">Environment</Text>
-                <Text className="text-sm text-text-muted">
-                  {getEnvironmentDisplay(profile.environment)}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">Fitness Level</Text>
-                <Text className="text-sm text-text-muted">
-                  {getFitnessLevelDisplay(profile.fitnessLevel)}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">
-                  Workout Duration
-                </Text>
-                <Text className="text-sm text-text-muted">
-                  {profile.workoutDuration
-                    ? `${profile.workoutDuration} minutes`
-                    : "Not specified"}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-text-primary">
-                  Intensity Level
-                </Text>
-                <Text className="text-sm text-text-muted">
-                  {getIntensityLevelDisplay(profile.intensityLevel)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
+        {profile && <PersonalInformationSection profile={profile} />}
 
         {/* Fitness Goals */}
         {profile?.goals && profile.goals.length > 0 && (
-          <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
-            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-              Fitness Goals
-            </Text>
-            <View className="px-4 pb-4">
-              <View className="flex-row flex-wrap">
-                {profile.goals.map((goal, index) => (
-                  <View
-                    key={index}
-                    className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
-                  >
-                    <Text className="text-xs font-medium text-neutral-light-1">
-                      {formatEnumValue(goal)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
+          <FitnessGoalsSection goals={profile.goals} />
         )}
 
         {/* Preferred Workout Types */}
         {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-              Preferred Workout Types
-            </Text>
-            <View className="px-4 pb-4">
-              <View className="flex-row flex-wrap">
-                {profile.preferredStyles.map((style, index) => (
-                  <View
-                    key={index}
-                    className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
-                  >
-                    <Text className="text-xs font-medium text-neutral-light-1">
-                      {style === "HIIT" ? "HIIT" : formatEnumValue(style)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
+          <PreferredWorkoutTypesSection
+            preferredStyles={profile.preferredStyles}
+          />
         )}
 
         {/* Equipment Available */}
         {profile?.equipment && profile.equipment.length > 0 && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-              Available Equipment
-            </Text>
-            <View className="px-4 pb-4">
-              <View className="flex-row flex-wrap mb-2">
-                {profile.equipment.map((item, index) => (
-                  <View
-                    key={index}
-                    className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
-                  >
-                    <Text className="text-xs font-medium text-neutral-light-1">
-                      {formatEnumValue(item)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-              {profile.otherEquipment && (
-                <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
-                  <Text className="text-sm font-medium text-text-primary mb-2">
-                    Other Equipment
-                  </Text>
-                  <Text className="text-sm text-text-muted">
-                    {profile.otherEquipment}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
+          <EquipmentSection
+            equipment={profile.equipment}
+            otherEquipment={profile.otherEquipment}
+          />
         )}
 
         {/* Weekly Schedule */}
         {profile?.availableDays && profile.availableDays.length > 0 && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-              Weekly Schedule
-            </Text>
-            <View className="flex-row justify-between px-4 pb-4">
-              {formatAvailableDays(profile.availableDays).map((dayInfo) => (
-                <View
-                  key={dayInfo.index}
-                  className={`w-8 h-8 rounded-full items-center justify-center ${
-                    dayInfo.active ? "bg-text-primary" : "bg-neutral-light-2"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-medium ${
-                      dayInfo.active ? "text-white" : "text-text-muted"
-                    }`}
-                  >
-                    {dayInfo.day}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
+          <WeeklyScheduleSection availableDays={profile.availableDays} />
         )}
 
         {/* Limitations & Medical Notes */}
-        {((profile?.limitations && profile.limitations.length > 0) ||
-          profile?.medicalNotes) && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-            <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-              Health Information
-            </Text>
-
-            {profile.limitations && profile.limitations.length > 0 && (
-              <View className="px-4 pb-3">
-                <Text className="text-sm font-medium text-text-primary mb-2">
-                  Limitations
-                </Text>
-                <View className="flex-row flex-wrap">
-                  {profile.limitations.map((limitation, index) => (
-                    <View
-                      key={index}
-                      className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
-                    >
-                      <Text className="text-xs font-medium text-neutral-light-1">
-                        {formatEnumValue(limitation)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {profile.medicalNotes && (
-              <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
-                <Text className="text-sm font-medium text-text-primary mb-2">
-                  Medical Notes
-                </Text>
-                <Text className="text-sm text-text-muted">
-                  {profile.medicalNotes}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+        <HealthInformationSection
+          limitations={profile?.limitations}
+          medicalNotes={profile?.medicalNotes}
+        />
 
         {/* Subscription Section */}
-        <View className="mx-6 mb-6 bg-white rounded-xl overflow-hidden">
-          <Text className="text-base font-semibold text-text-primary p-4 pb-2">
-            Subscription
-          </Text>
-
-          {isPro && activeEntitlement ? (
-            <TouchableOpacity
-              className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
-              onPress={() => setShowSubscriptionDetails(true)}
-              activeOpacity={0.7}
-            >
-              <View className="flex-row items-center flex-1">
-                <View className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg mr-3">
-                  <Ionicons name="star" size={16} color="#FFD700" />
-                  <Text className="text-sm font-bold text-primary ml-1.5">
-                    PRO
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-sm font-semibold text-text-primary">
-                    {productIdentifier
-                      ?.replace(/_/g, " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase()) ||
-                      "Premium Subscription"}
-                  </Text>
-                  {expirationDate && (
-                    <Text className="text-xs text-text-muted mt-0.5">
-                      {activeEntitlement.willRenew ? "Renews" : "Expires"}{" "}
-                      {expirationDate.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </Text>
-                  )}
-                </View>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={colors.neutral.medium[3]}
-              />
-            </TouchableOpacity>
-          ) : (
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <Text className="text-sm text-text-secondary">
-                No active subscription
-              </Text>
-            </View>
-          )}
-        </View>
+        <SubscriptionSection
+          isPro={isPro}
+          activeEntitlement={activeEntitlement}
+          productIdentifier={productIdentifier}
+          expirationDate={expirationDate}
+          onPress={() => setShowSubscriptionDetails(true)}
+        />
 
         {/* App Settings */}
-        <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-          <TouchableOpacity
-            onPress={handleDebugTap}
-            activeOpacity={0.7}
-            hitSlop={{ top: 5, bottom: 5, left: 10, right: 10 }}
-          >
-            <Text
-              className="text-base font-semibold text-text-primary p-4 pb-2"
-              style={{
-                opacity: debugTapCount > 0 ? 0.7 + debugTapCount * 0.03 : 1,
-              }}
-            >
-              App Settings{debugTapCount >= 7 ? ` (${10 - debugTapCount})` : ""}
-            </Text>
-          </TouchableOpacity>
-
-          {!healthConnected && (
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1 pr-3">
-                  <Text className="text-sm font-semibold text-text-primary">
-                    Connect Health
-                  </Text>
-                  <Text className="text-xs text-text-secondary mt-1">
-                    Sync steps, calories, heart rate, and workouts from Apple
-                    Health or Health Connect.
-                  </Text>
-                  {healthError && (
-                    <Text className="text-xs text-danger mt-2">
-                      {healthError}
-                    </Text>
-                  )}
-                </View>
-                <TouchableOpacity
-                  className="bg-secondary px-4 py-2 rounded-xl items-center justify-center"
-                  onPress={handleConnectHealth}
-                  disabled={healthLoading}
-                >
-                  {healthLoading ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.neutral.white}
-                    />
-                  ) : (
-                    <Text className="text-sm font-semibold text-white">
-                      Connect
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {healthConnected && (
-            <View className="px-4 py-3 border-t border-neutral-light-2">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={colors.brand.primary}
-                  />
-                  <Text className="text-sm font-semibold text-text-primary ml-2">
-                    Health Connected
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  className="bg-secondary/20 px-3 py-1.5 rounded-lg"
-                  onPress={handleConnectHealth}
-                  disabled={healthLoading}
-                >
-                  {healthLoading ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.brand.secondary}
-                    />
-                  ) : (
-                    <Text className="text-xs font-semibold text-secondary">
-                      Update Permissions
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-            <View className="flex-row items-center flex-1">
-              <Ionicons
-                name="moon-outline"
-                size={20}
-                color={colors.text.muted}
-              />
-              <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
-            </View>
-            <Switch
-              value={darkModeEnabled}
-              onValueChange={() => showComingSoonModal("moon-outline")}
-              trackColor={{
-                false: colors.neutral.medium[1],
-                true: colors.brand.primary,
-              }}
-              thumbColor={
-                darkModeEnabled ? colors.neutral.white : colors.neutral.light[1]
-              }
-            />
-          </View>
-
-          {/* Legal Accordion */}
-          <TouchableOpacity
-            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
-            onPress={() => setLegalExpanded(!legalExpanded)}
-          >
-            <View className="flex-row items-center flex-1">
-              <Ionicons
-                name="document-text-outline"
-                size={20}
-                color={colors.text.muted}
-              />
-              <Text className="text-sm text-text-primary ml-3">Legal</Text>
-            </View>
-            <Ionicons
-              name={legalExpanded ? "chevron-up" : "chevron-down"}
-              size={16}
-              color={colors.neutral.medium[3]}
-            />
-          </TouchableOpacity>
-
-          {/* Expanded Legal Options */}
-          {legalExpanded && (
-            <View className="bg-neutral-light-1">
-              <TouchableOpacity
-                className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-                onPress={() =>
-                  router.push({
-                    pathname: "/legal-document",
-                    params: { type: "terms" },
-                  } as any)
-                }
-              >
-                <View className="flex-row items-center flex-1">
-                  <Ionicons
-                    name="newspaper-outline"
-                    size={18}
-                    color={colors.text.muted}
-                  />
-                  <Text className="text-sm text-text-primary ml-3">
-                    Terms & Conditions
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.neutral.medium[3]}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-                onPress={() =>
-                  router.push({
-                    pathname: "/legal-document",
-                    params: { type: "privacy" },
-                  } as any)
-                }
-              >
-                <View className="flex-row items-center flex-1">
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={18}
-                    color={colors.text.muted}
-                  />
-                  <Text className="text-sm text-text-primary ml-3">
-                    Privacy Policy
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.neutral.medium[3]}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-                onPress={() =>
-                  router.push({
-                    pathname: "/legal-document",
-                    params: { type: "waiver" },
-                  } as any)
-                }
-              >
-                <View className="flex-row items-center flex-1">
-                  <Ionicons
-                    name="shield-checkmark-outline"
-                    size={18}
-                    color={colors.text.muted}
-                  />
-                  <Text className="text-sm text-text-primary ml-3">
-                    Waiver of Liability
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.neutral.medium[3]}
-                />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        <AppSettingsSection
+          debugTapCount={debugTapCount}
+          onDebugTap={handleDebugTap}
+        />
 
         {/* Debug Mode Section - Only visible when debug mode is activated */}
-        {(isDebugModeActivated || __DEV__) && (
-          <View className="mx-6 mb-6 bg-amber-50 rounded-xl overflow-hidden border border-amber-200">
-            <View className="flex-row items-center p-4 pb-2">
-              <Ionicons name="construct" size={18} color="#D97706" />
-              <Text className="text-base font-semibold text-amber-700 ml-2">
-                Developer Tools
-              </Text>
-              {!__DEV__ && (
-                <View className="ml-auto bg-amber-200 px-2 py-0.5 rounded">
-                  <Text className="text-xs text-amber-800 font-medium">
-                    DEBUG
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Test RevenueCat Paywall */}
-            <TouchableOpacity
-              className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
-              onPress={() => setShowPaywallTest(true)}
-            >
-              <View className="flex-row items-center flex-1">
-                <Ionicons name="card-outline" size={20} color="#D97706" />
-                <Text className="text-sm text-amber-800 ml-3">
-                  Test RevenueCat Paywall
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#D97706" />
-            </TouchableOpacity>
-
-            {/* Network Logger */}
-            <TouchableOpacity
-              className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
-              onPress={() => {
-                if (onClose) onClose();
-                router.push("/network-logger");
-              }}
-            >
-              <View className="flex-row items-center flex-1">
-                <Ionicons name="bug-outline" size={20} color="#D97706" />
-                <Text className="text-sm text-amber-800 ml-3">
-                  Network Logger
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#D97706" />
-            </TouchableOpacity>
-
-            {/* AI Provider Selection (if secret activated) */}
-            {isSecretActivated && (
-              <TouchableOpacity
-                className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
-                onPress={() => {
-                  if (onClose) onClose();
-                  router.push("/ai-provider-selection");
-                }}
-              >
-                <View className="flex-row items-center flex-1">
-                  <Ionicons
-                    name="hardware-chip-outline"
-                    size={20}
-                    color="#D97706"
-                  />
-                  <Text className="text-sm text-amber-800 ml-3">
-                    AI Provider Selection
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="#D97706" />
-              </TouchableOpacity>
-            )}
-
-            {/* Deactivate Debug Mode (only in production) */}
-            {!__DEV__ && isDebugModeActivated && (
-              <TouchableOpacity
-                className="flex-row items-center justify-between px-4 py-3 border-t border-amber-200"
-                onPress={handleDeactivateDebugMode}
-              >
-                <View className="flex-row items-center flex-1">
-                  <Ionicons
-                    name="close-circle-outline"
-                    size={20}
-                    color="#DC2626"
-                  />
-                  <Text className="text-sm text-red-600 ml-3">
-                    Deactivate Debug Mode
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        <DeveloperToolsSection
+          isDebugModeActivated={isDebugModeActivated}
+          isSecretActivated={isSecretActivated}
+          onDeactivateDebugMode={handleDeactivateDebugMode}
+          onShowPaywallTest={() => setShowPaywallTest(true)}
+          onClose={onClose}
+        />
 
         {/* Logout Button */}
-        <View className="px-6 mb-4">
-          <TouchableOpacity
-            className="bg-white rounded-xl p-4 flex-row items-center justify-center"
-            onPress={handleLogout}
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={20}
-              color={colors.brand.secondary}
-              className="mr-2"
-            />
-            <Text className="text-red-700 font-semibold">Log Out</Text>
-          </TouchableOpacity>
-        </View>
+        <LogoutSection onLogout={handleLogout} />
 
         {/* Version Info */}
-        <View className="items-center pb-8">
-          <TouchableOpacity
-            onPress={handleVersionTap}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
-          >
-            <Text
-              className={`text-xs text-text-muted`}
-              style={{
-                transform: tapCount > 0 ? [{ scale: 1.05 }] : [{ scale: 1 }],
-                fontWeight:
-                  tapCount == 0
-                    ? "normal"
-                    : tapCount == 1
-                      ? "100"
-                      : tapCount == 2
-                        ? "200"
-                        : tapCount == 3
-                          ? "300"
-                          : tapCount == 4
-                            ? "400"
-                            : "500",
-              }}
-            >
-              MastersFit v1.0.0
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <AppVersionSection tapCount={tapCount} onTap={handleVersionTap} />
       </ScrollView>
 
       {/* Coming Soon Modal */}
