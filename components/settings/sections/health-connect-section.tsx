@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { connectHealth, getHealthConnection } from "@/utils/health";
-import { colors } from "../../lib/theme";
+import { colors } from "../../../lib/theme";
 
 export default function HealthConnectSection() {
   const [healthConnected, setHealthConnected] = useState(false);

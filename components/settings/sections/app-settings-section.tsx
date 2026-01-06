@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../lib/theme";
-import ComingSoonModal from "../coming-soon-modal";
+import { colors } from "../../../lib/theme";
+import ComingSoonModal from "../../coming-soon-modal";
 import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
 

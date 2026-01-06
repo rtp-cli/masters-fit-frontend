@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../lib/theme";
+import { colors } from "../../../lib/theme";
 
 interface SubscriptionSectionProps {
   isPro: boolean;
