@@ -761,3 +761,29 @@ export async function fetchSubscriptionPlans(): Promise<{
     };
   }
 }
+
+/**
+ * Delete user account
+ */
+export async function deleteAccountAPI(): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    return await apiRequest<{
+      success: boolean;
+      message?: string;
+      error?: string;
+    }>("/auth/delete-account", {
+      method: "DELETE",
+    });
+  } catch (error) {
+    console.error("Delete account error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete account",
+    };
+  }
+}

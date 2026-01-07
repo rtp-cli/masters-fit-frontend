@@ -1,13 +1,18 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/auth-context";
+import { useBackgroundJobs } from "../../contexts/background-job-context";
 import { OnboardingData } from "@lib/types";
 import { RegenerationType } from "@/constants";
+import { generateWorkoutPlanAsync } from "@lib/workouts";
+import { registerForPushNotifications } from "@lib/notifications";
+import { logger } from "@lib/logger";
 
 // Encapsulates onboarding side effects and data mapping
 export function useOnboardingController() {
   const router = useRouter();
   const { user, completeOnboarding, setIsGeneratingWorkout } = useAuth();
+  const { addJob } = useBackgroundJobs();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
@@ -23,13 +28,45 @@ export function useOnboardingController() {
   }, []);
 
   const startWorkoutGeneration = useCallback(async () => {
-    try {
-      // Align with AuthContext RegenerationType
-      setIsGeneratingWorkout(true, RegenerationType.Initial);
-    } catch (err) {
-      // Swallow errors to avoid breaking onboarding flow; consider logging later
+    if (!user?.id) {
+      logger.error("Cannot start workout generation: user ID not found");
+      return;
     }
-  }, [setIsGeneratingWorkout]);
+
+    try {
+      // Set generating flag
+      setIsGeneratingWorkout(true, RegenerationType.Initial);
+
+      // Register for push notifications
+      await registerForPushNotifications();
+
+      // Call the workout generation API
+      const result = await generateWorkoutPlanAsync(user.id);
+
+      if (result?.success && result.jobId) {
+        // Register the job with background context for FAB tracking
+        await addJob(result.jobId, "generation");
+        logger.info("Workout generation started after onboarding", {
+          userId: user.id,
+          jobId: result.jobId,
+        });
+      } else {
+        logger.error("Failed to start workout generation after onboarding", {
+          userId: user.id,
+          result,
+        });
+        // Reset generating flag if API call failed
+        setIsGeneratingWorkout(false);
+      }
+    } catch (err) {
+      logger.error("Error starting workout generation after onboarding", {
+        error: err instanceof Error ? err.message : "Unknown error",
+        userId: user?.id,
+      });
+      // Reset generating flag on error
+      setIsGeneratingWorkout(false);
+    }
+  }, [user?.id, setIsGeneratingWorkout, addJob]);
 
   const handleSubmit = useCallback(
     async (formData: any) => {
@@ -38,22 +75,36 @@ export function useOnboardingController() {
       try {
         const payload = mapFormToProfileData(formData);
 
-        // TODO: integrate profile update API if available in the codebase
-        // await updateProfile(payload);
-
+        // Complete onboarding (updates profile)
         const success = await completeOnboarding(payload);
-        if (success) {
+        if (success && user?.id) {
+          // Start workout generation (calls the API)
           await startWorkoutGeneration();
+          // Navigate to dashboard
           router.replace("/(tabs)/dashboard");
+        } else {
+          logger.error("Onboarding completion failed or user ID missing", {
+            success,
+            userId: user?.id,
+          });
         }
       } catch (error) {
+        logger.error("Error during onboarding submission", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
         // Consider surfacing a user-friendly message via your toast system
       } finally {
         setIsLoading(false);
         setIsCompletingOnboarding(false);
       }
     },
-    [completeOnboarding, startWorkoutGeneration, mapFormToProfileData, router]
+    [
+      completeOnboarding,
+      startWorkoutGeneration,
+      mapFormToProfileData,
+      router,
+      user?.id,
+    ]
   );
 
   return {

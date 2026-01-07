@@ -34,6 +34,7 @@ import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
 import { colors } from "@/lib/theme";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
+import * as TrackingTransparency from "expo-tracking-transparency";
 
 // Inner component that can access auth context
 function AppContent() {
@@ -298,6 +299,26 @@ export default function RootLayout() {
     Manrope_600SemiBold,
     Manrope_700Bold,
   });
+
+  // Request App Tracking Transparency permission on iOS
+  useEffect(() => {
+    const requestTrackingPermission = async () => {
+      if (Platform.OS === "ios") {
+        try {
+          const { status } =
+            await TrackingTransparency.requestTrackingPermissionsAsync();
+          console.log("ATT permission status:", status);
+        } catch (error) {
+          console.error("Error requesting ATT permission:", error);
+        }
+      }
+    };
+
+    // Request permission as early as possible after fonts are loaded
+    if (fontsLoaded || fontError) {
+      requestTrackingPermission();
+    }
+  }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
     return null;

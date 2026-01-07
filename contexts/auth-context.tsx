@@ -15,6 +15,7 @@ import {
   clearAllData,
   getCurrentUser,
   saveUserToSecureStorage,
+  deleteAccount as apiDeleteAccount,
 } from "../lib/auth";
 import { invalidateActiveWorkoutCache } from "../lib/workouts";
 import { OnboardingData, User } from "@lib/types";
@@ -56,6 +57,11 @@ interface AuthContextType {
   login: (params: { email: string }) => Promise<{ success: boolean }>;
   completeOnboarding: (userData: OnboardingData) => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }>;
 }
 
 // Create the context
@@ -302,6 +308,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Delete user account
+  const deleteAccount = async (): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> => {
+    setIsLoading(true);
+    try {
+      logger.info("Account deletion initiated", { userId: user?.id });
+
+      // Call the API to delete the account
+      const result = await apiDeleteAccount();
+
+      if (result.success) {
+        // Clear workout cache before clearing other data
+        invalidateActiveWorkoutCache();
+        await clearAllData();
+
+        // Log out from RevenueCat to clear subscription identity
+        await logOutFromRevenueCat();
+
+        setUser(null);
+        logger.info("Account deleted successfully", { userId: user?.id });
+      }
+
+      return result;
+    } catch (error) {
+      logger.error("Account deletion failed", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to delete account",
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Set up API auth failure callback (after logout function is defined)
   useEffect(() => {
     const handleAuthFailure = async () => {
@@ -389,6 +435,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     completeOnboarding,
     logout,
+    deleteAccount,
   };
 
   // Provide the context to children components
