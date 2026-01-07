@@ -1,5 +1,5 @@
 import { Image, Text, View } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { images } from "@/assets";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -8,6 +8,8 @@ interface MainContentProps {
 }
 
 export default function MainContent({ isUpdate }: MainContentProps) {
+  const colors = useThemeColors();
+
   return (
     <>
       {/* Logo and Title */}

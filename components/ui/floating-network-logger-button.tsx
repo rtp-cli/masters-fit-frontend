@@ -2,9 +2,10 @@ import React from "react";
 import { TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 export function FloatingNetworkLoggerButton() {
+  const colors = useThemeColors();
   const router = useRouter();
 
   // Only show in development mode
@@ -14,7 +15,7 @@ export function FloatingNetworkLoggerButton() {
 
   return (
     <TouchableOpacity
-      style={styles.fab}
+      style={[styles.fab, { backgroundColor: colors.brand.primary }]}
       onPress={() => router.push("/network-logger")}
       activeOpacity={0.8}
     >
@@ -31,7 +32,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.brand.primary,
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,

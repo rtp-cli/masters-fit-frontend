@@ -1,5 +1,4 @@
 import { TouchableOpacity, View, Text } from "react-native";
-import { colors } from "@/lib/theme";
 
 interface BottomActionsProps {
   isAgreed: boolean;
@@ -18,7 +17,6 @@ export default function BottomActions({ isAgreed, isLoading, onCancel, onContinu
 
         <TouchableOpacity
           className={`flex-1 py-4 px-6 rounded-xl items-center ${isAgreed && !isLoading ? "bg-brand-primary" : "bg-neutral-light-2"}`}
-          style={isAgreed && !isLoading ? { backgroundColor: colors.brand.primary } : {}}
           onPress={onContinue}
           disabled={!isAgreed || isLoading}
         >

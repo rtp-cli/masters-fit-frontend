@@ -3,7 +3,7 @@ import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { PREFERRED_STYLES } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface WorkoutStyleStepProps {
   formData: FormData;
@@ -18,7 +18,14 @@ interface StyleConfig {
   description: string;
 }
 
-const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
+export default function WorkoutStyleStep({
+  formData,
+  onToggle,
+  onFieldChange,
+}: WorkoutStyleStepProps) {
+  const colors = useThemeColors();
+
+  const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
   switch (styleKey) {
     case PREFERRED_STYLES.HIIT:
       return {
@@ -100,11 +107,6 @@ const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
   }
 };
 
-export default function WorkoutStyleStep({
-  formData,
-  onToggle,
-  onFieldChange,
-}: WorkoutStyleStepProps) {
   return (
     <View className="flex-1 px-6 pb-6">
       {/* Warmup/Cooldown Preferences */}

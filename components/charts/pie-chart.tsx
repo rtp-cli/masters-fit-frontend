@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export interface PieChartData {
   label: string;
@@ -28,6 +28,8 @@ export const PieChart: React.FC<PieChartProps> = ({
   donut = false,
   innerRadius,
 }) => {
+  const colors = useThemeColors();
+
   if (!data || data.length === 0) {
     return (
       <View className="items-center py-3" style={{ height: size }}>

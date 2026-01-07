@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import Text from "./text";
 
 interface Exercise {
@@ -31,6 +31,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const colors = useThemeColors();
   const [link, setLink] = useState("");
   const [linkType, setLinkType] = useState<"youtube" | "unknown">("unknown");
   const [isLoading, setIsLoading] = useState(false);

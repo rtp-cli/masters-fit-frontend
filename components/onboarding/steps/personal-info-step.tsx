@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomSlider from "@/components/ui/slider";
 import { FormData } from "@/types/components";
 import { GENDER } from "@/types/enums/fitness.enums";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import {
   convertCmToInches,
   convertInchesToCm,
@@ -24,6 +24,8 @@ export default function PersonalInfoStep({
   errors,
   onFieldChange,
 }: PersonalInfoStepProps) {
+  const colors = useThemeColors();
+
   return (
     <View className="flex-1 px-6 pb-6">
       {/* Age slider */}

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { PHYSICAL_LIMITATIONS } from "@/types/enums/fitness.enums";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 
@@ -23,7 +23,15 @@ interface PhysicalLimitationsStepProps {
   scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
-const getLimitationConfig = (limitationKey: string) => {
+export default function PhysicalLimitationsStep({
+  formData,
+  onToggle,
+  onFieldChange,
+  scrollViewRef,
+}: PhysicalLimitationsStepProps) {
+  const colors = useThemeColors();
+
+  const getLimitationConfig = (limitationKey: string) => {
   switch (limitationKey) {
     case PHYSICAL_LIMITATIONS.KNEE_PAIN:
       return {
@@ -147,12 +155,6 @@ const getLimitationConfig = (limitationKey: string) => {
   }
 };
 
-export default function PhysicalLimitationsStep({
-  formData,
-  onToggle,
-  onFieldChange,
-  scrollViewRef,
-}: PhysicalLimitationsStepProps) {
   return (
     <ScrollView
       className="flex-1 px-6 pb-6"

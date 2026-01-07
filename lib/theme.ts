@@ -228,6 +228,65 @@ export const breakpoints = {
   xl: 1200,
 } as const;
 
+// Dark mode color overrides
+export const darkColors = {
+  brand: {
+    primary: "#B8E5A1", // Lighter lime green for dark mode
+    secondary: "#F5F8F7", // Light color for text on dark backgrounds
+    light: {
+      1: "#282828",
+      2: "#323232",
+    },
+    medium: {
+      1: "#3C3C3C",
+      2: "#505050",
+    },
+    dark: {
+      0: "#B8E5A1",
+      1: "#A8D491",
+      2: "#9BB875",
+      3: "#8CAF25",
+      4: "#7D9D1F",
+      5: "#668019",
+    },
+  },
+  neutral: {
+    white: "#181917", // Inverted for dark mode
+    light: {
+      1: "#282828", // Dark card backgrounds
+      2: "#323232", // Slightly lighter cards
+    },
+    medium: {
+      1: "#3A3A3A", // Borders in dark mode
+      2: "#4A4A4A", // Hover states
+      3: "#5A5A5A", // Muted elements
+      4: "#6A6A6A", // Secondary elements
+    },
+    dark: {
+      1: "#A8A8A8", // Light grays in dark mode
+    },
+  },
+  text: {
+    primary: "#F5F8F7", // Light text for dark mode
+    secondary: "#C6C6C6", // Medium-light text
+    muted: "#8A93A2", // Keep same as light mode
+  },
+  background: "#181917", // Charcoal background
+  danger: "#FF6B6B", // Lighter red for dark mode
+} as const;
+
+// Hook to get theme-aware colors for components that need inline color values
+// (Ionicons, ActivityIndicator, StatusBar, NavigationBar, etc.)
+// For everything else, use Tailwind classes which automatically adapt to dark mode
+import { useColorScheme } from 'react-native';
+
+export function useThemeColors() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  return isDark ? { ...colors, ...darkColors } : colors;
+}
+
 export default {
   colors,
   spacing,

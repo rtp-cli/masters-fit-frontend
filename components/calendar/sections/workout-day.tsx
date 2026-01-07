@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import WorkoutBlock from "@/components/workout-block";
 import {
@@ -45,6 +45,8 @@ export default function WorkoutDaySection({
   onRepeatWorkout,
   onGenerateWorkout,
 }: WorkoutDaySectionProps) {
+  const colors = useThemeColors();
+
   if (!selectedDate) {
     return null;
   }

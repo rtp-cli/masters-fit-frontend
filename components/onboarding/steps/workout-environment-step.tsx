@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { WORKOUT_ENVIRONMENTS, AVAILABLE_EQUIPMENT } from "@/types/enums";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 
@@ -15,8 +15,16 @@ interface WorkoutEnvironmentStepProps {
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
 }
 
-// Helper function to get environment configuration
-const getEnvironmentConfig = (envKey: WORKOUT_ENVIRONMENTS) => {
+export default function WorkoutEnvironmentStep({
+  formData,
+  errors,
+  onFieldChange,
+  onToggle,
+}: WorkoutEnvironmentStepProps) {
+  const colors = useThemeColors();
+
+  // Helper function to get environment configuration
+  const getEnvironmentConfig = (envKey: WORKOUT_ENVIRONMENTS) => {
   switch (envKey) {
     case WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM:
       return {
@@ -175,12 +183,6 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
   }
 };
 
-export default function WorkoutEnvironmentStep({
-  formData,
-  errors,
-  onFieldChange,
-  onToggle,
-}: WorkoutEnvironmentStepProps) {
   return (
     <View className="flex-1 px-6 pb-6">
       {/* Environment Selection */}

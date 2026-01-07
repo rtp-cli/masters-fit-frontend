@@ -12,9 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/auth-context";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export const LoginScreen = () => {
+  const colors = useThemeColors();
   const router = useRouter();
   const { checkEmail, signup, login, setIsSigningUp } = useAuth();
 

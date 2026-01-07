@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getAvailableProviders,
@@ -28,6 +28,7 @@ import {
 import { logger } from "@/lib/logger";
 
 export default function AIProviderSelectionPage() {
+  const colors = useThemeColors();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -299,15 +300,9 @@ export default function AIProviderSelectionPage() {
 
         {/* Current Provider Info */}
         <View className="mx-5 mb-4">
-          <View
-            className="bg-white rounded-xl p-3 border"
-            style={{ borderColor: colors.brand.primary }}
-          >
+          <View className="bg-white rounded-xl p-3 border border-primary">
             <View className="flex-row items-center">
-              <View
-                className="w-6 h-6 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: colors.brand.primary }}
-              >
+              <View className="w-6 h-6 rounded-full items-center justify-center mr-3 bg-primary">
                 <Ionicons name="checkmark" size={12} color="white" />
               </View>
               <View className="flex-1">
@@ -392,13 +387,11 @@ export default function AIProviderSelectionPage() {
                       return (
                         <TouchableOpacity
                           key={model.id}
-                          className={`bg-white rounded-lg p-4 mb-2 border`}
-                          style={{
-                            borderColor: isSelected
-                              ? colors.brand.primary
-                              : colors.neutral.light[2],
-                            borderWidth: isSelected ? 2 : 1,
-                          }}
+                          className={`bg-white rounded-lg p-4 mb-2 ${
+                            isSelected
+                              ? "border-2 border-primary"
+                              : "border border-neutral-light-2"
+                          }`}
                           onPress={() =>
                             handleProviderSwitch(providerKey, model.id)
                           }
@@ -411,12 +404,7 @@ export default function AIProviderSelectionPage() {
                                   {model.displayName}
                                 </Text>
                                 {isSelected && (
-                                  <View
-                                    className="w-4 h-4 rounded-full items-center justify-center"
-                                    style={{
-                                      backgroundColor: colors.brand.primary,
-                                    }}
-                                  >
+                                  <View className="w-4 h-4 rounded-full items-center justify-center bg-primary">
                                     <Ionicons
                                       name="checkmark"
                                       size={10}
@@ -431,12 +419,7 @@ export default function AIProviderSelectionPage() {
                               </Text>
 
                               <View className="flex-row items-center justify-between">
-                                <View
-                                  className="px-2 py-1 rounded-full"
-                                  style={{
-                                    backgroundColor: colors.neutral.light[2],
-                                  }}
-                                >
+                                <View className="px-2 py-1 rounded-full bg-neutral-light-2">
                                   <Text className="text-xs font-medium capitalize text-text-muted">
                                     {model.costTier} cost
                                   </Text>
@@ -469,10 +452,7 @@ export default function AIProviderSelectionPage() {
             <TouchableWithoutFeedback>
               <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
                 {/* Icon */}
-                <View
-                  className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto"
-                  style={{ backgroundColor: colors.brand.primary + "20" }}
-                >
+                <View className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto bg-primary/10">
                   <Ionicons
                     name="swap-horizontal"
                     size={32}
@@ -508,8 +488,7 @@ export default function AIProviderSelectionPage() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="flex-1 rounded-xl py-3 items-center justify-center"
-                    style={{ backgroundColor: colors.brand.primary }}
+                    className="flex-1 rounded-xl py-3 items-center justify-center bg-primary"
                     onPress={confirmProviderSwitch}
                   >
                     <Text className="text-white font-semibold text-base">

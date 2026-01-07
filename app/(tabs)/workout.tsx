@@ -30,7 +30,7 @@ import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
 import { ExerciseSet } from "@/components/set-tracker";
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
 import CircuitTracker from "@/components/circuit-tracker";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
@@ -169,6 +169,8 @@ function CircuitLoggingInterface({
 }
 
 export default function WorkoutScreen() {
+  const colors = useThemeColors();
+
   // Get workout context for tab disabling
   const { setWorkoutInProgress, isWorkoutInProgress, setCurrentWorkoutData } =
     useWorkout();
@@ -2038,8 +2040,8 @@ export default function WorkoutScreen() {
             className="bg-primary rounded-2xl py-4 flex-row items-center justify-center"
             onPress={startWorkout}
           >
-            <Ionicons name="play" size={20} color={colors.text.secondary} />
-            <Text className="text-secondary font-bold text-lg ml-2">
+            <Ionicons name="play" size={20} color={colors.background} />
+            <Text className="text-white font-bold text-lg ml-2">
               Start Workout
             </Text>
           </TouchableOpacity>

@@ -21,7 +21,7 @@ import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./onboarding-form";
 import { formatEnumValue } from "./onboarding/utils/formatters";
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
@@ -95,6 +95,7 @@ export default function WorkoutRegenerationModal({
   noActiveWorkoutDay = false,
   selectedDate,
 }: WorkoutRegenerationModalProps) {
+  const colors = useThemeColors();
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(
     null
   );

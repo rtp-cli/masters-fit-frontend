@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import ExerciseLink from "./exercise-link";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 
@@ -25,6 +25,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
   exercises,
   blockName = "Exercises",
 }) => {
+  const colors = useThemeColors();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const { width: screenWidth } = Dimensions.get("window");

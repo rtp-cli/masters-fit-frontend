@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { LineChart } from "@/components/charts/line-chart";
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 type StrengthProgressItem = {
@@ -22,6 +22,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
   filter,
   onChangeFilter,
 }) => {
+  const colors = useThemeColors();
   if (!data || data.length === 0) return null;
 
   const latestAvg =

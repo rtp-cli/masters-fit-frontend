@@ -1,6 +1,6 @@
 import { Modal, View, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import SearchView from "./search-view";
 
 interface SearchModalProps {
@@ -9,6 +9,8 @@ interface SearchModalProps {
 }
 
 export default function SearchModal({ visible, onClose }: SearchModalProps) {
+  const colors = useThemeColors();
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View className="flex-1 bg-background">

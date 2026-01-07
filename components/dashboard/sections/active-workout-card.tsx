@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import { formatNumber, formatWorkoutDuration } from "../../../utils";
 import {
@@ -35,6 +35,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   onRepeatWorkout,
   onGenerateWorkout,
 }) => {
+  const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
     if (!workout) return 0;
     if ("blocks" in workout && workout.blocks) {

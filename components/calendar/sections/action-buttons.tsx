@@ -1,7 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { PlanDayWithBlocks, WorkoutWithDetails } from "@/types/api";
 
 type CalendarActionButtonsProps = {
@@ -21,6 +21,8 @@ export default function CalendarActionButtons({
   onOpenRegeneration,
   onOpenEditExercises,
 }: CalendarActionButtonsProps) {
+  const colors = useThemeColors();
+
   if (!workoutPlan || isHistoricalWorkout || isPastDate) {
     return null;
   }

@@ -9,10 +9,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { images } from "@/assets";
 
 export default function FloatingActionButton() {
+  const colors = useThemeColors();
   const {
     activeJobs,
     failedJobs,

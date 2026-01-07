@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import {
   CircuitTrackerProps,
   CircuitExerciseLog,
@@ -34,6 +34,7 @@ export default function CircuitTracker({
   updateTimerState,
   shouldShowTimer,
 }: CircuitTrackerProps & { circuitActions?: CircuitActions }) {
+  const colors = useThemeColors();
   // TIMER DISPLAY HIDDEN: Override shouldShowTimer to false
   const hideTimers = false;
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];

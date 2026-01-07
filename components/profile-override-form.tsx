@@ -3,9 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
 import CustomSlider from "@/components/ui/slider";
 import IconComponent from "./onboarding/ui/icon-component";
 import { formatEnumValue } from "./onboarding/utils/formatters";
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
-  IntensityLevels,
+  INTENSITY_LEVELS,
   WORKOUT_ENVIRONMENTS,
   AVAILABLE_EQUIPMENT,
   PREFERRED_STYLES,
@@ -14,7 +14,7 @@ import {
 // Interface for temporary overrides (not saved to profile)
 export interface TemporaryOverrides {
   duration?: number;
-  intensity?: IntensityLevels;
+  intensity?: INTENSITY_LEVELS;
   styles?: PREFERRED_STYLES[];
   environment?: WORKOUT_ENVIRONMENTS;
   equipment?: AVAILABLE_EQUIPMENT[];
@@ -29,7 +29,7 @@ interface ProfileOverrideFormProps {
 }
 
 // Intensity level configuration helper - exact copy from onboarding
-const getIntensityLevelConfig = (intensityKey: string) => {
+const getIntensityLevelConfig = (intensityKey: string, colors: any) => {
   switch (intensityKey) {
     case "LOW":
       return {
@@ -63,7 +63,7 @@ const getIntensityLevelConfig = (intensityKey: string) => {
 };
 
 // Workout style configuration helper - exact copy from onboarding
-const getStyleConfig = (styleKey: string) => {
+const getStyleConfig = (styleKey: string, colors: any) => {
   switch (styleKey) {
     case "HIIT":
       return {
@@ -146,7 +146,7 @@ const getStyleConfig = (styleKey: string) => {
 };
 
 // Environment configuration helper - exact copy from onboarding
-const getEnvironmentConfig = (envKey: string) => {
+const getEnvironmentConfig = (envKey: string, colors: any) => {
   switch (envKey) {
     case "COMMERCIAL_GYM":
       return {
@@ -180,7 +180,7 @@ const getEnvironmentConfig = (envKey: string) => {
 };
 
 // Equipment configuration helper - exact copy from onboarding
-const getEquipmentConfig = (equipKey: string) => {
+const getEquipmentConfig = (equipKey: string, colors: any) => {
   switch (equipKey) {
     case "BARBELLS":
       return {
@@ -309,6 +309,8 @@ export default function ProfileOverrideForm({
   overrides,
   onOverrideChange,
 }: ProfileOverrideFormProps) {
+  const colors = useThemeColors();
+
   const updateOverride = (updates: Partial<TemporaryOverrides>) => {
     onOverrideChange({ ...overrides, ...updates });
   };
@@ -340,9 +342,9 @@ export default function ProfileOverrideForm({
         <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
           Intensity Level
         </Text>
-        {Object.entries(IntensityLevels).map(([key, value]) => {
+        {Object.entries(INTENSITY_LEVELS).map(([key, value]) => {
           const isSelected = overrides.intensity === value;
-          const config = getIntensityLevelConfig(key);
+          const config = getIntensityLevelConfig(key, colors);
 
           return (
             <TouchableOpacity
@@ -388,7 +390,7 @@ export default function ProfileOverrideForm({
         </Text>
         {Object.entries(PREFERRED_STYLES).map(([key, value]) => {
           const isSelected = overrides.styles?.includes(value) || false;
-          const config = getStyleConfig(key);
+          const config = getStyleConfig(key, colors);
 
           return (
             <TouchableOpacity
@@ -438,7 +440,7 @@ export default function ProfileOverrideForm({
         </Text>
         {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
           const isSelected = overrides.environment === value;
-          const config = getEnvironmentConfig(key);
+          const config = getEnvironmentConfig(key, colors);
 
           return (
             <TouchableOpacity
@@ -485,7 +487,7 @@ export default function ProfileOverrideForm({
             {["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].map((key) => {
               const value =
                 AVAILABLE_EQUIPMENT[key as keyof typeof AVAILABLE_EQUIPMENT];
-              const config = getEquipmentConfig(key);
+              const config = getEquipmentConfig(key, colors);
               const isSelected = overrides.equipment?.includes(value) || false;
 
               return (
@@ -530,7 +532,7 @@ export default function ProfileOverrideForm({
                   !["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].includes(key)
               )
               .map(([key, value]) => {
-                const config = getEquipmentConfig(key);
+                const config = getEquipmentConfig(key, colors);
                 const isSelected =
                   overrides.equipment?.includes(value) || false;
 

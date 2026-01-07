@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 type DashboardEmptyStateSectionProps = {
   showLoading: boolean;
@@ -15,6 +15,7 @@ const DashboardEmptyStateSection: React.FC<DashboardEmptyStateSectionProps> = ({
   showNoData,
   onStartWorkout,
 }) => {
+  const colors = useThemeColors();
   if (showLoading) {
     return (
       <View className="px-4 mb-6">

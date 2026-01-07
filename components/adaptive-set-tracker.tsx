@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { ExerciseSet } from "./set-tracker";
 import CircularTimerDisplay from "./circular-timer-display";
@@ -37,6 +37,7 @@ export default function AdaptiveSetTracker({
   onProgressUpdate,
   blockType = "traditional",
 }: AdaptiveSetTrackerProps) {
+  const colors = useThemeColors();
   const loggingType = getExerciseLoggingType(exercise);
   const showWeightInput = shouldShowWeightInput(exercise);
 

@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { ONBOARDING_STEP } from "@/types/enums";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface NavigationButtonsProps {
   currentStep: ONBOARDING_STEP;
@@ -23,6 +23,7 @@ export default function NavigationButtons({
   currentStepIndex,
   totalSteps,
 }: NavigationButtonsProps) {
+  const colors = useThemeColors();
   // Use index-based logic if provided, fallback to absolute step logic
   const isLastStep =
     totalSteps !== undefined && currentStepIndex !== undefined
@@ -37,18 +38,18 @@ export default function NavigationButtons({
       <View className="flex-row">
         {!isFirstStep && (
           <TouchableOpacity
-            className="flex-1 py-4 items-center justify-center bg-white rounded-xl mr-3"
+            className="flex-1 py-4 items-center justify-center bg-surface rounded-xl mr-3"
             onPress={onPrevious}
             disabled={isLoading}
           >
-            <Text className="text-neutral-dark-1 font-semibold text-lg">
+            <Text className="text-text-primary font-semibold text-lg">
               Back
             </Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity
-          className={`py-4 px-8 bg-black rounded-xl items-center justify-center ${
+          className={`py-4 px-8 bg-primary rounded-xl items-center justify-center ${
             currentStep === 0 ? "flex-1" : "flex-1 ml-3"
           } ${isLoading ? "opacity-70" : ""}`}
           onPress={isLastStep ? onSubmit : onNext}
@@ -57,7 +58,7 @@ export default function NavigationButtons({
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-white font-bold text-lg">
+            <Text className="text-neutral-white font-bold text-lg">
               {isLastStep ? submitButtonText : "Continue"}
             </Text>
           )}

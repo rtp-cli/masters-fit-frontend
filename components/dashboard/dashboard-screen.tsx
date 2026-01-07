@@ -44,7 +44,7 @@ import {
   getCurrentDate,
   formatDateAsString,
 } from "../../utils";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import HealthMetricsCarousel from "./sections/health-metrics-carousel";
 import ActiveWorkoutCard from "./sections/active-workout-card";
 import WeeklyProgressSection from "./sections/weekly-progress";
@@ -56,6 +56,7 @@ import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 export default function DashboardScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();

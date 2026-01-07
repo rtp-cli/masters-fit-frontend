@@ -12,12 +12,14 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   fetchPreviousWorkouts,
   repeatPreviousWeekWorkout,
+  invalidateActiveWorkoutCache,
 } from "@lib/workouts";
 import { getCurrentUser } from "@lib/auth";
-import { colors } from "@lib/theme";
+import { useThemeColors } from "@lib/theme";
 import { formatDate, formatDateAsString } from "@utils/index";
 import type { PreviousWorkout } from "@/types/api/workout.types";
 import { useAuth } from "@/contexts/auth-context";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { useRouter } from "expo-router";
 
 interface WorkoutRepeatModalProps {
@@ -31,6 +33,7 @@ export default function WorkoutRepeatModal({
   onClose,
   onSuccess,
 }: WorkoutRepeatModalProps) {
+  const colors = useThemeColors();
   const [previousWorkouts, setPreviousWorkouts] = useState<PreviousWorkout[]>(
     []
   );
@@ -42,7 +45,10 @@ export default function WorkoutRepeatModal({
     Record<number, boolean>
   >({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const { setIsPreloadingData, setIsGeneratingWorkout } = useAuth();
+  const { setIsPreloadingData, setIsGeneratingWorkout, setNeedsFullAppRefresh } = useAuth();
+  const {
+    refresh: { reset, refreshAll },
+  } = useAppDataContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -103,7 +109,15 @@ export default function WorkoutRepeatModal({
 
       if (result?.success) {
         // Trigger app reload to show warming up screen
+        invalidateActiveWorkoutCache();
+        setNeedsFullAppRefresh(true);
         setIsPreloadingData(true);
+
+        // Reset all cached data
+        reset();
+
+        // Trigger fresh data load - this will show warming up screen during loading
+        refreshAll();
 
         // Navigate to dashboard to trigger the warming up flow
         router.replace("/(tabs)/dashboard");

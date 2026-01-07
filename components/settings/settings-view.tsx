@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../coming-soon-modal";
 import { useSecretActivation } from "@/hooks/use-secret-activation";
@@ -28,6 +28,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
+  const colors = useThemeColors();
   const { user, logout } = useAuth();
   const router = useRouter();
   const {
@@ -761,12 +762,13 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             <View className="bg-neutral-light-1">
               <TouchableOpacity
                 className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-                onPress={() =>
+                onPress={() => {
+                  if (onClose) onClose();
                   router.push({
                     pathname: "/legal-document",
                     params: { type: "terms" },
-                  } as any)
-                }
+                  } as any);
+                }}
               >
                 <View className="flex-row items-center flex-1">
                   <Ionicons
@@ -787,12 +789,13 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
               <TouchableOpacity
                 className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-                onPress={() =>
+                onPress={() => {
+                  if (onClose) onClose();
                   router.push({
                     pathname: "/legal-document",
                     params: { type: "privacy" },
-                  } as any)
-                }
+                  } as any);
+                }}
               >
                 <View className="flex-row items-center flex-1">
                   <Ionicons
@@ -813,12 +816,13 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
               <TouchableOpacity
                 className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-                onPress={() =>
+                onPress={() => {
+                  if (onClose) onClose();
                   router.push({
                     pathname: "/legal-document",
                     params: { type: "waiver" },
-                  } as any)
-                }
+                  } as any);
+                }}
               >
                 <View className="flex-row items-center flex-1">
                   <Ionicons

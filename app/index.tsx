@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, usePathname } from "expo-router";
@@ -13,6 +13,7 @@ import { images } from "@/assets";
 import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 
 export default function GetStarted() {
+  const colors = useThemeColors();
   const router = useRouter();
   const pathname = usePathname();
   const {

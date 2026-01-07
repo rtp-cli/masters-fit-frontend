@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { images } from "@/assets";
 
 // Import legal documents
@@ -41,6 +41,7 @@ interface GroupedSection {
 }
 
 export default function LegalDocumentScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const { type } = useLocalSearchParams<{ type: string }>();
   const [documentData, setDocumentData] = useState<DocumentData | null>(null);
@@ -305,7 +306,7 @@ export default function LegalDocumentScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Colored Header Section */}
-        <View style={{ backgroundColor: colors.brand.primary }}>
+        <View className="bg-primary">
           <View className="px-6 pt-8 pb-6">
             <View className="flex-row items-center mb-4">
               <Image
@@ -338,10 +339,7 @@ export default function LegalDocumentScreen() {
           {/* Disclaimer Section */}
           {documentData.disclaimer && (
             <View className="mb-8">
-              <View
-                className="rounded-xl p-5 border border-brand-primary border-opacity-20"
-                style={{ backgroundColor: colors.brand.light[1] }}
-              >
+              <View className="rounded-xl p-5 border border-brand-primary border-opacity-20 bg-brand-light-1">
                 <View className="flex-row items-start">
                   <View className="mr-3 mt-0.5">
                     <Ionicons
@@ -402,10 +400,7 @@ export default function LegalDocumentScreen() {
                   className="ml-4"
                   onPress={() => Linking.openURL("mailto:legal@mastersfit.ai")}
                 >
-                  <View
-                    className="w-12 h-12 rounded-full items-center justify-center"
-                    style={{ backgroundColor: colors.brand.primary }}
-                  >
+                  <View className="w-12 h-12 rounded-full items-center justify-center bg-primary">
                     <Ionicons name="mail" size={20} color="white" />
                   </View>
                 </TouchableOpacity>
@@ -424,9 +419,8 @@ export default function LegalDocumentScreen() {
       {showScrollTop && (
         <TouchableOpacity
           onPress={scrollToTop}
-          className="absolute bottom-6 right-6"
+          className="absolute bottom-6 right-6 bg-primary"
           style={{
-            backgroundColor: colors.brand.primary,
             width: 48,
             height: 48,
             borderRadius: 24,

@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 export interface ExerciseSet {
   roundNumber: number;
@@ -36,6 +36,7 @@ export default function SetTracker({
   onSetsChange,
   blockType = "traditional",
 }: SetTrackerProps) {
+  const colors = useThemeColors();
   const [localSets, setLocalSets] = useState<ExerciseSet[]>(sets);
 
   // Sync local state with props when exercise changes

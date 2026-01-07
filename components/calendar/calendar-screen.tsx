@@ -28,7 +28,7 @@ import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import { formatDateAsString } from "../../utils";
 import {
   PlanDayWithBlocks,
@@ -41,6 +41,7 @@ import CalendarActionButtons from "./sections/action-buttons";
 import WorkoutDaySection from "./sections/workout-day";
 
 export default function CalendarScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const {
     setIsGeneratingWorkout,

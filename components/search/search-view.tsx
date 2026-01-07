@@ -31,13 +31,14 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { updateExerciseLink } from "@lib/exercises";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 type SearchType = "date" | "exercise" | "general";
 
 type PlanDayForCompletion = DateSearchWorkout["planDay"];
 
 export default function SearchView() {
+  const colors = useThemeColors();
   const { user } = useAuth();
   const {
     refresh: { searchByDate, searchExercise, searchExercises },

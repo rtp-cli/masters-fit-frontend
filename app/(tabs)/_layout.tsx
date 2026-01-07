@@ -12,7 +12,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import FloatingActionButton from "@/components/floating-action-button";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";
 import { tabEvents } from "@/lib/tab-events";
 import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
@@ -96,6 +96,7 @@ function DisabledTabButton({
 }
 
 export default function TabLayout() {
+  const colors = useThemeColors();
   const { isWorkoutInProgress } = useWorkout();
   const insets = useSafeAreaInsets();
 

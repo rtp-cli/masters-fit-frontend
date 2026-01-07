@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import {
   CircuitTimerProps,
   CircuitTimerState,
@@ -19,6 +19,7 @@ export default function CircuitTimer({
   onTimerEvent,
   disabled = false,
 }: CircuitTimerProps) {
+  const colors = useThemeColors();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedMinuteRef = useRef<number>(0);
   const timerConfig = getCircuitTimerConfig(blockType);

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 type HealthMetricsProps = {
   stepsCount: number | null;
@@ -18,12 +18,14 @@ type HealthMetricItemProps = {
   value: number | null;
   iconName: keyof typeof Ionicons.glyphMap;
   unit?: string;
+  colors: ReturnType<typeof useThemeColors>;
 };
 
 const HealthMetricItem: React.FC<HealthMetricItemProps> = ({
   value,
   iconName,
   unit,
+  colors,
 }) => (
   <View className="items-center">
     <View
@@ -48,6 +50,8 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
   healthLoading,
   onConnect,
 }) => {
+  const colors = useThemeColors();
+
   const allMetrics: (HealthMetricItemProps & { key: string })[] = [
     {
       key: "steps",
@@ -75,7 +79,7 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
     },
   ];
 
-  const visibleMetrics = allMetrics.filter((metric) => metric.value !== null);
+  const visibleMetrics = allMetrics.filter((metric) => metric.value !== null && metric.value !== 0);
 
   if (!healthReady) {
     return (
@@ -113,6 +117,7 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
             value={metric.value}
             iconName={metric.iconName}
             unit={metric.unit}
+            colors={colors}
           />
         ))}
       </View>

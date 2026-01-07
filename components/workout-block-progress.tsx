@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
   type ExerciseSessionData,
   getBlockTypeDisplayName,
@@ -25,6 +25,7 @@ export default function WorkoutBlockProgress({
   currentExerciseIndex,
   onExercisePress,
 }: WorkoutBlockProgressProps) {
+  const colors = useThemeColors();
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
 
   const getBlockIcon = (blockType?: string) => {

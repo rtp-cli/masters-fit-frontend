@@ -2,7 +2,7 @@ import React from "react";
 import { Dimensions, Text, View } from "react-native";
 import { LineChart as RNLineChart } from "react-native-chart-kit";
 
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export interface LineChartData {
   label: string;
@@ -21,9 +21,11 @@ interface LineChartProps {
 export const LineChart: React.FC<LineChartProps> = ({
   data,
   height = 200,
-  color = colors.brand.primary,
+  color,
   showLabels = true,
 }) => {
+  const colors = useThemeColors();
+  const chartColor = color || colors.brand.primary;
   if (!data || data.length === 0) {
     return (
       <View
@@ -49,7 +51,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     datasets: [
       {
         data: data.map((item) => item.value),
-        color: () => color, // Function that returns color
+        color: () => chartColor, // Function that returns color
         strokeWidth: 3, // optional
       },
       // Add invisible baseline dataset for better scaling
@@ -68,7 +70,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     backgroundGradientTo: colors.background,
     decimalPlaces: 0, // optional, defaults to 2dp
     color: (opacity = 1) =>
-      color
+      chartColor
         .replace(/rgb\(([^)]+)\)/, `rgba($1, ${opacity})`)
         .replace(
           /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
@@ -81,7 +83,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     propsForDots: {
       r: "4",
       strokeWidth: "2",
-      stroke: color,
+      stroke: chartColor,
     },
     propsForBackgroundLines: {
       strokeDasharray: "", // solid background lines with no dashes

@@ -31,7 +31,8 @@ import {
 import "../global.css";
 import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
+import { ThemeProvider } from "@/contexts/theme-context";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
 
 // Inner component that can access auth context
@@ -51,14 +52,15 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
+  const colors = useThemeColors();
 
   useEffect(() => {
-    // Ensure Android system UI matches the light app background
+    // Ensure Android system UI matches the app background
     if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync(colors.background).catch(() => {});
       NavigationBar.setButtonStyleAsync("dark").catch(() => {});
     }
-  }, []);
+  }, [colors.background]);
 
   useEffect(() => {
     ensureHealthConnectInitialized();
@@ -274,18 +276,20 @@ export default function RootLayout() {
   }
 
   return (
-    <MixpanelProvider>
-      <AuthProvider>
-        <WaiverProvider>
-          <WorkoutProvider>
-            <AppDataProvider>
-              <BackgroundJobProvider>
-                <AppContent />
-              </BackgroundJobProvider>
-            </AppDataProvider>
-          </WorkoutProvider>
-        </WaiverProvider>
-      </AuthProvider>
-    </MixpanelProvider>
+    <ThemeProvider>
+      <MixpanelProvider>
+        <AuthProvider>
+          <WaiverProvider>
+            <WorkoutProvider>
+              <AppDataProvider>
+                <BackgroundJobProvider>
+                  <AppContent />
+                </BackgroundJobProvider>
+              </AppDataProvider>
+            </WorkoutProvider>
+          </WaiverProvider>
+        </AuthProvider>
+      </MixpanelProvider>
+    </ThemeProvider>
   );
 }

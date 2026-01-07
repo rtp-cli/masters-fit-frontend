@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
 import { View } from "react-native";
 
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export default function AuthLayout() {
+  const colors = useThemeColors();
+
   return (
     <View className="flex-1">
       <Stack

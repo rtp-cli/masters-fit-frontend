@@ -14,9 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export const VerifyScreen = () => {
+  const colors = useThemeColors();
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState(["", "", "", ""]);

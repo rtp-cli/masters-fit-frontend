@@ -2,7 +2,7 @@ import { Slider } from "@miblanchard/react-native-slider";
 import React from "react";
 import { Text, View } from "react-native";
 
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 interface CustomSliderProps {
   label?: string;
@@ -29,6 +29,7 @@ export default function CustomSlider({
   formatValue,
   formatMinMax,
 }: CustomSliderProps) {
+  const colors = useThemeColors();
   const displayValue = formatValue ? formatValue(value) : `${value}${unit}`;
   const displayMin = formatMinMax
     ? formatMinMax(minimumValue)

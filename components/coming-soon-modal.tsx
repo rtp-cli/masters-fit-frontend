@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 
 interface ComingSoonModalProps {
   visible: boolean;
@@ -21,6 +21,7 @@ export default function ComingSoonModal({
   onClose,
   icon,
 }: ComingSoonModalProps) {
+  const colors = useThemeColors();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <TouchableWithoutFeedback onPress={onClose}>

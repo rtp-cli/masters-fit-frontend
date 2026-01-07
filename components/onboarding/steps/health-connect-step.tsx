@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { connectHealth, getHealthConnection } from "@/utils/health";
 import Text from "@/components/text";
 
 export default function HealthConnectStep() {
+  const colors = useThemeColors();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

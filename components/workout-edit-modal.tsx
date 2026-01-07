@@ -15,7 +15,7 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { replaceExercise } from "@/lib/workouts";
@@ -51,6 +51,7 @@ export default function WorkoutEditModal({
   onSuccess,
   onError,
 }: WorkoutEditModalProps) {
+  const colors = useThemeColors();
   const { user } = useAuth();
   const {
     refresh: { refreshWorkout },
@@ -488,33 +489,21 @@ export default function WorkoutEditModal({
               removeClippedSubviews={true}
             >
               {/* Workout Info */}
-              <View
-                className="px-5 py-4 bg-white border-b"
-                style={{ borderBottomColor: colors.neutral.medium[1] }}
-              >
+              <View className="px-5 py-4 bg-white border-b border-neutral-medium-1">
                 {/* Workout Name */}
-                <Text
-                  className="text-xl font-bold mb-3"
-                  style={{ color: colors.text.primary }}
-                >
+                <Text className="text-xl font-bold mb-3 text-text-primary">
                   {planDay.description || planDay.name || "Workout"}
                 </Text>
 
                 {/* Workout Instructions */}
                 {planDay.instructions && (
-                  <Text
-                    className="text-sm mb-4 italic leading-5"
-                    style={{ color: colors.text.secondary }}
-                  >
+                  <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
                     {planDay.instructions}
                   </Text>
                 )}
 
                 {/* Edit Instructions */}
-                <Text
-                  className="text-sm mb-4 italic leading-5"
-                  style={{ color: colors.text.secondary }}
-                >
+                <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
                   Tap any exercise to replace it with an alternative
                 </Text>
 
@@ -528,10 +517,7 @@ export default function WorkoutEditModal({
                       color={colors.text.muted}
                     />
                     <View className="ml-2">
-                      <View
-                        className="rounded-full px-2 py-1"
-                        style={{ backgroundColor: colors.brand.primary }}
-                      >
+                      <View className="rounded-full px-2 py-1 bg-primary">
                         <Text className="text-xs font-semibold text-white">
                           {totalExercises} exercises
                         </Text>
@@ -543,10 +529,7 @@ export default function WorkoutEditModal({
                   <View className="flex-row items-center">
                     <Ionicons name="time" size={16} color={colors.text.muted} />
                     <View className="ml-2">
-                      <View
-                        className="rounded-full px-2 py-1"
-                        style={{ backgroundColor: colors.brand.primary }}
-                      >
+                      <View className="rounded-full px-2 py-1 bg-primary">
                         <Text className="text-xs font-semibold text-white">
                           {formatWorkoutDuration(
                             calculatePlanDayDuration(planDay)
@@ -593,20 +576,11 @@ export default function WorkoutEditModal({
                       </View>
                     ))
                 ) : (
-                  <View
-                    className="p-6 rounded-xl items-center"
-                    style={{ backgroundColor: colors.brand.light[1] }}
-                  >
-                    <Text
-                      className="text-base font-bold mb-2"
-                      style={{ color: colors.text.primary }}
-                    >
+                  <View className="p-6 rounded-xl items-center bg-brand-light-1">
+                    <Text className="text-base font-bold mb-2 text-text-primary">
                       No Exercises
                     </Text>
-                    <Text
-                      className="text-sm text-center leading-5"
-                      style={{ color: colors.text.muted }}
-                    >
+                    <Text className="text-sm text-center leading-5 text-text-muted">
                       This workout doesn't have any exercises to edit.
                     </Text>
                   </View>
@@ -621,35 +595,23 @@ export default function WorkoutEditModal({
                 {currentExercise && (
                   <>
                     {/* Exercise Name */}
-                    <Text
-                      className="text-xl font-bold mb-3"
-                      style={{ color: colors.text.primary }}
-                    >
+                    <Text className="text-xl font-bold mb-3 text-text-primary">
                       {currentExercise.exercise.name}
                     </Text>
 
                     {/* Instructions */}
                     {currentExercise.exercise.instructions ? (
-                      <Text
-                        className="text-sm mb-4 italic leading-5"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
                         {currentExercise.exercise.instructions}
                       </Text>
                     ) : (
-                      <Text
-                        className="text-sm mb-4 italic leading-5"
-                        style={{ color: colors.text.muted }}
-                      >
+                      <Text className="text-sm mb-4 italic leading-5 text-text-muted">
                         No instructions available
                       </Text>
                     )}
 
                     {/* Exercise Details (sets/reps/weight) */}
-                    <Text
-                      className="text-sm mb-4 italic leading-5"
-                      style={{ color: colors.text.secondary }}
-                    >
+                    <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
                       {formatExerciseDetails(currentExercise)}
                     </Text>
 
@@ -669,10 +631,7 @@ export default function WorkoutEditModal({
                             ).map((muscle, index) => (
                               <View
                                 key={index}
-                                className="rounded-full px-2 py-1 mr-1 mb-1"
-                                style={{
-                                  backgroundColor: colors.brand.primary,
-                                }}
+                                className="rounded-full px-2 py-1 mr-1 mb-1 bg-primary"
                               >
                                 <Text className="text-xs font-semibold text-white">
                                   {muscle}
@@ -692,10 +651,7 @@ export default function WorkoutEditModal({
                             color={colors.text.muted}
                           />
                           <View className="ml-2">
-                            <View
-                              className="rounded-full px-2 py-1"
-                              style={{ backgroundColor: colors.brand.primary }}
-                            >
+                            <View className="rounded-full px-2 py-1 bg-primary">
                               <Text className="text-xs font-semibold text-white">
                                 {formatEquipment(
                                   currentExercise.exercise.equipment
@@ -711,10 +667,7 @@ export default function WorkoutEditModal({
               </View>
 
               {/* Separator Line */}
-              <View
-                className="h-px mx-5"
-                style={{ backgroundColor: colors.neutral.medium[1] }}
-              />
+              <View className="h-px mx-5 bg-neutral-medium-1" />
 
               {/* Search Section */}
               <View className="flex-1">
@@ -723,18 +676,14 @@ export default function WorkoutEditModal({
                   {/* Search Input Row */}
                   <View className="flex-row items-center gap-3">
                     {/* Search Input */}
-                    <View
-                      className="flex-1 flex-row items-center rounded-xl px-4 py-3"
-                      style={{ backgroundColor: colors.neutral.light[2] }}
-                    >
+                    <View className="flex-1 flex-row items-center rounded-xl px-4 py-3 bg-neutral-light-2">
                       <Ionicons
                         name="search"
                         size={20}
                         color={colors.text.muted}
                       />
                       <TextInput
-                        className="flex-1 ml-3 text-base"
-                        style={{ color: colors.text.primary }}
+                        className="flex-1 ml-3 text-base text-text-primary"
                         placeholder="Search exercises..."
                         placeholderTextColor={colors.text.muted}
                         value={searchQuery}
@@ -796,10 +745,7 @@ export default function WorkoutEditModal({
                 </View>
 
                 {/* Separator Line */}
-                <View
-                  className="h-px mx-5"
-                  style={{ backgroundColor: colors.neutral.medium[1] }}
-                />
+                <View className="h-px mx-5 bg-neutral-medium-1" />
 
                 {/* Search Results */}
                 <View className="flex-1">
@@ -859,11 +805,7 @@ export default function WorkoutEditModal({
                                           .map((muscle, muscleIndex) => (
                                             <View
                                               key={muscleIndex}
-                                              className="rounded-full px-2 py-1 mr-1"
-                                              style={{
-                                                backgroundColor:
-                                                  colors.brand.primary,
-                                              }}
+                                              className="rounded-full px-2 py-1 mr-1 bg-primary"
                                             >
                                               <Text className="text-xs font-semibold text-white">
                                                 {muscle}
@@ -873,13 +815,7 @@ export default function WorkoutEditModal({
                                         {getIndividualMuscleGroups(
                                           item.muscleGroups
                                         ).length > 2 && (
-                                          <View
-                                            className="rounded-full px-2 py-1"
-                                            style={{
-                                              backgroundColor:
-                                                colors.brand.primary,
-                                            }}
-                                          >
+                                          <View className="rounded-full px-2 py-1 bg-primary">
                                             <Text className="text-xs font-semibold text-white">
                                               +
                                               {getIndividualMuscleGroups(
@@ -901,12 +837,7 @@ export default function WorkoutEditModal({
                                       color={colors.text.muted}
                                     />
                                     <View className="ml-1">
-                                      <View
-                                        className="rounded-full px-2 py-1"
-                                        style={{
-                                          backgroundColor: colors.brand.primary,
-                                        }}
-                                      >
+                                      <View className="rounded-full px-2 py-1 bg-primary">
                                         <Text className="text-xs font-semibold text-white">
                                           {formatEquipment(item.equipment)}
                                         </Text>
@@ -1030,24 +961,15 @@ export default function WorkoutEditModal({
           {/* Modal Header */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity onPress={cancelFilters}>
-              <Text
-                className="text-base font-medium"
-                style={{ color: colors.text.muted }}
-              >
+              <Text className="text-base font-medium text-text-muted">
                 Cancel
               </Text>
             </TouchableOpacity>
-            <Text
-              className="text-base font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <Text className="text-base font-semibold text-text-primary">
               Filters
             </Text>
             <TouchableOpacity onPress={applyFilters}>
-              <Text
-                className="text-base font-medium"
-                style={{ color: colors.brand.primary }}
-              >
+              <Text className="text-base font-medium text-primary">
                 Apply
               </Text>
             </TouchableOpacity>
@@ -1066,10 +988,7 @@ export default function WorkoutEditModal({
                   color={colors.text.primary}
                   style={{ marginRight: 8 }}
                 />
-                <Text
-                  className="text-base font-semibold"
-                  style={{ color: colors.text.primary }}
-                >
+                <Text className="text-base font-semibold text-text-primary">
                   Equipment
                 </Text>
               </View>
@@ -1113,13 +1032,9 @@ export default function WorkoutEditModal({
                 filterOptions.equipment.length > 10 && (
                   <TouchableOpacity
                     onPress={() => setShowAllEquipment(!showAllEquipment)}
-                    className="mt-3 py-2 px-4 rounded-lg self-start"
-                    style={{ backgroundColor: colors.neutral.light[1] }}
+                    className="mt-3 py-2 px-4 rounded-lg self-start bg-neutral-light-1"
                   >
-                    <Text
-                      className="text-sm font-medium"
-                      style={{ color: colors.brand.primary }}
-                    >
+                    <Text className="text-sm font-medium text-primary">
                       {showAllEquipment
                         ? "Show Less"
                         : `Show More (${
@@ -1140,10 +1055,7 @@ export default function WorkoutEditModal({
                     color={colors.text.primary}
                     style={{ marginRight: 8 }}
                   />
-                  <Text
-                    className="text-base font-semibold"
-                    style={{ color: colors.text.primary }}
-                  >
+                  <Text className="text-base font-semibold text-text-primary">
                     Muscle Groups
                   </Text>
                 </View>
@@ -1161,11 +1073,7 @@ export default function WorkoutEditModal({
               {showMuscleGroupSearch && (
                 <View className="mb-3">
                   <TextInput
-                    className="px-3 py-2 border rounded-lg text-sm"
-                    style={{
-                      borderColor: colors.neutral.medium[1],
-                      color: colors.text.primary,
-                    }}
+                    className="px-3 py-2 border border-neutral-medium-1 rounded-lg text-sm text-text-primary"
                     placeholder="Search muscle groups..."
                     placeholderTextColor={colors.text.muted}
                     value={muscleGroupSearchQuery}
@@ -1216,13 +1124,9 @@ export default function WorkoutEditModal({
                 filterOptions.muscleGroups.length > 10 && (
                   <TouchableOpacity
                     onPress={() => setShowAllMuscleGroups(!showAllMuscleGroups)}
-                    className="mt-3 py-2 px-4 rounded-lg self-start"
-                    style={{ backgroundColor: colors.neutral.light[1] }}
+                    className="mt-3 py-2 px-4 rounded-lg self-start bg-neutral-light-1"
                   >
-                    <Text
-                      className="text-sm font-medium"
-                      style={{ color: colors.brand.primary }}
-                    >
+                    <Text className="text-sm font-medium text-primary">
                       {showAllMuscleGroups
                         ? "Show Less"
                         : `Show More (${
@@ -1242,10 +1146,7 @@ export default function WorkoutEditModal({
                   color={colors.text.primary}
                   style={{ marginRight: 8 }}
                 />
-                <Text
-                  className="text-base font-semibold"
-                  style={{ color: colors.text.primary }}
-                >
+                <Text className="text-base font-semibold text-text-primary">
                   Difficulty
                 </Text>
               </View>
@@ -1298,10 +1199,7 @@ export default function WorkoutEditModal({
                   setTempDifficulty(null);
                 }}
               >
-                <Text
-                  className="text-base font-medium"
-                  style={{ color: colors.brand.primary }}
-                >
+                <Text className="text-base font-medium text-primary">
                   Clear all filters
                 </Text>
               </TouchableOpacity>

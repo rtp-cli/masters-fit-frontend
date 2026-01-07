@@ -1,7 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 type CalendarViewSectionProps = {
   calendarKey: number;
@@ -22,6 +22,8 @@ export default function CalendarViewSection({
   onPressToday,
   showTodayButton,
 }: CalendarViewSectionProps) {
+  const colors = useThemeColors();
+
   return (
     <>
       <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">

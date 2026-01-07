@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface NoActiveWorkoutCardProps {
   isGenerating: boolean;
@@ -24,6 +24,7 @@ export default function NoActiveWorkoutCard({
   showActionsOnlyForToday = false,
   isToday = true,
 }: NoActiveWorkoutCardProps) {
+  const colors = useThemeColors();
   // Variant-specific styling and icons
   const getVariantStyles = () => {
     switch (variant) {

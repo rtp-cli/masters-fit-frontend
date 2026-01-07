@@ -2,51 +2,55 @@
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
+  darkMode: 'class', // Enable class-based dark mode
   theme: {
     extend: {
       colors: {
         brand: {
-          primary: "#9BB875",
-          secondary: "#181917",
+          primary: "rgb(var(--color-brand-primary) / <alpha-value>)",
+          secondary: "rgb(var(--color-brand-secondary) / <alpha-value>)",
           light: {
-            1: "#F2F6E7",
-            2: "#F0F9D3",
+            1: "rgb(var(--color-brand-light-1) / <alpha-value>)",
+            2: "rgb(var(--color-brand-light-2) / <alpha-value>)",
           },
           medium: {
-            1: "#E8F8B8",
-            2: "#D4E5A1",
+            1: "rgb(var(--color-brand-medium-1) / <alpha-value>)",
+            2: "rgb(var(--color-brand-medium-2) / <alpha-value>)",
           },
           dark: {
-            1: "#8CAF25",
-            2: "#7D9D1F",
-            3: "#668019",
-            4: "#506415",
+            1: "rgb(var(--color-brand-dark-1) / <alpha-value>)",
+            2: "rgb(var(--color-brand-dark-2) / <alpha-value>)",
+            3: "rgb(var(--color-brand-dark-3) / <alpha-value>)",
+            4: "rgb(var(--color-brand-dark-4) / <alpha-value>)",
           },
         },
         neutral: {
-          white: "#FFFFFF",
+          white: "rgb(var(--color-neutral-white) / <alpha-value>)",
           light: {
-            1: "#FBFBFB",
-            2: "#F4F4F4",
+            1: "rgb(var(--color-neutral-light-1) / <alpha-value>)",
+            2: "rgb(var(--color-neutral-light-2) / <alpha-value>)",
           },
           medium: {
-            1: "#E8E8E8",
-            2: "#C6C6C6",
-            3: "#A8A8A8",
-            4: "#8A93A2",
+            1: "rgb(var(--color-neutral-medium-1) / <alpha-value>)",
+            2: "rgb(var(--color-neutral-medium-2) / <alpha-value>)",
+            3: "rgb(var(--color-neutral-medium-3) / <alpha-value>)",
+            4: "rgb(var(--color-neutral-medium-4) / <alpha-value>)",
           },
           dark: {
-            1: "#525252",
+            1: "rgb(var(--color-neutral-dark-1) / <alpha-value>)",
           },
         },
-        primary: "#9BB875",
-        secondary: "#181917",
-        background: "#FFFFFF",
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        secondary: "rgb(var(--color-secondary) / <alpha-value>)",
+        background: "rgb(var(--color-background) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
         text: {
-          primary: "#181917",
-          secondary: "#525252",
-          muted: "#8A93A2",
+          primary: "rgb(var(--color-text-primary) / <alpha-value>)",
+          secondary: "rgb(var(--color-text-secondary) / <alpha-value>)",
+          muted: "rgb(var(--color-text-muted) / <alpha-value>)",
         },
+        danger: "rgb(var(--color-danger) / <alpha-value>)",
+        success: "rgb(var(--color-success) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["Manrope_400Regular", "System", "Arial", "sans-serif"],

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
 import SettingsModal from "./settings/settings-modal";
 
@@ -23,6 +23,7 @@ export default function Header({
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const colors = useThemeColors();
 
   // Modal state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
@@ -84,14 +85,14 @@ export default function Header({
         <View className="flex-row items-center space-x-4">
           <TouchableOpacity
             onPress={handleSearchPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-white"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface"
           >
             <Ionicons name="search" size={20} color={colors.text.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleSettingsPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-white"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface"
           >
             <Ionicons name="person" size={20} color={colors.text.primary} />
           </TouchableOpacity>

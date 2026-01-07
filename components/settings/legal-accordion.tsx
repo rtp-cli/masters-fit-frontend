@@ -2,9 +2,10 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 export default function LegalAccordion() {
+  const colors = useThemeColors();
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
 

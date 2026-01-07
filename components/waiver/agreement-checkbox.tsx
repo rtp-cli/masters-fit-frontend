@@ -1,6 +1,5 @@
 import { TouchableOpacity, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
 import { CURRENT_WAIVER_VERSION } from "@/constants/waiver";
 
 interface AgreementCheckboxProps {
@@ -24,14 +23,6 @@ export default function AgreementCheckbox({
               ? "bg-brand-primary border-brand-primary"
               : "bg-white border-neutral-medium-2"
           }`}
-          style={
-            isAgreed
-              ? {
-                  backgroundColor: colors.brand.primary,
-                  borderColor: colors.brand.primary,
-                }
-              : {}
-          }
         >
           {isAgreed && <Ionicons name="checkmark" size={16} color="white" />}
         </View>
