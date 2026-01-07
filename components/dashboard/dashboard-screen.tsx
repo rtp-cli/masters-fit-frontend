@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../contexts/auth-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import {
   fetchHeartRateSamples,
   fetchCaloriesToday,
@@ -37,10 +31,8 @@ import {
 } from "@/types/api";
 import {
   formatDate,
-  formatNumber,
   calculateWorkoutDuration,
   calculatePlanDayDuration,
-  formatWorkoutDuration,
   getCurrentDate,
   formatDateAsString,
 } from "../../utils";
@@ -52,6 +44,7 @@ import WeightPerformanceSection from "./sections/weight-performance";
 import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
+import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
@@ -63,6 +56,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
+  const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
   const scrollViewRef = useRef<ScrollView>(null);
   const [todaysWorkout, setTodaysWorkout] = useState<TodayWorkout | null>(null);
   const [workoutInfo, setWorkoutInfo] = useState<{
@@ -131,6 +125,7 @@ export default function DashboardScreen() {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showPaywallTest, setShowPaywallTest] = useState(false);
+  const [showPaymentWall, setShowPaymentWall] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -913,25 +908,12 @@ export default function DashboardScreen() {
           })}
         />
 
-        {/* DEV ONLY: Test RevenueCat Paywall Button */}
-        {__DEV__ && (
-          <TouchableOpacity
-            onPress={() => setShowPaywallTest(true)}
-            style={{
-              backgroundColor: "#FF6B6B",
-              marginHorizontal: 20,
-              marginBottom: 16,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "white", fontWeight: "700", fontSize: 14 }}>
-              🧪 Test RevenueCat Paywall
-            </Text>
-          </TouchableOpacity>
-        )}
+        {/* Premium Upgrade Banner - Show for non-pro users */}
+        <PremiumUpgradeBanner
+          isPro={isPro}
+          isLoading={subscriptionLoading}
+          onPress={() => setShowPaymentWall(true)}
+        />
 
         <ActiveWorkoutCard
           workoutInfo={
@@ -1002,33 +984,32 @@ export default function DashboardScreen() {
         onSuccess={handleRepeatWorkoutSuccess}
       />
 
-      {/* DEV ONLY: Test RevenueCat Paywall Modal */}
-      {__DEV__ && (
-        <PaymentWallModal
-          visible={showPaywallTest}
-          onClose={() => setShowPaywallTest(false)}
-          paywallData={{
-            type: "subscription_required",
-            message:
-              "Testing RevenueCat integration. Select a plan to test the purchase flow.",
-          }}
-          onPurchaseSuccess={() => {
-            setDialogConfig({
-              title: "Success",
-              description: "Purchase completed successfully!",
-              primaryButton: {
-                text: "OK",
-                onPress: () => {
-                  setDialogVisible(false);
-                  setShowPaywallTest(false);
-                },
+      {/* Premium Upgrade Payment Wall Modal */}
+      <PaymentWallModal
+        visible={showPaymentWall}
+        onClose={() => setShowPaymentWall(false)}
+        paywallData={{
+          type: "subscription_required",
+          message:
+            "Upgrade to Premium to unlock unlimited workouts, advanced analytics, and exclusive features.",
+        }}
+        onPurchaseSuccess={() => {
+          setDialogConfig({
+            title: "Welcome to Premium!",
+            description:
+              "Your subscription is now active. Enjoy unlimited access to all premium features!",
+            primaryButton: {
+              text: "OK",
+              onPress: () => {
+                setDialogVisible(false);
+                setShowPaymentWall(false);
               },
-              icon: "checkmark-circle",
-            });
-            setDialogVisible(true);
-          }}
-        />
-      )}
+            },
+            icon: "checkmark-circle",
+          });
+          setDialogVisible(true);
+        }}
+      />
 
       {/* Custom Dialog */}
       {dialogConfig && (
