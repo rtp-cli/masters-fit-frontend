@@ -22,6 +22,7 @@ import { getCurrentUser } from "@lib/auth";
 import OnboardingForm, { FormData } from "./onboarding-form";
 import { formatEnumValue } from "./onboarding/utils/formatters";
 import { useThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/theme-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
@@ -96,6 +97,7 @@ export default function WorkoutRegenerationModal({
   selectedDate,
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(
     null
   );
@@ -724,7 +726,7 @@ export default function WorkoutRegenerationModal({
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View className="flex-1 justify-center items-center bg-background">
+        <View className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}>
           <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-4 text-base text-primary font-medium">
             Loading your preferences...
@@ -742,7 +744,7 @@ export default function WorkoutRegenerationModal({
         presentationStyle="pageSheet"
         onRequestClose={() => setShowOnboardingForm(false)}
       >
-        <View className="flex-1 bg-background">
+        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
           {/* Custom Header with Save/Cancel Options */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity
@@ -796,7 +798,7 @@ export default function WorkoutRegenerationModal({
         presentationStyle="pageSheet"
         onRequestClose={handleCancelDailyOverrides}
       >
-        <View className="flex-1 bg-background">
+        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
           {/* Custom Header with Cancel/Apply Options */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity
@@ -846,7 +848,7 @@ export default function WorkoutRegenerationModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        className="flex-1"
+        className={`flex-1 ${isDark ? "dark" : ""}`}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View className="flex-1 bg-background">
@@ -909,7 +911,7 @@ export default function WorkoutRegenerationModal({
               <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
                 <TouchableOpacity
                   className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                    selectedType === "day" ? "bg-white" : "bg-transparent"
+                    selectedType === "day" ? "bg-surface" : "bg-transparent"
                   } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
                   style={
                     selectedType === "day"
@@ -946,7 +948,7 @@ export default function WorkoutRegenerationModal({
                 </TouchableOpacity>
                 <TouchableOpacity
                   className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                    selectedType === "week" ? "bg-white" : "bg-transparent"
+                    selectedType === "week" ? "bg-surface" : "bg-transparent"
                   }`}
                   style={
                     selectedType === "week"
@@ -1003,7 +1005,7 @@ export default function WorkoutRegenerationModal({
                           } workout plan, and what you would like to change:`}
                 </Text>
                 <TextInput
-                  className="bg-white border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
+                  className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
                   style={{
                     minHeight: 120,
                     maxHeight: 200,
@@ -1075,11 +1077,11 @@ export default function WorkoutRegenerationModal({
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="white" />
+                <ActivityIndicator size="small" color={colors.neutral.white} />
               ) : (
                 <>
-                  <Ionicons name="refresh" size={18} color="white" />
-                  <Text className="text-white font-semibold text-sm ml-2">
+                  <Ionicons name="refresh" size={18} color={colors.neutral.white} />
+                  <Text className="text-neutral-white font-semibold text-sm ml-2">
                     {selectedType === "week"
                       ? "Regenerate Weekly Plan"
                       : "Regenerate Today's Workout"}

@@ -176,7 +176,7 @@ export const LoginScreen = () => {
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-neutral-white font-semibold text-base">
               {showNameField ? "Sign Up" : "Continue"}
             </Text>
           )}

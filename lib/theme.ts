@@ -42,7 +42,10 @@ export const colors = {
     muted: "#8A93A2",
   },
   background: "#FFFFFF",
+  surface: "#FFFFFF", // Cards/containers
   danger: "#EF4444", // A common red color for danger
+  warning: "#F59E0B", // Amber for warning/pending states
+  contentOnPrimary: "#181917", // Dark text/icons on bg-primary (always dark since primary is bright)
 } as const;
 
 // Spacing system
@@ -234,8 +237,8 @@ export const darkColors = {
     primary: "#B8E5A1", // Lighter lime green for dark mode
     secondary: "#F5F8F7", // Light color for text on dark backgrounds
     light: {
-      1: "#282828",
-      2: "#323232",
+      1: "#5A7350", // Soft green, closer to light mode feel
+      2: "#647D5A", // Slightly lighter
     },
     medium: {
       1: "#3C3C3C",
@@ -258,9 +261,9 @@ export const darkColors = {
     },
     medium: {
       1: "#3A3A3A", // Borders in dark mode
-      2: "#4A4A4A", // Hover states
-      3: "#5A5A5A", // Muted elements
-      4: "#6A6A6A", // Secondary elements
+      2: "#646464", // Disabled text, more visible
+      3: "#787878", // Muted elements
+      4: "#8A8A8A", // Secondary elements
     },
     dark: {
       1: "#A8A8A8", // Light grays in dark mode
@@ -272,17 +275,19 @@ export const darkColors = {
     muted: "#8A93A2", // Keep same as light mode
   },
   background: "#181917", // Charcoal background
+  surface: "#181917", // Cards/containers in dark mode
   danger: "#FF6B6B", // Lighter red for dark mode
+  warning: "#FBBF24", // Lighter amber for dark mode
+  contentOnPrimary: "#181917", // Still dark in dark mode (primary is still bright/light green)
 } as const;
 
 // Hook to get theme-aware colors for components that need inline color values
 // (Ionicons, ActivityIndicator, StatusBar, NavigationBar, etc.)
 // For everything else, use Tailwind classes which automatically adapt to dark mode
-import { useColorScheme } from 'react-native';
+import { useTheme } from "./theme-context";
 
 export function useThemeColors() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   return isDark ? { ...colors, ...darkColors } : colors;
 }

@@ -48,7 +48,7 @@ export default function CalendarActionButtons({
 
         {currentSelectedPlanDay && (
           <TouchableOpacity
-            className="flex-1 ml-2 bg-white border border-primary py-3 rounded-lg items-center flex-row justify-center"
+            className="flex-1 ml-2 bg-surface border border-primary py-3 rounded-lg items-center flex-row justify-center"
             onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
           >
             <Ionicons

@@ -14,7 +14,7 @@ export const HeaderSkeleton = () => (
 
 // Card skeleton for workout/calendar items
 export const CardSkeleton = () => (
-  <View className="bg-white rounded-2xl p-5 shadow-rn-sm mb-4">
+  <View className="bg-surface rounded-2xl p-5 shadow-rn-sm mb-4">
     <View className="flex-row items-center justify-between mb-4">
       <SkeletonLoader width={160} height={24} />
       <SkeletonLoader width={80} height={32} />
@@ -30,7 +30,7 @@ export const CardSkeleton = () => (
 
 // List item skeleton
 export const ListItemSkeleton = () => (
-  <View className="bg-white rounded-lg p-4 mb-3 shadow-rn-sm">
+  <View className="bg-surface rounded-lg p-4 mb-3 shadow-rn-sm">
     <View className="flex-row items-center">
       <SkeletonLoader
         width={48}
@@ -49,7 +49,7 @@ export const ListItemSkeleton = () => (
 
 // Chart skeleton
 export const ChartSkeleton = () => (
-  <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+  <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
     <SkeletonLoader width={144} height={24} className="mb-4" />
     <SkeletonLoader width="100%" height={160} />
   </View>
@@ -68,7 +68,7 @@ export const CalendarSkeleton = () => (
 
         {/* Calendar Header */}
         <View className="px-5 mb-6">
-          <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+          <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
             <SkeletonLoader width="100%" height={200} />
           </View>
         </View>
@@ -157,7 +157,7 @@ export const SettingsSkeleton = () => (
 
         {/* Profile Section */}
         <View className="px-5 mb-6">
-          <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+          <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
             <View className="flex-row items-center mb-4">
               <SkeletonLoader
                 width={64}

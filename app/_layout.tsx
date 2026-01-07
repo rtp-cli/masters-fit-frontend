@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Platform, View } from "react-native";
+import { Platform, View, useColorScheme as useSystemColorScheme } from "react-native";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { WorkoutProvider } from "@/contexts/workout-context";
 import {
@@ -20,7 +20,7 @@ import {
   Manrope_600SemiBold,
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import {
@@ -31,16 +31,43 @@ import {
 import "../global.css";
 import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
-import { useThemeColors } from "@/lib/theme";
-import { ThemeProvider } from "@/contexts/theme-context";
+import { colors, darkColors } from "@/lib/theme";
+import { ThemeContext, ThemeMode, useTheme } from "@/lib/theme-context";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useColorScheme as useNativeWindColorScheme } from "nativewind";
+
+const THEME_KEY = "@theme_preference";
+
+// Re-export useTheme for backward compatibility
+export { useTheme } from "@/lib/theme-context";
+
+// Inner wrapper for StatusBar and Android navigation bar
+function SystemUIWrapper({ children }: { children: React.ReactNode }) {
+  const { isDark } = useTheme();
+  const themeColors = isDark ? { ...colors, ...darkColors } : colors;
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync(themeColors.background).catch(() => {});
+      NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark").catch(() => {});
+    }
+  }, [themeColors.background, isDark]);
+
+  return (
+    <>
+      <StatusBar
+        style={isDark ? "light" : "dark"}
+        backgroundColor={themeColors.background}
+      />
+      {children}
+    </>
+  );
+}
 
 // Inner component that can access auth context
 function AppContent() {
   const {
-    isGeneratingWorkout,
-    currentRegenerationType,
-    setIsGeneratingWorkout,
     needsFullAppRefresh,
     setNeedsFullAppRefresh,
     isPreloadingData,
@@ -52,15 +79,6 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
-  const colors = useThemeColors();
-
-  useEffect(() => {
-    // Ensure Android system UI matches the app background
-    if (Platform.OS === "android") {
-      NavigationBar.setBackgroundColorAsync(colors.background).catch(() => {});
-      NavigationBar.setButtonStyleAsync("dark").catch(() => {});
-    }
-  }, [colors.background]);
 
   useEffect(() => {
     ensureHealthConnectInitialized();
@@ -242,7 +260,6 @@ function AppContent() {
 
   return (
     <View className="flex-1 bg-background">
-      <StatusBar style="dark" backgroundColor={colors.background} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -271,25 +288,83 @@ export default function RootLayout() {
     Manrope_700Bold,
   });
 
+  // Theme state managed at absolute root level
+  const [mode, setMode] = useState<ThemeMode>("auto");
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
+  const systemColorScheme = useSystemColorScheme();
+  const { setColorScheme } = useNativeWindColorScheme();
+
+  // Calculate isDark based on mode and system preference
+  const isDark = mode === "auto" ? systemColorScheme === "dark" : mode === "dark";
+
+  // Load theme preference on mount
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(THEME_KEY);
+        if (saved && ["light", "dark", "auto"].includes(saved)) {
+          setMode(saved as ThemeMode);
+          // Sync with NativeWind
+          if (saved === "auto") {
+            setColorScheme("system");
+          } else {
+            setColorScheme(saved as "light" | "dark");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load theme:", error);
+      } finally {
+        setIsThemeLoaded(true);
+      }
+    };
+    loadTheme();
+  }, [setColorScheme]);
+
+  // Function to update theme mode
+  const setThemeMode = useCallback(async (newMode: ThemeMode) => {
+    setMode(newMode);
+    // Sync with NativeWind
+    if (newMode === "auto") {
+      setColorScheme("system");
+    } else {
+      setColorScheme(newMode);
+    }
+    try {
+      await AsyncStorage.setItem(THEME_KEY, newMode);
+    } catch (error) {
+      console.error("Failed to save theme:", error);
+    }
+  }, [setColorScheme]);
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
+  // Wait for theme to load to prevent flash
+  if (!isThemeLoaded) {
+    return null;
+  }
+
   return (
-    <ThemeProvider>
-      <MixpanelProvider>
-        <AuthProvider>
-          <WaiverProvider>
-            <WorkoutProvider>
-              <AppDataProvider>
-                <BackgroundJobProvider>
-                  <AppContent />
-                </BackgroundJobProvider>
-              </AppDataProvider>
-            </WorkoutProvider>
-          </WaiverProvider>
-        </AuthProvider>
-      </MixpanelProvider>
-    </ThemeProvider>
+    // Dark class applied at absolute root - OUTSIDE all providers
+    <View className={`flex-1 ${isDark ? "dark" : ""}`}>
+      <ThemeContext.Provider value={{ mode, isDark, setThemeMode }}>
+        <MixpanelProvider>
+          <AuthProvider>
+            <WaiverProvider>
+              <WorkoutProvider>
+                <AppDataProvider>
+                  <BackgroundJobProvider>
+                    <SystemUIWrapper>
+                      <AppContent />
+                    </SystemUIWrapper>
+                  </BackgroundJobProvider>
+                </AppDataProvider>
+              </WorkoutProvider>
+            </WaiverProvider>
+          </AuthProvider>
+        </MixpanelProvider>
+      </ThemeContext.Provider>
+    </View>
   );
 }

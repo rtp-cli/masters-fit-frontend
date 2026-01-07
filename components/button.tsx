@@ -70,7 +70,7 @@ const Button: React.FC<ButtonProps> = ({
     secondary: "text-text-primary",
     outline: "text-primary",
     ghost: "text-primary",
-    destructive: "text-white",
+    destructive: "text-neutral-white",
   };
 
   // Text size classes

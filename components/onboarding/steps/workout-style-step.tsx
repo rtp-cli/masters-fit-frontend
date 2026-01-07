@@ -30,70 +30,70 @@ export default function WorkoutStyleStep({
     case PREFERRED_STYLES.HIIT:
       return {
         icon: "flash-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
         description: "High-intensity interval training",
       };
     case PREFERRED_STYLES.STRENGTH:
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-blue-100",
         description: "Build muscle and increase strength",
       };
     case PREFERRED_STYLES.CARDIO:
       return {
         icon: "heart-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Improve cardiovascular health",
       };
     case PREFERRED_STYLES.REHAB:
       return {
         icon: "medkit-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
         description: "Recovery and rehabilitation",
       };
     case PREFERRED_STYLES.CROSSFIT:
       return {
         icon: "stopwatch-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
         description: "High-intensity functional training",
       };
     case PREFERRED_STYLES.FUNCTIONAL:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
         description: "Real-world movement patterns",
       };
     case PREFERRED_STYLES.PILATES:
       return {
         icon: "accessibility-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
         description: "Core strength and flexibility",
       };
     case PREFERRED_STYLES.YOGA:
       return {
         icon: "leaf-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
         description: "Mind-body connection and flexibility",
       };
     case PREFERRED_STYLES.BALANCE:
       return {
         icon: "infinite-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
         description: "Stability and coordination training",
       };
     case PREFERRED_STYLES.MOBILITY:
       return {
         icon: "move-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-cyan-100",
         description: "Joint mobility and movement quality",
       };
@@ -116,7 +116,7 @@ export default function WorkoutStyleStep({
         </Text>
 
         {/* Include Warmup Toggle */}
-        <View className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-3">
+        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl mb-3">
           <View className="flex-1">
             <Text className="font-medium text-sm text-neutral-dark-1">
               Include Warmup
@@ -134,7 +134,7 @@ export default function WorkoutStyleStep({
         </View>
 
         {/* Include Cooldown Toggle */}
-        <View className="flex-row items-center justify-between p-4 bg-white rounded-xl">
+        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl">
           <View className="flex-1">
             <Text className="font-medium text-sm text-neutral-dark-1">
               Include Cooldown
@@ -169,7 +169,7 @@ export default function WorkoutStyleStep({
             <TouchableOpacity
               key={key}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                isSelected ? "bg-primary" : "bg-white"
+                isSelected ? "bg-primary" : "bg-surface"
               }`}
               onPress={() => onToggle("preferredStyles", value)}
             >
@@ -182,14 +182,14 @@ export default function WorkoutStyleStep({
               <View className="flex-1 ml-3">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${
-                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}

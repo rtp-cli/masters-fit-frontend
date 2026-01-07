@@ -17,7 +17,7 @@ export default function LegalAccordion() {
   };
 
   return (
-    <View className="mx-6 mb-6 bg-white rounded-xl overflow-hidden">
+    <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
       <Text className="text-base font-semibold text-text-primary p-4 pb-2">
         App Settings
       </Text>

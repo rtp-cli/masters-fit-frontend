@@ -76,7 +76,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
           `rgba($1,$2,$3, ${opacity})`
         ) || `rgba(79, 70, 229, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    labelColor: (opacity = 1) => colors.text.primary,
     style: {
       borderRadius: 16,
     },

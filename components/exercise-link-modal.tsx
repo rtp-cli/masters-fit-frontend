@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { useThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/theme-context";
 import Text from "./text";
 
 interface Exercise {
@@ -32,6 +33,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   onSave,
 }) => {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [link, setLink] = useState("");
   const [linkType, setLinkType] = useState<"youtube" | "unknown">("unknown");
   const [isLoading, setIsLoading] = useState(false);
@@ -174,7 +176,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-background">
+      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-md pt-md pb-3 border-b border-neutral-medium-1">
           <TouchableOpacity
@@ -323,7 +325,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
               {isLoading ? (
                 <ActivityIndicator size="small" color={colors.neutral.white} />
               ) : (
-                <Text className="text-white font-semibold text-sm">
+                <Text className="text-neutral-white font-semibold text-sm">
                   Link Exercise
                 </Text>
               )}

@@ -16,6 +16,7 @@ import {
 } from "@lib/workouts";
 import { getCurrentUser } from "@lib/auth";
 import { useThemeColors } from "@lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import { formatDate, formatDateAsString } from "@utils/index";
 import type { PreviousWorkout } from "@/types/api/workout.types";
 import { useAuth } from "@/contexts/auth-context";
@@ -34,6 +35,7 @@ export default function WorkoutRepeatModal({
   onSuccess,
 }: WorkoutRepeatModalProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [previousWorkouts, setPreviousWorkouts] = useState<PreviousWorkout[]>(
     []
   );
@@ -215,7 +217,7 @@ export default function WorkoutRepeatModal({
           className={`p-4 rounded-2xl border ${
             isSelected
               ? "bg-primary/10 border-primary"
-              : "bg-white border-neutral-light-2"
+              : "bg-surface border-neutral-light-2"
           }`}
           onPress={() => setSelectedWorkout(workout)}
           disabled={repeating}
@@ -300,7 +302,7 @@ export default function WorkoutRepeatModal({
                 <Ionicons
                   name="checkmark"
                   size={14}
-                  color={colors.text.secondary}
+                  color={colors.contentOnPrimary}
                 />
               )}
             </View>
@@ -320,34 +322,34 @@ export default function WorkoutRepeatModal({
                   <View className="p-4 bg-brand-light-2 rounded-lg">
                     <View className="flex-row items-center justify-between mb-1">
                       <View className="flex-1">
-                        <Text className="text-base font-bold text-text-primary mb-1">
+                        <Text className="text-base font-bold text-content-on-primary mb-1">
                           {day.name}
                         </Text>
-                        <Text className="text-sm text-text-muted">
+                        <Text className="text-sm text-content-on-primary/70">
                           {formatDayDate(day.date)}
                         </Text>
                         <View className="flex-row items-center mt-xs">
-                          <Text className="text-xs text-text-muted">
+                          <Text className="text-xs text-content-on-primary/70">
                             {day.totalExercises} exercises
                           </Text>
-                          <Text className="text-xs text-text-muted mx-2">
+                          <Text className="text-xs text-content-on-primary/70 mx-2">
                             •
                           </Text>
-                          <Text className="text-xs text-text-muted">
+                          <Text className="text-xs text-content-on-primary/70">
                             {day.blocks.length} blocks
                           </Text>
                           {day.isComplete && (
                             <>
-                              <Text className="text-xs text-text-muted mx-2">
+                              <Text className="text-xs text-content-on-primary/70 mx-2">
                                 •
                               </Text>
                               <View className="flex-row items-center">
                                 <Ionicons
                                   name="checkmark-circle"
                                   size={12}
-                                  color={colors.brand.primary}
+                                  color={colors.brand.dark[1]}
                                 />
-                                <Text className="text-xs text-brand-primary ml-1 font-medium">
+                                <Text className="text-xs text-content-on-primary ml-1 font-medium">
                                   Completed
                                 </Text>
                               </View>
@@ -357,7 +359,7 @@ export default function WorkoutRepeatModal({
                       </View>
                     </View>
                     {day.description && (
-                      <Text className="text-sm text-text-muted leading-5">
+                      <Text className="text-sm text-content-on-primary/70 leading-5">
                         {day.description}
                       </Text>
                     )}
@@ -368,13 +370,13 @@ export default function WorkoutRepeatModal({
                         onPress={() => toggleDayExpanded(dayKey)}
                         className="flex-row items-center"
                       >
-                        <Text className="text-text-primary text-sm mr-2">
+                        <Text className="text-content-on-primary text-sm mr-2">
                           {isDayExpanded ? "Hide Details" : "Show Details"}
                         </Text>
                         <Ionicons
                           name={isDayExpanded ? "chevron-up" : "chevron-down"}
                           size={16}
-                          color={colors.text.muted}
+                          color={colors.contentOnPrimary}
                         />
                       </TouchableOpacity>
                     </View>
@@ -382,13 +384,13 @@ export default function WorkoutRepeatModal({
 
                   {/* Day details - expanded */}
                   {isDayExpanded && (
-                    <View className="bg-white border-l-4 border-l-gray-200">
+                    <View className="bg-surface border-l-4 border-l-neutral-medium-1">
                       {day.blocks.length > 0 && (
                         <>
                           {day.blocks.map((block, index) => (
                             <View
                               key={block.id}
-                              className={`p-4 border-b border-gray-100 ${
+                              className={`p-4 border-b border-neutral-light-2 ${
                                 index === day.blocks.length - 1
                                   ? "border-b-0"
                                   : ""
@@ -397,8 +399,8 @@ export default function WorkoutRepeatModal({
                               <View className="flex-row items-start justify-between">
                                 <View className="flex-1">
                                   <View className="flex-row items-center mb-1">
-                                    <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-3">
-                                      <Text className="text-xs font-bold text-gray-600">
+                                    <View className="w-6 h-6 rounded-full bg-surface-elevated items-center justify-center mr-3">
+                                      <Text className="text-xs font-bold text-text-primary">
                                         {index + 1}
                                       </Text>
                                     </View>
@@ -467,7 +469,7 @@ export default function WorkoutRepeatModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-background">
+      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
@@ -552,12 +554,12 @@ export default function WorkoutRepeatModal({
                     name="repeat"
                     size={18}
                     color={
-                      selectedWorkout ? colors.text.primary : colors.text.muted
+                      selectedWorkout ? colors.contentOnPrimary : colors.text.muted
                     }
                   />
                   <Text
                     className={`font-semibold text-sm ml-2 ${
-                      selectedWorkout ? "text-text-primary" : "text-text-muted"
+                      selectedWorkout ? "text-content-on-primary" : "text-text-muted"
                     }`}
                   >
                     Repeat Selected Workout

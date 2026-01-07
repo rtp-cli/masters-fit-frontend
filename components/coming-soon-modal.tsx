@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { useThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/theme-context";
 
 interface ComingSoonModalProps {
   visible: boolean;
@@ -22,12 +23,13 @@ export default function ComingSoonModal({
   icon,
 }: ComingSoonModalProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
           <TouchableWithoutFeedback>
-            <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
+            <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
               {/* Icon */}
               <View className="size-16 rounded-full bg-primary/10 items-center justify-center mb-4">
                 <Ionicons name={icon} size={32} color={colors.brand.primary} />
@@ -49,7 +51,7 @@ export default function ComingSoonModal({
                 className="bg-primary rounded-xl py-3 px-8 flex-row items-center justify-center"
                 onPress={onClose}
               >
-                <Text className="text-white font-semibold text-base">
+                <Text className="text-neutral-white font-semibold text-base">
                   Got it!
                 </Text>
               </TouchableOpacity>

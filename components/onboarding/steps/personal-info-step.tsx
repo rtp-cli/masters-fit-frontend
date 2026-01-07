@@ -52,7 +52,7 @@ export default function PersonalInfoStep({
         <View className="flex-row justify-between">
           <TouchableOpacity
             className={`flex-1 p-4 rounded-xl items-center mx-1 ${
-              formData.gender === GENDER.MALE ? "bg-primary" : "bg-white"
+              formData.gender === GENDER.MALE ? "bg-primary" : "bg-surface"
             }`}
             onPress={() => onFieldChange("gender", GENDER.MALE)}
           >
@@ -76,7 +76,7 @@ export default function PersonalInfoStep({
             <Text
               className={`font-medium text-xs ${
                 formData.gender === GENDER.MALE
-                  ? "text-secondary"
+                  ? "text-content-on-primary"
                   : "text-neutral-dark-1"
               }`}
             >
@@ -86,7 +86,7 @@ export default function PersonalInfoStep({
 
           <TouchableOpacity
             className={`flex-1 p-4 rounded-xl items-center mx-1 ${
-              formData.gender === GENDER.FEMALE ? "bg-primary" : "bg-white"
+              formData.gender === GENDER.FEMALE ? "bg-primary" : "bg-surface"
             }`}
             onPress={() => onFieldChange("gender", GENDER.FEMALE)}
           >
@@ -110,7 +110,7 @@ export default function PersonalInfoStep({
             <Text
               className={`font-medium text-xs ${
                 formData.gender === GENDER.FEMALE
-                  ? "text-secondary"
+                  ? "text-content-on-primary"
                   : "text-neutral-dark-1"
               }`}
             >

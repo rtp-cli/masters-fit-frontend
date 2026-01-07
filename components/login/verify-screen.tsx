@@ -188,10 +188,10 @@ export const VerifyScreen = () => {
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
             <>
-              <Text className="text-white font-semibold text-base mr-2">
+              <Text className="text-neutral-white font-semibold text-base mr-2">
                 Continue
               </Text>
-              <Ionicons name="arrow-forward" size={20} color="white" />
+              <Ionicons name="arrow-forward" size={20} color={colors.neutral.white} />
             </>
           )}
         </TouchableOpacity>

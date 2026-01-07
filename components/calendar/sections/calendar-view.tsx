@@ -26,7 +26,7 @@ export default function CalendarViewSection({
 
   return (
     <>
-      <View className="bg-background mx-lg my-md rounded-xl overflow-hidden">
+      <View className="bg-surface mx-lg my-md rounded-xl overflow-hidden border border-neutral-medium-1">
         <RNCalendar
           key={calendarKey}
           current={currentMonth}
@@ -37,7 +37,7 @@ export default function CalendarViewSection({
           hideExtraDays={false}
           disableMonthChange={false}
           theme={{
-            calendarBackground: colors.background,
+            calendarBackground: colors.surface,
             textSectionTitleColor: colors.text.muted,
             selectedDayBackgroundColor: colors.brand.secondary,
             selectedDayTextColor: colors.neutral.white,
@@ -76,7 +76,7 @@ export default function CalendarViewSection({
         <View className="mx-lg mb-4">
           <View className="flex justify-center items-center">
             <TouchableOpacity
-              className="px-4 py-2 rounded-lg shadow-rn-sm"
+              className="px-4 py-2 rounded-lg bg-surface border border-neutral-medium-1"
               onPress={onPressToday}
             >
               <Text className="text-brand-primary text-md font-semibold">

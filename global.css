@@ -37,17 +37,19 @@
 
     /* Semantic Colors */
     --color-danger: 239 68 68;                 /* #EF4444 */
+    --color-warning: 245 158 11;               /* #F59E0B - Amber */
     --color-success: 155 184 117;              /* Use brand primary */
     --color-primary: 155 184 117;              /* Shorthand for brand primary */
     --color-secondary: 24 25 23;               /* Shorthand for brand secondary */
+    --color-content-on-primary: 24 25 23;      /* #181917 - Dark text/icons on bg-primary */
   }
 
   .dark {
     /* Brand Colors - Dark Mode */
     --color-brand-primary: 184 229 161;        /* #B8E5A1 - Lighter lime green */
     --color-brand-secondary: 245 248 247;      /* #F5F8F7 - Light for text on dark */
-    --color-brand-light-1: 40 40 40;           /* #282828 - Dark cards with tint */
-    --color-brand-light-2: 50 50 50;           /* #323232 */
+    --color-brand-light-1: 90 115 80;          /* #5A7350 - Soft green, closer to light mode feel */
+    --color-brand-light-2: 100 125 90;         /* #647D5A - Slightly lighter */
     --color-brand-medium-1: 60 60 60;          /* Darker version for dark mode */
     --color-brand-medium-2: 80 80 80;
     --color-brand-dark-1: 184 229 161;         /* Lighter in dark mode */
@@ -60,9 +62,9 @@
     --color-neutral-light-1: 40 40 40;         /* #282828 - Dark card backgrounds */
     --color-neutral-light-2: 50 50 50;         /* #323232 - Slightly lighter cards */
     --color-neutral-medium-1: 58 58 58;        /* #3A3A3A - Borders in dark mode */
-    --color-neutral-medium-2: 74 74 74;        /* #4A4A4A - Hover states */
-    --color-neutral-medium-3: 90 90 90;        /* #5A5A5A - Muted elements */
-    --color-neutral-medium-4: 106 106 106;     /* #6A6A6A - Secondary elements */
+    --color-neutral-medium-2: 100 100 100;     /* #646464 - Disabled text, more visible */
+    --color-neutral-medium-3: 120 120 120;     /* #787878 - Muted elements */
+    --color-neutral-medium-4: 138 138 138;     /* #8A8A8A - Secondary elements */
     --color-neutral-dark-1: 168 168 168;       /* #A8A8A8 - Light grays in dark mode */
 
     /* Text Colors - Dark Mode */
@@ -72,12 +74,14 @@
 
     /* Background - Dark Mode */
     --color-background: 24 25 23;              /* #181917 - Charcoal background */
-    --color-surface: 40 40 40;                 /* #282828 - Dark card background */
+    --color-surface: 24 25 23;                 /* #181917 - Same as background for consistency */
 
     /* Semantic Colors - Dark Mode */
     --color-danger: 255 107 107;               /* #FF6B6B - Lighter red for dark mode */
+    --color-warning: 251 191 36;               /* #FBBF24 - Lighter amber for dark mode */
     --color-success: 184 229 161;              /* #B8E5A1 - Lighter green */
     --color-primary: 184 229 161;              /* Lighter lime for dark mode */
     --color-secondary: 245 248 247;            /* Light for text */
+    --color-content-on-primary: 24 25 23;      /* #181917 - Still dark (primary is still bright) */
   }
 }

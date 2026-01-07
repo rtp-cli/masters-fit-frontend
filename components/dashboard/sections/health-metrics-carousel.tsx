@@ -94,7 +94,7 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
           ) : (
             <>
               <Ionicons name="fitness" size={18} color={colors.neutral.white} />
-              <Text className="text-white font-semibold text-sm ml-2">
+              <Text className="text-neutral-white font-semibold text-sm ml-2">
                 Connect Health
               </Text>
             </>

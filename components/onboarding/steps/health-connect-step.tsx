@@ -55,10 +55,10 @@ export default function HealthConnectStep() {
 
   return (
     <View className="px-6">
-      <View className="bg-white rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5">
         <View className="flex-row items-center mb-3">
           <View className="w-10 h-10 rounded-full bg-secondary/10 items-center justify-center mr-3">
-            <Ionicons name="fitness" size={22} color={colors.brand.secondary} />
+            <Ionicons name="fitness" size={22} color={colors.brand.primary} />
           </View>
           <View className="flex-1">
             <Text className="text-lg font-semibold text-text-primary">
@@ -92,7 +92,7 @@ export default function HealthConnectStep() {
 
         {checkingStatus && !isConnected && (
           <View className="flex-row items-center mb-3">
-            <ActivityIndicator size="small" color={colors.brand.secondary} />
+            <ActivityIndicator size="small" color={colors.brand.primary} />
             <Text className="ml-2 text-sm text-text-muted">
               Checking connection status...
             </Text>
@@ -108,7 +108,7 @@ export default function HealthConnectStep() {
             {isLoading ? (
               <ActivityIndicator size="small" color={colors.neutral.white} />
             ) : (
-              <Text className="text-white font-semibold text-base">
+              <Text className="text-neutral-white font-semibold text-base">
                 {buttonLabel}
               </Text>
             )}

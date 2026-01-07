@@ -9,10 +9,10 @@ interface BottomActionsProps {
 
 export default function BottomActions({ isAgreed, isLoading, onCancel, onContinue }: BottomActionsProps) {
   return (
-    <View className="px-6 pb-6 pt-4 bg-white border-t border-neutral-light-2">
+    <View className="px-6 pb-6 pt-4 bg-surface border-t border-neutral-light-2">
       <View className="flex-row gap-3">
-        <TouchableOpacity className="flex-1 py-3 px-6 rounded-xl bg-red-500 items-center justify-center" onPress={onCancel}>
-          <Text className="text-white font-semibold">Cancel</Text>
+        <TouchableOpacity className="flex-1 py-3 px-6 rounded-xl bg-danger items-center justify-center" onPress={onCancel}>
+          <Text className="text-neutral-white font-semibold">Cancel</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -20,7 +20,7 @@ export default function BottomActions({ isAgreed, isLoading, onCancel, onContinu
           onPress={onContinue}
           disabled={!isAgreed || isLoading}
         >
-          <Text className={`text-base font-semibold ${isAgreed && !isLoading ? "text-white" : "text-neutral-medium-3"}`}>
+          <Text className={`text-base font-semibold ${isAgreed && !isLoading ? "text-neutral-white" : "text-neutral-medium-3"}`}>
             {isLoading ? "Saving..." : "Continue"}
           </Text>
         </TouchableOpacity>

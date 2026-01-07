@@ -31,7 +31,7 @@ export default function MainContent({ isUpdate }: MainContentProps) {
 
       {/* Main Content */}
       <View className="px-6 mb-2">
-        <View className="bg-white rounded-xl p-5">
+        <View className="bg-surface rounded-xl p-5">
           <View className="flex-col items-start mb-4">
             <View className="flex items-center justify-center flex-row mb-4">
               <Ionicons

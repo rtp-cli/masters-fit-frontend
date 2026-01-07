@@ -50,7 +50,9 @@ module.exports = {
           muted: "rgb(var(--color-text-muted) / <alpha-value>)",
         },
         danger: "rgb(var(--color-danger) / <alpha-value>)",
+        warning: "rgb(var(--color-warning) / <alpha-value>)",
         success: "rgb(var(--color-success) / <alpha-value>)",
+        "content-on-primary": "rgb(var(--color-content-on-primary) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["Manrope_400Regular", "System", "Arial", "sans-serif"],

@@ -19,7 +19,7 @@ const DashboardEmptyStateSection: React.FC<DashboardEmptyStateSectionProps> = ({
   if (showLoading) {
     return (
       <View className="px-4 mb-6">
-        <View className="bg-white rounded-2xl p-6 items-center">
+        <View className="bg-surface rounded-2xl p-6 items-center">
           <View className="size-16 bg-primary/10 rounded-full items-center justify-center mb-4">
             <Ionicons
               name="analytics-outline"
@@ -41,7 +41,7 @@ const DashboardEmptyStateSection: React.FC<DashboardEmptyStateSectionProps> = ({
   if (showNoData) {
     return (
       <View className="px-4 mb-6">
-        <View className="bg-white rounded-2xl p-6 items-center">
+        <View className="bg-surface rounded-2xl p-6 items-center">
           <View className="size-16 bg-primary/10 rounded-full items-center justify-center mb-4">
             <Ionicons
               name="analytics-outline"

@@ -78,14 +78,14 @@ export const PieChart: React.FC<PieChartProps> = ({
               cy={center}
               r={radius}
               fill={color}
-              stroke={colors.background}
-              strokeWidth="1"
+              stroke={colors.surface}
+              strokeWidth="2"
             />
             <Circle
               cx={center}
               cy={center}
               r={calculatedInnerRadius}
-              fill={colors.background}
+              fill={colors.surface}
             />
           </G>
         );
@@ -98,8 +98,8 @@ export const PieChart: React.FC<PieChartProps> = ({
             cy={center}
             r={radius}
             fill={color}
-            stroke={colors.background}
-            strokeWidth="1"
+            stroke={colors.surface}
+            strokeWidth="2"
           />
         );
       }
@@ -132,8 +132,8 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke={colors.background}
-          strokeWidth="1"
+          stroke={colors.surface}
+          strokeWidth="2"
         />
       );
     } else {
@@ -151,8 +151,8 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke={colors.background}
-          strokeWidth="1"
+          stroke={colors.surface}
+          strokeWidth="2"
         />
       );
     }

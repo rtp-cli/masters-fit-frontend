@@ -10,10 +10,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import { images } from "@/assets";
 
 export default function FloatingActionButton() {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const {
     activeJobs,
     failedJobs,
@@ -188,15 +190,10 @@ export default function FloatingActionButton() {
               elevation: 8,
             }}
           >
-            <View
-              className="bg-primary rounded-full w-16 h-16 items-center justify-center"
-              style={{
-                backgroundColor: colors.brand.primary,
-              }}
-            >
+            <View className="rounded-full w-16 h-16 items-center justify-center bg-primary">
               <Image
-                source={images.icon}
-                className="w-12 h-12 rounded-full"
+                source={isDark ? images.logoDark : images.logo}
+                className="w-10 h-10"
                 resizeMode="contain"
               />
             </View>
@@ -214,8 +211,10 @@ export default function FloatingActionButton() {
           setShowCancelConfirmation(false);
         }}
       >
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <View
+          className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
+        >
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             {showCancelConfirmation ? (
               // Cancel Confirmation UI
               <>
@@ -251,28 +250,28 @@ export default function FloatingActionButton() {
                   {currentJob.status === "cancelled"
                     ? "Generation Cancelled"
                     : currentJob.status === "timeout"
-                    ? "Generation Timed Out"
-                    : currentJob.status === "failed"
-                    ? "Generation Failed"
-                    : currentJob.type === "generation"
-                    ? "Generating Workout"
-                    : currentJob.type === "regeneration"
-                    ? "Regenerating Workout Plan"
-                    : "Regenerating Daily Workout"}
+                      ? "Generation Timed Out"
+                      : currentJob.status === "failed"
+                        ? "Generation Failed"
+                        : currentJob.type === "generation"
+                          ? "Generating Workout"
+                          : currentJob.type === "regeneration"
+                            ? "Regenerating Workout Plan"
+                            : "Regenerating Daily Workout"}
                 </Text>
 
                 <Text className="text-base text-text-secondary text-center mb-6 leading-6">
                   {currentJob.status === "cancelled"
                     ? "The workout generation was cancelled. You can start a new generation at any time."
                     : currentJob.status === "timeout"
-                    ? "The workout generation took too long and was stopped. Please check your internet connection or try again later."
-                    : currentJob.status === "failed"
-                    ? "The workout generation failed after multiple attempts. Please check your internet connection or try again later."
-                    : currentJob.type === "generation"
-                    ? "Your personalized, AI powered workout plan is on the way."
-                    : currentJob.type === "regeneration"
-                    ? "Your personalized, AI powered workout plan is on the way."
-                    : "Your personalized, AI powered daily workout is on the way."}{" "}
+                      ? "The workout generation took too long and was stopped. Please check your internet connection or try again later."
+                      : currentJob.status === "failed"
+                        ? "The workout generation failed after multiple attempts. Please check your internet connection or try again later."
+                        : currentJob.type === "generation"
+                          ? "Your personalized, AI powered workout plan is on the way."
+                          : currentJob.type === "regeneration"
+                            ? "Your personalized, AI powered workout plan is on the way."
+                            : "Your personalized, AI powered daily workout is on the way."}{" "}
                   {currentJob.status !== "cancelled" &&
                   currentJob.status !== "timeout" &&
                   currentJob.status !== "failed"
@@ -300,16 +299,16 @@ export default function FloatingActionButton() {
                     className="bg-brand-primary mb-2 rounded-xl py-3 px-6"
                     onPress={handleCancelConfirmationBack}
                   >
-                    <Text className="text-white  font-semibold text-center">
+                    <Text className="text-neutral-white font-semibold text-center">
                       Keep Generating
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="bg-red-500 rounded-xl py-3 px-6"
+                    className="bg-danger rounded-xl py-3 px-6"
                     onPress={() => handleConfirmCancel(currentJob.id)}
                   >
-                    <Text className="text-white font-semibold text-center">
+                    <Text className="text-neutral-white font-semibold text-center">
                       Cancel Generation
                     </Text>
                   </TouchableOpacity>
@@ -323,7 +322,7 @@ export default function FloatingActionButton() {
                     currentJob.status === "cancelled" ||
                     currentJob.status === "timeout") ? (
                     <TouchableOpacity
-                      className="bg-red-500 rounded-xl py-3 px-6"
+                      className="bg-danger rounded-xl py-3 px-6"
                       onPress={() => {
                         setShowModal(false);
                         setShowCancelConfirmation(false);
@@ -333,7 +332,7 @@ export default function FloatingActionButton() {
                         }, 500);
                       }}
                     >
-                      <Text className="text-white font-semibold text-center">
+                      <Text className="text-neutral-white font-semibold text-center">
                         Dismiss
                       </Text>
                     </TouchableOpacity>
@@ -347,7 +346,7 @@ export default function FloatingActionButton() {
                           setShowCancelConfirmation(false);
                         }}
                       >
-                        <Text className="text-white font-semibold text-center">
+                        <Text className="text-neutral-white font-semibold text-center">
                           Continue Using App
                         </Text>
                       </TouchableOpacity>
@@ -357,10 +356,10 @@ export default function FloatingActionButton() {
                         (currentJob.status === "pending" ||
                           currentJob.status === "processing") && (
                           <TouchableOpacity
-                            className="bg-red-500 rounded-xl mt-2 py-3 px-6 border border-red-200"
+                            className="bg-danger rounded-xl mt-2 py-3 px-6"
                             onPress={handleCancelJob}
                           >
-                            <Text className="text-white font-semibold text-center">
+                            <Text className="text-neutral-white font-semibold text-center">
                               Cancel Generation
                             </Text>
                           </TouchableOpacity>

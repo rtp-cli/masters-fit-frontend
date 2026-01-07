@@ -53,7 +53,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
 
   return (
     <View className="px-4 mb-6">
-      <View className="bg-white rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5">
         <View className="flex-row items-center justify-between mb-6">
           <Text className="text-base font-semibold text-text-primary mb-1">
             Active Workout
@@ -130,7 +130,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
                 className="bg-secondary rounded-xl p-4 items-center"
                 onPress={onViewWorkout}
               >
-                <Text className="text-white font-semibold text-sm">
+                <Text className="text-neutral-white font-semibold text-sm">
                   View Workout
                 </Text>
               </TouchableOpacity>

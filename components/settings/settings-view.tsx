@@ -17,6 +17,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { formatEnumValue, getIntensityText } from "@utils/index";
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 import { useThemeColors } from "../../lib/theme";
+import { useTheme } from "@/app/_layout";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../coming-soon-modal";
 import { useSecretActivation } from "@/hooks/use-secret-activation";
@@ -29,6 +30,7 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
   const colors = useThemeColors();
+  const { mode: themeMode, setThemeMode } = useTheme();
   const { user, logout } = useAuth();
   const router = useRouter();
   const {
@@ -42,7 +44,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
   // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [legalExpanded, setLegalExpanded] = useState(false);
   const [healthConnected, setHealthConnected] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -339,7 +340,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Profile Section */}
         <View className="items-center px-6 mb-6">
           <View className="w-20 h-20 rounded-full bg-primary items-center justify-center mb-4">
-            <Text className="text-3xl font-bold text-white">
+            <Text className="text-3xl font-bold text-neutral-white">
               {getUserInitials()}
             </Text>
           </View>
@@ -406,7 +407,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Personal Information */}
         {profile && (
-          <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-2">
               Personal Information
             </Text>
@@ -497,7 +498,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Fitness Goals */}
         {profile?.goals && profile.goals.length > 0 && (
-          <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Fitness Goals
             </Text>
@@ -520,7 +521,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Preferred Workout Types */}
         {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Preferred Workout Types
             </Text>
@@ -543,7 +544,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Equipment Available */}
         {profile?.equipment && profile.equipment.length > 0 && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Available Equipment
             </Text>
@@ -576,7 +577,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Weekly Schedule */}
         {profile?.availableDays && profile.availableDays.length > 0 && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Weekly Schedule
             </Text>
@@ -590,7 +591,9 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                 >
                   <Text
                     className={`text-xs font-medium ${
-                      dayInfo.active ? "text-white" : "text-text-muted"
+                      dayInfo.active
+                        ? "text-neutral-light-1"
+                        : "text-text-muted"
                     }`}
                   >
                     {dayInfo.day}
@@ -604,7 +607,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Limitations & Medical Notes */}
         {((profile?.limitations && profile.limitations.length > 0) ||
           profile?.medicalNotes) && (
-          <View className="mx-6 mb-6   rounded-xl overflow-hidden">
+          <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
             <Text className="text-base font-semibold text-text-primary p-4 pb-3">
               Health Information
             </Text>
@@ -643,7 +646,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         )}
 
         {/* App Settings */}
-        <View className="mx-6 mb-6   rounded-xl overflow-hidden">
+        <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
           <Text className="text-base font-semibold text-text-primary p-4 pb-2">
             App Settings
           </Text>
@@ -676,7 +679,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                       color={colors.neutral.white}
                     />
                   ) : (
-                    <Text className="text-sm font-semibold text-white">
+                    <Text className="text-sm font-semibold text-neutral-white">
                       Connect
                     </Text>
                   )}
@@ -704,7 +707,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                   disabled={healthLoading}
                 >
                   {healthLoading ? (
-                    <ActivityIndicator size="small" color={colors.brand.secondary} />
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand.secondary}
+                    />
                   ) : (
                     <Text className="text-xs font-semibold text-secondary">
                       Update Permissions
@@ -715,26 +721,23 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             </View>
           )}
 
-          <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-            <View className="flex-row items-center flex-1">
-              <Ionicons
-                name="moon-outline"
-                size={20}
-                color={colors.text.muted}
+          <View className="px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="moon-outline"
+                  size={20}
+                  color={colors.text.muted}
+                />
+                <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
+              </View>
+              <Switch
+                value={themeMode === "dark"}
+                onValueChange={(value) => setThemeMode(value ? "dark" : "light")}
+                trackColor={{ false: colors.neutral.medium[1], true: colors.brand.primary }}
+                thumbColor={colors.neutral.white}
               />
-              <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
             </View>
-            <Switch
-              value={darkModeEnabled}
-              onValueChange={() => showComingSoonModal("moon-outline")}
-              trackColor={{
-                false: colors.neutral.medium[1],
-                true: colors.brand.primary,
-              }}
-              thumbColor={
-                darkModeEnabled ? colors.neutral.white : colors.neutral.light[1]
-              }
-            />
           </View>
 
           {/* Legal Accordion */}
@@ -847,7 +850,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Logout Button */}
         <View className="px-6 mb-4">
           <TouchableOpacity
-            className="bg-white rounded-xl p-4 flex-row items-center justify-center"
+            className="bg-surface rounded-xl p-4 flex-row items-center justify-center"
             onPress={handleLogout}
           >
             <Ionicons

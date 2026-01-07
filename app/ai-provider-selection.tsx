@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getAvailableProviders,
@@ -29,6 +30,7 @@ import { logger } from "@/lib/logger";
 
 export default function AIProviderSelectionPage() {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -300,10 +302,10 @@ export default function AIProviderSelectionPage() {
 
         {/* Current Provider Info */}
         <View className="mx-5 mb-4">
-          <View className="bg-white rounded-xl p-3 border border-primary">
+          <View className="bg-surface rounded-xl p-3 border border-primary">
             <View className="flex-row items-center">
               <View className="w-6 h-6 rounded-full items-center justify-center mr-3 bg-primary">
-                <Ionicons name="checkmark" size={12} color="white" />
+                <Ionicons name="checkmark" size={12} color={colors.neutral.white} />
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold mb-1 text-text-primary">
@@ -348,7 +350,7 @@ export default function AIProviderSelectionPage() {
               >
                 {/* Provider Subheading - Accordion Trigger */}
                 <TouchableOpacity
-                  className="bg-white p-4 border-b border-neutral-light-2"
+                  className="bg-surface p-4 border-b border-neutral-light-2"
                   onPress={() => toggleProvider(providerKey)}
                 >
                   <View className="flex-row items-center justify-between">
@@ -387,7 +389,7 @@ export default function AIProviderSelectionPage() {
                       return (
                         <TouchableOpacity
                           key={model.id}
-                          className={`bg-white rounded-lg p-4 mb-2 ${
+                          className={`bg-surface rounded-lg p-4 mb-2 ${
                             isSelected
                               ? "border-2 border-primary"
                               : "border border-neutral-light-2"
@@ -408,7 +410,7 @@ export default function AIProviderSelectionPage() {
                                     <Ionicons
                                       name="checkmark"
                                       size={10}
-                                      color="white"
+                                      color={colors.neutral.white}
                                     />
                                   </View>
                                 )}
@@ -448,9 +450,9 @@ export default function AIProviderSelectionPage() {
       {/* Confirmation Modal */}
       <Modal visible={showConfirmModal} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={cancelProviderSwitch}>
-          <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
             <TouchableWithoutFeedback>
-              <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+              <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
                 {/* Icon */}
                 <View className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto bg-primary/10">
                   <Ionicons
@@ -491,7 +493,7 @@ export default function AIProviderSelectionPage() {
                     className="flex-1 rounded-xl py-3 items-center justify-center bg-primary"
                     onPress={confirmProviderSwitch}
                   >
-                    <Text className="text-white font-semibold text-base">
+                    <Text className="text-neutral-white font-semibold text-base">
                       Switch
                     </Text>
                   </TouchableOpacity>

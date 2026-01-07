@@ -36,112 +36,112 @@ export default function PhysicalLimitationsStep({
     case PHYSICAL_LIMITATIONS.KNEE_PAIN:
       return {
         icon: "walk-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Pain or discomfort in the knee joint",
       };
     case PHYSICAL_LIMITATIONS.SHOULDER_PAIN:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
         description: "Pain or discomfort in the shoulder area",
       };
     case PHYSICAL_LIMITATIONS.LOWER_BACK_PAIN:
       return {
         icon: "arrow-down-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
         description: "Pain or discomfort in the lower back",
       };
     case PHYSICAL_LIMITATIONS.NECK_PAIN:
       return {
         icon: "arrow-up-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
         description: "Pain or stiffness in neck area",
       };
     case PHYSICAL_LIMITATIONS.HIP_PAIN:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
         description: "Pain or limited mobility in hips",
       };
     case PHYSICAL_LIMITATIONS.ANKLE_INSTABILITY:
       return {
         icon: "walk-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
         description: "Weak or unstable ankles",
       };
     case PHYSICAL_LIMITATIONS.WRIST_PAIN:
       return {
         icon: "hand-left-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
         description: "Pain or weakness in wrists",
       };
     case PHYSICAL_LIMITATIONS.ELBOW_PAIN:
       return {
         icon: "remove-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
         description: "Tennis elbow or other elbow issues",
       };
     case PHYSICAL_LIMITATIONS.ARTHRITIS:
       return {
         icon: "medical-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Joint inflammation and stiffness",
       };
     case PHYSICAL_LIMITATIONS.OSTEOPOROSIS:
       return {
         icon: "pulse-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
         description: "Weak or brittle bones",
       };
     case PHYSICAL_LIMITATIONS.SCIATICA:
       return {
         icon: "flash-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
         description: "Nerve pain down leg from lower back",
       };
     case PHYSICAL_LIMITATIONS.LIMITED_RANGE_OF_MOTION:
       return {
         icon: "resize-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
         description: "Restricted movement in joints",
       };
     case PHYSICAL_LIMITATIONS.POST_SURGERY_RECOVERY:
       return {
         icon: "medical-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
         description: "Recovering from a recent surgery",
       };
     case PHYSICAL_LIMITATIONS.BALANCE_ISSUES:
       return {
         icon: "analytics-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
         description: "Difficulty with balance and stability",
       };
     case PHYSICAL_LIMITATIONS.CHRONIC_FATIGUE:
       return {
         icon: "battery-half-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
         description: "Persistent and extreme tiredness",
       };
     case PHYSICAL_LIMITATIONS.BREATHING_ISSUES:
       return {
         icon: "heart-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
         description: "Asthma or other breathing conditions",
       };
@@ -169,7 +169,7 @@ export default function PhysicalLimitationsStep({
           <TouchableOpacity
             key={key}
             className={`p-4 rounded-xl mb-3 flex-row items-center ${
-              isSelected ? "bg-primary" : "bg-white"
+              isSelected ? "bg-primary" : "bg-surface"
             }`}
             onPress={() => onToggle("limitations", value)}
           >
@@ -181,14 +181,14 @@ export default function PhysicalLimitationsStep({
             <View className="flex-1">
               <Text
                 className={`font-medium text-sm ${
-                  isSelected ? "text-secondary" : "text-neutral-dark-1"
+                  isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                 }`}
               >
                 {formatEnumValue(value)}
               </Text>
               <Text
                 className={`text-xs ${
-                  isSelected ? "text-secondary" : "text-neutral-medium-4"
+                  isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                 }`}
               >
                 {config.description}
@@ -208,7 +208,7 @@ export default function PhysicalLimitationsStep({
           your workout plan (optional)
         </Text>
         <TextInput
-          className="bg-white p-4 rounded-xl text-neutral-dark-1 min-h-[100px] border border-neutral-medium-1"
+          className="bg-surface p-4 rounded-xl text-neutral-dark-1 min-h-[100px] border border-neutral-medium-1"
           placeholder="Enter any additional medical notes here..."
           placeholderTextColor={colors.text.muted}
           value={formData.medicalNotes}

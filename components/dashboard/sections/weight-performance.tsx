@@ -55,7 +55,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
               <Text
                 className={`text-xs font-medium ${
                   weightPerformanceFilter === filter
-                    ? "text-text-primary"
+                    ? "text-content-on-primary"
                     : "text-text-muted"
                 }`}
               >
@@ -66,7 +66,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
         </View>
       </View>
 
-      <View className="bg-white rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5">
         {hasData ? (
           <>
             <View className="items-center mb-6">
@@ -101,7 +101,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
             </View>
             <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
               <View className="items-center">
-                <Text className="text-lg font-bold text-brand-medium-1">
+                <Text className="text-lg font-bold text-text-primary">
                   {filteredWeightAccuracy.exactMatches || 0}
                 </Text>
                 <Text className="text-xs text-text-muted text-center">
@@ -109,7 +109,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
                 </Text>
               </View>
               <View className="items-center">
-                <Text className="text-lg font-bold text-primary">
+                <Text className="text-lg font-bold text-text-primary">
                   {filteredWeightAccuracy.higherWeight || 0}
                 </Text>
                 <Text className="text-xs text-text-muted text-center">
@@ -117,7 +117,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
                 </Text>
               </View>
               <View className="items-center">
-                <Text className="text-lg font-bold text-brand-dark-1">
+                <Text className="text-lg font-bold text-text-primary">
                   {filteredWeightAccuracy.lowerWeight || 0}
                 </Text>
                 <Text className="text-xs text-text-muted text-center">

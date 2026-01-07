@@ -18,9 +18,9 @@ const Card: React.FC<CardProps> = ({
 
   // Variant classes
   const variantClasses = {
-    default: "bg-white",
-    outlined: "bg-white border border-neutral-light-2",
-    flat: "bg-white",
+    default: "bg-surface",
+    outlined: "bg-surface border border-neutral-light-2",
+    flat: "bg-surface",
   };
 
   const cardClassName = [baseClasses, variantClasses[variant]]

@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { replaceExercise } from "@/lib/workouts";
@@ -52,6 +53,7 @@ export default function WorkoutEditModal({
   onError,
 }: WorkoutEditModalProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const { user } = useAuth();
   const {
     refresh: { refreshWorkout },
@@ -420,7 +422,7 @@ export default function WorkoutEditModal({
         presentationStyle="pageSheet"
         onRequestClose={onClose}
       >
-        <View className="flex-1 justify-center items-center bg-background">
+        <View className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}>
           <Ionicons
             name="alert-circle-outline"
             size={48}
@@ -436,7 +438,7 @@ export default function WorkoutEditModal({
             className="bg-primary py-3 px-6 rounded-md"
             onPress={onClose}
           >
-            <Text className="text-white font-semibold">Close</Text>
+            <Text className="text-neutral-white font-semibold">Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -456,7 +458,7 @@ export default function WorkoutEditModal({
       onRequestClose={handleCancel}
     >
       <KeyboardAvoidingView
-        className="flex-1"
+        className={`flex-1 ${isDark ? "dark" : ""}`}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View className="flex-1 bg-background">
@@ -489,7 +491,7 @@ export default function WorkoutEditModal({
               removeClippedSubviews={true}
             >
               {/* Workout Info */}
-              <View className="px-5 py-4 bg-white border-b border-neutral-medium-1">
+              <View className="px-5 py-4 bg-surface border-b border-neutral-medium-1">
                 {/* Workout Name */}
                 <Text className="text-xl font-bold mb-3 text-text-primary">
                   {planDay.description || planDay.name || "Workout"}
@@ -518,7 +520,7 @@ export default function WorkoutEditModal({
                     />
                     <View className="ml-2">
                       <View className="rounded-full px-2 py-1 bg-primary">
-                        <Text className="text-xs font-semibold text-white">
+                        <Text className="text-xs font-semibold text-neutral-white">
                           {totalExercises} exercises
                         </Text>
                       </View>
@@ -530,7 +532,7 @@ export default function WorkoutEditModal({
                     <Ionicons name="time" size={16} color={colors.text.muted} />
                     <View className="ml-2">
                       <View className="rounded-full px-2 py-1 bg-primary">
-                        <Text className="text-xs font-semibold text-white">
+                        <Text className="text-xs font-semibold text-neutral-white">
                           {formatWorkoutDuration(
                             calculatePlanDayDuration(planDay)
                           )}
@@ -542,10 +544,10 @@ export default function WorkoutEditModal({
                   {/* Modified Count */}
                   {modifiedExercises.size > 0 && (
                     <View className="flex-row items-center">
-                      <Ionicons name="create" size={16} color="#eab308" />
+                      <Ionicons name="create" size={16} color={colors.warning} />
                       <View className="ml-2">
-                        <View className="rounded-full px-2 py-1 bg-yellow-500">
-                          <Text className="text-xs font-semibold text-white">
+                        <View className="rounded-full px-2 py-1 bg-warning">
+                          <Text className="text-xs font-semibold text-neutral-white">
                             {modifiedExercises.size} changed
                           </Text>
                         </View>
@@ -591,7 +593,7 @@ export default function WorkoutEditModal({
             /* Exercise Replacement View */
             <View className="flex-1">
               {/* Current Exercise Section */}
-              <View className="px-5 py-4 bg-white">
+              <View className="px-5 py-4 bg-surface">
                 {currentExercise && (
                   <>
                     {/* Exercise Name */}
@@ -633,7 +635,7 @@ export default function WorkoutEditModal({
                                 key={index}
                                 className="rounded-full px-2 py-1 mr-1 mb-1 bg-primary"
                               >
-                                <Text className="text-xs font-semibold text-white">
+                                <Text className="text-xs font-semibold text-neutral-white">
                                   {muscle}
                                 </Text>
                               </View>
@@ -652,7 +654,7 @@ export default function WorkoutEditModal({
                           />
                           <View className="ml-2">
                             <View className="rounded-full px-2 py-1 bg-primary">
-                              <Text className="text-xs font-semibold text-white">
+                              <Text className="text-xs font-semibold text-neutral-white">
                                 {formatEquipment(
                                   currentExercise.exercise.equipment
                                 )}
@@ -672,7 +674,7 @@ export default function WorkoutEditModal({
               {/* Search Section */}
               <View className="flex-1">
                 {/* Search Header and Input */}
-                <View className="px-5 py-4 bg-white">
+                <View className="px-5 py-4 bg-surface">
                   {/* Search Input Row */}
                   <View className="flex-row items-center gap-3">
                     {/* Search Input */}
@@ -711,7 +713,7 @@ export default function WorkoutEditModal({
                           selectedMuscleGroups.length > 0 ||
                           selectedDifficulty
                             ? colors.brand.primary
-                            : "white",
+                            : colors.surface,
                         borderColor: colors.brand.primary,
                       }}
                       onPress={openFilterModal}
@@ -723,7 +725,7 @@ export default function WorkoutEditModal({
                           selectedEquipment.length > 0 ||
                           selectedMuscleGroups.length > 0 ||
                           selectedDifficulty
-                            ? "white"
+                            ? colors.contentOnPrimary
                             : colors.brand.primary
                         }
                       />
@@ -734,7 +736,7 @@ export default function WorkoutEditModal({
                             selectedEquipment.length > 0 ||
                             selectedMuscleGroups.length > 0 ||
                             selectedDifficulty
-                              ? "white"
+                              ? colors.contentOnPrimary
                               : colors.brand.primary,
                         }}
                       >
@@ -770,7 +772,7 @@ export default function WorkoutEditModal({
                           className={`mb-3 p-4 rounded-xl border ${
                             selectedExercise?.id === item.id
                               ? "border-brand-primary"
-                              : "bg-white border-gray-200"
+                              : "bg-surface border-neutral-medium-1"
                           }`}
                           onPress={() => setSelectedExercise(item)}
                           activeOpacity={0.7}
@@ -807,7 +809,7 @@ export default function WorkoutEditModal({
                                               key={muscleIndex}
                                               className="rounded-full px-2 py-1 mr-1 bg-primary"
                                             >
-                                              <Text className="text-xs font-semibold text-white">
+                                              <Text className="text-xs font-semibold text-neutral-white">
                                                 {muscle}
                                               </Text>
                                             </View>
@@ -816,7 +818,7 @@ export default function WorkoutEditModal({
                                           item.muscleGroups
                                         ).length > 2 && (
                                           <View className="rounded-full px-2 py-1 bg-primary">
-                                            <Text className="text-xs font-semibold text-white">
+                                            <Text className="text-xs font-semibold text-neutral-white">
                                               +
                                               {getIndividualMuscleGroups(
                                                 item.muscleGroups
@@ -838,7 +840,7 @@ export default function WorkoutEditModal({
                                     />
                                     <View className="ml-1">
                                       <View className="rounded-full px-2 py-1 bg-primary">
-                                        <Text className="text-xs font-semibold text-white">
+                                        <Text className="text-xs font-semibold text-neutral-white">
                                           {formatEquipment(item.equipment)}
                                         </Text>
                                       </View>
@@ -855,7 +857,7 @@ export default function WorkoutEditModal({
                                   <Ionicons
                                     name="checkmark"
                                     size={14}
-                                    color="white"
+                                    color={colors.neutral.white}
                                   />
                                 </View>
                               </View>
@@ -894,15 +896,15 @@ export default function WorkoutEditModal({
                     disabled={replacing}
                   >
                     {replacing ? (
-                      <ActivityIndicator size="small" color="white" />
+                      <ActivityIndicator size="small" color={colors.neutral.white} />
                     ) : (
                       <View className="flex-row items-center">
                         <Ionicons
                           name="swap-horizontal"
                           size={20}
-                          color="white"
+                          color={colors.neutral.white}
                         />
-                        <Text className="text-white font-semibold text-lg ml-2">
+                        <Text className="text-neutral-white font-semibold text-lg ml-2">
                           Replace Exercise
                         </Text>
                       </View>
@@ -918,7 +920,7 @@ export default function WorkoutEditModal({
             <View className="px-5 pb-10 mb-5">
               <View className="flex-row space-x-3">
                 <TouchableOpacity
-                  className="flex-1 bg-white border border-gray-300 py-4 rounded-md items-center"
+                  className="flex-1 bg-surface border border-neutral-medium-1 py-4 rounded-md items-center"
                   onPress={handleCancel}
                   disabled={saving}
                 >
@@ -934,11 +936,11 @@ export default function WorkoutEditModal({
                   disabled={saving}
                 >
                   {saving ? (
-                    <ActivityIndicator size="small" color="white" />
+                    <ActivityIndicator size="small" color={colors.neutral.white} />
                   ) : (
                     <>
-                      <Ionicons name="checkmark" size={18} color="white" />
-                      <Text className="text-white font-semibold text-sm ml-2">
+                      <Ionicons name="checkmark" size={18} color={colors.neutral.white} />
+                      <Text className="text-neutral-white font-semibold text-sm ml-2">
                         Save Changes
                       </Text>
                     </>
@@ -957,7 +959,7 @@ export default function WorkoutEditModal({
         presentationStyle="pageSheet"
         onRequestClose={cancelFilters}
       >
-        <View className="flex-1 bg-background mb-4">
+        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
           {/* Modal Header */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity onPress={cancelFilters}>
@@ -1000,7 +1002,7 @@ export default function WorkoutEditModal({
                     style={{
                       backgroundColor: tempEquipment.includes(equipment)
                         ? colors.brand.primary
-                        : "white",
+                        : colors.surface,
                       borderColor: tempEquipment.includes(equipment)
                         ? colors.brand.primary
                         : colors.neutral.medium[1],
@@ -1017,7 +1019,7 @@ export default function WorkoutEditModal({
                       className="text-sm font-medium"
                       style={{
                         color: tempEquipment.includes(equipment)
-                          ? "white"
+                          ? colors.contentOnPrimary
                           : colors.text.primary,
                       }}
                     >
@@ -1091,7 +1093,7 @@ export default function WorkoutEditModal({
                     style={{
                       backgroundColor: tempMuscleGroups.includes(muscleGroup)
                         ? colors.brand.primary
-                        : "white",
+                        : colors.surface,
                       borderColor: tempMuscleGroups.includes(muscleGroup)
                         ? colors.brand.primary
                         : colors.neutral.medium[1],
@@ -1108,7 +1110,7 @@ export default function WorkoutEditModal({
                       className="text-sm font-medium"
                       style={{
                         color: tempMuscleGroups.includes(muscleGroup)
-                          ? "white"
+                          ? colors.contentOnPrimary
                           : colors.text.primary,
                       }}
                     >
@@ -1159,7 +1161,7 @@ export default function WorkoutEditModal({
                       backgroundColor:
                         tempDifficulty === difficulty
                           ? colors.brand.primary
-                          : "white",
+                          : colors.surface,
                       borderColor:
                         tempDifficulty === difficulty
                           ? colors.brand.primary
@@ -1176,7 +1178,7 @@ export default function WorkoutEditModal({
                       style={{
                         color:
                           tempDifficulty === difficulty
-                            ? "white"
+                            ? colors.contentOnPrimary
                             : colors.text.primary,
                       }}
                     >

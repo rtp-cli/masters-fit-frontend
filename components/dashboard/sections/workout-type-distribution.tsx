@@ -110,7 +110,7 @@ const WorkoutTypeDistributionSection: React.FC<
             >
               <Text
                 className={`text-xs font-medium ${
-                  filter === f ? "text-text-primary" : "text-text-muted"
+                  filter === f ? "text-content-on-primary" : "text-text-muted"
                 }`}
               >
                 {f}
@@ -120,7 +120,7 @@ const WorkoutTypeDistributionSection: React.FC<
         </View>
       </View>
 
-      <View className="bg-white rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5">
         <View className="items-center mb-4">
           <PieChart
             data={chartData}
@@ -175,13 +175,13 @@ const WorkoutTypeDistributionSection: React.FC<
             </Text>
           </View>
           <View className="items-center">
-            <Text className="text-lg font-bold text-accent">
+            <Text className="text-lg font-bold text-text-primary">
               {metrics.distribution.length || 0}
             </Text>
             <Text className="text-xs text-text-muted text-center">Types</Text>
           </View>
           <View className="items-center">
-            <Text className="text-lg font-bold text-secondary">
+            <Text className="text-lg font-bold text-text-primary">
               {metrics.distribution.length > 0
                 ? Math.round(
                     metrics.distribution.reduce(
