@@ -7,7 +7,7 @@ interface Profile {
   height?: number;
   weight?: number;
   gender?: string;
-  environment?: string | null;
+  environment?: string | string[] | null;
   fitnessLevel?: string;
   workoutDuration?: number;
   intensityLevel?: string | number | null;
@@ -27,13 +27,32 @@ export default function PersonalInformationSection({
   };
 
   // Handle environment display with robust error handling
-  const getEnvironmentDisplay = (environment: string | undefined | null) => {
+  const getEnvironmentDisplay = (environment: string | string[] | undefined | null) => {
     if (!environment || environment === "") return "Not specified";
     try {
+      // Handle array case - take first element
+      if (Array.isArray(environment)) {
+        if (environment.length === 0) return "Not specified";
+        return formatEnumValue(environment[0]);
+      }
+
+      // Handle stringified array like "{Commercial Gym}" or "[Commercial Gym]"
+      if (typeof environment === "string") {
+        // Remove curly braces, square brackets, and quotes
+        const cleaned = environment
+          .replace(/^\{|\}$/g, "")  // Remove { }
+          .replace(/^\[|\]$/g, "")  // Remove [ ]
+          .replace(/^["']|["']$/g, "")  // Remove quotes
+          .trim();
+
+        if (!cleaned) return "Not specified";
+        return formatEnumValue(cleaned);
+      }
+
       return formatEnumValue(environment);
     } catch (error) {
       console.error("Environment formatting error:", error);
-      return environment;
+      return Array.isArray(environment) ? environment[0] : String(environment);
     }
   };
 
