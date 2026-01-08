@@ -280,6 +280,27 @@ function AppContent() {
   );
 }
 
+// Memoized provider tree to prevent re-mounting when theme class changes
+const StableProviderTree = React.memo(function StableProviderTree() {
+  return (
+    <MixpanelProvider>
+      <AuthProvider>
+        <WaiverProvider>
+          <WorkoutProvider>
+            <AppDataProvider>
+              <BackgroundJobProvider>
+                <SystemUIWrapper>
+                  <AppContent />
+                </SystemUIWrapper>
+              </BackgroundJobProvider>
+            </AppDataProvider>
+          </WorkoutProvider>
+        </WaiverProvider>
+      </AuthProvider>
+    </MixpanelProvider>
+  );
+});
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -345,21 +366,7 @@ export default function RootLayout() {
   return (
     <View className={`flex-1 ${isDark ? "dark" : ""}`}>
       <ThemeContext.Provider value={{ mode, isDark, setThemeMode }}>
-        <MixpanelProvider>
-          <AuthProvider>
-            <WaiverProvider>
-              <WorkoutProvider>
-                <AppDataProvider>
-                  <BackgroundJobProvider>
-                    <SystemUIWrapper>
-                      <AppContent />
-                    </SystemUIWrapper>
-                  </BackgroundJobProvider>
-                </AppDataProvider>
-              </WorkoutProvider>
-            </WaiverProvider>
-          </AuthProvider>
-        </MixpanelProvider>
+        <StableProviderTree />
       </ThemeContext.Provider>
     </View>
   );
