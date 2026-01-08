@@ -15,31 +15,38 @@ export default function LogoutSection({
   const colors = useThemeColors();
 
   return (
-    <View className="px-6 mb-4 gap-3">
+    <View className="px-6 mb-8 gap-3">
+      {/* Log Out - Subtle ghost style */}
       <TouchableOpacity
-        className="bg-surface rounded-xl p-4 flex-row items-center justify-center"
+        className="rounded-xl p-4 flex-row items-center justify-center border border-neutral-medium-1"
         onPress={onLogout}
+        activeOpacity={0.7}
       >
         <Ionicons
           name="log-out-outline"
           size={20}
-          color={colors.brand.secondary}
+          color={colors.text.secondary}
           style={{ marginRight: 8 }}
         />
-        <Text style={{ color: colors.brand.secondary }} className="font-semibold">Log Out</Text>
+        <Text className="font-semibold text-text-secondary">Log Out</Text>
       </TouchableOpacity>
-      <View className="border-t border-neutral-light-2" />
+
+      {/* Delete Account - Destructive style */}
       <TouchableOpacity
-        className="bg-surface rounded-xl p-4 flex-row items-center justify-center"
+        className="rounded-xl p-4 flex-row items-center justify-center"
+        style={{ backgroundColor: `${colors.danger}15` }}
         onPress={onDeleteAccount}
+        activeOpacity={0.7}
       >
         <Ionicons
           name="trash-outline"
           size={20}
-          color={colors.brand.secondary}
+          color={colors.danger}
           style={{ marginRight: 8 }}
         />
-        <Text style={{ color: colors.brand.secondary }} className="font-semibold">Delete Account</Text>
+        <Text style={{ color: colors.danger }} className="font-semibold">
+          Delete Account
+        </Text>
       </TouchableOpacity>
     </View>
   );
