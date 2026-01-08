@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, Switch } from "react-native";
+import { View, Text, TouchableOpacity, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "../../../lib/theme";
 import { ThemeMode } from "../../../lib/theme-context";
@@ -61,8 +61,13 @@ export default function AppSettingsSection({
               true: colors.brand.primary,
             }}
             thumbColor={
-              isDarkMode ? colors.neutral.white : colors.neutral.light[1]
+              Platform.OS === "android"
+                ? colors.text.primary
+                : isDarkMode
+                  ? colors.neutral.white
+                  : colors.neutral.light[1]
             }
+            ios_backgroundColor={colors.neutral.medium[1]}
           />
         </View>
 
