@@ -325,7 +325,11 @@ export default function AIProviderSelectionPage() {
           <View className="bg-surface rounded-xl p-3 border border-primary">
             <View className="flex-row items-center">
               <View className="w-6 h-6 rounded-full items-center justify-center mr-3 bg-primary">
-                <Ionicons name="checkmark" size={12} color={colors.neutral.white} />
+                <Ionicons
+                  name="checkmark"
+                  size={12}
+                  color={colors.contentOnPrimary}
+                />
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold mb-1 text-text-primary">
@@ -470,7 +474,9 @@ export default function AIProviderSelectionPage() {
       {/* Confirmation Modal */}
       <Modal visible={showConfirmModal} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={cancelProviderSwitch}>
-          <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+          <View
+            className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
+          >
             <TouchableWithoutFeedback>
               <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
                 {/* Icon */}
@@ -488,7 +494,7 @@ export default function AIProviderSelectionPage() {
                 </Text>
 
                 {/* Description */}
-                <Text className="text-base text-text-secondary text-center mb-6 leading-6">
+                <Text className="text-base text-text-secondary text-center mb-6 mr-2 leading-6">
                   Switch to{" "}
                   <Text className="font-semibold">
                     {pendingSwitch?.providerInfo?.displayName} -{" "}
@@ -501,7 +507,7 @@ export default function AIProviderSelectionPage() {
                 {/* Buttons */}
                 <View className="flex-row space-x-3">
                   <TouchableOpacity
-                    className="flex-1 bg-neutral-light-2 rounded-xl py-3 items-center justify-center"
+                    className="flex-1 bg-neutral-light-2 rounded-xl py-3 items-center justify-center mr-2"
                     onPress={cancelProviderSwitch}
                   >
                     <Text className="text-text-muted font-semibold text-base">

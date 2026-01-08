@@ -13,6 +13,51 @@ import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import { images } from "@/assets";
 
+// Get user-friendly error message based on error type
+function getErrorMessage(error?: string, status?: string): string {
+  if (!error && status === "timeout") {
+    return "The generation took too long. Please try again.";
+  }
+
+  if (!error) {
+    return "Something went wrong. Please try again.";
+  }
+
+  const errorLower = error.toLowerCase();
+
+  // Rate limit errors
+  if (
+    errorLower.includes("429") ||
+    errorLower.includes("rate limit") ||
+    errorLower.includes("rate_limit") ||
+    errorLower.includes("too many requests") ||
+    errorLower.includes("quota exceeded") ||
+    errorLower.includes("resource exhausted")
+  ) {
+    return "You've made too many requests. Please wait a moment and try again.";
+  }
+
+  // Authentication errors
+  if (
+    errorLower.includes("401") ||
+    errorLower.includes("403") ||
+    errorLower.includes("unauthorized") ||
+    errorLower.includes("forbidden") ||
+    errorLower.includes("invalid api key") ||
+    errorLower.includes("invalid_api_key")
+  ) {
+    return "There was an authentication issue. Please contact support.";
+  }
+
+  // Timeout errors
+  if (status === "timeout" || errorLower.includes("timeout") || errorLower.includes("timed out")) {
+    return "The generation took too long. Please try again.";
+  }
+
+  // Generic fallback
+  return "Something went wrong. Please try again.";
+}
+
 export default function FloatingActionButton() {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -263,15 +308,13 @@ export default function FloatingActionButton() {
                 <Text className="text-base text-text-secondary text-center mb-6 leading-6">
                   {currentJob.status === "cancelled"
                     ? "The workout generation was cancelled. You can start a new generation at any time."
-                    : currentJob.status === "timeout"
-                      ? "The workout generation took too long and was stopped. Please check your internet connection or try again later."
-                      : currentJob.status === "failed"
-                        ? "The workout generation failed after multiple attempts. Please check your internet connection or try again later."
-                        : currentJob.type === "generation"
+                    : currentJob.status === "timeout" || currentJob.status === "failed"
+                      ? getErrorMessage(currentJob.error, currentJob.status)
+                      : currentJob.type === "generation"
+                        ? "Your personalized, AI powered workout plan is on the way."
+                        : currentJob.type === "regeneration"
                           ? "Your personalized, AI powered workout plan is on the way."
-                          : currentJob.type === "regeneration"
-                            ? "Your personalized, AI powered workout plan is on the way."
-                            : "Your personalized, AI powered daily workout is on the way."}{" "}
+                          : "Your personalized, AI powered daily workout is on the way."}{" "}
                   {currentJob.status !== "cancelled" &&
                   currentJob.status !== "timeout" &&
                   currentJob.status !== "failed"

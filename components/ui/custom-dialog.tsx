@@ -92,7 +92,7 @@ export default function CustomDialog({
                     className="flex-1 bg-primary rounded-xl py-3 px-6 items-center justify-center"
                     onPress={primaryButton.onPress}
                   >
-                    <Text className="text-white font-semibold text-base">
+                    <Text className="text-content-on-primary font-semibold text-base">
                       {primaryButton.text}
                     </Text>
                   </TouchableOpacity>
@@ -102,7 +102,7 @@ export default function CustomDialog({
                   className="bg-primary rounded-xl py-3 px-8 w-full items-center justify-center"
                   onPress={primaryButton.onPress}
                 >
-                  <Text className="text-white font-semibold text-base">
+                  <Text className="text-content-on-primary font-semibold text-base">
                     {primaryButton.text}
                   </Text>
                 </TouchableOpacity>

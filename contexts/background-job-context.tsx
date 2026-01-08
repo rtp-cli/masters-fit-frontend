@@ -216,8 +216,8 @@ export function BackgroundJobProvider({
 
       // Set up automatic timeout for the job
       const timeoutDuration = getTimeoutForJobType(type);
-      setTimeout(() => {
-        // Check if job is still active and timeout it
+      setTimeout(async () => {
+        // Check if job is still activegh
         setJobs((currentJobs) => {
           const jobToTimeout = currentJobs.find((j) => j.id === jobId);
           if (
@@ -225,18 +225,73 @@ export function BackgroundJobProvider({
             (jobToTimeout.status === "pending" ||
               jobToTimeout.status === "processing")
           ) {
-            const updatedJobs = currentJobs.map((j) =>
-              j.id === jobId
-                ? {
-                    ...j,
-                    status: "timeout" as const,
-                    error: "Job timed out",
-                    completedAt: new Date().toISOString(),
+            // Do one final poll to get the actual status/error from backend
+            getJobStatus(jobId)
+              .then((response) => {
+                if (response?.success && response.job) {
+                  const backendJob = response.job;
+                  // If backend has a final status (completed/failed), use it
+                  if (
+                    backendJob.status === "completed" ||
+                    backendJob.status === "failed"
+                  ) {
+                    setJobs((jobs) => {
+                      const updatedJobs = jobs.map((j) =>
+                        j.id === jobId
+                          ? {
+                              ...j,
+                              status:
+                                backendJob.status as BackgroundJob["status"],
+                              error: backendJob.error || undefined,
+                              progress: backendJob.progress,
+                              workoutId: backendJob.workoutId,
+                              completedAt:
+                                backendJob.completedAt ||
+                                new Date().toISOString(),
+                            }
+                          : j
+                      );
+                      saveJobsToStorage(updatedJobs);
+                      return updatedJobs;
+                    });
+                    return;
                   }
-                : j
-            );
-            saveJobsToStorage(updatedJobs);
-            return updatedJobs;
+                }
+                // Backend still processing or no response - mark as timeout
+                setJobs((jobs) => {
+                  const updatedJobs = jobs.map((j) =>
+                    j.id === jobId
+                      ? {
+                          ...j,
+                          status: "timeout" as const,
+                          error:
+                            "The generation took too long. Please try again.",
+                          completedAt: new Date().toISOString(),
+                        }
+                      : j
+                  );
+                  saveJobsToStorage(updatedJobs);
+                  return updatedJobs;
+                });
+              })
+              .catch(() => {
+                // On error, mark as timeout
+                setJobs((jobs) => {
+                  const updatedJobs = jobs.map((j) =>
+                    j.id === jobId
+                      ? {
+                          ...j,
+                          status: "timeout" as const,
+                          error:
+                            "The generation took too long. Please try again.",
+                          completedAt: new Date().toISOString(),
+                        }
+                      : j
+                  );
+                  saveJobsToStorage(updatedJobs);
+                  return updatedJobs;
+                });
+              });
           }
           return currentJobs;
         });
