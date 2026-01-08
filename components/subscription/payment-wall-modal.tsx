@@ -230,7 +230,7 @@ export default function PaymentWallModal({
               {isPurchasing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text className="text-white text-lg font-bold">
+                <Text className="text-content-on-primary text-lg font-bold">
                   {selectedPackage
                     ? `Subscribe for ${selectedPackage.product.priceString}`
                     : "Select a Plan"}
