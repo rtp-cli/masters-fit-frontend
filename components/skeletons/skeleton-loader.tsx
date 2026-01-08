@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, type DimensionValue, type ViewProps } from "react-native";
+import { useThemeColors } from "@/lib/theme";
 
 interface SkeletonLoaderProps extends ViewProps {
   width?: DimensionValue;
@@ -16,6 +17,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   style,
   ...props
 }) => {
+  const colors = useThemeColors();
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         {
           width,
           height,
-          backgroundColor: "#E5E5E5",
+          backgroundColor: colors.neutral.medium[1],
           borderRadius: getBorderRadius(),
           opacity: animate ? pulseAnim : 1,
         },
