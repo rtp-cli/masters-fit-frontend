@@ -74,7 +74,7 @@ export default function PersonalInformationSection({
   };
 
   return (
-    <View className="px-6 mb-6 bg-white rounded-xl overflow-hidden">
+    <View className="px-6 mb-6 bg-surface rounded-xl overflow-hidden">
       <Text className="text-base font-semibold text-text-primary p-4 pb-2">
         Personal Information
       </Text>

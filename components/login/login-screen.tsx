@@ -12,10 +12,11 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/auth-context";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import { CustomDialog, DialogButton } from "../../components/ui";
 
 export const LoginScreen = () => {
+  const colors = useThemeColors();
   const router = useRouter();
   const { checkEmail, signup, login, setIsSigningUp } = useAuth();
 
@@ -247,7 +248,7 @@ export const LoginScreen = () => {
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-neutral-white font-semibold text-base">
               {showNameField ? "Sign Up" : "Continue"}
             </Text>
           )}

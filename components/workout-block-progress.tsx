@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
   type ExerciseSessionData,
   getBlockTypeDisplayName,
@@ -25,6 +25,7 @@ export default function WorkoutBlockProgress({
   currentExerciseIndex,
   onExercisePress,
 }: WorkoutBlockProgressProps) {
+  const colors = useThemeColors();
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
 
   const getBlockIcon = (blockType?: string) => {
@@ -177,7 +178,7 @@ export default function WorkoutBlockProgress({
       </View>
 
       {/* Block Exercises */}
-      <View className="bg-white border-l-4 border-l-gray-200 rounded-b-xl">
+      <View className="bg-surface border-l-4 border-l-neutral-medium-1 rounded-b-xl">
         {blockExercises.map((exercise, exerciseIndex) => {
           // Find global exercise index
           const globalExerciseIndex = exerciseData.findIndex(
@@ -190,16 +191,16 @@ export default function WorkoutBlockProgress({
           return (
             <TouchableOpacity
               key={exercise.id}
-              className={`p-4 border-b border-gray-100 ${exerciseIndex === blockExercises.length - 1 ? "border-b-0 rounded-b-xl" : ""} ${
-                isCurrentExercise ? "bg-primary/5" : "bg-white"
+              className={`p-4 border-b border-neutral-light-2 ${exerciseIndex === blockExercises.length - 1 ? "border-b-0 rounded-b-xl" : ""} ${
+                isCurrentExercise ? "bg-primary/5" : "bg-surface"
               }`}
               onPress={() => onExercisePress?.(globalExerciseIndex)}
               disabled={!onExercisePress}
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-1 flex-row items-center">
-                  <View className="size-8 rounded-full bg-gray-100 items-center justify-center mr-3">
-                    <Text className="text-xs font-bold text-gray-600">
+                  <View className="size-8 rounded-full bg-neutral-light-2 items-center justify-center mr-3">
+                    <Text className="text-xs font-bold text-text-secondary">
                       {exerciseIndex + 1}
                     </Text>
                   </View>

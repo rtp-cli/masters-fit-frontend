@@ -31,7 +31,8 @@ import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
+import { useTheme } from "../../lib/theme-context";
 import { formatDateAsString } from "../../utils";
 import {
   PlanDayWithBlocks,
@@ -45,6 +46,8 @@ import CalendarActionButtons from "./sections/action-buttons";
 import WorkoutDaySection from "./sections/workout-day";
 
 export default function CalendarScreen() {
+  const colors = useThemeColors();
+  const { isDark } = useTheme();
   const router = useRouter();
   const {
     setIsGeneratingWorkout,
@@ -566,7 +569,7 @@ export default function CalendarScreen() {
         <Header workoutTitle={workoutPlan?.name} />
 
         <CalendarViewSection
-          calendarKey={calendarKey}
+          calendarKey={`${calendarKey}-${isDark ? "dark" : "light"}`}
           currentMonth={currentMonth}
           markedDates={getMarkedDates()}
           onDayPress={handleDateSelect}

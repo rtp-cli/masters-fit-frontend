@@ -1,44 +1,31 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../lib/theme";
-import ComingSoonModal from "../../coming-soon-modal";
+import { useThemeColors } from "../../../lib/theme";
+import { ThemeMode } from "../../../lib/theme-context";
 import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
 
 interface AppSettingsSectionProps {
   debugTapCount: number;
   onDebugTap: () => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
 }
 
 export default function AppSettingsSection({
   debugTapCount,
   onDebugTap,
+  themeMode,
+  setThemeMode,
 }: AppSettingsSectionProps) {
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
-  const [comingSoonModal, setComingSoonModal] = useState<{
-    visible: boolean;
-    icon: keyof typeof Ionicons.glyphMap;
-  }>({
-    visible: false,
-    icon: "information-circle-outline",
-  });
 
-  // Show coming soon modal
-  const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
-    setComingSoonModal({
-      visible: true,
-      icon,
-    });
-  };
+  const isDarkMode = themeMode === "dark";
 
-  // Hide coming soon modal
-  const hideComingSoonModal = () => {
-    setComingSoonModal({
-      ...comingSoonModal,
-      visible: false,
-    });
+  const handleDarkModeToggle = (value: boolean) => {
+    setThemeMode(value ? "dark" : "light");
   };
 
   return (
@@ -67,14 +54,14 @@ export default function AppSettingsSection({
             <Text className="text-sm text-text-primary ml-3">Dark Mode</Text>
           </View>
           <Switch
-            value={darkModeEnabled}
-            onValueChange={() => showComingSoonModal("moon-outline")}
+            value={isDarkMode}
+            onValueChange={handleDarkModeToggle}
             trackColor={{
               false: colors.neutral.medium[1],
               true: colors.brand.primary,
             }}
             thumbColor={
-              darkModeEnabled ? colors.neutral.white : colors.neutral.light[1]
+              isDarkMode ? colors.neutral.white : colors.neutral.light[1]
             }
           />
         </View>
@@ -84,12 +71,6 @@ export default function AppSettingsSection({
           onToggle={() => setLegalExpanded(!legalExpanded)}
         />
       </View>
-
-      <ComingSoonModal
-        visible={comingSoonModal.visible}
-        onClose={hideComingSoonModal}
-        icon={comingSoonModal.icon}
-      />
     </>
   );
 }

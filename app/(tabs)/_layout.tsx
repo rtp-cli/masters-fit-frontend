@@ -1,14 +1,14 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { View, TouchableOpacity, GestureResponderEvent } from "react-native";
-import { useNavigation, NavigationState } from "@react-navigation/native";
+import { NavigationContainerRefContext } from "@react-navigation/native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import FloatingActionButton from "@/components/floating-action-button";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";
 import { tabEvents } from "@/lib/tab-events";
 import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
@@ -43,7 +43,10 @@ function DisabledTabButton({
   routeName: string;
 }) {
   const { abandonWorkout } = useWorkout();
-  const navigation = useNavigation();
+  // Use NavigationContainerRefContext directly - it never throws, just returns undefined
+  // when navigation context isn't available (e.g., during dark mode initialization)
+  const navigationRef = useContext(NavigationContainerRefContext);
+  const currentRoute = navigationRef?.current?.getCurrentRoute()?.name;
   const [dialogVisible, setDialogVisible] = useState(false);
   const pendingEventRef = useRef<GestureResponderEvent | null>(null);
 
@@ -51,19 +54,12 @@ function DisabledTabButton({
     if (disabled) {
       pendingEventRef.current = e;
       setDialogVisible(true);
+    } else if (currentRoute === routeName) {
+      // Already on this tab - emit scroll-to-top event
+      tabEvents.emit(`scrollToTop:${routeName}`);
     } else {
-      // Check if we're already on this tab
-      const currentRoute = (navigation.getState() as NavigationState).routes[
-        (navigation.getState() as NavigationState).index
-      ]?.name;
-
-      if (currentRoute === routeName) {
-        // Emit scroll-to-top event for the current tab
-        tabEvents.emit(`scrollToTop:${routeName}`);
-      } else {
-        // Navigate to the tab normally
-        onPress?.(e);
-      }
+      // Navigate to the tab normally
+      onPress?.(e);
     }
   };
 
@@ -114,6 +110,7 @@ function DisabledTabButton({
 }
 
 export default function TabLayout() {
+  const colors = useThemeColors();
   const { isWorkoutInProgress } = useWorkout();
   const insets = useSafeAreaInsets();
 
@@ -127,6 +124,7 @@ export default function TabLayout() {
             tabBarInactiveTintColor: colors.neutral.medium[3],
             tabBarShowLabel: false,
             tabBarStyle: {
+              backgroundColor: colors.background,
               borderTopWidth: 1,
               borderTopColor: colors.neutral.medium[1],
               height: 70,

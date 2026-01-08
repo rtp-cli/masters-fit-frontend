@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PurchasesPackage } from "react-native-purchases";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
 import { PaywallLimits } from "@/types/api";
 import SubscriptionPlansList from "./subscription-plans-list";
@@ -33,6 +33,7 @@ export default function PaymentWallModal({
   paywallData,
   onPurchaseSuccess,
 }: PaymentWallModalProps) {
+  const colors = useThemeColors();
   const {
     packages,
     isLoading,
@@ -131,7 +132,7 @@ export default function PaymentWallModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-background">
         {/* Header with Close Button */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity

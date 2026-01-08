@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
   getBlockTypeDisplayName,
   type WorkoutBlockWithExercise,
@@ -28,6 +28,7 @@ export default function WorkoutBlock({
   variant = "calendar",
   onExercisePress,
 }: WorkoutBlockProps) {
+  const colors = useThemeColors();
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
 
   const getBlockIcon = (blockType?: string) => {
@@ -155,8 +156,8 @@ export default function WorkoutBlock({
 
         {/* Block Instructions */}
         {block.instructions && isExpanded && !isCompactVariant && (
-          <View className="p-3 bg-white/10 rounded-lg">
-            <Text className="text-sm text-text-primary leading-5">
+          <View className="mt-3">
+            <Text className="text-sm text-text-secondary leading-5 italic">
               {block.instructions}
             </Text>
           </View>
@@ -165,26 +166,26 @@ export default function WorkoutBlock({
 
       {/* Block Exercises */}
       {isExpanded && showDetails && (
-        <View className="bg-white border-l-4 border-l-gray-200">
+        <View className="bg-surface border-l-4 border-l-neutral-medium-1">
           {block.exercises
             .sort((a, b) => (a.order || 0) - (b.order || 0))
             .map((exercise, exerciseIndex) =>
               onExercisePress ? (
                 <TouchableOpacity
                   key={exercise.id}
-                  className={`p-4 border-b border-gray-100 ${
+                  className={`p-4 border-b border-neutral-light-2 ${
                     exerciseIndex === block.exercises.length - 1
                       ? "border-b-0"
                       : ""
-                  } ${isCompactVariant ? "p-3" : "p-4"} active:bg-gray-50`}
+                  } ${isCompactVariant ? "p-3" : "p-4"} active:bg-neutral-light-1`}
                   onPress={() => onExercisePress(exercise)}
                   activeOpacity={0.7}
                 >
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1">
                       <View className="flex-row items-center mb-1">
-                        <View className="size-6 rounded-full bg-gray-100 items-center justify-center mr-3">
-                          <Text className="text-xs font-bold text-gray-600">
+                        <View className="size-6 rounded-full bg-neutral-light-2 items-center justify-center mr-3">
+                          <Text className="text-xs font-bold text-text-secondary">
                             {exerciseIndex + 1}
                           </Text>
                         </View>
@@ -244,14 +245,14 @@ export default function WorkoutBlock({
                       <View className="ml-2">
                         <View
                           className={`size-6 rounded-full ${
-                            exercise.completed ? "bg-green-500" : "bg-gray-200"
+                            exercise.completed ? "bg-primary" : "bg-neutral-medium-1"
                           } items-center justify-center`}
                         >
                           {exercise.completed && (
                             <Ionicons
                               name="checkmark"
                               size={14}
-                              color="white"
+                              color={colors.neutral.white}
                             />
                           )}
                         </View>
@@ -262,7 +263,7 @@ export default function WorkoutBlock({
               ) : (
                 <View
                   key={exercise.id}
-                  className={`p-4 border-b border-gray-100 ${
+                  className={`p-4 border-b border-neutral-light-2 ${
                     exerciseIndex === block.exercises.length - 1
                       ? "border-b-0"
                       : ""
@@ -271,8 +272,8 @@ export default function WorkoutBlock({
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1">
                       <View className="flex-row items-center mb-1">
-                        <View className="size-6 rounded-full bg-gray-100 items-center justify-center mr-3">
-                          <Text className="text-xs font-bold text-gray-600">
+                        <View className="size-6 rounded-full bg-neutral-light-2 items-center justify-center mr-3">
+                          <Text className="text-xs font-bold text-text-secondary">
                             {exerciseIndex + 1}
                           </Text>
                         </View>
@@ -332,14 +333,14 @@ export default function WorkoutBlock({
                       <View className="ml-2">
                         <View
                           className={`size-6 rounded-full ${
-                            exercise.completed ? "bg-green-500" : "bg-gray-200"
+                            exercise.completed ? "bg-primary" : "bg-neutral-medium-1"
                           } items-center justify-center`}
                         >
                           {exercise.completed && (
                             <Ionicons
                               name="checkmark"
                               size={14}
-                              color="white"
+                              color={colors.neutral.white}
                             />
                           )}
                         </View>

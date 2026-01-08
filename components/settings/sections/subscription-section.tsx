@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 interface SubscriptionSectionProps {
   isPro: boolean;
@@ -18,8 +18,10 @@ export default function SubscriptionSection({
   expirationDate,
   onPress,
 }: SubscriptionSectionProps) {
+  const colors = useThemeColors();
+
   return (
-    <View className="mx-6 mb-6 bg-white rounded-xl overflow-hidden">
+    <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
       <Text className="text-base font-semibold text-text-primary p-4 pb-2">
         Subscription
       </Text>

@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 
 type ButtonVariant =
   | "primary"
@@ -44,6 +44,7 @@ const Button: React.FC<ButtonProps> = ({
   children,
   ...rest
 }) => {
+  const colors = useThemeColors();
   // Base classes
   const baseClasses = "flex-row items-center justify-center rounded-sm";
 
@@ -69,7 +70,7 @@ const Button: React.FC<ButtonProps> = ({
     secondary: "text-text-primary",
     outline: "text-primary",
     ghost: "text-primary",
-    destructive: "text-white",
+    destructive: "text-neutral-white",
   };
 
   // Text size classes

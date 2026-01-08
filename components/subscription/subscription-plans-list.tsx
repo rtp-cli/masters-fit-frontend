@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PurchasesPackage, PACKAGE_TYPE } from "react-native-purchases";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface SubscriptionPlansListProps {
   packages: PurchasesPackage[];
@@ -15,6 +15,7 @@ export default function SubscriptionPlansList({
   selectedPackageId,
   onPackageSelect,
 }: SubscriptionPlansListProps) {
+  const colors = useThemeColors();
   // Helper to determine if a package is annual
   const isAnnualPackage = (pkg: PurchasesPackage): boolean => {
     return (

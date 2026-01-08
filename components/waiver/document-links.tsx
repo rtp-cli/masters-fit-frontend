@@ -1,6 +1,6 @@
 import { TouchableOpacity, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface DocumentLinksProps {
   onOpenTerms: () => void;
@@ -9,6 +9,8 @@ interface DocumentLinksProps {
 }
 
 export default function DocumentLinks({ onOpenTerms, onOpenPrivacy, onOpenWaiver }: DocumentLinksProps) {
+  const colors = useThemeColors();
+
   return (
     <View className="px-6 mb-8">
       <View className="flex-row justify-center items-center flex-wrap">

@@ -1,6 +1,10 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Platform, View } from "react-native";
+import {
+  Platform,
+  View,
+  useColorScheme as useSystemColorScheme,
+} from "react-native";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { WorkoutProvider } from "@/contexts/workout-context";
@@ -21,7 +25,7 @@ import {
   Manrope_600SemiBold,
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import {
@@ -32,16 +36,48 @@ import {
 import "../global.css";
 import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
+import { ThemeContext, ThemeMode, useTheme } from "@/lib/theme-context";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import * as TrackingTransparency from "expo-tracking-transparency";
+
+const THEME_KEY = "@theme_preference";
+
+// Re-export useTheme for backward compatibility
+export { useTheme } from "@/lib/theme-context";
+
+// Inner wrapper for StatusBar and Android navigation bar
+function SystemUIWrapper({ children }: { children: React.ReactNode }) {
+  const { isDark } = useTheme();
+  const themeColors = isDark ? { ...colors, ...darkColors } : colors;
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync(themeColors.background).catch(
+        () => {}
+      );
+      NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark").catch(
+        () => {}
+      );
+    }
+  }, [themeColors.background, isDark]);
+
+  return (
+    <>
+      <StatusBar
+        style={isDark ? "light" : "dark"}
+        backgroundColor={themeColors.background}
+      />
+      {children}
+    </>
+  );
+}
 
 // Inner component that can access auth context
 function AppContent() {
   const {
-    isGeneratingWorkout,
-    currentRegenerationType,
-    setIsGeneratingWorkout,
     needsFullAppRefresh,
     setNeedsFullAppRefresh,
     isPreloadingData,
@@ -53,6 +89,7 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
+
   // Initialize RevenueCat
   useEffect(() => {
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
@@ -65,34 +102,11 @@ function AppContent() {
       Purchases.configure({
         apiKey: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
       });
-    }
-  }, []);
-
-  useEffect(() => {
-    // Ensure Android system UI matches the light app background
-    if (Platform.OS === "android") {
-      NavigationBar.setBackgroundColorAsync(colors.background).catch(() => {});
-      NavigationBar.setButtonStyleAsync("dark").catch(() => {});
     }
   }, []);
 
   useEffect(() => {
     ensureHealthConnectInitialized();
-  }, []);
-
-  // Initialize RevenueCat
-  useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-
-    if (Platform.OS === "ios") {
-      Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
-      });
-    } else if (Platform.OS === "android") {
-      Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
-      });
-    }
   }, []);
 
   // State to track notification-triggered refreshes
@@ -271,7 +285,6 @@ function AppContent() {
 
   return (
     <View className="flex-1 bg-background">
-      <StatusBar style="dark" backgroundColor={colors.background} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -292,6 +305,27 @@ function AppContent() {
   );
 }
 
+// Memoized provider tree to prevent re-mounting when theme class changes
+const StableProviderTree = React.memo(function StableProviderTree() {
+  return (
+    <MixpanelProvider>
+      <AuthProvider>
+        <WaiverProvider>
+          <WorkoutProvider>
+            <AppDataProvider>
+              <BackgroundJobProvider>
+                <SystemUIWrapper>
+                  <AppContent />
+                </SystemUIWrapper>
+              </BackgroundJobProvider>
+            </AppDataProvider>
+          </WorkoutProvider>
+        </WaiverProvider>
+      </AuthProvider>
+    </MixpanelProvider>
+  );
+});
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -299,6 +333,16 @@ export default function RootLayout() {
     Manrope_600SemiBold,
     Manrope_700Bold,
   });
+
+  // Theme state managed at absolute root level
+  const [mode, setMode] = useState<ThemeMode>("auto");
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
+  const systemColorScheme = useSystemColorScheme();
+  const { setColorScheme } = useNativeWindColorScheme();
+
+  // Calculate isDark based on mode and system preference
+  const isDark =
+    mode === "auto" ? systemColorScheme === "dark" : mode === "dark";
 
   // Request App Tracking Transparency permission on iOS
   useEffect(() => {
@@ -320,23 +364,67 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  // Load theme preference on mount
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(THEME_KEY);
+        if (saved && ["light", "dark", "auto"].includes(saved)) {
+          setMode(saved as ThemeMode);
+          // Sync with NativeWind
+          if (saved === "auto") {
+            setColorScheme("system");
+          } else {
+            setColorScheme(saved as "light" | "dark");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load theme:", error);
+      } finally {
+        setIsThemeLoaded(true);
+      }
+    };
+    loadTheme();
+  }, [setColorScheme]);
+
+  // Function to update theme mode
+  const setThemeMode = useCallback(
+    (newMode: ThemeMode) => {
+      setMode(newMode);
+      if (newMode === "auto") {
+        setColorScheme("system");
+      } else {
+        setColorScheme(newMode);
+      }
+      AsyncStorage.setItem(THEME_KEY, newMode).catch((error) => {
+        console.error("Failed to save theme:", error);
+      });
+    },
+    [setColorScheme]
+  );
+
+  // Memoize context value to prevent unnecessary re-renders
+  // This fixes navigation context errors when toggling theme
+  const themeContextValue = useMemo(
+    () => ({ mode, isDark, setThemeMode }),
+    [mode, isDark, setThemeMode]
+  );
+
+  // Return null until fonts are loaded - prevents Expo Router from pre-rendering routes
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
+  // Wait for theme to load to prevent flash
+  if (!isThemeLoaded) {
+    return null;
+  }
+
   return (
-    <MixpanelProvider>
-      <AuthProvider>
-        <WaiverProvider>
-          <WorkoutProvider>
-            <AppDataProvider>
-              <BackgroundJobProvider>
-                <AppContent />
-              </BackgroundJobProvider>
-            </AppDataProvider>
-          </WorkoutProvider>
-        </WaiverProvider>
-      </AuthProvider>
-    </MixpanelProvider>
+    <View className={`flex-1 ${isDark ? "dark" : ""}`}>
+      <ThemeContext.Provider value={themeContextValue}>
+        <StableProviderTree />
+      </ThemeContext.Provider>
+    </View>
   );
 }

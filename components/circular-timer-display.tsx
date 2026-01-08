@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface CircularTimerDisplayProps {
   countdown: number;
@@ -32,6 +32,7 @@ export default function CircularTimerDisplay({
   onReset,
   onCancel,
 }: CircularTimerDisplayProps) {
+  const colors = useThemeColors();
   // TIMER DISPLAY HIDDEN: CircularTimerDisplay component hidden
   return null;
 

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 interface LegalSectionProps {
   expanded: boolean;
@@ -14,6 +14,7 @@ export default function LegalSection({
   onToggle,
 }: LegalSectionProps) {
   const router = useRouter();
+  const colors = useThemeColors();
 
   return (
     <>

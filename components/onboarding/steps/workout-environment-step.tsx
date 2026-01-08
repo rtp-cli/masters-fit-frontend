@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { WORKOUT_ENVIRONMENTS, AVAILABLE_EQUIPMENT } from "@/types/enums";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
 
@@ -15,27 +15,35 @@ interface WorkoutEnvironmentStepProps {
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
 }
 
-// Helper function to get environment configuration
-const getEnvironmentConfig = (envKey: WORKOUT_ENVIRONMENTS) => {
+export default function WorkoutEnvironmentStep({
+  formData,
+  errors,
+  onFieldChange,
+  onToggle,
+}: WorkoutEnvironmentStepProps) {
+  const colors = useThemeColors();
+
+  // Helper function to get environment configuration
+  const getEnvironmentConfig = (envKey: WORKOUT_ENVIRONMENTS) => {
   switch (envKey) {
     case WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM:
       return {
         icon: "business-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Full gym with all equipment available",
       };
     case WORKOUT_ENVIRONMENTS.HOME_GYM:
       return {
         icon: "home-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
         description: "Personal home gym setup",
       };
     case WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-blue-100",
         description: "No equipment needed, just your body",
       };
@@ -55,115 +63,115 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
     case AVAILABLE_EQUIPMENT.BARBELLS:
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
       };
     case AVAILABLE_EQUIPMENT.DUMBBELLS:
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
       };
     case AVAILABLE_EQUIPMENT.KETTLEBELLS:
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
       };
     case AVAILABLE_EQUIPMENT.BENCH:
       return {
         icon: "remove-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
       };
     case AVAILABLE_EQUIPMENT.INCLINE_DECLINE_BENCH:
       return {
         icon: "remove-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
       };
     case AVAILABLE_EQUIPMENT.PULL_UP_BAR:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
       };
     case AVAILABLE_EQUIPMENT.BIKE:
       return {
         icon: "bicycle-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
       };
     case AVAILABLE_EQUIPMENT.MEDICINE_BALLS:
       return {
         icon: "basketball-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
       };
     case AVAILABLE_EQUIPMENT.PLYO_BOX:
       return {
         icon: "apps-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
       };
     case AVAILABLE_EQUIPMENT.RINGS:
       return {
         icon: "radio-button-off-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
       };
     case AVAILABLE_EQUIPMENT.RESISTANCE_BANDS:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
       };
     case AVAILABLE_EQUIPMENT.STABILITY_BALL:
       return {
         icon: "radio-button-off-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
       };
     case AVAILABLE_EQUIPMENT.SQUAT_RACK:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
       };
     case AVAILABLE_EQUIPMENT.DIP_BAR:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
       };
     case AVAILABLE_EQUIPMENT.ROWING_MACHINE:
       return {
         icon: "boat-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
       };
     case AVAILABLE_EQUIPMENT.SLAM_BALLS:
       return {
         icon: "basketball-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
       };
     case AVAILABLE_EQUIPMENT.CABLE_MACHINE:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
       };
     case AVAILABLE_EQUIPMENT.JUMP_ROPE:
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
       };
     case AVAILABLE_EQUIPMENT.FOAM_ROLLER:
       return {
         icon: "radio-button-off-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
       };
     default:
@@ -175,12 +183,6 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
   }
 };
 
-export default function WorkoutEnvironmentStep({
-  formData,
-  errors,
-  onFieldChange,
-  onToggle,
-}: WorkoutEnvironmentStepProps) {
   return (
     <View className="flex-1 px-6 pb-6">
       {/* Environment Selection */}
@@ -195,7 +197,7 @@ export default function WorkoutEnvironmentStep({
               <TouchableOpacity
                 key={key}
                 className={`flex-1 p-4 rounded-xl items-center ${
-                  formData.environment === value ? "bg-primary" : "bg-white"
+                  formData.environment === value ? "bg-primary" : "bg-surface"
                 }`}
                 onPress={() => onFieldChange("environment", value)}
               >
@@ -209,7 +211,7 @@ export default function WorkoutEnvironmentStep({
                 <Text
                   className={`font-medium text-sm text-center ${
                     formData.environment === value
-                      ? "text-secondary"
+                      ? "text-content-on-primary"
                       : "text-neutral-dark-1"
                   }`}
                 >
@@ -218,7 +220,7 @@ export default function WorkoutEnvironmentStep({
                 <Text
                   className={`text-xs text-center mt-1 ${
                     formData.environment === value
-                      ? "text-secondary"
+                      ? "text-content-on-primary"
                       : "text-neutral-medium-4"
                   }`}
                 >
@@ -253,7 +255,7 @@ export default function WorkoutEnvironmentStep({
                 <TouchableOpacity
                   key={key}
                   className={`w-[32%] p-4 rounded-xl mb-3 mx-[0.66%] ${
-                    isSelected ? "bg-primary" : "bg-white"
+                    isSelected ? "bg-primary" : "bg-surface"
                   }`}
                   onPress={() => onToggle("equipment", value)}
                 >
@@ -267,7 +269,7 @@ export default function WorkoutEnvironmentStep({
                     <View className="h-2" />
                     <Text
                       className={`font-medium text-sm text-center ${
-                        isSelected ? "text-secondary" : "text-neutral-dark-1"
+                        isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                       }`}
                       numberOfLines={2}
                     >
@@ -292,7 +294,7 @@ export default function WorkoutEnvironmentStep({
                   <TouchableOpacity
                     key={key}
                     className={`w-[32%] p-4 rounded-xl mb-3 mx-[0.66%] ${
-                      isSelected ? "bg-primary" : "bg-white"
+                      isSelected ? "bg-primary" : "bg-surface"
                     }`}
                     onPress={() => onToggle("equipment", value)}
                   >
@@ -306,7 +308,7 @@ export default function WorkoutEnvironmentStep({
                       <View className="h-2" />
                       <Text
                         className={`font-medium text-sm text-center ${
-                          isSelected ? "text-secondary" : "text-neutral-dark-1"
+                          isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                         }`}
                         numberOfLines={2}
                       >
@@ -333,7 +335,7 @@ export default function WorkoutEnvironmentStep({
               (optional)
             </Text>
             <TextInput
-              className="bg-white p-4 rounded-xl text-neutral-dark-1 border border-neutral-medium-1"
+              className="bg-surface p-4 rounded-xl text-neutral-dark-1 border border-neutral-medium-1"
               placeholder="e.g., TRX straps, battle ropes, agility ladder..."
               placeholderTextColor={colors.text.muted}
               value={formData.otherEquipment}

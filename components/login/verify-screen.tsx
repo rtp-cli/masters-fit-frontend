@@ -14,10 +14,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import { CustomDialog } from "@/components/ui";
 
 export const VerifyScreen = () => {
+  const colors = useThemeColors();
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState(["", "", "", ""]);
@@ -239,10 +240,14 @@ export const VerifyScreen = () => {
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
             <>
-              <Text className="text-white font-semibold text-base mr-2">
+              <Text className="text-neutral-white font-semibold text-base mr-2">
                 Continue
               </Text>
-              <Ionicons name="arrow-forward" size={20} color="white" />
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={colors.neutral.white}
+              />
             </>
           )}
         </TouchableOpacity>

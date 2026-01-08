@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export interface DialogButton {
   text: string;
@@ -38,6 +38,7 @@ export default function CustomDialog({
   iconColor,
   dismissOnBackdropPress = true,
 }: CustomDialogProps) {
+  const colors = useThemeColors();
   const handleBackdropPress = () => {
     if (dismissOnBackdropPress && onClose) {
       onClose();
@@ -51,7 +52,7 @@ export default function CustomDialog({
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <TouchableWithoutFeedback>
-            <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
+            <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
               {/* Icon */}
               {icon && (
                 <View className="size-16 rounded-full bg-primary/10 items-center justify-center mb-4">

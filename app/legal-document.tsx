@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { images } from "@/assets";
 
 // Import legal documents
@@ -41,6 +41,7 @@ interface GroupedSection {
 }
 
 export default function LegalDocumentScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const { type } = useLocalSearchParams<{ type: string }>();
   const [documentData, setDocumentData] = useState<DocumentData | null>(null);
@@ -261,11 +262,11 @@ export default function LegalDocumentScreen() {
   const readingTime = Math.ceil(wordCount / 200);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="light" />
 
       {/* Header */}
-      <View className="bg-white">
+      <View className="bg-surface">
         <View className="px-5 py-4">
           <View className="flex-row items-center">
             <TouchableOpacity
@@ -305,28 +306,28 @@ export default function LegalDocumentScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Colored Header Section */}
-        <View style={{ backgroundColor: colors.brand.primary }}>
+        <View className="bg-primary">
           <View className="px-6 pt-8 pb-6">
             <View className="flex-row items-center mb-4">
               <Image
                 source={images.logo}
                 className="w-10 h-10 mr-3"
                 resizeMode="contain"
-                style={{ tintColor: "white" }}
+                style={{ tintColor: colors.neutral.white }}
               />
-              <Text className="text-3xl font-bold text-white flex-1">
+              <Text className="text-3xl font-bold text-neutral-white flex-1">
                 {documentData.title.replace("MastersFit LLC – ", "")}
               </Text>
             </View>
             <View className="flex-row items-center mb-2">
-              <Ionicons name="calendar-outline" size={16} color="white" />
-              <Text className="text-sm text-white ml-2 opacity-95">
+              <Ionicons name="calendar-outline" size={16} color={colors.neutral.white} />
+              <Text className="text-sm text-neutral-white ml-2 opacity-95">
                 Effective: {documentData.effectiveDate}
               </Text>
             </View>
             <View className="flex-row items-center">
-              <Ionicons name="refresh-outline" size={16} color="white" />
-              <Text className="text-sm text-white ml-2 opacity-95">
+              <Ionicons name="refresh-outline" size={16} color={colors.neutral.white} />
+              <Text className="text-sm text-neutral-white ml-2 opacity-95">
                 Updated: {documentData.lastUpdated}
               </Text>
             </View>
@@ -334,14 +335,11 @@ export default function LegalDocumentScreen() {
         </View>
 
         {/* Main Content */}
-        <View className="px-5 py-6 bg-white">
+        <View className="px-5 py-6 bg-surface">
           {/* Disclaimer Section */}
           {documentData.disclaimer && (
             <View className="mb-8">
-              <View
-                className="rounded-xl p-5 border border-brand-primary border-opacity-20"
-                style={{ backgroundColor: colors.brand.light[1] }}
-              >
+              <View className="rounded-xl p-5 border border-brand-primary border-opacity-20 bg-brand-light-1">
                 <View className="flex-row items-start">
                   <View className="mr-3 mt-0.5">
                     <Ionicons
@@ -364,7 +362,7 @@ export default function LegalDocumentScreen() {
           )}
 
           {/* Document Sections */}
-          <View className="bg-white rounded-xl px-6 py-6">
+          <View className="bg-surface rounded-xl px-6 py-6">
             {groupedSections.map((group, groupIndex) => (
               <View key={groupIndex} className={groupIndex > 0 ? "mt-8" : ""}>
                 {/* Section Header */}
@@ -382,7 +380,7 @@ export default function LegalDocumentScreen() {
 
           {/* Contact Footer */}
           <View className="mt-8 mb-6">
-            <View className="bg-white rounded-xl p-5 border border-neutral-light-2">
+            <View className="bg-surface rounded-xl p-5 border border-neutral-light-2">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
                   <Text className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
@@ -402,11 +400,8 @@ export default function LegalDocumentScreen() {
                   className="ml-4"
                   onPress={() => Linking.openURL("mailto:legal@mastersfit.ai")}
                 >
-                  <View
-                    className="w-12 h-12 rounded-full items-center justify-center"
-                    style={{ backgroundColor: colors.brand.primary }}
-                  >
-                    <Ionicons name="mail" size={20} color="white" />
+                  <View className="w-12 h-12 rounded-full items-center justify-center bg-primary">
+                    <Ionicons name="mail" size={20} color={colors.neutral.white} />
                   </View>
                 </TouchableOpacity>
               </View>
@@ -424,9 +419,8 @@ export default function LegalDocumentScreen() {
       {showScrollTop && (
         <TouchableOpacity
           onPress={scrollToTop}
-          className="absolute bottom-6 right-6"
+          className="absolute bottom-6 right-6 bg-primary"
           style={{
-            backgroundColor: colors.brand.primary,
             width: 48,
             height: 48,
             borderRadius: 24,
@@ -439,7 +433,7 @@ export default function LegalDocumentScreen() {
             elevation: 5,
           }}
         >
-          <Ionicons name="arrow-up" size={24} color="white" />
+          <Ionicons name="arrow-up" size={24} color={colors.neutral.white} />
         </TouchableOpacity>
       )}
     </SafeAreaView>

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 type DashboardEmptyStateSectionProps = {
   showLoading: boolean;
@@ -15,10 +15,11 @@ const DashboardEmptyStateSection: React.FC<DashboardEmptyStateSectionProps> = ({
   showNoData,
   onStartWorkout,
 }) => {
+  const colors = useThemeColors();
   if (showLoading) {
     return (
       <View className="px-4 mb-6">
-        <View className="bg-white rounded-2xl p-6 items-center">
+        <View className="bg-surface rounded-2xl p-6 items-center">
           <View className="size-16 bg-primary/10 rounded-full items-center justify-center mb-4">
             <Ionicons
               name="analytics-outline"
@@ -40,7 +41,7 @@ const DashboardEmptyStateSection: React.FC<DashboardEmptyStateSectionProps> = ({
   if (showNoData) {
     return (
       <View className="px-4 mb-6">
-        <View className="bg-white rounded-2xl p-6 items-center">
+        <View className="bg-surface rounded-2xl p-6 items-center">
           <View className="size-16 bg-primary/10 rounded-full items-center justify-center mb-4">
             <Ionicons
               name="analytics-outline"

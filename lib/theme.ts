@@ -42,7 +42,10 @@ export const colors = {
     muted: "#8A93A2",
   },
   background: "#FFFFFF",
+  surface: "#FFFFFF", // Cards/containers
   danger: "#EF4444", // A common red color for danger
+  warning: "#F59E0B", // Amber for warning/pending states
+  contentOnPrimary: "#FFFFFF", // White text/icons on bg-primary in light mode
 } as const;
 
 // Spacing system
@@ -227,6 +230,67 @@ export const breakpoints = {
   lg: 992,
   xl: 1200,
 } as const;
+
+// Dark mode color overrides
+export const darkColors = {
+  brand: {
+    primary: "#B8E5A1", // Lighter lime green for dark mode
+    secondary: "#F5F8F7", // Light color for text on dark backgrounds
+    light: {
+      1: "#5A7350", // Soft green, closer to light mode feel
+      2: "#647D5A", // Slightly lighter
+    },
+    medium: {
+      1: "#3C3C3C",
+      2: "#505050",
+    },
+    dark: {
+      0: "#B8E5A1",
+      1: "#A8D491",
+      2: "#9BB875",
+      3: "#8CAF25",
+      4: "#7D9D1F",
+      5: "#668019",
+    },
+  },
+  neutral: {
+    white: "#181917", // Inverted for dark mode
+    light: {
+      1: "#282828", // Dark card backgrounds
+      2: "#323232", // Slightly lighter cards
+    },
+    medium: {
+      1: "#3A3A3A", // Borders in dark mode
+      2: "#646464", // Disabled text, more visible
+      3: "#787878", // Muted elements
+      4: "#8A8A8A", // Secondary elements
+    },
+    dark: {
+      1: "#A8A8A8", // Light grays in dark mode
+    },
+  },
+  text: {
+    primary: "#F5F8F7", // Light text for dark mode
+    secondary: "#C6C6C6", // Medium-light text
+    muted: "#8A93A2", // Keep same as light mode
+  },
+  background: "#181917", // Charcoal background
+  surface: "#181917", // Cards/containers in dark mode
+  danger: "#FF6B6B", // Lighter red for dark mode
+  warning: "#FBBF24", // Lighter amber for dark mode
+  contentOnPrimary: "#181917", // Still dark in dark mode (primary is still bright/light green)
+} as const;
+
+// Hook to get theme-aware colors for components that need inline color values
+// (Ionicons, ActivityIndicator, StatusBar, NavigationBar, etc.)
+// For everything else, use Tailwind classes which automatically adapt to dark mode
+import { useTheme } from "./theme-context";
+
+export function useThemeColors() {
+  const { isDark } = useTheme();
+
+  return isDark ? { ...colors, ...darkColors } : colors;
+}
 
 export default {
   colors,

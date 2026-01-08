@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 
 export interface PieChartData {
   label: string;
@@ -28,6 +28,8 @@ export const PieChart: React.FC<PieChartProps> = ({
   donut = false,
   innerRadius,
 }) => {
+  const colors = useThemeColors();
+
   if (!data || data.length === 0) {
     return (
       <View className="items-center py-3" style={{ height: size }}>
@@ -76,19 +78,19 @@ export const PieChart: React.FC<PieChartProps> = ({
               cy={center}
               r={radius}
               fill={color}
-              stroke={colors.background}
-              strokeWidth="1"
+              stroke={colors.surface}
+              strokeWidth="2"
             />
             <Circle
               cx={center}
               cy={center}
               r={calculatedInnerRadius}
-              fill={colors.background}
+              fill={colors.surface}
             />
           </G>
         );
       } else {
-        // Full pie circle
+        // Full pie circle - no stroke needed for single segment
         return (
           <Circle
             key={`slice-${index}`}
@@ -96,8 +98,6 @@ export const PieChart: React.FC<PieChartProps> = ({
             cy={center}
             r={radius}
             fill={color}
-            stroke={colors.background}
-            strokeWidth="1"
           />
         );
       }
@@ -130,12 +130,12 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke={colors.background}
-          strokeWidth="1"
+          stroke={colors.surface}
+          strokeWidth="2"
         />
       );
     } else {
-      // Regular pie chart path
+      // Regular pie chart path - no stroke to avoid lines from center
       const pathData = [
         `M ${center} ${center}`,
         `L ${x1} ${y1}`,
@@ -149,8 +149,6 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke={colors.background}
-          strokeWidth="1"
         />
       );
     }

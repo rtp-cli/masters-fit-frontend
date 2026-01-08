@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { LineChart } from "@/components/charts/line-chart";
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
 type StrengthProgressItem = {
@@ -22,6 +22,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
   filter,
   onChangeFilter,
 }) => {
+  const colors = useThemeColors();
   if (!data || data.length === 0) return null;
 
   const latestAvg =
@@ -61,7 +62,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
               onPress={() => onChangeFilter(f as any)}
             >
               <Text
-                className={`text-xs font-medium ${filter === f ? "text-text-primary" : "text-text-muted"}`}
+                className={`text-xs font-medium ${filter === f ? "text-content-on-primary" : "text-text-muted"}`}
               >
                 {f}
               </Text>
@@ -70,7 +71,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
         </View>
       </View>
 
-      <View className="bg-white rounded-2xl p-4">
+      <View className="bg-surface rounded-2xl p-4">
         <View className="mb-4">
           <LineChart
             data={data.map((item, index) => {
@@ -118,13 +119,13 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
             <Text className="text-xs text-text-muted">Latest Avg</Text>
           </View>
           <View className="items-center">
-            <Text className="text-base font-bold text-accent">
+            <Text className="text-base font-bold text-text-primary">
               {peakWeight} lbs
             </Text>
             <Text className="text-xs text-text-muted">Peak Weight</Text>
           </View>
           <View className="items-center">
-            <Text className="text-base font-bold text-primary">{`${growth > 0 ? "+" : ""}${Math.round(growth)}%`}</Text>
+            <Text className="text-base font-bold text-text-primary">{`${growth > 0 ? "+" : ""}${Math.round(growth)}%`}</Text>
             <Text className="text-xs text-text-muted">Growth</Text>
           </View>
         </View>

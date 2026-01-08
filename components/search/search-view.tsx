@@ -30,7 +30,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { updateExerciseLink } from "@lib/exercises";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { CustomDialog } from "@/components/ui";
 import type { DialogButton } from "@/components/ui";
 
@@ -39,6 +39,7 @@ type SearchType = "date" | "exercise" | "general";
 type PlanDayForCompletion = DateSearchWorkout["planDay"];
 
 export default function SearchView() {
+  const colors = useThemeColors();
   const { user } = useAuth();
   const {
     refresh: { searchByDate, searchExercise, searchExercises },
@@ -405,23 +406,23 @@ export default function SearchView() {
     switch (lowerDifficulty) {
       case "low":
         return {
-          bg: "bg-green-500",
-          text: "text-white",
+          bg: "bg-success",
+          text: "text-neutral-white",
         };
       case "moderate":
         return {
-          bg: "bg-yellow-500",
-          text: "text-white",
+          bg: "bg-warning",
+          text: "text-neutral-white",
         };
       case "high":
         return {
-          bg: "bg-red-500",
-          text: "text-white",
+          bg: "bg-danger",
+          text: "text-neutral-white",
         };
       default:
         return {
-          bg: "bg-gray-500",
-          text: "text-white",
+          bg: "bg-neutral-medium-3",
+          text: "text-neutral-white",
         };
     }
   };
@@ -543,7 +544,10 @@ export default function SearchView() {
     <View className="px-4">
       <SkeletonLoader height={24} width={160} style={{ marginBottom: 16 }} />
       {Array.from({ length: 5 }).map((_, index) => (
-        <View key={index} className="bg-white rounded-xl p-4 mb-3 shadow-rn-sm">
+        <View
+          key={index}
+          className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm"
+        >
           <View className="flex-row items-center">
             <SkeletonLoader
               height={48}
@@ -574,7 +578,7 @@ export default function SearchView() {
           <View className="flex-row gap-3">
             {/* Exercise Search */}
             <View className="flex-1">
-              <View className="flex-row items-center bg-white rounded-xl px-4 py-1 shadow-rn-sm h-12">
+              <View className="flex-row items-center bg-surface rounded-xl px-4 py-1 shadow-rn-sm border border-neutral-medium-1 h-12">
                 <Ionicons
                   name="search"
                   size={18}
@@ -606,7 +610,7 @@ export default function SearchView() {
 
             {/* Date Picker Icon */}
             <TouchableOpacity
-              className="bg-white rounded-xl shadow-rn-sm h-12 w-12 items-center justify-center"
+              className="bg-surface rounded-xl shadow-rn-sm border border-neutral-medium-1 h-12 w-12 items-center justify-center"
               onPress={() => setShowDatePicker(true)}
             >
               <Ionicons
@@ -631,7 +635,7 @@ export default function SearchView() {
                 onRequestClose={() => setShowDatePicker(false)}
               >
                 <View className="flex-1 justify-end bg-black/50">
-                  <View className="bg-white rounded-t-xl p-5 min-h-80">
+                  <View className="bg-surface rounded-t-xl p-5 min-h-80">
                     <View className="flex-row justify-between items-center mb-5">
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(false)}
@@ -766,7 +770,7 @@ export default function SearchView() {
         {/* Exercise Detail View */}
         {!isLoading && exerciseResult ? (
           <View className="px-4 pb-4">
-            <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+            <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
               {/* Exercise Link at the top inside card */}
               <View className="mb-4 -mx-5 -mt-5">
                 <ExerciseLink
@@ -1006,7 +1010,7 @@ export default function SearchView() {
         {/* Date Search Results */}
         {!isLoading && dateResult ? (
           <View className="px-4">
-            <View className="bg-white rounded-2xl p-5 shadow-rn-sm">
+            <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
               <View className="flex-row justify-between items-center mb-3">
                 <Text className="text-lg font-bold text-text-primary flex-1">
                   {safeString(dateResult.name)}
@@ -1017,11 +1021,11 @@ export default function SearchView() {
                       ? calculateWorkoutCompletionRate(dateResult.planDay) ===
                         100
                         ? "bg-brand-primary"
-                        : "bg-yellow-600"
-                      : "bg-gray-500"
+                        : "bg-warning"
+                      : "bg-neutral-medium-3"
                   }`}
                 >
-                  <Text className="text-xs font-semibold text-white">
+                  <Text className="text-xs font-semibold text-neutral-white">
                     {dateResult.planDay
                       ? calculateWorkoutCompletionRate(dateResult.planDay) ===
                         100
@@ -1121,7 +1125,7 @@ export default function SearchView() {
                               ) => (
                                 <TouchableOpacity
                                   key={exercise.id || exerciseIndex}
-                                  className="bg-white rounded-xl p-4 mb-3 border border-neutral-light-2"
+                                  className="bg-surface rounded-xl p-4 mb-3 border border-neutral-light-2"
                                   onPress={() => {
                                     try {
                                       if (exercise?.exercise?.id) {
@@ -1177,11 +1181,11 @@ export default function SearchView() {
                                           exercise?.completed === true
                                             ? "bg-brand-primary"
                                             : exercise?.completed === false
-                                              ? "bg-red-700"
-                                              : "bg-yellow-700"
+                                              ? "bg-danger"
+                                              : "bg-warning"
                                         }`}
                                       >
-                                        <Text className="text-xs font-semibold text-white">
+                                        <Text className="text-xs font-semibold text-neutral-white">
                                           {exercise?.completed === true
                                             ? "Done"
                                             : exercise?.completed === false
@@ -1276,7 +1280,7 @@ export default function SearchView() {
                         (exercise: DateSearchExercise, index: number) => (
                           <TouchableOpacity
                             key={index}
-                            className="bg-white rounded-xl p-4 mb-3 border border-neutral-light-2"
+                            className="bg-surface rounded-xl p-4 mb-3 border border-neutral-light-2"
                             onPress={() => {
                               try {
                                 if (exercise?.exercise?.id) {
@@ -1330,11 +1334,11 @@ export default function SearchView() {
                                     exercise?.completed === true
                                       ? "bg-brand-primary"
                                       : exercise?.completed === false
-                                        ? "bg-red-700"
-                                        : "bg-yellow-700"
+                                        ? "bg-danger"
+                                        : "bg-warning"
                                   }`}
                                 >
-                                  <Text className="text-xs font-semibold text-white">
+                                  <Text className="text-xs font-semibold text-neutral-white">
                                     {exercise?.completed === true
                                       ? "Done"
                                       : exercise?.completed === false
@@ -1430,7 +1434,7 @@ export default function SearchView() {
             {generalResults.map((exercise: Exercise, index: number) => (
               <TouchableOpacity
                 key={`general-exercise-${exercise?.id || index}`}
-                className="bg-white rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center"
+                className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center"
                 onPress={() => {
                   try {
                     handleExerciseSelect({
@@ -1533,7 +1537,7 @@ export default function SearchView() {
         !exerciseResult &&
         generalResults.length === 0 &&
         (exerciseQuery.trim() || dateQuery.trim()) ? (
-          <View className="items-center justify-center bg-white p-10 m-4 rounded-2xl shadow-rn-sm">
+          <View className="items-center justify-center bg-surface p-10 m-4 rounded-2xl shadow-rn-sm">
             <Ionicons
               name="search-outline"
               size={40}
@@ -1560,7 +1564,7 @@ export default function SearchView() {
               How to Search
             </Text>
 
-            <View className="bg-white rounded-xl p-4 mb-3 flex-row items-center">
+            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="calendar-outline"
@@ -1573,7 +1577,7 @@ export default function SearchView() {
               </Text>
             </View>
 
-            <View className="bg-white rounded-xl p-4 mb-3 flex-row items-center">
+            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="barbell-outline"

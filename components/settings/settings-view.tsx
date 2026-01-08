@@ -11,7 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "expo-router";
 import { useAppDataContext } from "@/contexts/app-data-context";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
+import { useTheme } from "@/app/_layout";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../coming-soon-modal";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
@@ -32,12 +33,15 @@ import HealthInformationSection from "./sections/health-information-section";
 import SubscriptionSection from "./sections/subscription-section";
 import LogoutSection from "./sections/logout-section";
 import AppVersionSection from "./sections/app-version-section";
+import { getHealthConnection } from "@/utils/health";
 
 interface SettingsViewProps {
   onClose?: () => void;
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
+  const colors = useThemeColors();
+  const { mode: themeMode, setThemeMode } = useTheme();
   const { user, logout, deleteAccount } = useAuth();
   const router = useRouter();
   const {
@@ -218,12 +222,55 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     setDialogVisible(true);
   };
 
+  // Cleanup debug tap timeout
+  useEffect(() => {
+    return () => {
+      if (debugTapTimeout) {
+        clearTimeout(debugTapTimeout);
+      }
+    };
+  }, [debugTapTimeout]);
+
   useEffect(() => {
     // Only fetch if we don't have profile data yet
     if (!profileData) {
       loadUserData();
     }
   }, [user?.id, profileData]);
+
+  // Health connect status
+  const loadHealthStatus = useCallback(async () => {
+    try {
+      const connected = await getHealthConnection();
+      setHealthConnected(connected);
+      if (connected) setHealthError(null);
+    } catch {
+      setHealthConnected(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHealthStatus();
+  }, [loadHealthStatus]);
+
+  const handleConnectHealth = useCallback(async () => {
+    setHealthError(null);
+    setHealthLoading(true);
+    try {
+      const granted = await connectHealth();
+      if (granted) {
+        setHealthConnected(true);
+      } else {
+        setHealthConnected(false);
+        setHealthError("Health permissions not granted");
+      }
+    } catch (err: any) {
+      setHealthConnected(false);
+      setHealthError(err?.message || "Unable to connect health right now.");
+    } finally {
+      setHealthLoading(false);
+    }
+  }, []);
 
   // Show coming soon modal
   const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
@@ -465,6 +512,8 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         <AppSettingsSection
           debugTapCount={debugTapCount}
           onDebugTap={handleDebugTap}
+          themeMode={themeMode}
+          setThemeMode={setThemeMode}
         />
 
         {/* Debug Mode Section - Only visible when debug mode is activated */}

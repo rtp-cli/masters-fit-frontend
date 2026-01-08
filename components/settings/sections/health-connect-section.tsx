@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { connectHealth, getHealthConnection } from "@/utils/health";
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 export default function HealthConnectSection() {
+  const colors = useThemeColors();
   const [healthConnected, setHealthConnected] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
   const [healthError, setHealthError] = useState<string | null>(null);
@@ -65,9 +66,9 @@ export default function HealthConnectSection() {
             disabled={healthLoading}
           >
             {healthLoading ? (
-              <ActivityIndicator size="small" color={colors.neutral.white} />
+              <ActivityIndicator size="small" color={colors.contentOnPrimary} />
             ) : (
-              <Text className="text-sm font-semibold text-white">Connect</Text>
+              <Text style={{ color: colors.contentOnPrimary }} className="text-sm font-semibold">Connect</Text>
             )}
           </TouchableOpacity>
         </View>

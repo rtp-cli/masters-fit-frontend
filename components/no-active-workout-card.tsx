@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 
 interface NoActiveWorkoutCardProps {
   isGenerating: boolean;
@@ -24,6 +24,7 @@ export default function NoActiveWorkoutCard({
   showActionsOnlyForToday = false,
   isToday = true,
 }: NoActiveWorkoutCardProps) {
+  const colors = useThemeColors();
   // Variant-specific styling and icons
   const getVariantStyles = () => {
     switch (variant) {
@@ -55,7 +56,7 @@ export default function NoActiveWorkoutCard({
 
   return (
     <View className="items-center py-6">
-      <View className="w-16 h-16 bg-neutral-light-2 rounded-full items-center justify-center mb-4">
+      <View className="w-16 h-16 bg-surface-elevated rounded-full items-center justify-center mb-4">
         <Ionicons
           name={variantStyles.icon}
           size={24}
@@ -87,10 +88,10 @@ export default function NoActiveWorkoutCard({
             <Ionicons
               name="repeat"
               size={18}
-              color={isGenerating ? colors.text.secondary : colors.text.secondary}
+              color={isGenerating ? colors.contentOnPrimary + "70" : colors.contentOnPrimary}
             />
             <Text className={`font-semibold text-sm ml-2 ${
-              isGenerating ? "text-secondary/70" : "text-secondary"
+              isGenerating ? "text-content-on-primary/70" : "text-content-on-primary"
             }`}>
               Repeat a Previous Workout Plan
             </Text>
@@ -99,8 +100,8 @@ export default function NoActiveWorkoutCard({
           <TouchableOpacity
             className={`rounded-xl py-3 px-6 flex-row items-center justify-center ${
               isGenerating
-                ? "bg-neutral-light-2/50 opacity-50"
-                : "bg-neutral-light-2"
+                ? "bg-secondary/50 opacity-50"
+                : "bg-secondary"
             }`}
             onPress={isGenerating ? undefined : onGenerateWorkout}
             disabled={isGenerating}
@@ -108,10 +109,10 @@ export default function NoActiveWorkoutCard({
             <Ionicons
               name="sparkles"
               size={18}
-              color={isGenerating ? colors.text.muted : colors.text.primary}
+              color={isGenerating ? colors.background + "80" : colors.background}
             />
             <Text className={`font-semibold text-sm ml-2 ${
-              isGenerating ? "text-text-muted" : "text-text-primary"
+              isGenerating ? "text-background/50" : "text-background"
             }`}>
               {isGenerating
                 ? "Generating a New Workout Plan"

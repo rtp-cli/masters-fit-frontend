@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import {
   CircuitTrackerProps,
   CircuitExerciseLog,
@@ -34,6 +34,7 @@ export default function CircuitTracker({
   updateTimerState,
   shouldShowTimer,
 }: CircuitTrackerProps & { circuitActions?: CircuitActions }) {
+  const colors = useThemeColors();
   // TIMER DISPLAY HIDDEN: Override shouldShowTimer to false
   const hideTimers = false;
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];
@@ -664,7 +665,7 @@ export default function CircuitTracker({
             className={`py-4 rounded-xl items-center bg-brand-primary`}
             onPress={handleCompleteRound}
           >
-            <Text className={`text-lg font-semibold text-white`}>
+            <Text className={`text-lg font-semibold text-neutral-white`}>
               {getRoundCompleteButtonText(
                 "for_time",
                 sessionData.currentRound,
@@ -706,7 +707,7 @@ export default function CircuitTracker({
           >
             <Text
               className={`text-sm font-semibold ${
-                showTimer ? "text-white" : ""
+                showTimer ? "text-neutral-white" : ""
               }`}
               style={!showTimer ? { color: colors.brand.primary } : {}}
             >
@@ -764,7 +765,7 @@ export default function CircuitTracker({
                   className={`py-3 px-4 rounded-lg items-center bg-brand-primary`}
                   onPress={handleCompleteRound}
                 >
-                  <Text className={`text-sm font-semibold text-white`}>
+                  <Text className={`text-sm font-semibold text-neutral-white`}>
                     {getRoundCompleteButtonText(
                       block.blockType || "circuit",
                       sessionData.currentRound,
@@ -786,7 +787,7 @@ export default function CircuitTracker({
                       : handleCompleteRound
                 }
               >
-                <Text className={`text-sm font-semibold text-white`}>
+                <Text className={`text-sm font-semibold text-neutral-white`}>
                   {getRoundCompleteButtonText(
                     block.blockType || "circuit",
                     sessionData.currentRound,

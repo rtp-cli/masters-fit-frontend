@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 
 interface SubscriptionDetailsModalProps {
@@ -20,6 +20,7 @@ export default function SubscriptionDetailsModal({
   visible,
   onClose,
 }: SubscriptionDetailsModalProps) {
+  const colors = useThemeColors();
   const { activeEntitlement, productIdentifier, expirationDate, willRenew } =
     useSubscriptionStatus();
 
@@ -66,7 +67,7 @@ export default function SubscriptionDetailsModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-background">
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <View className="w-9" />

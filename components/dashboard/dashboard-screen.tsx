@@ -36,7 +36,7 @@ import {
   getCurrentDate,
   formatDateAsString,
 } from "../../utils";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import HealthMetricsCarousel from "./sections/health-metrics-carousel";
 import ActiveWorkoutCard from "./sections/active-workout-card";
 import WeeklyProgressSection from "./sections/weekly-progress";
@@ -53,6 +53,7 @@ import type { DialogButton } from "@/components/ui";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
@@ -827,7 +828,7 @@ export default function DashboardScreen() {
               <SkeletonLoader height={200} width="100%" />
             </View>
             <View className="px-5 mb-6">
-              <View className="bg-white rounded-2xl p-5">
+              <View className="bg-surface rounded-2xl p-5">
                 <View className="flex-row items-center justify-between mb-4">
                   <SkeletonLoader height={24} width={160} />
                   <SkeletonLoader height={32} width={80} />
@@ -850,7 +851,7 @@ export default function DashboardScreen() {
                 width={144}
                 style={{ marginBottom: 16 }}
               />
-              <View className="bg-white rounded-2xl p-5">
+              <View className="bg-surface rounded-2xl p-5">
                 <SkeletonLoader height={160} width="100%" />
               </View>
             </View>
@@ -861,10 +862,10 @@ export default function DashboardScreen() {
                 style={{ marginBottom: 16 }}
               />
               <View className="flex-row justify-between">
-                <View className="bg-white rounded-2xl p-4 flex-1 mr-3">
+                <View className="bg-surface rounded-2xl p-4 flex-1 mr-3">
                   <SkeletonLoader height={128} width="100%" />
                 </View>
-                <View className="bg-white rounded-2xl p-4 flex-1">
+                <View className="bg-surface rounded-2xl p-4 flex-1">
                   <SkeletonLoader height={128} width="100%" />
                 </View>
               </View>

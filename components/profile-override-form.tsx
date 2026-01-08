@@ -3,9 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
 import CustomSlider from "@/components/ui/slider";
 import IconComponent from "./onboarding/ui/icon-component";
 import { formatEnumValue } from "./onboarding/utils/formatters";
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
-  IntensityLevels,
+  INTENSITY_LEVELS,
   WORKOUT_ENVIRONMENTS,
   AVAILABLE_EQUIPMENT,
   PREFERRED_STYLES,
@@ -14,7 +14,7 @@ import {
 // Interface for temporary overrides (not saved to profile)
 export interface TemporaryOverrides {
   duration?: number;
-  intensity?: IntensityLevels;
+  intensity?: INTENSITY_LEVELS;
   styles?: PREFERRED_STYLES[];
   environment?: WORKOUT_ENVIRONMENTS;
   equipment?: AVAILABLE_EQUIPMENT[];
@@ -29,33 +29,33 @@ interface ProfileOverrideFormProps {
 }
 
 // Intensity level configuration helper - exact copy from onboarding
-const getIntensityLevelConfig = (intensityKey: string) => {
+const getIntensityLevelConfig = (intensityKey: string, colors: any) => {
   switch (intensityKey) {
     case "LOW":
       return {
         icon: "walk-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Light, comfortable pace",
       };
     case "MODERATE":
       return {
         icon: "fitness-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
         description: "Moderate challenge, can still talk",
       };
     case "HIGH":
       return {
         icon: "flash-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
         description: "High intensity, challenging workouts",
       };
     default:
       return {
         icon: "pulse-outline",
-        color: "#6B7280",
+        color: colors.contentOnPrimary,
         bgColor: "bg-neutral-light-2",
         description: "Intensity level",
       };
@@ -63,82 +63,82 @@ const getIntensityLevelConfig = (intensityKey: string) => {
 };
 
 // Workout style configuration helper - exact copy from onboarding
-const getStyleConfig = (styleKey: string) => {
+const getStyleConfig = (styleKey: string, colors: any) => {
   switch (styleKey) {
     case "HIIT":
       return {
         icon: "flash-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
         description: "High-intensity interval training",
       };
     case "STRENGTH":
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-blue-100",
         description: "Build muscle and increase strength",
       };
     case "CARDIO":
       return {
         icon: "heart-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Improve cardiovascular health",
       };
     case "REHAB":
       return {
         icon: "medkit-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
         description: "Recovery and rehabilitation",
       };
     case "CROSSFIT":
       return {
         icon: "stopwatch-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
         description: "High-intensity functional training",
       };
     case "FUNCTIONAL":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
         description: "Real-world movement patterns",
       };
     case "PILATES":
       return {
         icon: "accessibility-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
         description: "Core strength and flexibility",
       };
     case "YOGA":
       return {
         icon: "leaf-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
         description: "Mind-body connection and flexibility",
       };
     case "BALANCE":
       return {
         icon: "infinite-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
         description: "Stability and coordination training",
       };
     case "MOBILITY":
       return {
         icon: "move-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-cyan-100",
         description: "Joint mobility and movement quality",
       };
     default:
       return {
         icon: "fitness-outline",
-        color: "#6B7280",
+        color: colors.contentOnPrimary,
         bgColor: "bg-neutral-light-2",
         description: "General workout style",
       };
@@ -146,33 +146,33 @@ const getStyleConfig = (styleKey: string) => {
 };
 
 // Environment configuration helper - exact copy from onboarding
-const getEnvironmentConfig = (envKey: string) => {
+const getEnvironmentConfig = (envKey: string, colors: any) => {
   switch (envKey) {
     case "COMMERCIAL_GYM":
       return {
         icon: "business-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
         description: "Full gym with all equipment available",
       };
     case "HOME_GYM":
       return {
         icon: "home-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
         description: "Personal home gym setup",
       };
     case "BODYWEIGHT_ONLY":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-blue-100",
         description: "No equipment needed, just your body",
       };
     default:
       return {
         icon: "fitness-outline",
-        color: "#6B7280",
+        color: colors.contentOnPrimary,
         bgColor: "bg-neutral-light-2",
         description: "",
       };
@@ -180,126 +180,126 @@ const getEnvironmentConfig = (envKey: string) => {
 };
 
 // Equipment configuration helper - exact copy from onboarding
-const getEquipmentConfig = (equipKey: string) => {
+const getEquipmentConfig = (equipKey: string, colors: any) => {
   switch (equipKey) {
     case "BARBELLS":
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
       };
     case "DUMBBELLS":
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
       };
     case "KETTLEBELLS":
       return {
         icon: "barbell-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
       };
     case "BENCH":
       return {
         icon: "remove-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
       };
     case "INCLINE_DECLINE_BENCH":
       return {
         icon: "remove-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
       };
     case "PULL_UP_BAR":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
       };
     case "BIKE":
       return {
         icon: "bicycle-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
       };
     case "MEDICINE_BALLS":
       return {
         icon: "basketball-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-indigo-100",
       };
     case "PLYO_BOX":
       return {
         icon: "apps-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-pink-100",
       };
     case "RINGS":
       return {
         icon: "radio-button-off-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-yellow-100",
       };
     case "RESISTANCE_BANDS":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
       };
     case "STABILITY_BALL":
       return {
         icon: "radio-button-off-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
       };
     case "SQUAT_RACK":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-teal-100",
       };
     case "DIP_BAR":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
       };
     case "ROWING_MACHINE":
       return {
         icon: "boat-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
       };
     case "SLAM_BALLS":
       return {
         icon: "basketball-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-red-100",
       };
     case "CABLE_MACHINE":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-green-100",
       };
     case "JUMP_ROPE":
       return {
         icon: "body-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-purple-100",
       };
     case "FOAM_ROLLER":
       return {
         icon: "radio-button-off-outline",
-        color: colors.brand.secondary,
+        color: colors.contentOnPrimary,
         bgColor: "bg-orange-100",
       };
     default:
       return {
         icon: "fitness-outline",
-        color: "#6B7280",
+        color: colors.contentOnPrimary,
         bgColor: "bg-neutral-light-2",
       };
   }
@@ -309,6 +309,8 @@ export default function ProfileOverrideForm({
   overrides,
   onOverrideChange,
 }: ProfileOverrideFormProps) {
+  const colors = useThemeColors();
+
   const updateOverride = (updates: Partial<TemporaryOverrides>) => {
     onOverrideChange({ ...overrides, ...updates });
   };
@@ -340,15 +342,15 @@ export default function ProfileOverrideForm({
         <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
           Intensity Level
         </Text>
-        {Object.entries(IntensityLevels).map(([key, value]) => {
+        {Object.entries(INTENSITY_LEVELS).map(([key, value]) => {
           const isSelected = overrides.intensity === value;
-          const config = getIntensityLevelConfig(key);
+          const config = getIntensityLevelConfig(key, colors);
 
           return (
             <TouchableOpacity
               key={key}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                isSelected ? "bg-primary" : "bg-white"
+                isSelected ? "bg-primary" : "bg-surface"
               }`}
               onPress={() => updateOverride({ intensity: value })}
             >
@@ -360,14 +362,14 @@ export default function ProfileOverrideForm({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -388,13 +390,13 @@ export default function ProfileOverrideForm({
         </Text>
         {Object.entries(PREFERRED_STYLES).map(([key, value]) => {
           const isSelected = overrides.styles?.includes(value) || false;
-          const config = getStyleConfig(key);
+          const config = getStyleConfig(key, colors);
 
           return (
             <TouchableOpacity
               key={key}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                isSelected ? "bg-primary" : "bg-white"
+                isSelected ? "bg-primary" : "bg-surface"
               }`}
               onPress={() => {
                 const currentStyles = overrides.styles || [];
@@ -413,14 +415,14 @@ export default function ProfileOverrideForm({
               <View className="flex-1 ml-3">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${
-                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -438,13 +440,13 @@ export default function ProfileOverrideForm({
         </Text>
         {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
           const isSelected = overrides.environment === value;
-          const config = getEnvironmentConfig(key);
+          const config = getEnvironmentConfig(key, colors);
 
           return (
             <TouchableOpacity
               key={key}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                isSelected ? "bg-primary" : "bg-white"
+                isSelected ? "bg-primary" : "bg-surface"
               }`}
               onPress={() => updateOverride({ environment: value })}
             >
@@ -456,14 +458,14 @@ export default function ProfileOverrideForm({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -485,14 +487,14 @@ export default function ProfileOverrideForm({
             {["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].map((key) => {
               const value =
                 AVAILABLE_EQUIPMENT[key as keyof typeof AVAILABLE_EQUIPMENT];
-              const config = getEquipmentConfig(key);
+              const config = getEquipmentConfig(key, colors);
               const isSelected = overrides.equipment?.includes(value) || false;
 
               return (
                 <TouchableOpacity
                   key={key}
                   className={`w-[32%] p-4 rounded-xl mb-3 mx-[0.66%] ${
-                    isSelected ? "bg-primary" : "bg-white"
+                    isSelected ? "bg-primary" : "bg-surface"
                   }`}
                   onPress={() => {
                     const currentEquipment = overrides.equipment || [];
@@ -512,7 +514,7 @@ export default function ProfileOverrideForm({
                     <View className="h-2" />
                     <Text
                       className={`font-medium text-sm text-center ${
-                        isSelected ? "text-secondary" : "text-neutral-dark-1"
+                        isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                       }`}
                       numberOfLines={2}
                     >
@@ -530,7 +532,7 @@ export default function ProfileOverrideForm({
                   !["BARBELLS", "DUMBBELLS", "KETTLEBELLS"].includes(key)
               )
               .map(([key, value]) => {
-                const config = getEquipmentConfig(key);
+                const config = getEquipmentConfig(key, colors);
                 const isSelected =
                   overrides.equipment?.includes(value) || false;
 
@@ -538,7 +540,7 @@ export default function ProfileOverrideForm({
                   <TouchableOpacity
                     key={key}
                     className={`w-[32%] p-4 rounded-xl mb-3 mx-[0.66%] ${
-                      isSelected ? "bg-primary" : "bg-white"
+                      isSelected ? "bg-primary" : "bg-surface"
                     }`}
                     onPress={() => {
                       const currentEquipment = overrides.equipment || [];
@@ -558,7 +560,7 @@ export default function ProfileOverrideForm({
                       <View className="h-2" />
                       <Text
                         className={`font-medium text-sm text-center ${
-                          isSelected ? "text-secondary" : "text-neutral-dark-1"
+                          isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                         }`}
                         numberOfLines={2}
                       >
@@ -580,7 +582,7 @@ export default function ProfileOverrideForm({
               (optional)
             </Text>
             <TextInput
-              className="bg-white p-4 rounded-xl text-neutral-dark-1 border border-neutral-medium-1"
+              className="bg-surface p-4 rounded-xl text-neutral-dark-1 border border-neutral-medium-1"
               placeholder="e.g., TRX straps, battle ropes, agility ladder..."
               placeholderTextColor={colors.text.muted}
               value={overrides.otherEquipment}
@@ -597,7 +599,7 @@ export default function ProfileOverrideForm({
         </Text>
 
         {/* Include Warmup Toggle */}
-        <View className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-3">
+        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl mb-3">
           <View className="flex-1">
             <Text className="font-medium text-sm text-neutral-dark-1">
               Include Warmup
@@ -615,7 +617,7 @@ export default function ProfileOverrideForm({
         </View>
 
         {/* Include Cooldown Toggle */}
-        <View className="flex-row items-center justify-between p-4 bg-white rounded-xl">
+        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl">
           <View className="flex-1">
             <Text className="font-medium text-sm text-neutral-dark-1">
               Include Cooldown

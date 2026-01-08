@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
 import SettingsModal from "./settings/settings-modal";
 import SubscriptionDetailsModal from "./subscription/subscription-details-modal";
@@ -25,6 +25,7 @@ export default function Header({
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const colors = useThemeColors();
 
   // Modal state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
@@ -78,11 +79,11 @@ export default function Header({
                   {isPro && (
                     <TouchableOpacity
                       onPress={() => setSubscriptionDetailsVisible(true)}
-                      style={styles.proBadge}
+                      className="flex-row items-center bg-primary/15 px-2 py-1 rounded-xl gap-1"
                       activeOpacity={0.7}
                     >
                       <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text style={styles.proBadgeText}>PRO</Text>
+                      <Text className="text-[11px] font-bold text-primary tracking-wide">PRO</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -102,11 +103,11 @@ export default function Header({
               {isPro && (
                 <TouchableOpacity
                   onPress={() => setSubscriptionDetailsVisible(true)}
-                  style={styles.proBadge}
+                  className="flex-row items-center bg-primary/15 px-2 py-1 rounded-xl gap-1"
                   activeOpacity={0.7}
                 >
                   <Ionicons name="star" size={14} color="#FFD700" />
-                  <Text style={styles.proBadgeText}>PRO</Text>
+                  <Text className="text-[11px] font-bold text-primary tracking-wide">PRO</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -117,14 +118,14 @@ export default function Header({
         <View className="flex-row items-center space-x-4">
           <TouchableOpacity
             onPress={handleSearchPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-white"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface"
           >
             <Ionicons name="search" size={20} color={colors.text.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleSettingsPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-white"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface"
           >
             <Ionicons name="person" size={20} color={colors.text.primary} />
           </TouchableOpacity>
@@ -147,21 +148,3 @@ export default function Header({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  proBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: `${colors.brand.primary}15`,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  proBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.brand.primary,
-    letterSpacing: 0.5,
-  },
-});

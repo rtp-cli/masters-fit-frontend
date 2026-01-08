@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
   View,
   Image,
@@ -40,6 +40,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   variant = "default",
   exerciseId,
 }) => {
+  const colors = useThemeColors();
   const [showModal, setShowModal] = useState(false);
   const [webViewError, setWebViewError] = useState(false);
   const [showVideo, setShowVideo] = useState(showFullVideo);

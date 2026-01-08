@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
 
-import { colors } from "../../../lib/theme";
+import { useThemeColors } from "../../../lib/theme";
 
 type WeeklyProgressItem = {
   dayName: string;
@@ -23,6 +23,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
   weeklyProgressData,
   streak,
 }) => {
+  const colors = useThemeColors();
   return (
     <View className="px-4 mb-6">
       <View className="flex-row justify-between items-center px-4 mb-4">
@@ -43,7 +44,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
           </View>
         )}
       </View>
-      <View className="bg-white rounded-2xl px-4 pt-5">
+      <View className="bg-surface rounded-2xl px-4 pt-5">
         <View className="mb-4">
           <View className="flex-row justify-between items-end mb-4 h-30">
             {weeklyProgressData.map((day, index) => {

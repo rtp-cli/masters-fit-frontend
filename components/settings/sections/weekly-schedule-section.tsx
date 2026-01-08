@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { useThemeColors } from "../../../lib/theme";
 
 interface WeeklyScheduleSectionProps {
   availableDays: string[];
@@ -7,6 +8,7 @@ interface WeeklyScheduleSectionProps {
 export default function WeeklyScheduleSection({
   availableDays,
 }: WeeklyScheduleSectionProps) {
+  const colors = useThemeColors();
   if (!availableDays || availableDays.length === 0) {
     return null;
   }
@@ -50,13 +52,16 @@ export default function WeeklyScheduleSection({
           <View
             key={dayInfo.index}
             className={`w-8 h-8 rounded-full items-center justify-center ${
-              dayInfo.active ? "bg-text-primary" : "bg-neutral-light-2"
+              dayInfo.active ? "bg-primary" : "bg-neutral-light-2"
             }`}
           >
             <Text
-              className={`text-xs font-medium ${
-                dayInfo.active ? "text-white" : "text-text-muted"
-              }`}
+              className="text-xs font-medium"
+              style={{
+                color: dayInfo.active
+                  ? colors.contentOnPrimary
+                  : colors.text.muted,
+              }}
             >
               {dayInfo.day}
             </Text>

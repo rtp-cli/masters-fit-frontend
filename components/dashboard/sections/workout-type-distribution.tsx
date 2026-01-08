@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { PieChart } from "@/components/charts/pie-chart";
-import { DONUT_COLORS, TIME_RANGE_FILTER } from "@/constants";
+import { getDonutColors, TIME_RANGE_FILTER } from "@/constants";
 import { WorkoutTypeMetrics } from "@/types/api";
+import { useTheme } from "@/lib/theme-context";
 
 type WorkoutTypeDistributionSectionProps = {
   metrics: WorkoutTypeMetrics | null;
@@ -13,6 +14,9 @@ type WorkoutTypeDistributionSectionProps = {
 const WorkoutTypeDistributionSection: React.FC<
   WorkoutTypeDistributionSectionProps
 > = ({ metrics, filter, onChangeFilter }) => {
+  const { isDark } = useTheme();
+  const donutColors = getDonutColors(isDark);
+
   if (
     !metrics ||
     !metrics.hasData ||
@@ -27,7 +31,7 @@ const WorkoutTypeDistributionSection: React.FC<
     const base = topTypes.map((item, index) => ({
       label: item.label,
       value: item.percentage,
-      color: DONUT_COLORS[index],
+      color: donutColors[index],
       count: item.totalSets,
     }));
     if (otherTypes.length > 0) {
@@ -42,7 +46,7 @@ const WorkoutTypeDistributionSection: React.FC<
       base.push({
         label: "Other",
         value: Math.round(otherPercentage * 10) / 10,
-        color: DONUT_COLORS[5],
+        color: donutColors[5],
         count: otherCount,
       });
     }
@@ -54,7 +58,7 @@ const WorkoutTypeDistributionSection: React.FC<
     const otherTypes = metrics.distribution.slice(5);
     const base = topTypes.map((item, index) => ({
       ...item,
-      color: DONUT_COLORS[index],
+      color: donutColors[index],
     }));
     if (otherTypes.length > 0) {
       const otherPercentage = otherTypes.reduce(
@@ -65,7 +69,7 @@ const WorkoutTypeDistributionSection: React.FC<
         tag: "other",
         label: "Other",
         percentage: Math.round(otherPercentage * 10) / 10,
-        color: DONUT_COLORS[5],
+        color: donutColors[5],
         totalSets: otherTypes.reduce((sum, item) => sum + item.totalSets, 0),
         totalReps: otherTypes.reduce((sum, item) => sum + item.totalReps, 0),
         exerciseCount: otherTypes.reduce(
@@ -110,7 +114,7 @@ const WorkoutTypeDistributionSection: React.FC<
             >
               <Text
                 className={`text-xs font-medium ${
-                  filter === f ? "text-text-primary" : "text-text-muted"
+                  filter === f ? "text-content-on-primary" : "text-text-muted"
                 }`}
               >
                 {f}
@@ -120,7 +124,7 @@ const WorkoutTypeDistributionSection: React.FC<
         </View>
       </View>
 
-      <View className="bg-white rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5">
         <View className="items-center mb-4">
           <PieChart
             data={chartData}
@@ -175,13 +179,13 @@ const WorkoutTypeDistributionSection: React.FC<
             </Text>
           </View>
           <View className="items-center">
-            <Text className="text-lg font-bold text-accent">
+            <Text className="text-lg font-bold text-text-primary">
               {metrics.distribution.length || 0}
             </Text>
             <Text className="text-xs text-text-muted text-center">Types</Text>
           </View>
           <View className="items-center">
-            <Text className="text-lg font-bold text-secondary">
+            <Text className="text-lg font-bold text-text-primary">
               {metrics.distribution.length > 0
                 ? Math.round(
                     metrics.distribution.reduce(

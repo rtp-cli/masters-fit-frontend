@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "@lib/theme";
+import { useThemeColors } from "@lib/theme";
 import { Image } from "react-native";
 import { images } from "@/assets";
 
@@ -21,6 +21,7 @@ export default function WarmingUpScreen({
   onComplete,
   duration = 8000,
 }: WarmingUpScreenProps) {
+  const colors = useThemeColors();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   useEffect(() => {

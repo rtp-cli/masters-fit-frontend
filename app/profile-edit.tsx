@@ -8,7 +8,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
 import OnboardingForm, { FormData } from "@/components/onboarding-form";
 import { CustomDialog, DialogButton } from "@/components/ui";
-import { colors } from "../lib/theme";
+import { useThemeColors } from "../lib/theme";
 import {
   FITNESS_GOALS,
   FITNESS_LEVELS,
@@ -22,6 +22,7 @@ import {
 } from "@/types/enums/fitness.enums";
 
 export default function ProfileEditScreen() {
+  const colors = useThemeColors();
   const { user } = useAuth();
   const router = useRouter();
 

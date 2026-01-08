@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { PieChart } from "@/components/charts/pie-chart";
-import { colors } from "../../../lib/theme";
+import { useTheme } from "../../../lib/theme-context";
+import { getPieChartColors } from "@/constants/colors";
 import { WeightAccuracyMetrics } from "@/types/api";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
@@ -16,6 +17,8 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
   weightPerformanceFilter,
   onChangeFilter,
 }) => {
+  const { isDark } = useTheme();
+  const pieColors = getPieChartColors(isDark);
   if (!filteredWeightAccuracy) return null;
 
   const hasData =
@@ -54,7 +57,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
               <Text
                 className={`text-xs font-medium ${
                   weightPerformanceFilter === filter
-                    ? "text-text-primary"
+                    ? "text-content-on-primary"
                     : "text-text-muted"
                 }`}
               >
@@ -65,42 +68,37 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
         </View>
       </View>
 
-      <View className="bg-white rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5">
         {hasData ? (
           <>
-            <View className="items-center mb-6">
+            <View key={`pie-${isDark ? "dark" : "light"}`} className="items-center mb-6">
               <PieChart
-                data={
-                  filteredWeightAccuracy.chartData &&
-                  filteredWeightAccuracy.chartData.length > 0
-                    ? filteredWeightAccuracy.chartData
-                    : [
-                        {
-                          label: "As Planned",
-                          value: 35,
-                          color: colors.brand.medium[1],
-                          count: 35,
-                        },
-                        {
-                          label: "Progressed",
-                          value: 40,
-                          color: colors.brand.primary,
-                          count: 40,
-                        },
-                        {
-                          label: "Adapted",
-                          value: 25,
-                          color: colors.brand.dark[1],
-                          count: 25,
-                        },
-                      ]
-                }
+                data={[
+                  {
+                    label: "As Planned",
+                    value: filteredWeightAccuracy.chartData?.[0]?.value ?? 35,
+                    color: pieColors.asPlanned,
+                    count: filteredWeightAccuracy.exactMatches || 35,
+                  },
+                  {
+                    label: "Progressed",
+                    value: filteredWeightAccuracy.chartData?.[1]?.value ?? 40,
+                    color: pieColors.progressed,
+                    count: filteredWeightAccuracy.higherWeight || 40,
+                  },
+                  {
+                    label: "Adapted",
+                    value: filteredWeightAccuracy.chartData?.[2]?.value ?? 25,
+                    color: pieColors.adapted,
+                    count: filteredWeightAccuracy.lowerWeight || 25,
+                  },
+                ]}
                 size={160}
               />
             </View>
             <View className="flex-row justify-around pt-4 border-t border-neutral-light-2">
               <View className="items-center">
-                <Text className="text-lg font-bold text-brand-medium-1">
+                <Text className="text-lg font-bold text-text-primary">
                   {filteredWeightAccuracy.exactMatches || 0}
                 </Text>
                 <Text className="text-xs text-text-muted text-center">
@@ -108,7 +106,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
                 </Text>
               </View>
               <View className="items-center">
-                <Text className="text-lg font-bold text-primary">
+                <Text className="text-lg font-bold text-text-primary">
                   {filteredWeightAccuracy.higherWeight || 0}
                 </Text>
                 <Text className="text-xs text-text-muted text-center">
@@ -116,7 +114,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
                 </Text>
               </View>
               <View className="items-center">
-                <Text className="text-lg font-bold text-brand-dark-1">
+                <Text className="text-lg font-bold text-text-primary">
                   {filteredWeightAccuracy.lowerWeight || 0}
                 </Text>
                 <Text className="text-xs text-text-muted text-center">

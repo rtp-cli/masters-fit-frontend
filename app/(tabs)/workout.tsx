@@ -29,7 +29,8 @@ import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
 import { ExerciseSet } from "@/components/set-tracker";
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
 import CircuitTracker from "@/components/circuit-tracker";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import {
   WorkoutBlockWithExercises,
   WorkoutBlockWithExercise,
@@ -172,6 +173,9 @@ function CircuitLoggingInterface({
 }
 
 export default function WorkoutScreen() {
+  const colors = useThemeColors();
+  const { isDark } = useTheme();
+
   // Get workout context for tab disabling
   const { setWorkoutInProgress, isWorkoutInProgress, setCurrentWorkoutData } =
     useWorkout();
@@ -1505,7 +1509,7 @@ export default function WorkoutScreen() {
           className="bg-primary rounded-xl py-3 px-6"
           onPress={() => loadWorkout(true)}
         >
-          <Text className="text-secondary font-semibold">Try Again</Text>
+          <Text className="text-content-on-primary font-semibold">Try Again</Text>
         </TouchableOpacity>
       </View>
     );
@@ -1751,7 +1755,7 @@ export default function WorkoutScreen() {
                             key={index}
                             className=" bg-brand-primary rounded-full px-3 py-1 mr-2"
                           >
-                            <Text className="text-xs text-text-primary font-semibold">
+                            <Text className="text-xs text-content-on-primary font-semibold">
                               {formatEquipment(equipment.trim())}
                             </Text>
                           </View>
@@ -1862,7 +1866,7 @@ export default function WorkoutScreen() {
                                       <Ionicons
                                         name="checkmark"
                                         size={14}
-                                        color={colors.text.secondary}
+                                        color={colors.contentOnPrimary}
                                       />
                                     ) : (
                                       <Text className="text-xs font-semibold text-text-muted">
@@ -1908,7 +1912,7 @@ export default function WorkoutScreen() {
                           >
                             <Text
                               className={`text-sm font-semibold ${
-                                showRestTimer ? "text-white" : ""
+                                showRestTimer ? "text-content-on-primary" : ""
                               }`}
                               style={
                                 !showRestTimer
@@ -2053,7 +2057,7 @@ export default function WorkoutScreen() {
                           <Ionicons
                             name="play-skip-forward-outline"
                             size={16}
-                            color="white"
+                            color={colors.contentOnPrimary}
                           />
                         ) : isCompleted ? (
                           <Ionicons
@@ -2117,8 +2121,8 @@ export default function WorkoutScreen() {
             className="bg-primary rounded-2xl py-4 flex-row items-center justify-center"
             onPress={startWorkout}
           >
-            <Ionicons name="play" size={20} color={colors.text.secondary} />
-            <Text className="text-secondary font-bold text-lg ml-2">
+            <Ionicons name="play" size={20} color={colors.contentOnPrimary} />
+            <Text className="text-content-on-primary font-bold text-lg ml-2">
               Start Workout
             </Text>
           </TouchableOpacity>
@@ -2133,9 +2137,9 @@ export default function WorkoutScreen() {
                 <Ionicons
                   name="play-skip-forward-outline"
                   size={20}
-                  color={colors.text.secondary}
+                  color={colors.contentOnPrimary}
                 />
-                <Text className="text-secondary font-semibold ml-2">Skip</Text>
+                <Text className="text-content-on-primary font-semibold ml-2">Skip</Text>
               </TouchableOpacity>
             )}
 
@@ -2160,9 +2164,9 @@ export default function WorkoutScreen() {
               <Ionicons
                 name="checkmark"
                 size={20}
-                color={colors.text.secondary}
+                color={colors.contentOnPrimary}
               />
-              <Text className="text-secondary font-semibold ml-2">
+              <Text className="text-content-on-primary font-semibold ml-2">
                 {isCurrentBlockCircuit
                   ? "Complete Circuit"
                   : isCurrentBlockWarmupCooldown
@@ -2176,8 +2180,8 @@ export default function WorkoutScreen() {
 
       {/* Complete Exercise Modal */}
       <Modal visible={showCompleteModal} transparent animationType="fade">
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               {isCurrentBlockCircuit
                 ? "Complete Circuit"
@@ -2226,14 +2230,14 @@ export default function WorkoutScreen() {
                   <View className="flex-row items-center justify-center">
                     <ActivityIndicator
                       size="small"
-                      color={colors.text.secondary}
+                      color={colors.contentOnPrimary}
                     />
-                    <Text className="text-secondary font-semibold ml-2">
+                    <Text className="text-content-on-primary font-semibold ml-2">
                       Saving...
                     </Text>
                   </View>
                 ) : (
-                  <Text className="text-secondary font-semibold text-center">
+                  <Text className="text-content-on-primary font-semibold text-center">
                     Complete
                   </Text>
                 )}
@@ -2245,8 +2249,8 @@ export default function WorkoutScreen() {
 
       {/* Skip Exercise Modal */}
       <Modal visible={showSkipModal} transparent animationType="fade">
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               Skip Exercise
             </Text>
@@ -2276,14 +2280,14 @@ export default function WorkoutScreen() {
                   <View className="flex-row items-center justify-center">
                     <ActivityIndicator
                       size="small"
-                      color={colors.text.primary}
+                      color={colors.contentOnPrimary}
                     />
-                    <Text className="text-text-primary font-semibold ml-2">
+                    <Text className="text-content-on-primary font-semibold ml-2">
                       Skipping...
                     </Text>
                   </View>
                 ) : (
-                  <Text className="text-text-primary font-semibold text-center">
+                  <Text className="text-content-on-primary font-semibold text-center">
                     Skip
                   </Text>
                 )}
@@ -2295,8 +2299,8 @@ export default function WorkoutScreen() {
 
       {/* Rest Complete Modal */}
       <Modal visible={showRestCompleteModal} transparent animationType="fade">
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             {/* TIMER DISPLAY HIDDEN: Timer icon commented out */}
             {/* <View className="items-center mb-4">
               <Ionicons name="timer" size={48} color={colors.brand.primary} />
@@ -2341,7 +2345,7 @@ export default function WorkoutScreen() {
                       // Timer is already finished, user can continue with next set
                     }}
                   >
-                    <Text className="text-secondary font-semibold text-center">
+                    <Text className="text-content-on-primary font-semibold text-center">
                       Continue Exercise
                     </Text>
                   </TouchableOpacity>

@@ -3,10 +3,11 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
-import { colors } from "../../lib/theme";
+import { useThemeColors } from "../../lib/theme";
 import { OnboardingScreen } from "@/components/onboarding";
 
 export default function OnboardingRoute() {
+  const colors = useThemeColors();
   const router = useRouter();
   const { isAuthenticated, isLoading, user } = useAuth();
 

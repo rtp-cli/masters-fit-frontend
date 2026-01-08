@@ -1,7 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { PlanDayWithBlocks, WorkoutWithDetails } from "@/types/api";
 
 type CalendarActionButtonsProps = {
@@ -21,6 +21,8 @@ export default function CalendarActionButtons({
   onOpenRegeneration,
   onOpenEditExercises,
 }: CalendarActionButtonsProps) {
+  const colors = useThemeColors();
+
   if (!workoutPlan || isHistoricalWorkout || isPastDate) {
     return null;
   }
@@ -46,7 +48,7 @@ export default function CalendarActionButtons({
 
         {currentSelectedPlanDay && (
           <TouchableOpacity
-            className="flex-1 ml-2 bg-white border border-primary py-3 rounded-lg items-center flex-row justify-center"
+            className="flex-1 ml-2 bg-surface border border-primary py-3 rounded-lg items-center flex-row justify-center"
             onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
           >
             <Ionicons

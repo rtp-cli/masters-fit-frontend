@@ -8,7 +8,7 @@ import {
 } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
 
 interface FitnessLevelStepProps {
@@ -21,80 +21,82 @@ interface FitnessLevelStepProps {
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
 }
 
-// Fitness level configuration helper
-const getFitnessLevelConfig = (levelKey: FITNESS_LEVELS) => {
-  switch (levelKey) {
-    case FITNESS_LEVELS.BEGINNER:
-      return {
-        icon: "walk-outline",
-        color: colors.brand.secondary,
-        bgColor: "bg-green-100",
-        description: "New to fitness or returning after a long break",
-      };
-    case FITNESS_LEVELS.INTERMEDIATE:
-      return {
-        icon: "fitness-outline",
-        color: colors.brand.secondary,
-        bgColor: "bg-yellow-100",
-        description: "Consistent exercise for 6+ months",
-      };
-    case FITNESS_LEVELS.ADVANCED:
-      return {
-        icon: "flame-outline",
-        color: colors.brand.secondary,
-        bgColor: "bg-red-100",
-        description: "Regular challenging workouts for 1+ years",
-      };
-    default:
-      return {
-        icon: "fitness-outline",
-        color: "#6B7280",
-        bgColor: "bg-neutral-light-2",
-        description: "Fitness level",
-      };
-  }
-};
-
-// Intensity level configuration helper
-const getIntensityLevelConfig = (intensityKey: INTENSITY_LEVELS) => {
-  switch (intensityKey) {
-    case INTENSITY_LEVELS.LOW:
-      return {
-        icon: "walk-outline",
-        color: colors.brand.secondary,
-        bgColor: "bg-green-100",
-        description: "Light, comfortable pace",
-      };
-    case INTENSITY_LEVELS.MODERATE:
-      return {
-        icon: "fitness-outline",
-        color: colors.brand.secondary,
-        bgColor: "bg-yellow-100",
-        description: "Moderate challenge, can still talk",
-      };
-    case INTENSITY_LEVELS.HIGH:
-      return {
-        icon: "flash-outline",
-        color: colors.brand.secondary,
-        bgColor: "bg-red-100",
-        description: "High intensity, challenging workouts",
-      };
-    default:
-      return {
-        icon: "pulse-outline",
-        color: "#6B7280",
-        bgColor: "bg-neutral-light-2",
-        description: "Intensity level",
-      };
-  }
-};
-
 export default function FitnessLevelStep({
   formData,
   errors,
   onFieldChange,
   onToggle,
 }: FitnessLevelStepProps) {
+  const colors = useThemeColors();
+
+  // Fitness level configuration helper
+  const getFitnessLevelConfig = (levelKey: FITNESS_LEVELS) => {
+    switch (levelKey) {
+      case FITNESS_LEVELS.BEGINNER:
+        return {
+          icon: "walk-outline",
+          color: colors.contentOnPrimary,
+          bgColor: "bg-green-100",
+          description: "New to fitness or returning after a long break",
+        };
+      case FITNESS_LEVELS.INTERMEDIATE:
+        return {
+          icon: "fitness-outline",
+          color: colors.contentOnPrimary,
+          bgColor: "bg-yellow-100",
+          description: "Consistent exercise for 6+ months",
+        };
+      case FITNESS_LEVELS.ADVANCED:
+        return {
+          icon: "flame-outline",
+          color: colors.contentOnPrimary,
+          bgColor: "bg-red-100",
+          description: "Regular challenging workouts for 1+ years",
+        };
+      default:
+        return {
+          icon: "fitness-outline",
+          color: "#6B7280",
+          bgColor: "bg-neutral-light-2",
+          description: "Fitness level",
+        };
+    }
+  };
+
+  // Intensity level configuration helper
+  const getIntensityLevelConfig = (intensityKey: INTENSITY_LEVELS) => {
+    switch (intensityKey) {
+      case INTENSITY_LEVELS.LOW:
+        return {
+          icon: "walk-outline",
+          color: colors.contentOnPrimary,
+          bgColor: "bg-green-100",
+          description: "Light, comfortable pace",
+        };
+      case INTENSITY_LEVELS.MODERATE:
+        return {
+          icon: "fitness-outline",
+          color: colors.contentOnPrimary,
+          bgColor: "bg-yellow-100",
+          description: "Moderate challenge, can still talk",
+        };
+      case INTENSITY_LEVELS.HIGH:
+        return {
+          icon: "flash-outline",
+          color: colors.contentOnPrimary,
+          bgColor: "bg-red-100",
+          description: "High intensity, challenging workouts",
+        };
+      default:
+        return {
+          icon: "pulse-outline",
+          color: "#6B7280",
+          bgColor: "bg-neutral-light-2",
+          description: "Intensity level",
+        };
+    }
+  };
+
   return (
     <View className="flex-1 px-6 pb-6">
       {/* Fitness Level Selection */}
@@ -110,7 +112,7 @@ export default function FitnessLevelStep({
             <TouchableOpacity
               key={value}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                isSelected ? "bg-primary" : "bg-white"
+                isSelected ? "bg-primary" : "bg-surface"
               }`}
               onPress={() => onFieldChange("fitnessLevel", value)}
             >
@@ -122,14 +124,14 @@ export default function FitnessLevelStep({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -169,14 +171,14 @@ export default function FitnessLevelStep({
               className={`p-3 rounded-lg mr-2 mb-2 ${
                 formData.availableDays.includes(value)
                   ? "bg-primary"
-                  : "bg-white"
+                  : "bg-surface"
               }`}
               onPress={() => onToggle("availableDays", value)}
             >
               <Text
                 className={`font-medium text-sm ${
                   formData.availableDays.includes(value)
-                    ? "text-secondary"
+                    ? "text-content-on-primary"
                     : "text-neutral-dark-1"
                 }`}
               >
@@ -225,7 +227,7 @@ export default function FitnessLevelStep({
             <TouchableOpacity
               key={key}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
-                isSelected ? "bg-primary" : "bg-white"
+                isSelected ? "bg-primary" : "bg-surface"
               }`}
               onPress={() => onFieldChange("intensityLevel", value)}
             >
@@ -237,14 +239,14 @@ export default function FitnessLevelStep({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-secondary" : "text-neutral-dark-1"
+                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-secondary" : "text-neutral-medium-4"
+                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}

@@ -1,11 +1,14 @@
 import { View, Text } from "react-native";
 import { User } from "@/lib/types";
+import { useThemeColors } from "../../../lib/theme";
 
 interface ProfileSectionProps {
   user: User | null;
 }
 
 export default function ProfileSection({ user }: ProfileSectionProps) {
+  const colors = useThemeColors();
+
   // Get user initials
   const getUserInitials = () => {
     if (user?.name) {
@@ -22,7 +25,10 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
   return (
     <View className="items-center px-6 mb-6">
       <View className="w-20 h-20 rounded-full bg-primary items-center justify-center mb-4">
-        <Text className="text-3xl font-bold text-white">
+        <Text
+          className="text-3xl font-bold"
+          style={{ color: colors.contentOnPrimary }}
+        >
           {getUserInitials()}
         </Text>
       </View>

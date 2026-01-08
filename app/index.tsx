@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, usePathname } from "expo-router";
@@ -13,6 +13,7 @@ import { images } from "@/assets";
 import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 
 export default function GetStarted() {
+  const colors = useThemeColors();
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -169,10 +170,10 @@ export default function GetStarted() {
 
         {/* Get Started Button */}
         <TouchableOpacity
-          className="bg-black py-4 px-6 rounded-md items-center flex-row justify-center"
+          className="bg-text-primary py-4 px-6 rounded-md items-center flex-row justify-center"
           onPress={handleGetStarted}
         >
-          <Text className="text-white text-base font-semibold mr-2">
+          <Text className="text-background text-base font-semibold mr-2">
             Get Started
           </Text>
           <Ionicons
