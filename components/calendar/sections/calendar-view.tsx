@@ -4,7 +4,7 @@ import { Calendar as RNCalendar, DateData } from "react-native-calendars";
 import { useThemeColors } from "@/lib/theme";
 
 type CalendarViewSectionProps = {
-  calendarKey: number;
+  calendarKey: string | number;
   currentMonth: string;
   markedDates: any;
   onDayPress: (day: DateData) => void;

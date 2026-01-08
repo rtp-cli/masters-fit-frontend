@@ -321,19 +321,16 @@ export default function RootLayout() {
   }, [setColorScheme]);
 
   // Function to update theme mode
-  const setThemeMode = useCallback(async (newMode: ThemeMode) => {
+  const setThemeMode = useCallback((newMode: ThemeMode) => {
     setMode(newMode);
-    // Sync with NativeWind
     if (newMode === "auto") {
       setColorScheme("system");
     } else {
       setColorScheme(newMode);
     }
-    try {
-      await AsyncStorage.setItem(THEME_KEY, newMode);
-    } catch (error) {
+    AsyncStorage.setItem(THEME_KEY, newMode).catch((error) => {
       console.error("Failed to save theme:", error);
-    }
+    });
   }, [setColorScheme]);
 
   if (!fontsLoaded && !fontError) {
@@ -346,7 +343,6 @@ export default function RootLayout() {
   }
 
   return (
-    // Dark class applied at absolute root - OUTSIDE all providers
     <View className={`flex-1 ${isDark ? "dark" : ""}`}>
       <ThemeContext.Provider value={{ mode, isDark, setThemeMode }}>
         <MixpanelProvider>

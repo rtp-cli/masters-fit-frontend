@@ -90,7 +90,7 @@ export const PieChart: React.FC<PieChartProps> = ({
           </G>
         );
       } else {
-        // Full pie circle
+        // Full pie circle - no stroke needed for single segment
         return (
           <Circle
             key={`slice-${index}`}
@@ -98,8 +98,6 @@ export const PieChart: React.FC<PieChartProps> = ({
             cy={center}
             r={radius}
             fill={color}
-            stroke={colors.surface}
-            strokeWidth="2"
           />
         );
       }
@@ -137,7 +135,7 @@ export const PieChart: React.FC<PieChartProps> = ({
         />
       );
     } else {
-      // Regular pie chart path
+      // Regular pie chart path - no stroke to avoid lines from center
       const pathData = [
         `M ${center} ${center}`,
         `L ${x1} ${y1}`,
@@ -151,8 +149,6 @@ export const PieChart: React.FC<PieChartProps> = ({
           key={`slice-${index}`}
           d={pathData}
           fill={color}
-          stroke={colors.surface}
-          strokeWidth="2"
         />
       );
     }
