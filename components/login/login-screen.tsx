@@ -201,7 +201,7 @@ export const LoginScreen = () => {
               Email
             </Text>
             <TextInput
-              className={`bg-background px-md py-md rounded-xl text-base border ${
+              className={`bg-background px-md py-md rounded-xl text-text-primary border ${
                 emailError ? "border-red-500" : "border-neutral-medium-1"
               }`}
               placeholder="Email address"
@@ -225,7 +225,7 @@ export const LoginScreen = () => {
                 Full Name
               </Text>
               <TextInput
-                className="bg-background px-md py-md rounded-xl text-base border border-neutral-medium-1"
+                className="bg-background px-md py-md rounded-xl text-text-primary border border-neutral-medium-1"
                 placeholder="Enter your full name"
                 value={name}
                 onChangeText={setName}
