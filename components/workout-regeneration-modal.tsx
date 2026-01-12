@@ -34,6 +34,7 @@ import {
 import { Profile as UserProfile } from "@/types/api";
 import { setPaywallCallback, PaywallError } from "@/lib/api";
 import { CustomDialog, DialogButton } from "./ui";
+import PaymentWallModal from "./subscription/payment-wall-modal";
 
 import {
   GENDER,
@@ -146,10 +147,41 @@ export default function WorkoutRegenerationModal({
     icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
 
+  // Payment wall state
+  const [showPaymentWall, setShowPaymentWall] = useState(false);
+  const [paywallData, setPaywallData] = useState<{
+    type: string;
+    message: string;
+    limits?: any;
+  } | null>(null);
+
+  // Store pending regeneration data when paywall appears
+  const pendingRegenerationRef = useRef<{
+    selectedType: "week" | "day";
+    customFeedback: string;
+    temporaryOverrides: TemporaryOverrides;
+    profileData?: any;
+  } | null>(null);
+
   // Set up paywall callback
   useEffect(() => {
-    setPaywallCallback(() => {
+    setPaywallCallback((data) => {
       paywallErrorOccurredRef.current = true;
+
+      // Store current form state before showing paywall
+      pendingRegenerationRef.current = {
+        selectedType,
+        customFeedback,
+        temporaryOverrides,
+        profileData: currentProfile
+          ? convertProfileToFormData(currentProfile)
+          : undefined,
+      };
+
+      // Show payment wall modal
+      setPaywallData(data);
+      setShowPaymentWall(true);
+
       // Reset the flag after a short delay
       setTimeout(() => {
         paywallErrorOccurredRef.current = false;
@@ -159,7 +191,7 @@ export default function WorkoutRegenerationModal({
     return () => {
       setPaywallCallback(() => {});
     };
-  }, []);
+  }, [selectedType, customFeedback, temporaryOverrides, currentProfile]);
 
   useEffect(() => {
     if (visible) {
@@ -172,8 +204,19 @@ export default function WorkoutRegenerationModal({
       setSelectedType(
         isRestDay ? "day" : noActiveWorkoutDay ? "week" : regenerationType
       );
+    } else {
+      // Clear pending regeneration data when modal closes (unless payment wall is showing)
+      if (!showPaymentWall) {
+        pendingRegenerationRef.current = null;
+      }
     }
-  }, [visible, regenerationType, isRestDay, noActiveWorkoutDay]);
+  }, [
+    visible,
+    regenerationType,
+    isRestDay,
+    noActiveWorkoutDay,
+    showPaymentWall,
+  ]);
 
   // Initialize temporary overrides when profile loads
   useEffect(() => {
@@ -267,6 +310,14 @@ export default function WorkoutRegenerationModal({
         includeCooldown: formData.includeCooldown ?? true,
       };
 
+      // Store pending regeneration data before attempting (in case paywall appears)
+      pendingRegenerationRef.current = {
+        selectedType,
+        customFeedback,
+        temporaryOverrides,
+        profileData: profileData,
+      };
+
       // Update the profile first
       await updateUserProfile(profileData as any);
 
@@ -304,13 +355,24 @@ export default function WorkoutRegenerationModal({
 
             // Success callback
             onSuccess?.();
+            // Clear pending data after success
+            pendingRegenerationRef.current = null;
           } else {
             setIsGeneratingWorkout(false);
-            onError?.("Regeneration failed to start");
+            // Don't show error if paywall appeared (it will be handled by paywall callback)
+            if (!paywallErrorOccurredRef.current) {
+              onError?.("Regeneration failed to start");
+            }
           }
         } catch (error) {
           setIsGeneratingWorkout(false);
-          onError?.("An error occurred while starting regeneration");
+          // Don't show error if paywall appeared (it will be handled by paywall callback)
+          if (
+            !paywallErrorOccurredRef.current &&
+            !(error instanceof PaywallError)
+          ) {
+            onError?.("An error occurred while starting regeneration");
+          }
         }
       } else {
         // Daily regeneration: call regenerateDailyWorkout directly
@@ -336,6 +398,8 @@ export default function WorkoutRegenerationModal({
               // Close modal and let FAB handle progress
               onClose();
               onSuccess?.();
+              // Clear pending data after success
+              pendingRegenerationRef.current = null;
             } else {
               // Only show alert if it's not a paywall error
               if (!paywallErrorOccurredRef.current) {
@@ -410,8 +474,161 @@ export default function WorkoutRegenerationModal({
     await handleUpdateProfile(completeFormData);
   };
 
+  // Retry regeneration after payment success
+  const retryRegenerationAfterPayment = async () => {
+    const pending = pendingRegenerationRef.current;
+    if (!pending) {
+      return;
+    }
+
+    try {
+      // Close payment wall
+      setShowPaymentWall(false);
+      setPaywallData(null);
+
+      // Close modal immediately - no generating screen
+      onClose();
+
+      const user = await getCurrentUser();
+      if (!user) {
+        console.error("User not found");
+        return;
+      }
+
+      if (pending.selectedType === "week") {
+        // Weekly regeneration: call the weekly endpoint directly
+        // Include profileData if it was stored (from handleUpdateProfile flow)
+        const result = await regenerateWorkoutPlanAsync(user.id, {
+          customFeedback: pending.customFeedback.trim() || undefined,
+          profileData: pending.profileData,
+        });
+
+        if (result?.success && result.jobId) {
+          // Add job to background tracking
+          await addJob(result.jobId, "regeneration");
+
+          // Success callback
+          onSuccess?.();
+          // Clear pending data after success
+          pendingRegenerationRef.current = null;
+        } else {
+          onError?.("Regeneration failed to start");
+        }
+      } else {
+        // Daily regeneration or rest day workout
+        // Check if this is a rest day workout request
+        if (isRestDay && selectedDate) {
+          console.log("Rest day workout generation started after payment", {
+            userId: user.id,
+            date: selectedDate,
+            reason:
+              pending.customFeedback.trim() ||
+              "User requested rest day workout",
+          });
+
+          const result = await generateRestDayWorkoutAsync(user.id, {
+            date: selectedDate,
+            reason: formatOverridesIntoReason(
+              pending.customFeedback,
+              pending.temporaryOverrides,
+              currentProfile
+            ),
+          });
+
+          console.log("Rest day workout API response:", result);
+
+          if (result?.success && result.jobId) {
+            // Add job to background tracking
+            await addJob(result.jobId, "daily-regeneration");
+
+            // Success callback
+            onSuccess?.();
+          } else {
+            setDialogConfig({
+              title: "Rest Day Workout Failed",
+              description:
+                "Unable to start rest day workout generation. Please check your connection and try again.",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
+              },
+              icon: "alert-circle",
+            });
+            setDialogVisible(true);
+          }
+        } else if (selectedPlanDay) {
+          // Regular daily regeneration
+          const result = await regenerateDailyWorkoutAsync(
+            user.id,
+            selectedPlanDay.id,
+            {
+              reason: formatOverridesIntoReason(
+                pending.customFeedback,
+                pending.temporaryOverrides,
+                currentProfile
+              ),
+            }
+          );
+
+          if (result?.success && result.jobId) {
+            // Add job to background tracking
+            await addJob(result.jobId, "daily-regeneration");
+
+            // Success callback
+            onSuccess?.();
+            // Clear pending data after success
+            pendingRegenerationRef.current = null;
+          } else {
+            // Only show alert if it's not a paywall error
+            if (!paywallErrorOccurredRef.current) {
+              setDialogConfig({
+                title: "Daily Regeneration Failed",
+                description:
+                  "Unable to start daily workout regeneration. Please check your connection and try again.",
+                primaryButton: {
+                  text: "OK",
+                  onPress: () => setDialogVisible(false),
+                },
+                icon: "alert-circle",
+              });
+              setDialogVisible(true);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Only show alert if it's not a paywall error
+      if (
+        !paywallErrorOccurredRef.current &&
+        !(error instanceof PaywallError)
+      ) {
+        setDialogConfig({
+          title: "Regeneration Error",
+          description:
+            "An error occurred while starting regeneration. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
+      }
+    }
+  };
+
   const handleRegenerateWithFeedback = async () => {
     try {
+      // Store regeneration data before attempting (in case paywall appears)
+      pendingRegenerationRef.current = {
+        selectedType,
+        customFeedback,
+        temporaryOverrides,
+        profileData: currentProfile
+          ? convertProfileToFormData(currentProfile)
+          : undefined,
+      };
+
       // Close modal immediately - no generating screen
       onClose();
 
@@ -429,6 +646,8 @@ export default function WorkoutRegenerationModal({
 
             // Success callback
             onSuccess?.();
+            // Clear pending data after success
+            pendingRegenerationRef.current = null;
           } else {
             onError?.("Regeneration failed to start");
           }
@@ -463,6 +682,8 @@ export default function WorkoutRegenerationModal({
 
               // Success callback
               onSuccess?.();
+              // Clear pending data after success
+              pendingRegenerationRef.current = null;
             } else {
               setDialogConfig({
                 title: "Rest Day Workout Failed",
@@ -496,6 +717,8 @@ export default function WorkoutRegenerationModal({
 
               // Success callback
               onSuccess?.();
+              // Clear pending data after success
+              pendingRegenerationRef.current = null;
             } else {
               // Only show alert if it's not a paywall error
               if (!paywallErrorOccurredRef.current) {
@@ -796,390 +1019,489 @@ export default function WorkoutRegenerationModal({
 
   if (loadingProfile) {
     return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <View className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}>
-          <ActivityIndicator size="large" color={colors.brand.primary} />
-          <Text className="mt-4 text-base text-primary font-medium">
-            Loading your preferences...
-          </Text>
-        </View>
-      </Modal>
+      <>
+        <Modal
+          visible={visible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <View
+            className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}
+          >
+            <ActivityIndicator size="large" color={colors.brand.primary} />
+            <Text className="mt-4 text-base text-primary font-medium">
+              Loading your preferences...
+            </Text>
+          </View>
+        </Modal>
+        {/* Payment Wall Modal - rendered outside main modal */}
+        <PaymentWallModal
+          visible={showPaymentWall && !!paywallData}
+          onClose={() => {
+            setShowPaymentWall(false);
+            setPaywallData(null);
+            // Clear pending data if user closes payment wall without purchasing
+            pendingRegenerationRef.current = null;
+          }}
+          paywallData={
+            paywallData || {
+              type: "subscription_required",
+              message: "A subscription is required to continue.",
+              limits: {},
+            }
+          }
+          onPurchaseSuccess={retryRegenerationAfterPayment}
+        />
+      </>
     );
   }
 
   if (showOnboardingForm && currentProfile) {
     return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowOnboardingForm(false)}
-      >
-        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
-          {/* Custom Header with Save/Cancel Options */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-            <TouchableOpacity
-              onPress={() => setShowOnboardingForm(false)}
-              className="py-2 px-3"
-              disabled={updatingProfile}
-            >
-              <Text className="text-base text-text-muted font-medium">
-                Cancel
+      <>
+        <Modal
+          visible={visible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowOnboardingForm(false)}
+        >
+          <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+            {/* Custom Header with Save/Cancel Options */}
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+              <TouchableOpacity
+                onPress={() => setShowOnboardingForm(false)}
+                className="py-2 px-3"
+                disabled={updatingProfile}
+              >
+                <Text className="text-base text-text-muted font-medium">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <Text className="text-base font-semibold text-text-primary">
+                Update Preferences
               </Text>
-            </TouchableOpacity>
-            <Text className="text-base font-semibold text-text-primary">
-              Update Preferences
-            </Text>
-            <TouchableOpacity
-              onPress={handleQuickSaveAndRegenerate}
-              className="py-2 px-3"
-              disabled={updatingProfile}
-            >
-              {updatingProfile ? (
-                <ActivityIndicator size="small" color={colors.brand.primary} />
-              ) : (
-                <Text className="text-base text-primary font-medium">Save</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={handleQuickSaveAndRegenerate}
+                className="py-2 px-3"
+                disabled={updatingProfile}
+              >
+                {updatingProfile ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.brand.primary}
+                  />
+                ) : (
+                  <Text className="text-base text-primary font-medium">
+                    Save
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
 
-          {/* OnboardingForm */}
-          <View className="flex-1">
-            <OnboardingForm
-              title="Update Your Preferences"
-              initialData={convertProfileToFormData(currentProfile)}
-              onSubmit={handleUpdateProfile}
-              onCancel={() => setShowOnboardingForm(false)}
-              isLoading={updatingProfile}
-              submitButtonText="Save"
-              showNavigation={false}
-              excludePersonalInfo={true}
-            />
+            {/* OnboardingForm */}
+            <View className="flex-1">
+              <OnboardingForm
+                title="Update Your Preferences"
+                initialData={convertProfileToFormData(currentProfile)}
+                onSubmit={handleUpdateProfile}
+                onCancel={() => setShowOnboardingForm(false)}
+                isLoading={updatingProfile}
+                submitButtonText="Save"
+                showNavigation={false}
+                excludePersonalInfo={true}
+              />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+        {/* Payment Wall Modal - rendered outside main modal */}
+        <PaymentWallModal
+          visible={showPaymentWall && !!paywallData}
+          onClose={() => {
+            setShowPaymentWall(false);
+            setPaywallData(null);
+            // Clear pending data if user closes payment wall without purchasing
+            pendingRegenerationRef.current = null;
+          }}
+          paywallData={
+            paywallData || {
+              type: "subscription_required",
+              message: "A subscription is required to continue.",
+              limits: {},
+            }
+          }
+          onPurchaseSuccess={retryRegenerationAfterPayment}
+        />
+      </>
     );
   }
 
   if (showDailyOverrideForm) {
     return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={handleCancelDailyOverrides}
-      >
-        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
-          {/* Custom Header with Cancel/Apply Options */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-            <TouchableOpacity
-              onPress={handleCancelDailyOverrides}
-              className="py-2 px-3"
-            >
-              <Text className="text-base text-text-muted font-medium">
-                Cancel
+      <>
+        <Modal
+          visible={visible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={handleCancelDailyOverrides}
+        >
+          <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+            {/* Custom Header with Cancel/Apply Options */}
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+              <TouchableOpacity
+                onPress={handleCancelDailyOverrides}
+                className="py-2 px-3"
+              >
+                <Text className="text-base text-text-muted font-medium">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <Text className="text-base font-semibold text-text-primary">
+                Customize Workout Settings
               </Text>
-            </TouchableOpacity>
-            <Text className="text-base font-semibold text-text-primary">
-              Customize Workout Settings
-            </Text>
-            <TouchableOpacity
-              onPress={handleApplyDailyOverrides}
-              className="py-2 px-3"
-            >
-              <Text className="text-base text-primary font-medium">Apply</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={handleApplyDailyOverrides}
+                className="py-2 px-3"
+              >
+                <Text className="text-base text-primary font-medium">
+                  Apply
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-          {/* Daily Override Form */}
-          <View className="flex-1">
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ padding: 20 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            >
-              <ProfileOverrideForm
-                overrides={temporaryOverrides}
-                onOverrideChange={setTemporaryOverrides}
-              />
-            </ScrollView>
+            {/* Daily Override Form */}
+            <View className="flex-1">
+              <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ padding: 20 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+              >
+                <ProfileOverrideForm
+                  overrides={temporaryOverrides}
+                  onOverrideChange={setTemporaryOverrides}
+                />
+              </ScrollView>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+        {/* Payment Wall Modal - rendered outside main modal */}
+        <PaymentWallModal
+          visible={showPaymentWall && !!paywallData}
+          onClose={() => {
+            setShowPaymentWall(false);
+            setPaywallData(null);
+            // Clear pending data if user closes payment wall without purchasing
+            pendingRegenerationRef.current = null;
+          }}
+          paywallData={
+            paywallData || {
+              type: "subscription_required",
+              message: "A subscription is required to continue.",
+              limits: {},
+            }
+          }
+          onPurchaseSuccess={retryRegenerationAfterPayment}
+        />
+      </>
     );
   }
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        className={`flex-1 ${isDark ? "dark" : ""}`}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={onClose}
       >
-        <View className="flex-1 bg-background">
-          {/* Header */}
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-              <TouchableOpacity
-                onPress={onClose}
-                className="w-8 h-8 items-center justify-center"
-              >
-                <Ionicons name="close" size={20} color={colors.text.muted} />
-              </TouchableOpacity>
-              <Text className="text-base font-semibold text-text-primary">
-                Edit Workout Plan
-              </Text>
-              <View className="w-8" />
-            </View>
-          </TouchableWithoutFeedback>
-
-          {/* Content */}
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            bounces={true}
-            scrollEventThrottle={16}
-            removeClippedSubviews={true}
-          >
-            <View className="px-5 py-5">
-              {isRestDay ? (
-                <View className="mb-6">
-                  <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                    Today is a Rest Day
-                  </Text>
-                  <Text className="text-sm text-text-muted mb-4 text-center">
-                    You can generate an optional workout for today, or
-                    regenerate your entire weekly plan.
-                  </Text>
-                </View>
-              ) : noActiveWorkoutDay ? (
-                <View className="mb-6">
-                  <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                    No Workout Generated
-                  </Text>
-                  <Text className="text-sm text-text-muted mb-4 text-center">
-                    Workouts for this period haven't been generated yet. To
-                    create workouts for this period, complete your current week
-                    and generate the next week's workout plan.
-                  </Text>
-                </View>
-              ) : (
-                <Text className="text-base text-text-muted mb-6 text-center">
-                  Choose how you would like to generate your workout plan:
+        <KeyboardAvoidingView
+          className={`flex-1 ${isDark ? "dark" : ""}`}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View className="flex-1 bg-background">
+            {/* Header */}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="w-8 h-8 items-center justify-center"
+                >
+                  <Ionicons name="close" size={20} color={colors.text.muted} />
+                </TouchableOpacity>
+                <Text className="text-base font-semibold text-text-primary">
+                  Edit Workout Plan
                 </Text>
-              )}
-
-              {/* Week/Day Toggle - Fixed shadow issue */}
-              <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
-                <TouchableOpacity
-                  className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                    selectedType === "day" ? "bg-surface" : "bg-transparent"
-                  } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
-                  style={
-                    selectedType === "day"
-                      ? {
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 2,
-                          elevation: 2,
-                        }
-                      : undefined
-                  }
-                  onPress={() => !noActiveWorkoutDay && setSelectedType("day")}
-                  disabled={noActiveWorkoutDay}
-                >
-                  <Text
-                    className={`font-medium text-sm ${
-                      selectedType === "day"
-                        ? "text-secondary"
-                        : "text-text-muted"
-                    }`}
-                  >
-                    Single Day
-                  </Text>
-                  <Text
-                    className={`text-xs mt-1 text-center ${
-                      selectedType === "day"
-                        ? "text-secondary"
-                        : "text-text-muted"
-                    }`}
-                  >
-                    Today only
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                    selectedType === "week" ? "bg-surface" : "bg-transparent"
-                  }`}
-                  style={
-                    selectedType === "week"
-                      ? {
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 2,
-                          elevation: 2,
-                        }
-                      : undefined
-                  }
-                  onPress={() => setSelectedType("week")}
-                >
-                  <Text
-                    className={`font-medium text-sm ${
-                      selectedType === "week"
-                        ? "text-secondary"
-                        : "text-text-muted"
-                    }`}
-                  >
-                    Full Week
-                  </Text>
-                  <Text
-                    className={`text-xs mt-1 text-center ${
-                      selectedType === "week"
-                        ? "text-secondary"
-                        : "text-text-muted"
-                    }`}
-                  >
-                    Next 7 days
-                  </Text>
-                </TouchableOpacity>
+                <View className="w-8" />
               </View>
+            </TouchableWithoutFeedback>
 
-              {noActiveWorkoutDay && (
-                <Text className="text-xs text-text-muted mb-4 text-center">
-                  Day regeneration is not available for days outside your
-                  workout plan
-                </Text>
-              )}
+            {/* Content */}
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              bounces={true}
+              scrollEventThrottle={16}
+              removeClippedSubviews={true}
+            >
+              <View className="px-5 py-5">
+                {isRestDay ? (
+                  <View className="mb-6">
+                    <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                      Today is a Rest Day
+                    </Text>
+                    <Text className="text-sm text-text-muted mb-4 text-center">
+                      You can generate an optional workout for today, or
+                      regenerate your entire weekly plan.
+                    </Text>
+                  </View>
+                ) : noActiveWorkoutDay ? (
+                  <View className="mb-6">
+                    <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                      No Workout Generated
+                    </Text>
+                    <Text className="text-sm text-text-muted mb-4 text-center">
+                      Workouts for this period haven't been generated yet. To
+                      create workouts for this period, complete your current
+                      week and generate the next week's workout plan.
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-base text-text-muted mb-6 text-center">
+                    Choose how you would like to generate your workout plan:
+                  </Text>
+                )}
 
-              {/* Feedback Input */}
-              <View>
-                <Text className="text-sm text-text-muted mb-4">
-                  {isRestDay && selectedType === "day"
-                    ? "What kind of workout would you like for this rest day?"
-                    : isRestDay
-                      ? "Tell us what you'd like to change about your weekly workout plan:"
-                      : noActiveWorkoutDay
-                        ? "Tell us what you'd like to include in your next week's workout plan:"
-                        : `Tell us why you want to regenerate this ${
-                            selectedType === "day" ? "day's" : "week's"
-                          } workout plan, and what you would like to change:`}
-                </Text>
-                <TextInput
-                  className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
-                  style={{
-                    minHeight: 120,
-                    maxHeight: 200,
-                    textAlignVertical: "top",
-                  }}
-                  placeholder={
-                    isRestDay && selectedType === "day"
-                      ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
-                      : "Add notes about your workout here..."
-                  }
-                  placeholderTextColor={colors.text.muted}
-                  value={customFeedback}
-                  onChangeText={setCustomFeedback}
-                  multiline
-                  scrollEnabled={true}
-                />
-                {selectedType === "day" &&
-                  !isRestDay &&
-                  !noActiveWorkoutDay && (
+                {/* Week/Day Toggle - Fixed shadow issue */}
+                <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
+                  <TouchableOpacity
+                    className={`flex-1 py-3 px-2 rounded-sm items-center ${
+                      selectedType === "day" ? "bg-surface" : "bg-transparent"
+                    } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
+                    style={
+                      selectedType === "day"
+                        ? {
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 2,
+                            elevation: 2,
+                          }
+                        : undefined
+                    }
+                    onPress={() =>
+                      !noActiveWorkoutDay && setSelectedType("day")
+                    }
+                    disabled={noActiveWorkoutDay}
+                  >
+                    <Text
+                      className={`font-medium text-sm ${
+                        selectedType === "day"
+                          ? "text-secondary"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      Single Day
+                    </Text>
+                    <Text
+                      className={`text-xs mt-1 text-center ${
+                        selectedType === "day"
+                          ? "text-secondary"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      Today only
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className={`flex-1 py-3 px-2 rounded-sm items-center ${
+                      selectedType === "week" ? "bg-surface" : "bg-transparent"
+                    }`}
+                    style={
+                      selectedType === "week"
+                        ? {
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 2,
+                            elevation: 2,
+                          }
+                        : undefined
+                    }
+                    onPress={() => setSelectedType("week")}
+                  >
+                    <Text
+                      className={`font-medium text-sm ${
+                        selectedType === "week"
+                          ? "text-secondary"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      Full Week
+                    </Text>
+                    <Text
+                      className={`text-xs mt-1 text-center ${
+                        selectedType === "week"
+                          ? "text-secondary"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      Next 7 days
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {noActiveWorkoutDay && (
+                  <Text className="text-xs text-text-muted mb-4 text-center">
+                    Day regeneration is not available for days outside your
+                    workout plan
+                  </Text>
+                )}
+
+                {/* Feedback Input */}
+                <View>
+                  <Text className="text-sm text-text-muted mb-4">
+                    {isRestDay && selectedType === "day"
+                      ? "What kind of workout would you like for this rest day?"
+                      : isRestDay
+                        ? "Tell us what you'd like to change about your weekly workout plan:"
+                        : noActiveWorkoutDay
+                          ? "Tell us what you'd like to include in your next week's workout plan:"
+                          : `Tell us why you want to regenerate this ${
+                              selectedType === "day" ? "day's" : "week's"
+                            } workout plan, and what you would like to change:`}
+                  </Text>
+                  <TextInput
+                    className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
+                    style={{
+                      minHeight: 120,
+                      maxHeight: 200,
+                      textAlignVertical: "top",
+                    }}
+                    placeholder={
+                      isRestDay && selectedType === "day"
+                        ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
+                        : "Add notes about your workout here..."
+                    }
+                    placeholderTextColor={colors.text.muted}
+                    value={customFeedback}
+                    onChangeText={setCustomFeedback}
+                    multiline
+                    scrollEnabled={true}
+                  />
+                  {selectedType === "day" &&
+                    !isRestDay &&
+                    !noActiveWorkoutDay && (
+                      <Text className="text-xs text-text-muted mt-3">
+                        Only this day's workout will be changed. All other days
+                        will remain the same.
+                      </Text>
+                    )}
+
+                  {selectedType === "week" && (
                     <Text className="text-xs text-text-muted mt-3">
-                      Only this day's workout will be changed. All other days
-                      will remain the same.
+                      Your regenerated weekly plan will begin on{" "}
+                      {formatWorkoutPlanStartDate()} and end on{" "}
+                      {formatWorkoutPlanEndDate()}.
                     </Text>
                   )}
 
-                {selectedType === "week" && (
-                  <Text className="text-xs text-text-muted mt-3">
-                    Your regenerated weekly plan will begin on{" "}
-                    {formatWorkoutPlanStartDate()} and end on{" "}
-                    {formatWorkoutPlanEndDate()}.
-                  </Text>
-                )}
+                  {/* Daily Override Button */}
+                  {selectedType === "day" && !noActiveWorkoutDay && (
+                    <TouchableOpacity
+                      className="mt-4 py-2"
+                      onPress={handleOpenDailyOverrideForm}
+                    >
+                      <Text className="text-sm text-primary font-medium text-center">
+                        Customize settings for this workout
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
-                {/* Daily Override Button */}
-                {selectedType === "day" && !noActiveWorkoutDay && (
-                  <TouchableOpacity
-                    className="mt-4 py-2"
-                    onPress={handleOpenDailyOverrideForm}
-                  >
-                    <Text className="text-sm text-primary font-medium text-center">
-                      Customize settings for this workout
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Update Preferences Link */}
-                {selectedType === "week" && (
-                  <TouchableOpacity
-                    className="mt-4 py-2"
-                    onPress={() => setShowOnboardingForm(true)}
-                    disabled={loading}
-                  >
-                    <Text className="text-sm text-primary font-medium text-center">
-                      Need to update your fitness preferences? Tap here
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                  {/* Update Preferences Link */}
+                  {selectedType === "week" && (
+                    <TouchableOpacity
+                      className="mt-4 py-2"
+                      onPress={() => setShowOnboardingForm(true)}
+                      disabled={loading}
+                    >
+                      <Text className="text-sm text-primary font-medium text-center">
+                        Need to update your fitness preferences? Tap here
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
+            </ScrollView>
+
+            {/* Action Button */}
+            <View className="px-5 pb-10 mb-5">
+              <TouchableOpacity
+                className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+                  loading ? "opacity-70" : ""
+                }`}
+                onPress={handleRegenerateWithFeedback}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.neutral.white}
+                  />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="refresh"
+                      size={18}
+                      color={colors.neutral.white}
+                    />
+                    <Text className="text-neutral-white font-semibold text-sm ml-2">
+                      {selectedType === "week"
+                        ? "Regenerate Weekly Plan"
+                        : "Regenerate Today's Workout"}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
-          </ScrollView>
-
-          {/* Action Button */}
-          <View className="px-5 pb-10 mb-5">
-            <TouchableOpacity
-              className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                loading ? "opacity-70" : ""
-              }`}
-              onPress={handleRegenerateWithFeedback}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color={colors.neutral.white} />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={18} color={colors.neutral.white} />
-                  <Text className="text-neutral-white font-semibold text-sm ml-2">
-                    {selectedType === "week"
-                      ? "Regenerate Weekly Plan"
-                      : "Regenerate Today's Workout"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
 
-      {/* Custom Dialog */}
-      {dialogConfig && (
-        <CustomDialog
-          visible={dialogVisible}
-          onClose={() => setDialogVisible(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          primaryButton={dialogConfig.primaryButton}
-          secondaryButton={dialogConfig.secondaryButton}
-          icon={dialogConfig.icon}
-        />
-      )}
-    </Modal>
+        {/* Custom Dialog */}
+        {dialogConfig && (
+          <CustomDialog
+            visible={dialogVisible}
+            onClose={() => setDialogVisible(false)}
+            title={dialogConfig.title}
+            description={dialogConfig.description}
+            primaryButton={dialogConfig.primaryButton}
+            secondaryButton={dialogConfig.secondaryButton}
+            icon={dialogConfig.icon}
+          />
+        )}
+      </Modal>
+
+      {/* Payment Wall Modal - rendered outside main modal so it can show even when main modal is visible */}
+      <PaymentWallModal
+        visible={showPaymentWall && !!paywallData}
+        onClose={() => {
+          setShowPaymentWall(false);
+          setPaywallData(null);
+          // Clear pending data if user closes payment wall without purchasing
+          pendingRegenerationRef.current = null;
+        }}
+        paywallData={
+          paywallData || {
+            type: "subscription_required",
+            message: "A subscription is required to continue.",
+            limits: {},
+          }
+        }
+        onPurchaseSuccess={retryRegenerationAfterPayment}
+      />
+    </>
   );
 }
