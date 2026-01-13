@@ -30,7 +30,7 @@ export const colors = {
     primary: "#9BB875",
     secondary: "#181917",
     light: {
-      1: "#F2F6E7",
+      1: "#E5EFD4",
       2: "#F0F9D3",
     },
     medium: {
@@ -68,7 +68,7 @@ export const colors = {
     muted: "#8A93A2",
   },
   background: "#F8FAF5",
-  surface: "#FFFFFF",
+  surface: "#F8FAF5",
   danger: "#EF4444",
   warning: "#F59E0B",
   contentOnPrimary: "#FFFFFF",
@@ -117,7 +117,7 @@ export const darkColors = {
     muted: "#8A93A2",
   },
   background: "#181917",
-  surface: "#1E1F1D",
+  surface: "#181917",
   danger: "#FF6B6B",
   warning: "#FBBF24",
   contentOnPrimary: "#181917",
@@ -131,7 +131,7 @@ export const steelBlueColors = {
     primary: "#5A7A94",
     secondary: "#1C1D1F",
     light: {
-      1: "#EBF2FA",
+      1: "#D6E5F3",
       2: "#DCE8F5",
     },
     medium: {
@@ -168,8 +168,8 @@ export const steelBlueColors = {
     secondary: "#464B55",
     muted: "#6E7887",
   },
-  background: "#EEF3F8",
-  surface: "#F8FAFC",
+  background: "#F2F4F7",
+  surface: "#F2F4F7",
   danger: "#DC5050",
   warning: "#D2A03C",
   contentOnPrimary: "#FFFFFF",
@@ -188,12 +188,12 @@ export const steelBlueDarkColors = {
       2: "#465569",
     },
     dark: {
-      0: "#9DB8D0",
-      1: "#7A9BB8",
-      2: "#8CAAC6",
-      3: "#9DB8D0",
-      4: "#AFC6DA",
-      5: "#C0D2E4",
+      0: "#7A9BB8",
+      1: "#8CAAC6",
+      2: "#9DB8D0",
+      3: "#AFC6DA",
+      4: "#C0D2E4",
+      5: "#D4E2EE",
     },
   },
   neutral: {
@@ -218,10 +218,10 @@ export const steelBlueDarkColors = {
     muted: "#737882",
   },
   background: "#171A1E",
-  surface: "#1D2025",
+  surface: "#171A1E",
   danger: "#F06E6E",
   warning: "#F0BE50",
-  contentOnPrimary: "#1C1D1F",
+  contentOnPrimary: "#171A1E",
 } as const;
 
 // ============================================
@@ -232,7 +232,7 @@ export const dustyDenimColors = {
     primary: "#5C6D7E",
     secondary: "#19191B",
     light: {
-      1: "#EBF0F8",
+      1: "#D8E1ED",
       2: "#DAE4F0",
     },
     medium: {
@@ -270,7 +270,7 @@ export const dustyDenimColors = {
     muted: "#707A88",
   },
   background: "#EFF1F5",
-  surface: "#F7F8FA",
+  surface: "#EFF1F5",
   danger: "#DA5252",
   warning: "#D09E3A",
   contentOnPrimary: "#FFFFFF",
@@ -289,12 +289,12 @@ export const dustyDenimDarkColors = {
       2: "#4B5562",
     },
     dark: {
-      0: "#ABB8C6",
-      1: "#8B9CAE",
-      2: "#9BAABA",
-      3: "#ABB8C6",
-      4: "#BCC6D2",
-      5: "#CDD4DE",
+      0: "#8B9CAE",
+      1: "#9BAABA",
+      2: "#ABB8C6",
+      3: "#BCC6D2",
+      4: "#CDD4DE",
+      5: "#DEE6EC",
     },
   },
   neutral: {
@@ -319,10 +319,10 @@ export const dustyDenimDarkColors = {
     muted: "#707680",
   },
   background: "#16171A",
-  surface: "#1C1D21",
+  surface: "#16171A",
   danger: "#EE6C6C",
   warning: "#EEBC4E",
-  contentOnPrimary: "#19191B",
+  contentOnPrimary: "#16171A",
 } as const;
 
 // ============================================
@@ -333,7 +333,7 @@ export const dustySageColors = {
     primary: "#6E806B",
     secondary: "#1B1C1B",
     light: {
-      1: "#EEF4ED",
+      1: "#DCE8DA",
       2: "#DEEBDC",
     },
     medium: {
@@ -370,8 +370,8 @@ export const dustySageColors = {
     secondary: "#485048",
     muted: "#707C70",
   },
-  background: "#F2F5F1",
-  surface: "#F8FAF7",
+  background: "#F3F4F3",
+  surface: "#F3F4F3",
   danger: "#D25555",
   warning: "#C89E3C",
   contentOnPrimary: "#FFFFFF",
@@ -390,16 +390,16 @@ export const dustySageDarkColors = {
       2: "#4B584B",
     },
     dark: {
-      0: "#B5C4B2",
-      1: "#94A891",
-      2: "#A5B6A2",
-      3: "#B5C4B2",
-      4: "#C6D2C3",
-      5: "#D7E0D4",
+      0: "#94A891",
+      1: "#A5B6A2",
+      2: "#B5C4B2",
+      3: "#C6D2C3",
+      4: "#D7E0D4",
+      5: "#E8EEE5",
     },
   },
   neutral: {
-    white: "#1B1C1B",
+    white: "#181918",
     light: {
       1: "#232423",
       2: "#2C2E2C",
@@ -419,11 +419,11 @@ export const dustySageDarkColors = {
     secondary: "#B2BAB2",
     muted: "#707870",
   },
-  background: "#181A17",
-  surface: "#1E201D",
+  background: "#181918",
+  surface: "#181918",
   danger: "#EB6E6E",
   warning: "#EBBC50",
-  contentOnPrimary: "#1B1C1B",
+  contentOnPrimary: "#181918",
 } as const;
 
 // ============================================
@@ -434,7 +434,7 @@ export const carbonVioletColors = {
     primary: "#6B6488",
     secondary: "#1A1A1A",
     light: {
-      1: "#F2F0F8",
+      1: "#E0DCF0",
       2: "#E6E2F2",
     },
     medium: {
@@ -472,7 +472,7 @@ export const carbonVioletColors = {
     muted: "#6B7280",
   },
   background: "#F5F5F5",
-  surface: "#FFFFFF",
+  surface: "#F5F5F5",
   danger: "#C8555F",
   warning: "#C8A04B",
   contentOnPrimary: "#FFFFFF",
@@ -491,12 +491,12 @@ export const carbonVioletDarkColors = {
       2: "#443E55",
     },
     dark: {
-      0: "#AAA4C0",
-      1: "#9088A8",
-      2: "#9E96B4",
-      3: "#AAA4C0",
-      4: "#B9B4CD",
-      5: "#C8C4DA",
+      0: "#9088A8",
+      1: "#9E96B4",
+      2: "#AAA4C0",
+      3: "#B9B4CD",
+      4: "#C8C4DA",
+      5: "#D7D2E7",
     },
   },
   neutral: {
@@ -521,7 +521,7 @@ export const carbonVioletDarkColors = {
     muted: "#6B6B6B",
   },
   background: "#121212",
-  surface: "#1A1A1A",
+  surface: "#121212",
   danger: "#E1737D",
   warning: "#E1B95F",
   contentOnPrimary: "#121212",

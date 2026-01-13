@@ -488,7 +488,7 @@ export default function CircuitTracker({
                         >
                           <Text
                             className="text-sm font-semibold"
-                            style={{ color: colors.brand.secondary }}
+                            style={{ color: colors.contentOnPrimary }}
                           >
                             +5
                           </Text>
@@ -547,7 +547,7 @@ export default function CircuitTracker({
                           <Ionicons
                             name="add"
                             size={20}
-                            color={colors.brand.secondary}
+                            color={colors.contentOnPrimary}
                           />
                         </TouchableOpacity>
                       </View>

@@ -60,7 +60,7 @@ const DashboardEmptyStateSection: React.FC<DashboardEmptyStateSectionProps> = ({
             className="bg-primary rounded-lg px-6 py-3"
             onPress={onStartWorkout}
           >
-            <Text className="text-text-primary font-semibold text-sm">
+            <Text className="text-content-on-primary font-semibold text-sm">
               Start Workout
             </Text>
           </TouchableOpacity>

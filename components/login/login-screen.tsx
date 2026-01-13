@@ -239,16 +239,16 @@ export const LoginScreen = () => {
       </ScrollView>
       <View className="px-lg pb-2xl pt-md bg-background">
         <TouchableOpacity
-          className={`py-md px-2xl bg-secondary rounded-xl items-center justify-center ${
+          className={`py-md px-2xl bg-brand-primary rounded-xl items-center justify-center ${
             isLoading ? "opacity-70" : ""
           }`}
           onPress={showNameField ? handleSignup : handleContinue}
           disabled={isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color={colors.neutral.white} />
+            <ActivityIndicator size="small" color={colors.contentOnPrimary} />
           ) : (
-            <Text className="text-neutral-white font-semibold text-base">
+            <Text className="text-content-on-primary font-semibold text-base">
               {showNameField ? "Sign Up" : "Continue"}
             </Text>
           )}

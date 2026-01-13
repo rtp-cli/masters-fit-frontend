@@ -170,16 +170,16 @@ export default function GetStarted() {
 
         {/* Get Started Button */}
         <TouchableOpacity
-          className="bg-text-primary py-4 px-6 rounded-md items-center flex-row justify-center"
+          className="bg-brand-primary py-4 px-6 rounded-md items-center flex-row justify-center"
           onPress={handleGetStarted}
         >
-          <Text className="text-background text-base font-semibold mr-2">
+          <Text className="text-content-on-primary text-base font-semibold mr-2">
             Get Started
           </Text>
           <Ionicons
             name="arrow-forward"
             size={20}
-            color={colors.background}
+            color={colors.contentOnPrimary}
             className="ml-1"
           />
         </TouchableOpacity>

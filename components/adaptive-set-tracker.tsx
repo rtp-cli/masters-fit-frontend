@@ -399,7 +399,7 @@ export default function AdaptiveSetTracker({
                 >
                   <Text
                     className="text-xs font-semibold"
-                    style={{ color: colors.brand.secondary }}
+                    style={{ color: colors.contentOnPrimary }}
                   >
                     +5
                   </Text>
@@ -458,11 +458,11 @@ export default function AdaptiveSetTracker({
         <Ionicons
           name="add-circle-outline"
           size={20}
-          color={colors.brand.secondary}
+          color={colors.contentOnPrimary}
         />
         <Text
           className="text-sm font-semibold ml-2"
-          style={{ color: colors.brand.secondary }}
+          style={{ color: colors.contentOnPrimary }}
         >
           Add Set
         </Text>
@@ -556,7 +556,7 @@ export default function AdaptiveSetTracker({
                 >
                   <Text
                     className="text-xs font-semibold"
-                    style={{ color: colors.brand.secondary }}
+                    style={{ color: colors.contentOnPrimary }}
                   >
                     +5
                   </Text>
@@ -608,11 +608,11 @@ export default function AdaptiveSetTracker({
           <Ionicons
             name="add-circle-outline"
             size={20}
-            color={colors.brand.secondary}
+            color={colors.contentOnPrimary}
           />
           <Text
             className="text-sm font-semibold ml-2"
-            style={{ color: colors.brand.secondary }}
+            style={{ color: colors.contentOnPrimary }}
           >
             Add Set
           </Text>

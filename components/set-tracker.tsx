@@ -131,13 +131,16 @@ export default function SetTracker({
     return targetRounds > 1 ? `Round ${roundNumber}` : "";
   };
 
-  const groupedSets = localSets.reduce((acc, set) => {
-    if (!acc[set.roundNumber]) {
-      acc[set.roundNumber] = [];
-    }
-    acc[set.roundNumber].push(set);
-    return acc;
-  }, {} as Record<number, ExerciseSet[]>);
+  const groupedSets = localSets.reduce(
+    (acc, set) => {
+      if (!acc[set.roundNumber]) {
+        acc[set.roundNumber] = [];
+      }
+      acc[set.roundNumber].push(set);
+      return acc;
+    },
+    {} as Record<number, ExerciseSet[]>
+  );
 
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -398,10 +401,10 @@ export default function SetTracker({
           <Ionicons
             name="add-circle-outline"
             size={20}
-            color={colors.brand.secondary}
+            color={colors.contentOnPrimary}
           />
           <Text
-            style={{ color: colors.brand.secondary }}
+            style={{ color: colors.contentOnPrimary }}
             className="text-sm font-semibold ml-2"
           >
             Add Set
