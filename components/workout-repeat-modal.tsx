@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
   fetchPreviousWorkouts,
@@ -48,7 +49,11 @@ export default function WorkoutRepeatModal({
     Record<number, boolean>
   >({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const { setIsPreloadingData, setIsGeneratingWorkout, setNeedsFullAppRefresh } = useAuth();
+  const {
+    setIsPreloadingData,
+    setIsGeneratingWorkout,
+    setNeedsFullAppRefresh,
+  } = useAuth();
   const {
     refresh: { reset, refreshAll },
   } = useAppDataContext();
@@ -508,8 +513,9 @@ export default function WorkoutRepeatModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+      <SafeAreaView className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
@@ -594,12 +600,16 @@ export default function WorkoutRepeatModal({
                     name="repeat"
                     size={18}
                     color={
-                      selectedWorkout ? colors.contentOnPrimary : colors.text.muted
+                      selectedWorkout
+                        ? colors.contentOnPrimary
+                        : colors.text.muted
                     }
                   />
                   <Text
                     className={`font-semibold text-sm ml-2 ${
-                      selectedWorkout ? "text-content-on-primary" : "text-text-muted"
+                      selectedWorkout
+                        ? "text-content-on-primary"
+                        : "text-text-muted"
                     }`}
                   >
                     Repeat Selected Workout
@@ -609,7 +619,7 @@ export default function WorkoutRepeatModal({
             </TouchableOpacity>
           </View>
         )}
-      </View>
+      </SafeAreaView>
 
       {/* Custom Dialog */}
       {dialogConfig && (

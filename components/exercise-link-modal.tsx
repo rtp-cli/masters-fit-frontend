@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/theme-context";
@@ -210,8 +211,9 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+      <SafeAreaView className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-md pt-md pb-3 border-b border-neutral-medium-1">
           <TouchableOpacity
@@ -367,7 +369,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
       {dialogConfig && (
         <CustomDialog
           visible={dialogVisible}

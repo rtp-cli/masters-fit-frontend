@@ -1,4 +1,5 @@
 import { Modal, View, TouchableOpacity, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import SettingsView from "./settings-view";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
@@ -17,8 +18,13 @@ export default function SettingsModal({
   const { isDark } = useTheme();
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      statusBarTranslucent
+    >
+      <SafeAreaView className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         <View className="flex-row items-center justify-between p-4 border-b border-neutral-light-2">
           <View className="w-6" />
           <Text className="text-xl font-bold text-text-primary">Account</Text>
@@ -31,7 +37,7 @@ export default function SettingsModal({
         </View>
 
         <SettingsView onClose={onClose} />
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

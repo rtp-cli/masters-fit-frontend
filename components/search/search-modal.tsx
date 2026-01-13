@@ -1,4 +1,5 @@
 import { Modal, View, TouchableOpacity, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -14,8 +15,13 @@ export default function SearchModal({ visible, onClose }: SearchModalProps) {
   const { isDark } = useTheme();
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      statusBarTranslucent
+    >
+      <SafeAreaView className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         <View className="flex-row items-center justify-between p-4 border-b border-neutral-light-2">
           <View className="w-6" />
           <Text className="text-xl font-bold text-text-primary">Search</Text>
@@ -28,7 +34,7 @@ export default function SearchModal({ visible, onClose }: SearchModalProps) {
         </View>
 
         <SearchView />
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

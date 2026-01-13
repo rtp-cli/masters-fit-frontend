@@ -12,6 +12,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ProfileOverrideForm, {
   TemporaryOverrides,
@@ -1024,15 +1025,16 @@ export default function WorkoutRegenerationModal({
           visible={visible}
           animationType="slide"
           presentationStyle="pageSheet"
+          statusBarTranslucent
         >
-          <View
+          <SafeAreaView
             className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}
           >
             <ActivityIndicator size="large" color={colors.brand.primary} />
             <Text className="mt-4 text-base text-primary font-medium">
               Loading your preferences...
             </Text>
-          </View>
+          </SafeAreaView>
         </Modal>
         {/* Payment Wall Modal - rendered outside main modal */}
         <PaymentWallModal
@@ -1064,8 +1066,11 @@ export default function WorkoutRegenerationModal({
           animationType="slide"
           presentationStyle="pageSheet"
           onRequestClose={() => setShowOnboardingForm(false)}
+          statusBarTranslucent
         >
-          <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+          <SafeAreaView
+            className={`flex-1 bg-background ${isDark ? "dark" : ""}`}
+          >
             {/* Custom Header with Save/Cancel Options */}
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
               <TouchableOpacity
@@ -1111,7 +1116,7 @@ export default function WorkoutRegenerationModal({
                 excludePersonalInfo={true}
               />
             </View>
-          </View>
+          </SafeAreaView>
         </Modal>
         {/* Payment Wall Modal - rendered outside main modal */}
         <PaymentWallModal
@@ -1143,8 +1148,11 @@ export default function WorkoutRegenerationModal({
           animationType="slide"
           presentationStyle="pageSheet"
           onRequestClose={handleCancelDailyOverrides}
+          statusBarTranslucent
         >
-          <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+          <SafeAreaView
+            className={`flex-1 bg-background ${isDark ? "dark" : ""}`}
+          >
             {/* Custom Header with Cancel/Apply Options */}
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
               <TouchableOpacity
@@ -1183,7 +1191,7 @@ export default function WorkoutRegenerationModal({
                 />
               </ScrollView>
             </View>
-          </View>
+          </SafeAreaView>
         </Modal>
         {/* Payment Wall Modal - rendered outside main modal */}
         <PaymentWallModal
@@ -1214,261 +1222,270 @@ export default function WorkoutRegenerationModal({
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={onClose}
+        statusBarTranslucent
       >
-        <KeyboardAvoidingView
-          className={`flex-1 ${isDark ? "dark" : ""}`}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <View className="flex-1 bg-background">
-            {/* Header */}
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-                <TouchableOpacity
-                  onPress={onClose}
-                  className="w-8 h-8 items-center justify-center"
-                >
-                  <Ionicons name="close" size={20} color={colors.text.muted} />
-                </TouchableOpacity>
-                <Text className="text-base font-semibold text-text-primary">
-                  Edit Workout Plan
-                </Text>
-                <View className="w-8" />
-              </View>
-            </TouchableWithoutFeedback>
-
-            {/* Content */}
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ paddingBottom: 20 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              bounces={true}
-              scrollEventThrottle={16}
-              removeClippedSubviews={true}
-            >
-              <View className="px-5 py-5">
-                {isRestDay ? (
-                  <View className="mb-6">
-                    <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                      Today is a Rest Day
-                    </Text>
-                    <Text className="text-sm text-text-muted mb-4 text-center">
-                      You can generate an optional workout for today, or
-                      regenerate your entire weekly plan.
-                    </Text>
-                  </View>
-                ) : noActiveWorkoutDay ? (
-                  <View className="mb-6">
-                    <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
-                      No Workout Generated
-                    </Text>
-                    <Text className="text-sm text-text-muted mb-4 text-center">
-                      Workouts for this period haven't been generated yet. To
-                      create workouts for this period, complete your current
-                      week and generate the next week's workout plan.
-                    </Text>
-                  </View>
-                ) : (
-                  <Text className="text-base text-text-muted mb-6 text-center">
-                    Choose how you would like to generate your workout plan:
+        <SafeAreaView className={`flex-1 ${isDark ? "dark" : ""}`}>
+          <KeyboardAvoidingView
+            className="flex-1"
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View className="flex-1 bg-background">
+              {/* Header */}
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+                  <TouchableOpacity
+                    onPress={onClose}
+                    className="w-8 h-8 items-center justify-center"
+                  >
+                    <Ionicons
+                      name="close"
+                      size={20}
+                      color={colors.text.muted}
+                    />
+                  </TouchableOpacity>
+                  <Text className="text-base font-semibold text-text-primary">
+                    Edit Workout Plan
                   </Text>
-                )}
-
-                {/* Week/Day Toggle - Fixed shadow issue */}
-                <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
-                  <TouchableOpacity
-                    className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                      selectedType === "day" ? "bg-surface" : "bg-transparent"
-                    } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
-                    style={
-                      selectedType === "day"
-                        ? {
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 2,
-                            elevation: 2,
-                          }
-                        : undefined
-                    }
-                    onPress={() =>
-                      !noActiveWorkoutDay && setSelectedType("day")
-                    }
-                    disabled={noActiveWorkoutDay}
-                  >
-                    <Text
-                      className={`font-medium text-sm ${
-                        selectedType === "day"
-                          ? "text-secondary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Single Day
-                    </Text>
-                    <Text
-                      className={`text-xs mt-1 text-center ${
-                        selectedType === "day"
-                          ? "text-secondary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Today only
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                      selectedType === "week" ? "bg-surface" : "bg-transparent"
-                    }`}
-                    style={
-                      selectedType === "week"
-                        ? {
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 2,
-                            elevation: 2,
-                          }
-                        : undefined
-                    }
-                    onPress={() => setSelectedType("week")}
-                  >
-                    <Text
-                      className={`font-medium text-sm ${
-                        selectedType === "week"
-                          ? "text-secondary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Full Week
-                    </Text>
-                    <Text
-                      className={`text-xs mt-1 text-center ${
-                        selectedType === "week"
-                          ? "text-secondary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Next 7 days
-                    </Text>
-                  </TouchableOpacity>
+                  <View className="w-8" />
                 </View>
+              </TouchableWithoutFeedback>
 
-                {noActiveWorkoutDay && (
-                  <Text className="text-xs text-text-muted mb-4 text-center">
-                    Day regeneration is not available for days outside your
-                    workout plan
-                  </Text>
-                )}
+              {/* Content */}
+              <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                bounces={true}
+                scrollEventThrottle={16}
+                removeClippedSubviews={true}
+              >
+                <View className="px-5 py-5">
+                  {isRestDay ? (
+                    <View className="mb-6">
+                      <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                        Today is a Rest Day
+                      </Text>
+                      <Text className="text-sm text-text-muted mb-4 text-center">
+                        You can generate an optional workout for today, or
+                        regenerate your entire weekly plan.
+                      </Text>
+                    </View>
+                  ) : noActiveWorkoutDay ? (
+                    <View className="mb-6">
+                      <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                        No Workout Generated
+                      </Text>
+                      <Text className="text-sm text-text-muted mb-4 text-center">
+                        Workouts for this period haven't been generated yet. To
+                        create workouts for this period, complete your current
+                        week and generate the next week's workout plan.
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text className="text-base text-text-muted mb-6 text-center">
+                      Choose how you would like to generate your workout plan:
+                    </Text>
+                  )}
 
-                {/* Feedback Input */}
-                <View>
-                  <Text className="text-sm text-text-muted mb-4">
-                    {isRestDay && selectedType === "day"
-                      ? "What kind of workout would you like for this rest day?"
-                      : isRestDay
-                        ? "Tell us what you'd like to change about your weekly workout plan:"
-                        : noActiveWorkoutDay
-                          ? "Tell us what you'd like to include in your next week's workout plan:"
-                          : `Tell us why you want to regenerate this ${
-                              selectedType === "day" ? "day's" : "week's"
-                            } workout plan, and what you would like to change:`}
-                  </Text>
-                  <TextInput
-                    className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
-                    style={{
-                      minHeight: 120,
-                      maxHeight: 200,
-                      textAlignVertical: "top",
-                    }}
-                    placeholder={
-                      isRestDay && selectedType === "day"
-                        ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
-                        : "Add notes about your workout here..."
-                    }
-                    placeholderTextColor={colors.text.muted}
-                    value={customFeedback}
-                    onChangeText={setCustomFeedback}
-                    multiline
-                    scrollEnabled={true}
-                  />
-                  {selectedType === "day" &&
-                    !isRestDay &&
-                    !noActiveWorkoutDay && (
+                  {/* Week/Day Toggle - Fixed shadow issue */}
+                  <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
+                    <TouchableOpacity
+                      className={`flex-1 py-3 px-2 rounded-sm items-center ${
+                        selectedType === "day" ? "bg-surface" : "bg-transparent"
+                      } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
+                      style={
+                        selectedType === "day"
+                          ? {
+                              shadowColor: "#000",
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.1,
+                              shadowRadius: 2,
+                              elevation: 2,
+                            }
+                          : undefined
+                      }
+                      onPress={() =>
+                        !noActiveWorkoutDay && setSelectedType("day")
+                      }
+                      disabled={noActiveWorkoutDay}
+                    >
+                      <Text
+                        className={`font-medium text-sm ${
+                          selectedType === "day"
+                            ? "text-secondary"
+                            : "text-text-muted"
+                        }`}
+                      >
+                        Single Day
+                      </Text>
+                      <Text
+                        className={`text-xs mt-1 text-center ${
+                          selectedType === "day"
+                            ? "text-secondary"
+                            : "text-text-muted"
+                        }`}
+                      >
+                        Today only
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className={`flex-1 py-3 px-2 rounded-sm items-center ${
+                        selectedType === "week"
+                          ? "bg-surface"
+                          : "bg-transparent"
+                      }`}
+                      style={
+                        selectedType === "week"
+                          ? {
+                              shadowColor: "#000",
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.1,
+                              shadowRadius: 2,
+                              elevation: 2,
+                            }
+                          : undefined
+                      }
+                      onPress={() => setSelectedType("week")}
+                    >
+                      <Text
+                        className={`font-medium text-sm ${
+                          selectedType === "week"
+                            ? "text-secondary"
+                            : "text-text-muted"
+                        }`}
+                      >
+                        Full Week
+                      </Text>
+                      <Text
+                        className={`text-xs mt-1 text-center ${
+                          selectedType === "week"
+                            ? "text-secondary"
+                            : "text-text-muted"
+                        }`}
+                      >
+                        Next 7 days
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {noActiveWorkoutDay && (
+                    <Text className="text-xs text-text-muted mb-4 text-center">
+                      Day regeneration is not available for days outside your
+                      workout plan
+                    </Text>
+                  )}
+
+                  {/* Feedback Input */}
+                  <View>
+                    <Text className="text-sm text-text-muted mb-4">
+                      {isRestDay && selectedType === "day"
+                        ? "What kind of workout would you like for this rest day?"
+                        : isRestDay
+                          ? "Tell us what you'd like to change about your weekly workout plan:"
+                          : noActiveWorkoutDay
+                            ? "Tell us what you'd like to include in your next week's workout plan:"
+                            : `Tell us why you want to regenerate this ${
+                                selectedType === "day" ? "day's" : "week's"
+                              } workout plan, and what you would like to change:`}
+                    </Text>
+                    <TextInput
+                      className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
+                      style={{
+                        minHeight: 120,
+                        maxHeight: 200,
+                        textAlignVertical: "top",
+                      }}
+                      placeholder={
+                        isRestDay && selectedType === "day"
+                          ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
+                          : "Add notes about your workout here..."
+                      }
+                      placeholderTextColor={colors.text.muted}
+                      value={customFeedback}
+                      onChangeText={setCustomFeedback}
+                      multiline
+                      scrollEnabled={true}
+                    />
+                    {selectedType === "day" &&
+                      !isRestDay &&
+                      !noActiveWorkoutDay && (
+                        <Text className="text-xs text-text-muted mt-3">
+                          Only this day's workout will be changed. All other
+                          days will remain the same.
+                        </Text>
+                      )}
+
+                    {selectedType === "week" && (
                       <Text className="text-xs text-text-muted mt-3">
-                        Only this day's workout will be changed. All other days
-                        will remain the same.
+                        Your regenerated weekly plan will begin on{" "}
+                        {formatWorkoutPlanStartDate()} and end on{" "}
+                        {formatWorkoutPlanEndDate()}.
                       </Text>
                     )}
 
-                  {selectedType === "week" && (
-                    <Text className="text-xs text-text-muted mt-3">
-                      Your regenerated weekly plan will begin on{" "}
-                      {formatWorkoutPlanStartDate()} and end on{" "}
-                      {formatWorkoutPlanEndDate()}.
-                    </Text>
-                  )}
+                    {/* Daily Override Button */}
+                    {selectedType === "day" && !noActiveWorkoutDay && (
+                      <TouchableOpacity
+                        className="mt-4 py-2"
+                        onPress={handleOpenDailyOverrideForm}
+                      >
+                        <Text className="text-sm text-primary font-medium text-center">
+                          Customize settings for this workout
+                        </Text>
+                      </TouchableOpacity>
+                    )}
 
-                  {/* Daily Override Button */}
-                  {selectedType === "day" && !noActiveWorkoutDay && (
-                    <TouchableOpacity
-                      className="mt-4 py-2"
-                      onPress={handleOpenDailyOverrideForm}
-                    >
-                      <Text className="text-sm text-primary font-medium text-center">
-                        Customize settings for this workout
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Update Preferences Link */}
-                  {selectedType === "week" && (
-                    <TouchableOpacity
-                      className="mt-4 py-2"
-                      onPress={() => setShowOnboardingForm(true)}
-                      disabled={loading}
-                    >
-                      <Text className="text-sm text-primary font-medium text-center">
-                        Need to update your fitness preferences? Tap here
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                    {/* Update Preferences Link */}
+                    {selectedType === "week" && (
+                      <TouchableOpacity
+                        className="mt-4 py-2"
+                        onPress={() => setShowOnboardingForm(true)}
+                        disabled={loading}
+                      >
+                        <Text className="text-sm text-primary font-medium text-center">
+                          Need to update your fitness preferences? Tap here
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
-              </View>
-            </ScrollView>
+              </ScrollView>
 
-            {/* Action Button */}
-            <View className="px-5 pb-10 mb-5">
-              <TouchableOpacity
-                className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                  loading ? "opacity-70" : ""
-                }`}
-                onPress={handleRegenerateWithFeedback}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={colors.neutral.white}
-                  />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="refresh"
-                      size={18}
+              {/* Action Button */}
+              <View className="px-5 pb-10 mb-5">
+                <TouchableOpacity
+                  className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+                    loading ? "opacity-70" : ""
+                  }`}
+                  onPress={handleRegenerateWithFeedback}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator
+                      size="small"
                       color={colors.neutral.white}
                     />
-                    <Text className="text-neutral-white font-semibold text-sm ml-2">
-                      {selectedType === "week"
-                        ? "Regenerate Weekly Plan"
-                        : "Regenerate Today's Workout"}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="refresh"
+                        size={18}
+                        color={colors.neutral.white}
+                      />
+                      <Text className="text-neutral-white font-semibold text-sm ml-2">
+                        {selectedType === "week"
+                          ? "Regenerate Weekly Plan"
+                          : "Regenerate Today's Workout"}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
 
         {/* Custom Dialog */}
         {dialogConfig && (

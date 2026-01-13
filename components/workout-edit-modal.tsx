@@ -13,6 +13,7 @@ import {
   TextInput,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -479,8 +480,11 @@ export default function WorkoutEditModal({
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={onClose}
+        statusBarTranslucent
       >
-        <View className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}>
+        <SafeAreaView
+          className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}
+        >
           <Ionicons
             name="alert-circle-outline"
             size={48}
@@ -498,7 +502,7 @@ export default function WorkoutEditModal({
           >
             <Text className="text-neutral-white font-semibold">Close</Text>
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   }
@@ -514,501 +518,524 @@ export default function WorkoutEditModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={handleCancel}
+      statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        className={`flex-1 ${isDark ? "dark" : ""}`}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View className="flex-1 bg-background">
-          {/* Header */}
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
-              <TouchableOpacity
-                onPress={handleCancel}
-                className="w-8 h-8 items-center justify-center"
+      <SafeAreaView className={`flex-1 ${isDark ? "dark" : ""}`}>
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View className="flex-1 bg-background">
+            {/* Header */}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
+                <TouchableOpacity
+                  onPress={handleCancel}
+                  className="w-8 h-8 items-center justify-center"
+                >
+                  <Ionicons name="close" size={20} color={colors.text.muted} />
+                </TouchableOpacity>
+                <Text className="text-base font-semibold text-text-primary">
+                  {currentView === "main"
+                    ? "Edit Exercises"
+                    : "Replace Exercise"}
+                </Text>
+                <View className="w-8" />
+              </View>
+            </TouchableWithoutFeedback>
+
+            {/* Content */}
+            {currentView === "main" ? (
+              <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                bounces={true}
+                scrollEventThrottle={16}
+                removeClippedSubviews={true}
               >
-                <Ionicons name="close" size={20} color={colors.text.muted} />
-              </TouchableOpacity>
-              <Text className="text-base font-semibold text-text-primary">
-                {currentView === "main" ? "Edit Exercises" : "Replace Exercise"}
-              </Text>
-              <View className="w-8" />
-            </View>
-          </TouchableWithoutFeedback>
-
-          {/* Content */}
-          {currentView === "main" ? (
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ paddingBottom: 20 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              bounces={true}
-              scrollEventThrottle={16}
-              removeClippedSubviews={true}
-            >
-              {/* Workout Info */}
-              <View className="px-5 py-4 bg-surface border-b border-neutral-medium-1">
-                {/* Workout Name */}
-                <Text className="text-xl font-bold mb-3 text-text-primary">
-                  {planDay.description || planDay.name || "Workout"}
-                </Text>
-
-                {/* Workout Instructions */}
-                {planDay.instructions && (
-                  <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                    {planDay.instructions}
+                {/* Workout Info */}
+                <View className="px-5 py-4 bg-surface border-b border-neutral-medium-1">
+                  {/* Workout Name */}
+                  <Text className="text-xl font-bold mb-3 text-text-primary">
+                    {planDay.description || planDay.name || "Workout"}
                   </Text>
-                )}
 
-                {/* Edit Instructions */}
-                <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                  Tap any exercise to replace it with an alternative
-                </Text>
+                  {/* Workout Instructions */}
+                  {planDay.instructions && (
+                    <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
+                      {planDay.instructions}
+                    </Text>
+                  )}
 
-                {/* Workout Details with Icons */}
-                <View className="flex-row flex-wrap items-center gap-4">
-                  {/* Exercise Count */}
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="fitness"
-                      size={16}
-                      color={colors.text.muted}
-                    />
-                    <View className="ml-2">
-                      <View className="rounded-full px-2 py-1 bg-primary">
-                        <Text className="text-xs font-semibold text-neutral-white">
-                          {totalExercises} exercises
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
+                  {/* Edit Instructions */}
+                  <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
+                    Tap any exercise to replace it with an alternative
+                  </Text>
 
-                  {/* Duration */}
-                  <View className="flex-row items-center">
-                    <Ionicons name="time" size={16} color={colors.text.muted} />
-                    <View className="ml-2">
-                      <View className="rounded-full px-2 py-1 bg-primary">
-                        <Text className="text-xs font-semibold text-neutral-white">
-                          {formatWorkoutDuration(
-                            calculatePlanDayDuration(planDay)
-                          )}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Modified Count */}
-                  {modifiedExercises.size > 0 && (
+                  {/* Workout Details with Icons */}
+                  <View className="flex-row flex-wrap items-center gap-4">
+                    {/* Exercise Count */}
                     <View className="flex-row items-center">
-                      <Ionicons name="create" size={16} color={colors.warning} />
+                      <Ionicons
+                        name="fitness"
+                        size={16}
+                        color={colors.text.muted}
+                      />
                       <View className="ml-2">
-                        <View className="rounded-full px-2 py-1 bg-warning">
+                        <View className="rounded-full px-2 py-1 bg-primary">
                           <Text className="text-xs font-semibold text-neutral-white">
-                            {modifiedExercises.size} changed
+                            {totalExercises} exercises
                           </Text>
                         </View>
                       </View>
                     </View>
-                  )}
-                </View>
-              </View>
 
-              {/* Workout Blocks */}
-              <View className="px-5 pt-5">
-                {planDay.blocks && planDay.blocks.length > 0 ? (
-                  planDay.blocks
-                    .sort((a, b) => (a.order || 0) - (b.order || 0))
-                    .map((block, blockIndex) => (
-                      <View key={block.id} className="mb-4">
-                        <WorkoutBlock
-                          block={block}
-                          blockIndex={blockIndex}
-                          isExpanded={expandedBlocks[block.id] !== false} // undefined = expanded, false = collapsed
-                          onToggleExpanded={() =>
-                            toggleBlockExpansion(block.id)
-                          }
-                          showDetails={true}
-                          variant="calendar"
-                          onExercisePress={handleExercisePress}
-                        />
-                      </View>
-                    ))
-                ) : (
-                  <View className="p-6 rounded-xl items-center bg-brand-light-1">
-                    <Text className="text-base font-bold mb-2 text-text-primary">
-                      No Exercises
-                    </Text>
-                    <Text className="text-sm text-center leading-5 text-text-muted">
-                      This workout doesn't have any exercises to edit.
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          ) : (
-            /* Exercise Replacement View */
-            <View className="flex-1">
-              {/* Current Exercise Section */}
-              <View className="px-5 py-4 bg-surface">
-                {currentExercise && (
-                  <>
-                    {/* Exercise Name */}
-                    <Text className="text-xl font-bold mb-3 text-text-primary">
-                      {currentExercise.exercise.name}
-                    </Text>
-
-                    {/* Instructions */}
-                    {currentExercise.exercise.instructions ? (
-                      <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                        {currentExercise.exercise.instructions}
-                      </Text>
-                    ) : (
-                      <Text className="text-sm mb-4 italic leading-5 text-text-muted">
-                        No instructions available
-                      </Text>
-                    )}
-
-                    {/* Exercise Details (sets/reps/weight) */}
-                    <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                      {formatExerciseDetails(currentExercise)}
-                    </Text>
-
-                    {/* Exercise Details with Icons */}
-                    <View className="flex-row flex-wrap items-center gap-4">
-                      {/* Muscle Groups */}
-                      {currentExercise.exercise.muscles_targeted && (
-                        <View className="flex-row items-center">
-                          <Ionicons
-                            name="body"
-                            size={16}
-                            color={colors.text.muted}
-                          />
-                          <View className="flex-row flex-wrap ml-2">
-                            {getIndividualMuscleGroups(
-                              currentExercise.exercise.muscles_targeted
-                            ).map((muscle, index) => (
-                              <View
-                                key={index}
-                                className="rounded-full px-2 py-1 mr-1 mb-1 bg-primary"
-                              >
-                                <Text className="text-xs font-semibold text-neutral-white">
-                                  {muscle}
-                                </Text>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      )}
-
-                      {/* Equipment */}
-                      {currentExercise.exercise.equipment && (
-                        <View className="flex-row items-center">
-                          <Ionicons
-                            name="fitness"
-                            size={16}
-                            color={colors.text.muted}
-                          />
-                          <View className="ml-2">
-                            <View className="rounded-full px-2 py-1 bg-primary">
-                              <Text className="text-xs font-semibold text-neutral-white">
-                                {formatEquipment(
-                                  currentExercise.exercise.equipment
-                                )}
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  </>
-                )}
-              </View>
-
-              {/* Separator Line */}
-              <View className="h-px mx-5 bg-neutral-medium-1" />
-
-              {/* Search Section */}
-              <View className="flex-1">
-                {/* Search Header and Input */}
-                <View className="px-5 py-4 bg-surface">
-                  {/* Search Input Row */}
-                  <View className="flex-row items-center gap-3">
-                    {/* Search Input */}
-                    <View className="flex-1 flex-row items-center rounded-xl px-4 py-3 bg-neutral-light-2">
+                    {/* Duration */}
+                    <View className="flex-row items-center">
                       <Ionicons
-                        name="search"
-                        size={20}
+                        name="time"
+                        size={16}
                         color={colors.text.muted}
                       />
-                      <TextInput
-                        className="flex-1 ml-3 text-base text-text-primary"
-                        placeholder="Search exercises..."
-                        placeholderTextColor={colors.text.muted}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        onSubmitEditing={searchExercises}
-                        returnKeyType="search"
-                      />
-                      {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery("")}>
-                          <Ionicons
-                            name="close-circle"
-                            size={20}
-                            color={colors.text.muted}
-                          />
-                        </TouchableOpacity>
-                      )}
+                      <View className="ml-2">
+                        <View className="rounded-full px-2 py-1 bg-primary">
+                          <Text className="text-xs font-semibold text-neutral-white">
+                            {formatWorkoutDuration(
+                              calculatePlanDayDuration(planDay)
+                            )}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
 
-                    {/* Filter Button */}
-                    <TouchableOpacity
-                      className="flex-row items-center justify-center px-4 py-3 rounded-xl border"
-                      style={{
-                        backgroundColor:
-                          selectedEquipment.length > 0 ||
-                          selectedMuscleGroups.length > 0 ||
-                          selectedDifficulty
-                            ? colors.brand.primary
-                            : colors.surface,
-                        borderColor: colors.brand.primary,
-                      }}
-                      onPress={openFilterModal}
-                    >
-                      <Ionicons
-                        name="options"
-                        size={20}
-                        color={
-                          selectedEquipment.length > 0 ||
-                          selectedMuscleGroups.length > 0 ||
-                          selectedDifficulty
-                            ? colors.contentOnPrimary
-                            : colors.brand.primary
-                        }
-                      />
-                      <Text
-                        className="text-sm font-medium ml-2"
-                        style={{
-                          color:
-                            selectedEquipment.length > 0 ||
-                            selectedMuscleGroups.length > 0 ||
-                            selectedDifficulty
-                              ? colors.contentOnPrimary
-                              : colors.brand.primary,
-                        }}
-                      >
-                        Filter
-                      </Text>
-                    </TouchableOpacity>
+                    {/* Modified Count */}
+                    {modifiedExercises.size > 0 && (
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="create"
+                          size={16}
+                          color={colors.warning}
+                        />
+                        <View className="ml-2">
+                          <View className="rounded-full px-2 py-1 bg-warning">
+                            <Text className="text-xs font-semibold text-neutral-white">
+                              {modifiedExercises.size} changed
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
                   </View>
+                </View>
+
+                {/* Workout Blocks */}
+                <View className="px-5 pt-5">
+                  {planDay.blocks && planDay.blocks.length > 0 ? (
+                    planDay.blocks
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((block, blockIndex) => (
+                        <View key={block.id} className="mb-4">
+                          <WorkoutBlock
+                            block={block}
+                            blockIndex={blockIndex}
+                            isExpanded={expandedBlocks[block.id] !== false} // undefined = expanded, false = collapsed
+                            onToggleExpanded={() =>
+                              toggleBlockExpansion(block.id)
+                            }
+                            showDetails={true}
+                            variant="calendar"
+                            onExercisePress={handleExercisePress}
+                          />
+                        </View>
+                      ))
+                  ) : (
+                    <View className="p-6 rounded-xl items-center bg-brand-light-1">
+                      <Text className="text-base font-bold mb-2 text-text-primary">
+                        No Exercises
+                      </Text>
+                      <Text className="text-sm text-center leading-5 text-text-muted">
+                        This workout doesn't have any exercises to edit.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            ) : (
+              /* Exercise Replacement View */
+              <View className="flex-1">
+                {/* Current Exercise Section */}
+                <View className="px-5 py-4 bg-surface">
+                  {currentExercise && (
+                    <>
+                      {/* Exercise Name */}
+                      <Text className="text-xl font-bold mb-3 text-text-primary">
+                        {currentExercise.exercise.name}
+                      </Text>
+
+                      {/* Instructions */}
+                      {currentExercise.exercise.instructions ? (
+                        <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
+                          {currentExercise.exercise.instructions}
+                        </Text>
+                      ) : (
+                        <Text className="text-sm mb-4 italic leading-5 text-text-muted">
+                          No instructions available
+                        </Text>
+                      )}
+
+                      {/* Exercise Details (sets/reps/weight) */}
+                      <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
+                        {formatExerciseDetails(currentExercise)}
+                      </Text>
+
+                      {/* Exercise Details with Icons */}
+                      <View className="flex-row flex-wrap items-center gap-4">
+                        {/* Muscle Groups */}
+                        {currentExercise.exercise.muscles_targeted && (
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name="body"
+                              size={16}
+                              color={colors.text.muted}
+                            />
+                            <View className="flex-row flex-wrap ml-2">
+                              {getIndividualMuscleGroups(
+                                currentExercise.exercise.muscles_targeted
+                              ).map((muscle, index) => (
+                                <View
+                                  key={index}
+                                  className="rounded-full px-2 py-1 mr-1 mb-1 bg-primary"
+                                >
+                                  <Text className="text-xs font-semibold text-neutral-white">
+                                    {muscle}
+                                  </Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Equipment */}
+                        {currentExercise.exercise.equipment && (
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name="fitness"
+                              size={16}
+                              color={colors.text.muted}
+                            />
+                            <View className="ml-2">
+                              <View className="rounded-full px-2 py-1 bg-primary">
+                                <Text className="text-xs font-semibold text-neutral-white">
+                                  {formatEquipment(
+                                    currentExercise.exercise.equipment
+                                  )}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    </>
+                  )}
                 </View>
 
                 {/* Separator Line */}
                 <View className="h-px mx-5 bg-neutral-medium-1" />
 
-                {/* Search Results */}
+                {/* Search Section */}
                 <View className="flex-1">
-                  {searching ? (
-                    <View className="flex-1 justify-center items-center">
-                      <ActivityIndicator
-                        size="large"
-                        color={colors.brand.primary}
-                      />
-                      <Text className="mt-4 text-base text-text-muted">
-                        Searching exercises...
-                      </Text>
-                    </View>
-                  ) : (
-                    <FlatList
-                      data={searchResults}
-                      keyExtractor={(item) => item.id.toString()}
-                      contentContainerStyle={{ padding: 20 }}
-                      showsVerticalScrollIndicator={false}
-                      renderItem={({ item }) => (
-                        <TouchableOpacity
-                          className={`mb-3 p-4 rounded-xl border ${
-                            selectedExercise?.id === item.id
-                              ? "border-brand-primary"
-                              : "bg-surface border-neutral-medium-1"
-                          }`}
-                          onPress={() => setSelectedExercise(item)}
-                          activeOpacity={0.7}
-                        >
-                          <View className="flex-row items-start justify-between">
-                            <View className="flex-1">
-                              <Text className="text-base font-semibold text-text-primary mb-1">
-                                {item.name}
-                              </Text>
-                              {item.description && (
-                                <Text className="text-sm text-text-muted mb-3">
-                                  {item.description}
-                                </Text>
-                              )}
+                  {/* Search Header and Input */}
+                  <View className="px-5 py-4 bg-surface">
+                    {/* Search Input Row */}
+                    <View className="flex-row items-center gap-3">
+                      {/* Search Input */}
+                      <View className="flex-1 flex-row items-center rounded-xl px-4 py-3 bg-neutral-light-2">
+                        <Ionicons
+                          name="search"
+                          size={20}
+                          color={colors.text.muted}
+                        />
+                        <TextInput
+                          className="flex-1 ml-3 text-base text-text-primary"
+                          placeholder="Search exercises..."
+                          placeholderTextColor={colors.text.muted}
+                          value={searchQuery}
+                          onChangeText={setSearchQuery}
+                          onSubmitEditing={searchExercises}
+                          returnKeyType="search"
+                        />
+                        {searchQuery.length > 0 && (
+                          <TouchableOpacity onPress={() => setSearchQuery("")}>
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color={colors.text.muted}
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
 
-                              {/* Exercise Details with Icons */}
-                              <View className="flex-row flex-wrap gap-3 mb-2">
-                                {/* Muscle Groups */}
-                                {item.muscleGroups &&
-                                  item.muscleGroups.length > 0 && (
-                                    <View className="flex-row items-center">
-                                      <Ionicons
-                                        name="body"
-                                        size={14}
-                                        color={colors.text.muted}
-                                      />
-                                      <View className="flex-row flex-wrap ml-1">
-                                        {getIndividualMuscleGroups(
-                                          item.muscleGroups
-                                        )
-                                          .slice(0, 2)
-                                          .map((muscle, muscleIndex) => (
-                                            <View
-                                              key={muscleIndex}
-                                              className="rounded-full px-2 py-1 mr-1 bg-primary"
-                                            >
-                                              <Text className="text-xs font-semibold text-neutral-white">
-                                                {muscle}
-                                              </Text>
-                                            </View>
-                                          ))}
-                                        {getIndividualMuscleGroups(
-                                          item.muscleGroups
-                                        ).length > 2 && (
-                                          <View className="rounded-full px-2 py-1 bg-primary">
-                                            <Text className="text-xs font-semibold text-neutral-white">
-                                              +
-                                              {getIndividualMuscleGroups(
-                                                item.muscleGroups
-                                              ).length - 2}
-                                            </Text>
-                                          </View>
-                                        )}
-                                      </View>
-                                    </View>
-                                  )}
-
-                                {/* Equipment */}
-                                {item.equipment && (
-                                  <View className="flex-row items-center">
-                                    <Ionicons
-                                      name="fitness"
-                                      size={14}
-                                      color={colors.text.muted}
-                                    />
-                                    <View className="ml-1">
-                                      <View className="rounded-full px-2 py-1 bg-primary">
-                                        <Text className="text-xs font-semibold text-neutral-white">
-                                          {formatEquipment(item.equipment)}
-                                        </Text>
-                                      </View>
-                                    </View>
-                                  </View>
-                                )}
-                              </View>
-                            </View>
-
-                            {/* Selection Indicator */}
-                            {selectedExercise?.id === item.id && (
-                              <View className="ml-3">
-                                <View className="w-6 h-6 bg-brand-primary rounded-full items-center justify-center">
-                                  <Ionicons
-                                    name="checkmark"
-                                    size={14}
-                                    color={colors.neutral.white}
-                                  />
-                                </View>
-                              </View>
-                            )}
-                          </View>
-                        </TouchableOpacity>
-                      )}
-                      ListEmptyComponent={
-                        <View className="flex-1 justify-center items-center py-12">
-                          <Ionicons
-                            name="search"
-                            size={48}
-                            color={colors.text.muted}
-                          />
-                          <Text className="text-base text-text-muted text-center mt-4">
-                            {searchQuery ||
+                      {/* Filter Button */}
+                      <TouchableOpacity
+                        className="flex-row items-center justify-center px-4 py-3 rounded-xl border"
+                        style={{
+                          backgroundColor:
                             selectedEquipment.length > 0 ||
                             selectedMuscleGroups.length > 0 ||
                             selectedDifficulty
-                              ? "No exercises found matching your criteria"
-                              : "Enter a search term or adjust filters to find exercises"}
-                          </Text>
-                        </View>
-                      }
-                    />
-                  )}
-                </View>
-              </View>
-
-              {/* Replace Button */}
-              {selectedExercise && (
-                <View className="px-5 py-4 border-t border-neutral-light-2">
-                  <TouchableOpacity
-                    className="bg-primary py-4 rounded-xl items-center"
-                    onPress={handleConfirmReplace}
-                    disabled={replacing}
-                  >
-                    {replacing ? (
-                      <ActivityIndicator size="small" color={colors.neutral.white} />
-                    ) : (
-                      <View className="flex-row items-center">
+                              ? colors.brand.primary
+                              : colors.surface,
+                          borderColor: colors.brand.primary,
+                        }}
+                        onPress={openFilterModal}
+                      >
                         <Ionicons
-                          name="swap-horizontal"
+                          name="options"
                           size={20}
-                          color={colors.neutral.white}
+                          color={
+                            selectedEquipment.length > 0 ||
+                            selectedMuscleGroups.length > 0 ||
+                            selectedDifficulty
+                              ? colors.contentOnPrimary
+                              : colors.brand.primary
+                          }
                         />
-                        <Text className="text-neutral-white font-semibold text-lg ml-2">
-                          Replace Exercise
+                        <Text
+                          className="text-sm font-medium ml-2"
+                          style={{
+                            color:
+                              selectedEquipment.length > 0 ||
+                              selectedMuscleGroups.length > 0 ||
+                              selectedDifficulty
+                                ? colors.contentOnPrimary
+                                : colors.brand.primary,
+                          }}
+                        >
+                          Filter
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Separator Line */}
+                  <View className="h-px mx-5 bg-neutral-medium-1" />
+
+                  {/* Search Results */}
+                  <View className="flex-1">
+                    {searching ? (
+                      <View className="flex-1 justify-center items-center">
+                        <ActivityIndicator
+                          size="large"
+                          color={colors.brand.primary}
+                        />
+                        <Text className="mt-4 text-base text-text-muted">
+                          Searching exercises...
                         </Text>
                       </View>
+                    ) : (
+                      <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item.id.toString()}
+                        contentContainerStyle={{ padding: 20 }}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            className={`mb-3 p-4 rounded-xl border ${
+                              selectedExercise?.id === item.id
+                                ? "border-brand-primary"
+                                : "bg-surface border-neutral-medium-1"
+                            }`}
+                            onPress={() => setSelectedExercise(item)}
+                            activeOpacity={0.7}
+                          >
+                            <View className="flex-row items-start justify-between">
+                              <View className="flex-1">
+                                <Text className="text-base font-semibold text-text-primary mb-1">
+                                  {item.name}
+                                </Text>
+                                {item.description && (
+                                  <Text className="text-sm text-text-muted mb-3">
+                                    {item.description}
+                                  </Text>
+                                )}
+
+                                {/* Exercise Details with Icons */}
+                                <View className="flex-row flex-wrap gap-3 mb-2">
+                                  {/* Muscle Groups */}
+                                  {item.muscleGroups &&
+                                    item.muscleGroups.length > 0 && (
+                                      <View className="flex-row items-center">
+                                        <Ionicons
+                                          name="body"
+                                          size={14}
+                                          color={colors.text.muted}
+                                        />
+                                        <View className="flex-row flex-wrap ml-1">
+                                          {getIndividualMuscleGroups(
+                                            item.muscleGroups
+                                          )
+                                            .slice(0, 2)
+                                            .map((muscle, muscleIndex) => (
+                                              <View
+                                                key={muscleIndex}
+                                                className="rounded-full px-2 py-1 mr-1 bg-primary"
+                                              >
+                                                <Text className="text-xs font-semibold text-neutral-white">
+                                                  {muscle}
+                                                </Text>
+                                              </View>
+                                            ))}
+                                          {getIndividualMuscleGroups(
+                                            item.muscleGroups
+                                          ).length > 2 && (
+                                            <View className="rounded-full px-2 py-1 bg-primary">
+                                              <Text className="text-xs font-semibold text-neutral-white">
+                                                +
+                                                {getIndividualMuscleGroups(
+                                                  item.muscleGroups
+                                                ).length - 2}
+                                              </Text>
+                                            </View>
+                                          )}
+                                        </View>
+                                      </View>
+                                    )}
+
+                                  {/* Equipment */}
+                                  {item.equipment && (
+                                    <View className="flex-row items-center">
+                                      <Ionicons
+                                        name="fitness"
+                                        size={14}
+                                        color={colors.text.muted}
+                                      />
+                                      <View className="ml-1">
+                                        <View className="rounded-full px-2 py-1 bg-primary">
+                                          <Text className="text-xs font-semibold text-neutral-white">
+                                            {formatEquipment(item.equipment)}
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  )}
+                                </View>
+                              </View>
+
+                              {/* Selection Indicator */}
+                              {selectedExercise?.id === item.id && (
+                                <View className="ml-3">
+                                  <View className="w-6 h-6 bg-brand-primary rounded-full items-center justify-center">
+                                    <Ionicons
+                                      name="checkmark"
+                                      size={14}
+                                      color={colors.neutral.white}
+                                    />
+                                  </View>
+                                </View>
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        ListEmptyComponent={
+                          <View className="flex-1 justify-center items-center py-12">
+                            <Ionicons
+                              name="search"
+                              size={48}
+                              color={colors.text.muted}
+                            />
+                            <Text className="text-base text-text-muted text-center mt-4">
+                              {searchQuery ||
+                              selectedEquipment.length > 0 ||
+                              selectedMuscleGroups.length > 0 ||
+                              selectedDifficulty
+                                ? "No exercises found matching your criteria"
+                                : "Enter a search term or adjust filters to find exercises"}
+                            </Text>
+                          </View>
+                        }
+                      />
+                    )}
+                  </View>
+                </View>
+
+                {/* Replace Button */}
+                {selectedExercise && (
+                  <View className="px-5 py-4 border-t border-neutral-light-2">
+                    <TouchableOpacity
+                      className="bg-primary py-4 rounded-xl items-center"
+                      onPress={handleConfirmReplace}
+                      disabled={replacing}
+                    >
+                      {replacing ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={colors.neutral.white}
+                        />
+                      ) : (
+                        <View className="flex-row items-center">
+                          <Ionicons
+                            name="swap-horizontal"
+                            size={20}
+                            color={colors.neutral.white}
+                          />
+                          <Text className="text-neutral-white font-semibold text-lg ml-2">
+                            Replace Exercise
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Action Buttons */}
+            {modifiedExercises.size > 0 && (
+              <View className="px-5 pb-10 mb-5">
+                <View className="flex-row space-x-3">
+                  <TouchableOpacity
+                    className="flex-1 bg-surface border border-neutral-medium-1 py-4 rounded-md items-center"
+                    onPress={handleCancel}
+                    disabled={saving}
+                  >
+                    <Text className="text-text-primary font-semibold text-sm">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className={`flex-1 bg-primary py-4 rounded-md items-center flex-row justify-center ${
+                      saving ? "opacity-70" : ""
+                    }`}
+                    onPress={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.neutral.white}
+                      />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="checkmark"
+                          size={18}
+                          color={colors.neutral.white}
+                        />
+                        <Text className="text-neutral-white font-semibold text-sm ml-2">
+                          Save Changes
+                        </Text>
+                      </>
                     )}
                   </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          )}
-
-          {/* Action Buttons */}
-          {modifiedExercises.size > 0 && (
-            <View className="px-5 pb-10 mb-5">
-              <View className="flex-row space-x-3">
-                <TouchableOpacity
-                  className="flex-1 bg-surface border border-neutral-medium-1 py-4 rounded-md items-center"
-                  onPress={handleCancel}
-                  disabled={saving}
-                >
-                  <Text className="text-text-primary font-semibold text-sm">
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`flex-1 bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                    saving ? "opacity-70" : ""
-                  }`}
-                  onPress={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color={colors.neutral.white} />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark" size={18} color={colors.neutral.white} />
-                      <Text className="text-neutral-white font-semibold text-sm ml-2">
-                        Save Changes
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
               </View>
-            </View>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
       {/* Filter Modal */}
       <Modal
@@ -1016,8 +1043,11 @@ export default function WorkoutEditModal({
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={cancelFilters}
+        statusBarTranslucent
       >
-        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+        <SafeAreaView
+          className={`flex-1 bg-background ${isDark ? "dark" : ""}`}
+        >
           {/* Modal Header */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity onPress={cancelFilters}>
@@ -1029,9 +1059,7 @@ export default function WorkoutEditModal({
               Filters
             </Text>
             <TouchableOpacity onPress={applyFilters}>
-              <Text className="text-base font-medium text-primary">
-                Apply
-              </Text>
+              <Text className="text-base font-medium text-primary">Apply</Text>
             </TouchableOpacity>
           </View>
 
@@ -1265,7 +1293,7 @@ export default function WorkoutEditModal({
               </TouchableOpacity>
             )}
           </ScrollView>
-        </View>
+        </SafeAreaView>
       </Modal>
 
       {/* Custom Dialog */}
