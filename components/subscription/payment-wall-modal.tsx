@@ -228,7 +228,7 @@ export default function PaymentWallModal({
               activeOpacity={0.8}
             >
               {isPurchasing ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={colors.contentOnPrimary} />
               ) : (
                 <Text className="text-content-on-primary text-lg font-bold">
                   {selectedPackage

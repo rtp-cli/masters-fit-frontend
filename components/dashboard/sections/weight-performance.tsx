@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { PieChart } from "@/components/charts/pie-chart";
 import { useTheme } from "../../../lib/theme-context";
-import { getPieChartColors } from "@/constants/colors";
+import { getThemedPieChartColors } from "@/constants/colors";
 import { WeightAccuracyMetrics } from "@/types/api";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 
@@ -17,8 +17,8 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
   weightPerformanceFilter,
   onChangeFilter,
 }) => {
-  const { isDark } = useTheme();
-  const pieColors = getPieChartColors(isDark);
+  const { isDark, colorTheme } = useTheme();
+  const pieColors = getThemedPieChartColors(colorTheme, isDark);
   if (!filteredWeightAccuracy) return null;
 
   const hasData =

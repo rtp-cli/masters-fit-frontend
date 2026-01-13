@@ -30,7 +30,7 @@ export default function WorkoutEnvironmentStep({
       return {
         icon: "business-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Full gym with all equipment available",
       };
     case WORKOUT_ENVIRONMENTS.HOME_GYM:
@@ -64,7 +64,7 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
       return {
         icon: "barbell-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
       };
     case AVAILABLE_EQUIPMENT.DUMBBELLS:
       return {
@@ -142,7 +142,7 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
       return {
         icon: "body-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
       };
     case AVAILABLE_EQUIPMENT.ROWING_MACHINE:
       return {
@@ -160,7 +160,7 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
       return {
         icon: "body-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
       };
     case AVAILABLE_EQUIPMENT.JUMP_ROPE:
       return {

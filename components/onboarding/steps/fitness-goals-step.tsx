@@ -22,7 +22,7 @@ export default function FitnessGoalsStep({
       case FITNESS_GOALS.GENERAL_FITNESS:
         return {
           icon: "checkmark-outline",
-          bgColor: "bg-green-100",
+          bgColor: "bg-brand-light-1",
           color: colors.contentOnPrimary,
           description: "Overall health and fitness improvement",
         };

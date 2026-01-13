@@ -93,7 +93,7 @@ export default function SubscriptionDetailsModal({
           {/* Pro Badge */}
           <View className="items-center mb-8">
             <View className="flex-row items-center bg-primary/10 px-5 py-3 rounded-3xl gap-2">
-              <Ionicons name="star" size={24} color="#FFD700" />
+              <Ionicons name="star" size={24} color={colors.warning} />
               <Text className="text-lg font-bold text-primary tracking-wide">
                 PRO
               </Text>
@@ -112,8 +112,14 @@ export default function SubscriptionDetailsModal({
             <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
               <Text className="text-sm text-text-secondary">Status</Text>
               <View className="flex-row items-center gap-1.5">
-                <View className="w-2 h-2 rounded-full bg-[#10B981]" />
-                <Text className="text-sm font-semibold text-[#10B981]">
+                <View
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: colors.brand.primary }}
+                />
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: colors.brand.primary }}
+                >
                   Active
                 </Text>
               </View>

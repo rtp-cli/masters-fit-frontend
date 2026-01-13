@@ -36,22 +36,25 @@ import {
 import "../global.css";
 import { ensureHealthConnectInitialized } from "@utils/health";
 import * as NavigationBar from "expo-navigation-bar";
-import { colors, darkColors } from "@/lib/theme";
-import { ThemeContext, ThemeMode, useTheme } from "@/lib/theme-context";
+import { colorThemes, themes, ThemeKey } from "@/lib/theme";
+import { ThemeContext, ThemeMode, ColorTheme, useTheme } from "@/lib/theme-context";
+
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import * as TrackingTransparency from "expo-tracking-transparency";
 
 const THEME_KEY = "@theme_preference";
+const COLOR_THEME_KEY = "@color_theme";
 
 // Re-export useTheme for backward compatibility
 export { useTheme } from "@/lib/theme-context";
 
 // Inner wrapper for StatusBar and Android navigation bar
 function SystemUIWrapper({ children }: { children: React.ReactNode }) {
-  const { isDark } = useTheme();
-  const themeColors = isDark ? { ...colors, ...darkColors } : colors;
+  const { isDark, colorTheme } = useTheme();
+  const palette = colorThemes[colorTheme];
+  const themeColors = isDark ? { ...palette.light, ...palette.dark } : palette.light;
 
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -336,6 +339,7 @@ export default function RootLayout() {
 
   // Theme state managed at absolute root level
   const [mode, setMode] = useState<ThemeMode>("auto");
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>("original");
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
   const systemColorScheme = useSystemColorScheme();
   const { setColorScheme } = useNativeWindColorScheme();
@@ -364,19 +368,32 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // Load theme preference on mount
+  // Load theme preferences on mount
   useEffect(() => {
     const loadTheme = async () => {
       try {
-        const saved = await AsyncStorage.getItem(THEME_KEY);
-        if (saved && ["light", "dark", "auto"].includes(saved)) {
-          setMode(saved as ThemeMode);
+        const [savedMode, savedColorTheme] = await Promise.all([
+          AsyncStorage.getItem(THEME_KEY),
+          AsyncStorage.getItem(COLOR_THEME_KEY),
+        ]);
+
+        if (savedMode && ["light", "dark", "auto"].includes(savedMode)) {
+          setMode(savedMode as ThemeMode);
           // Sync with NativeWind
-          if (saved === "auto") {
+          if (savedMode === "auto") {
             setColorScheme("system");
           } else {
-            setColorScheme(saved as "light" | "dark");
+            setColorScheme(savedMode as "light" | "dark");
           }
+        }
+
+        if (
+          savedColorTheme &&
+          ["original", "steel-blue", "dusty-denim", "dusty-sage"].includes(
+            savedColorTheme
+          )
+        ) {
+          setColorThemeState(savedColorTheme as ColorTheme);
         }
       } catch (error) {
         console.error("Failed to load theme:", error);
@@ -403,11 +420,25 @@ export default function RootLayout() {
     [setColorScheme]
   );
 
+  // Function to update color theme
+  const setColorTheme = useCallback((newColorTheme: ColorTheme) => {
+    setColorThemeState(newColorTheme);
+    AsyncStorage.setItem(COLOR_THEME_KEY, newColorTheme).catch((error) => {
+      console.error("Failed to save color theme:", error);
+    });
+  }, []);
+
   // Memoize context value to prevent unnecessary re-renders
   // This fixes navigation context errors when toggling theme
   const themeContextValue = useMemo(
-    () => ({ mode, isDark, setThemeMode }),
-    [mode, isDark, setThemeMode]
+    () => ({ mode, isDark, colorTheme, setThemeMode, setColorTheme }),
+    [mode, isDark, colorTheme, setThemeMode, setColorTheme]
+  );
+
+  // Generate combined theme key for selecting the correct theme variant
+  const themeKey = useMemo(
+    () => `${colorTheme}-${isDark ? "dark" : "light"}` as ThemeKey,
+    [colorTheme, isDark]
   );
 
   // Return null until fonts are loaded - prevents Expo Router from pre-rendering routes
@@ -421,7 +452,11 @@ export default function RootLayout() {
   }
 
   return (
-    <View className={`flex-1 ${isDark ? "dark" : ""}`}>
+    <View
+      key={`theme-${themeKey}`}
+      className="flex-1"
+      style={themes[themeKey]}
+    >
       <ThemeContext.Provider value={themeContextValue}>
         <StableProviderTree />
       </ThemeContext.Provider>

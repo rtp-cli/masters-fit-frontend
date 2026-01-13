@@ -2,7 +2,8 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "../../../lib/theme";
-import { ThemeMode } from "../../../lib/theme-context";
+import { ThemeMode, ColorTheme, COLOR_THEMES } from "../../../lib/theme-context";
+import ThemeDropdown from "../../ui/theme-dropdown";
 import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
 
@@ -11,6 +12,8 @@ interface AppSettingsSectionProps {
   onDebugTap: () => void;
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
+  colorTheme: ColorTheme;
+  setColorTheme: (theme: ColorTheme) => void;
 }
 
 export default function AppSettingsSection({
@@ -18,6 +21,8 @@ export default function AppSettingsSection({
   onDebugTap,
   themeMode,
   setThemeMode,
+  colorTheme,
+  setColorTheme,
 }: AppSettingsSectionProps) {
   const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
@@ -69,6 +74,18 @@ export default function AppSettingsSection({
             }
             ios_backgroundColor={colors.neutral.medium[1]}
           />
+        </View>
+
+        <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+          <View className="flex-row items-center flex-1">
+            <Ionicons
+              name="color-palette-outline"
+              size={20}
+              color={colors.text.muted}
+            />
+            <Text className="text-sm text-text-primary ml-3">Color Theme</Text>
+          </View>
+          <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
         </View>
 
         <LegalSection

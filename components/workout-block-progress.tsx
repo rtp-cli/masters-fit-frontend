@@ -60,11 +60,11 @@ export default function WorkoutBlockProgress({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Completed":
-        return "text-green-600";
+        return "text-primary";
       case "Current":
         return "text-primary";
       case "Next":
-        return "text-blue-600";
+        return "text-brand-dark-1";
       default:
         return "text-text-muted";
     }
@@ -73,11 +73,11 @@ export default function WorkoutBlockProgress({
   const getStatusBg = (status: string) => {
     switch (status) {
       case "Completed":
-        return "bg-green-100";
+        return "bg-brand-light-1";
       case "Current":
         return "bg-primary/20";
       case "Next":
-        return "bg-blue-100";
+        return "bg-brand-light-2";
       default:
         return "bg-neutral-light-2";
     }

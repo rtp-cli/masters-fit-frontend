@@ -37,7 +37,7 @@ export default function PhysicalLimitationsStep({
       return {
         icon: "walk-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Pain or discomfort in the knee joint",
       };
     case PHYSICAL_LIMITATIONS.SHOULDER_PAIN:
@@ -93,7 +93,7 @@ export default function PhysicalLimitationsStep({
       return {
         icon: "medical-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Joint inflammation and stiffness",
       };
     case PHYSICAL_LIMITATIONS.OSTEOPOROSIS:
@@ -149,7 +149,7 @@ export default function PhysicalLimitationsStep({
       return {
         icon: "warning-outline",
         color: colors.text.muted,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Physical limitation",
       };
   }

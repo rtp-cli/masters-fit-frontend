@@ -82,8 +82,10 @@ export default function Header({
                       className="flex-row items-center bg-primary/15 px-2 py-1 rounded-xl gap-1"
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text className="text-[11px] font-bold text-primary tracking-wide">PRO</Text>
+                      <Ionicons name="star" size={14} color={colors.warning} />
+                      <Text className="text-[11px] font-bold text-primary tracking-wide">
+                        PRO
+                      </Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -106,8 +108,10 @@ export default function Header({
                   className="flex-row items-center bg-primary/15 px-2 py-1 rounded-xl gap-1"
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="star" size={14} color="#FFD700" />
-                  <Text className="text-[11px] font-bold text-primary tracking-wide">PRO</Text>
+                  <Ionicons name="star" size={14} color={colors.warning} />
+                  <Text className="text-[11px] font-bold text-primary tracking-wide">
+                    PRO
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -118,7 +122,7 @@ export default function Header({
         <View className="flex-row items-center space-x-4">
           <TouchableOpacity
             onPress={handleSearchPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-surface"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-1"
           >
             <Ionicons name="search" size={20} color={colors.text.primary} />
           </TouchableOpacity>

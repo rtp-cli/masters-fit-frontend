@@ -45,7 +45,7 @@ export default function WorkoutStyleStep({
       return {
         icon: "heart-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Improve cardiovascular health",
       };
     case PREFERRED_STYLES.REHAB:

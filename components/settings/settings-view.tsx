@@ -41,7 +41,7 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
   const colors = useThemeColors();
-  const { mode: themeMode, setThemeMode } = useTheme();
+  const { mode: themeMode, setThemeMode, colorTheme, setColorTheme } = useTheme();
   const { user, logout, deleteAccount } = useAuth();
   const router = useRouter();
   const {
@@ -514,6 +514,8 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           onDebugTap={handleDebugTap}
           themeMode={themeMode}
           setThemeMode={setThemeMode}
+          colorTheme={colorTheme}
+          setColorTheme={setColorTheme}
         />
 
         {/* Debug Mode Section - Only visible when debug mode is activated */}

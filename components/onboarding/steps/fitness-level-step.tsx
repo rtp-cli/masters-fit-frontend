@@ -36,7 +36,7 @@ export default function FitnessLevelStep({
         return {
           icon: "walk-outline",
           color: colors.contentOnPrimary,
-          bgColor: "bg-green-100",
+          bgColor: "bg-brand-light-1",
           description: "New to fitness or returning after a long break",
         };
       case FITNESS_LEVELS.INTERMEDIATE:
@@ -70,7 +70,7 @@ export default function FitnessLevelStep({
         return {
           icon: "walk-outline",
           color: colors.contentOnPrimary,
-          bgColor: "bg-green-100",
+          bgColor: "bg-brand-light-1",
           description: "Light, comfortable pace",
         };
       case INTENSITY_LEVELS.MODERATE:

@@ -2,86 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Brand Colors - Light Mode */
-    --color-brand-primary: 155 184 117;        /* #9BB875 */
-    --color-brand-secondary: 24 25 23;         /* #181917 */
-    --color-brand-light-1: 242 246 231;        /* #F2F6E7 */
-    --color-brand-light-2: 240 249 211;        /* #F0F9D3 */
-    --color-brand-medium-1: 232 248 184;       /* #E8F8B8 */
-    --color-brand-medium-2: 212 229 161;       /* #D4E5A1 */
-    --color-brand-dark-1: 140 175 37;          /* #8CAF25 */
-    --color-brand-dark-2: 125 157 31;          /* #7D9D1F */
-    --color-brand-dark-3: 102 128 25;          /* #668019 */
-    --color-brand-dark-4: 80 100 21;           /* #506415 */
-
-    /* Neutral Colors - Light Mode */
-    --color-neutral-white: 255 255 255;        /* #FFFFFF */
-    --color-neutral-light-1: 251 251 251;      /* #FBFBFB */
-    --color-neutral-light-2: 244 244 244;      /* #F4F4F4 */
-    --color-neutral-medium-1: 232 232 232;     /* #E8E8E8 */
-    --color-neutral-medium-2: 198 198 198;     /* #C6C6C6 */
-    --color-neutral-medium-3: 168 168 168;     /* #A8A8A8 */
-    --color-neutral-medium-4: 138 147 162;     /* #8A93A2 */
-    --color-neutral-dark-1: 82 82 82;          /* #525252 */
-
-    /* Text Colors - Light Mode */
-    --color-text-primary: 24 25 23;            /* #181917 */
-    --color-text-secondary: 82 82 82;          /* #525252 */
-    --color-text-muted: 138 147 162;           /* #8A93A2 */
-
-    /* Background - Light Mode */
-    --color-background: 255 255 255;           /* #FFFFFF */
-    --color-surface: 255 255 255;              /* #FFFFFF - cards/containers */
-
-    /* Semantic Colors */
-    --color-danger: 239 68 68;                 /* #EF4444 */
-    --color-warning: 245 158 11;               /* #F59E0B - Amber */
-    --color-success: 155 184 117;              /* Use brand primary */
-    --color-primary: 155 184 117;              /* Shorthand for brand primary */
-    --color-secondary: 24 25 23;               /* Shorthand for brand secondary */
-    --color-content-on-primary: 255 255 255;    /* #FFFFFF - White text/icons on bg-primary in light mode */
+/* ============================================
+   Utility Classes for Theme Accents
+   These use CSS variables set by JS themes
+   ============================================ */
+@layer utilities {
+  /* Accent subtle backgrounds (for cards, highlights) */
+  .bg-accent-subtle {
+    background-color: rgb(var(--color-brand-primary) / 0.12);
   }
 
-  .dark {
-    /* Brand Colors - Dark Mode */
-    --color-brand-primary: 184 229 161;        /* #B8E5A1 - Lighter lime green */
-    --color-brand-secondary: 245 248 247;      /* #F5F8F7 - Light for text on dark */
-    --color-brand-light-1: 90 115 80;          /* #5A7350 - Soft green, closer to light mode feel */
-    --color-brand-light-2: 100 125 90;         /* #647D5A - Slightly lighter */
-    --color-brand-medium-1: 60 60 60;          /* Darker version for dark mode */
-    --color-brand-medium-2: 80 80 80;
-    --color-brand-dark-1: 184 229 161;         /* Lighter in dark mode */
-    --color-brand-dark-2: 168 213 145;
-    --color-brand-dark-3: 155 184 117;
-    --color-brand-dark-4: 140 175 37;
+  /* Border accent subtle */
+  .border-accent-subtle {
+    border-color: rgb(var(--color-brand-primary) / 0.25);
+  }
 
-    /* Neutral Colors - Dark Mode */
-    --color-neutral-white: 24 25 23;           /* #181917 - Inverted */
-    --color-neutral-light-1: 40 40 40;         /* #282828 - Dark card backgrounds */
-    --color-neutral-light-2: 50 50 50;         /* #323232 - Slightly lighter cards */
-    --color-neutral-medium-1: 58 58 58;        /* #3A3A3A - Borders in dark mode */
-    --color-neutral-medium-2: 100 100 100;     /* #646464 - Disabled text, more visible */
-    --color-neutral-medium-3: 120 120 120;     /* #787878 - Muted elements */
-    --color-neutral-medium-4: 138 138 138;     /* #8A8A8A - Secondary elements */
-    --color-neutral-dark-1: 168 168 168;       /* #A8A8A8 - Light grays in dark mode */
+  /* Gradient accent button */
+  .bg-accent-gradient {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-brand-dark-1)) 0%,
+      rgb(var(--color-brand-dark-0)) 100%
+    );
+  }
 
-    /* Text Colors - Dark Mode */
-    --color-text-primary: 245 248 247;         /* #F5F8F7 - Light text */
-    --color-text-secondary: 198 198 198;       /* #C6C6C6 - Medium-light text */
-    --color-text-muted: 138 147 162;           /* #8A93A2 - Keep same as light mode */
-
-    /* Background - Dark Mode */
-    --color-background: 24 25 23;              /* #181917 - Charcoal background */
-    --color-surface: 24 25 23;                 /* #181917 - Same as background for consistency */
-
-    /* Semantic Colors - Dark Mode */
-    --color-danger: 255 107 107;               /* #FF6B6B - Lighter red for dark mode */
-    --color-warning: 251 191 36;               /* #FBBF24 - Lighter amber for dark mode */
-    --color-success: 184 229 161;              /* #B8E5A1 - Lighter green */
-    --color-primary: 184 229 161;              /* Lighter lime for dark mode */
-    --color-secondary: 245 248 247;            /* Light for text */
-    --color-content-on-primary: 24 25 23;      /* #181917 - Still dark (primary is still bright) */
+  /* Text on gradient/primary backgrounds */
+  .text-on-primary {
+    color: rgb(var(--color-content-on-primary));
   }
 }

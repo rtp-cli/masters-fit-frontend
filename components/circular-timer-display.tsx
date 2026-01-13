@@ -126,12 +126,11 @@ export default function CircularTimerDisplay({
               className="flex-1 rounded-xl py-2 px-3 flex-row items-center justify-center"
               onPress={onCancel}
             >
-              <Ionicons
-                name="close"
-                size={14}
-                color="#ef4444"
-              />
-              <Text className="text-red-500 text-xs font-semibold ml-1">
+              <Ionicons name="close" size={14} color={colors.danger} />
+              <Text
+                className="text-xs font-semibold ml-1"
+                style={{ color: colors.danger }}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>

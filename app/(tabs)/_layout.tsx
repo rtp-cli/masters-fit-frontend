@@ -127,9 +127,9 @@ export default function TabLayout() {
               backgroundColor: colors.background,
               borderTopWidth: 1,
               borderTopColor: colors.neutral.medium[1],
-              height: 70,
-              paddingTop: 10,
-              paddingBottom: 10,
+              height: 60,
+              paddingTop: 8,
+              paddingBottom: 8,
             },
           }}
         >
@@ -138,7 +138,7 @@ export default function TabLayout() {
             options={{
               tabBarIcon: ({ color }: { color: string }) => (
                 <TabBarIcon
-                  name="bar-chart"
+                  name="stats-chart-outline"
                   color={color}
                   disabled={isWorkoutInProgress}
                 />
@@ -159,7 +159,7 @@ export default function TabLayout() {
             options={{
               tabBarIcon: ({ color }: { color: string }) => (
                 <TabBarIcon
-                  name="play"
+                  name="barbell-outline"
                   color={color}
                   disabled={isWorkoutInProgress}
                 />
@@ -180,7 +180,7 @@ export default function TabLayout() {
             options={{
               tabBarIcon: ({ color }: { color: string }) => (
                 <TabBarIcon
-                  name="calendar"
+                  name="calendar-outline"
                   color={color}
                   disabled={isWorkoutInProgress}
                 />

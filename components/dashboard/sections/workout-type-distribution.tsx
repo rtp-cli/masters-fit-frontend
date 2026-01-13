@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { PieChart } from "@/components/charts/pie-chart";
-import { getDonutColors, TIME_RANGE_FILTER } from "@/constants";
+import { getThemedDonutColors, TIME_RANGE_FILTER } from "@/constants";
 import { WorkoutTypeMetrics } from "@/types/api";
 import { useTheme } from "@/lib/theme-context";
 
@@ -14,8 +14,8 @@ type WorkoutTypeDistributionSectionProps = {
 const WorkoutTypeDistributionSection: React.FC<
   WorkoutTypeDistributionSectionProps
 > = ({ metrics, filter, onChangeFilter }) => {
-  const { isDark } = useTheme();
-  const donutColors = getDonutColors(isDark);
+  const { isDark, colorTheme } = useTheme();
+  const donutColors = getThemedDonutColors(colorTheme, isDark);
 
   if (
     !metrics ||

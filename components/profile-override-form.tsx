@@ -35,7 +35,7 @@ const getIntensityLevelConfig = (intensityKey: string, colors: any) => {
       return {
         icon: "walk-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Light, comfortable pace",
       };
     case "MODERATE":
@@ -83,7 +83,7 @@ const getStyleConfig = (styleKey: string, colors: any) => {
       return {
         icon: "heart-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Improve cardiovascular health",
       };
     case "REHAB":
@@ -152,7 +152,7 @@ const getEnvironmentConfig = (envKey: string, colors: any) => {
       return {
         icon: "business-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
         description: "Full gym with all equipment available",
       };
     case "HOME_GYM":
@@ -186,7 +186,7 @@ const getEquipmentConfig = (equipKey: string, colors: any) => {
       return {
         icon: "barbell-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
       };
     case "DUMBBELLS":
       return {
@@ -264,7 +264,7 @@ const getEquipmentConfig = (equipKey: string, colors: any) => {
       return {
         icon: "body-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
       };
     case "ROWING_MACHINE":
       return {
@@ -282,7 +282,7 @@ const getEquipmentConfig = (equipKey: string, colors: any) => {
       return {
         icon: "body-outline",
         color: colors.contentOnPrimary,
-        bgColor: "bg-green-100",
+        bgColor: "bg-brand-light-1",
       };
     case "JUMP_ROPE":
       return {

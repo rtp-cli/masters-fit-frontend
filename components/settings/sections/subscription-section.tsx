@@ -34,7 +34,7 @@ export default function SubscriptionSection({
         >
           <View className="flex-row items-center flex-1">
             <View className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg mr-3">
-              <Ionicons name="star" size={16} color="#FFD700" />
+              <Ionicons name="star" size={16} color={colors.warning} />
               <Text className="text-sm font-bold text-primary ml-1.5">PRO</Text>
             </View>
             <View className="flex-1">
