@@ -76,14 +76,18 @@ export default function PaymentWallModal({
     const success = await purchasePackage(selectedPackage);
 
     if (success) {
+      // Call onPurchaseSuccess immediately after successful purchase
+      // This allows the regeneration to start while showing the success message
+      onPurchaseSuccess?.();
+
       setDialogConfig({
         title: "Success!",
-        description: "Your subscription is now active. Enjoy unlimited access!",
+        description:
+          "Your subscription is now active. Your workout plan is being generated!",
         primaryButton: {
           text: "OK",
           onPress: () => {
             setDialogVisible(false);
-            onPurchaseSuccess?.();
             onClose();
           },
         },
@@ -97,14 +101,17 @@ export default function PaymentWallModal({
     const success = await restorePurchases();
 
     if (success) {
+      // Call onPurchaseSuccess immediately after successful restore
+      onPurchaseSuccess?.();
+
       setDialogConfig({
         title: "Purchases Restored",
-        description: "Your previous purchases have been restored.",
+        description:
+          "Your previous purchases have been restored. Your workout plan is being generated!",
         primaryButton: {
           text: "OK",
           onPress: () => {
             setDialogVisible(false);
-            onPurchaseSuccess?.();
             onClose();
           },
         },

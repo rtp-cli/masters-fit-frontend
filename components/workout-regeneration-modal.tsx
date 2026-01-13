@@ -169,15 +169,25 @@ export default function WorkoutRegenerationModal({
     setPaywallCallback((data) => {
       paywallErrorOccurredRef.current = true;
 
-      // Store current form state before showing paywall
-      pendingRegenerationRef.current = {
-        selectedType,
-        customFeedback,
-        temporaryOverrides,
-        profileData: currentProfile
-          ? convertProfileToFormData(currentProfile)
-          : undefined,
-      };
+      // If payment wall is already showing, don't show it again (this can happen during retries)
+      if (showPaymentWall) {
+        console.log(
+          "[Regeneration] Paywall callback triggered but payment wall already showing - likely a retry"
+        );
+        return;
+      }
+
+      // Store current form state before showing paywall (only if not already stored)
+      if (!pendingRegenerationRef.current) {
+        pendingRegenerationRef.current = {
+          selectedType,
+          customFeedback,
+          temporaryOverrides,
+          profileData: currentProfile
+            ? convertProfileToFormData(currentProfile)
+            : undefined,
+        };
+      }
 
       // Show payment wall modal
       setPaywallData(data);
@@ -192,7 +202,13 @@ export default function WorkoutRegenerationModal({
     return () => {
       setPaywallCallback(() => {});
     };
-  }, [selectedType, customFeedback, temporaryOverrides, currentProfile]);
+  }, [
+    selectedType,
+    customFeedback,
+    temporaryOverrides,
+    currentProfile,
+    showPaymentWall,
+  ]);
 
   useEffect(() => {
     if (visible) {
@@ -479,10 +495,15 @@ export default function WorkoutRegenerationModal({
   const retryRegenerationAfterPayment = async () => {
     const pending = pendingRegenerationRef.current;
     if (!pending) {
+      console.log("[Regeneration] No pending regeneration data found");
       return;
     }
 
     try {
+      // Wait a bit for backend to process subscription
+      console.log("[Regeneration] Waiting for subscription to be processed...");
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       // Close payment wall
       setShowPaymentWall(false);
       setPaywallData(null);
@@ -492,14 +513,24 @@ export default function WorkoutRegenerationModal({
 
       const user = await getCurrentUser();
       if (!user) {
-        console.error("User not found");
+        console.error("[Regeneration] User not found");
         return;
       }
+
+      let result;
+      let isSuccess = false;
 
       if (pending.selectedType === "week") {
         // Weekly regeneration: call the weekly endpoint directly
         // Include profileData if it was stored (from handleUpdateProfile flow)
-        const result = await regenerateWorkoutPlanAsync(user.id, {
+        console.log(
+          "[Regeneration] Attempting weekly regeneration after payment",
+          {
+            hasProfileData: !!pending.profileData,
+          }
+        );
+
+        result = await regenerateWorkoutPlanAsync(user.id, {
           customFeedback: pending.customFeedback.trim() || undefined,
           profileData: pending.profileData,
         });
@@ -507,27 +538,21 @@ export default function WorkoutRegenerationModal({
         if (result?.success && result.jobId) {
           // Add job to background tracking
           await addJob(result.jobId, "regeneration");
-
-          // Success callback
-          onSuccess?.();
-          // Clear pending data after success
-          pendingRegenerationRef.current = null;
-        } else {
-          onError?.("Regeneration failed to start");
+          isSuccess = true;
         }
       } else {
         // Daily regeneration or rest day workout
         // Check if this is a rest day workout request
         if (isRestDay && selectedDate) {
-          console.log("Rest day workout generation started after payment", {
-            userId: user.id,
-            date: selectedDate,
-            reason:
-              pending.customFeedback.trim() ||
-              "User requested rest day workout",
-          });
+          console.log(
+            "[Regeneration] Attempting rest day workout after payment",
+            {
+              userId: user.id,
+              date: selectedDate,
+            }
+          );
 
-          const result = await generateRestDayWorkoutAsync(user.id, {
+          result = await generateRestDayWorkoutAsync(user.id, {
             date: selectedDate,
             reason: formatOverridesIntoReason(
               pending.customFeedback,
@@ -536,30 +561,21 @@ export default function WorkoutRegenerationModal({
             ),
           });
 
-          console.log("Rest day workout API response:", result);
-
           if (result?.success && result.jobId) {
             // Add job to background tracking
             await addJob(result.jobId, "daily-regeneration");
-
-            // Success callback
-            onSuccess?.();
-          } else {
-            setDialogConfig({
-              title: "Rest Day Workout Failed",
-              description:
-                "Unable to start rest day workout generation. Please check your connection and try again.",
-              primaryButton: {
-                text: "OK",
-                onPress: () => setDialogVisible(false),
-              },
-              icon: "alert-circle",
-            });
-            setDialogVisible(true);
+            isSuccess = true;
           }
         } else if (selectedPlanDay) {
           // Regular daily regeneration
-          const result = await regenerateDailyWorkoutAsync(
+          console.log(
+            "[Regeneration] Attempting daily regeneration after payment",
+            {
+              planDayId: selectedPlanDay.id,
+            }
+          );
+
+          result = await regenerateDailyWorkoutAsync(
             user.id,
             selectedPlanDay.id,
             {
@@ -574,30 +590,42 @@ export default function WorkoutRegenerationModal({
           if (result?.success && result.jobId) {
             // Add job to background tracking
             await addJob(result.jobId, "daily-regeneration");
-
-            // Success callback
-            onSuccess?.();
-            // Clear pending data after success
-            pendingRegenerationRef.current = null;
-          } else {
-            // Only show alert if it's not a paywall error
-            if (!paywallErrorOccurredRef.current) {
-              setDialogConfig({
-                title: "Daily Regeneration Failed",
-                description:
-                  "Unable to start daily workout regeneration. Please check your connection and try again.",
-                primaryButton: {
-                  text: "OK",
-                  onPress: () => setDialogVisible(false),
-                },
-                icon: "alert-circle",
-              });
-              setDialogVisible(true);
-            }
+            isSuccess = true;
           }
         }
       }
+
+      if (isSuccess) {
+        console.log(
+          "[Regeneration] Successfully started regeneration after payment"
+        );
+        // Success callback
+        onSuccess?.();
+        // Clear pending data after success
+        pendingRegenerationRef.current = null;
+      } else {
+        // Regeneration failed
+        console.error(
+          "[Regeneration] Failed to start regeneration after payment",
+          result
+        );
+        setDialogConfig({
+          title: "Regeneration Failed",
+          description:
+            "Unable to start regeneration. Please try again in a moment or manually regenerate your workout plan.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
+      }
     } catch (error) {
+      console.error(
+        "[Regeneration] Error during regeneration after payment",
+        error
+      );
       // Only show alert if it's not a paywall error
       if (
         !paywallErrorOccurredRef.current &&
