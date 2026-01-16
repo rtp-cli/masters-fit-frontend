@@ -62,6 +62,7 @@
       "expo-health-connect",
       "expo-notifications",
       "expo-tracking-transparency",
+      "./plugins/withAndroidXFix",
       [
         "react-native-health",
         {
@@ -78,7 +79,8 @@
           "android": {
             "compileSdkVersion": 36,
             "targetSdkVersion": 36,
-            "minSdkVersion": 26
+            "minSdkVersion": 26,
+            "enableJetifier": true
           }
         }
       ]
