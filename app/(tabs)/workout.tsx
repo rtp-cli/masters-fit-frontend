@@ -979,6 +979,15 @@ export default function WorkoutScreen() {
     if (workout) {
       voiceAssistant.announceWorkoutStart(workout, exercises.length);
       
+      // Start listening for voice commands if voice assistant is enabled
+      if (voiceAssistant.isEnabled) {
+        setTimeout(() => {
+          voiceAssistant.startListening().catch((err) => {
+            console.warn("Failed to start voice listening:", err);
+          });
+        }, 1000);
+      }
+      
       // Announce first block and exercise after a short delay
       const firstBlock = workout.blocks[0];
       const firstExercise = exercises[0];
@@ -1175,6 +1184,9 @@ export default function WorkoutScreen() {
               Math.round(finalDuration / 60),
               completedExerciseCount
             );
+            
+            // Stop voice listening after workout
+            voiceAssistant.stopListening();
           }
 
           setCurrentExerciseIndex(exercises.length);
@@ -1404,6 +1416,9 @@ export default function WorkoutScreen() {
             Math.round(finalDuration / 60),
             completedExerciseCount
           );
+          
+          // Stop voice listening after workout
+          voiceAssistant.stopListening();
           
           // Announce next workout info after a delay
           setTimeout(async () => {
@@ -1768,6 +1783,13 @@ export default function WorkoutScreen() {
                 isSpeaking={voiceAssistant.isSpeaking}
                 isListening={voiceAssistant.isListening}
                 onToggle={voiceAssistant.toggle}
+                onToggleListening={() => {
+                  if (voiceAssistant.isListening) {
+                    voiceAssistant.stopListening();
+                  } else {
+                    voiceAssistant.startListening().catch(console.warn);
+                  }
+                }}
                 size="small"
               />
               {/* TIMER DISPLAY HIDDEN: Main workout timer commented out */}

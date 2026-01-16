@@ -13,6 +13,7 @@ interface VoiceToggleButtonProps {
   isSpeaking?: boolean;
   isListening?: boolean;
   onToggle: () => void;
+  onToggleListening?: () => void;
   size?: "small" | "medium" | "large";
   showLabel?: boolean;
 }
@@ -22,6 +23,7 @@ export function VoiceToggleButton({
   isSpeaking = false,
   isListening = false,
   onToggle,
+  onToggleListening,
   size = "medium",
   showLabel = false,
 }: VoiceToggleButtonProps) {
@@ -80,6 +82,8 @@ export function VoiceToggleButton({
     <View style={styles.container}>
       <TouchableOpacity
         onPress={onToggle}
+        onLongPress={onToggleListening}
+        delayLongPress={500}
         style={[
           styles.button,
           {
