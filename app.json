@@ -19,7 +19,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSHealthShareUsageDescription": "MastersFit needs access to your health data including steps, heart rate, workout sessions, calories burned, and nutrition to provide personalized fitness insights and track your progress.",
         "NSHealthUpdateUsageDescription": "MastersFit may write step count and workout data to HealthKit to help track your fitness progress and maintain accurate health records.",
-        "NSUserTrackingUsageDescription": "MastersFit uses tracking to provide personalized fitness insights and improve your workout experience. Your data helps us deliver better recommendations and track your progress."
+        "NSUserTrackingUsageDescription": "MastersFit uses tracking to provide personalized fitness insights and improve your workout experience. Your data helps us deliver better recommendations and track your progress.",
+        "NSSpeechRecognitionUsageDescription": "MastersFit uses speech recognition to enable voice commands during workouts, allowing hands-free control while exercising.",
+        "NSMicrophoneUsageDescription": "MastersFit needs microphone access to listen for voice commands during your workout sessions."
       }
     },
     "notification": {
@@ -43,7 +45,8 @@
         "android.permission.health.WRITE_STEPS",
         "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
         "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_EXERCISE_SESSION"
+        "android.permission.health.READ_EXERCISE_SESSION",
+        "android.permission.RECORD_AUDIO"
       ],
       "googleServicesFile": "./google-services.json"
     },

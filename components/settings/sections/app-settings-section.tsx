@@ -1,11 +1,26 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, Switch, Platform } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Switch,
+  Platform,
+  Modal,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemeColors } from "../../../lib/theme";
-import { ThemeMode, ColorTheme, COLOR_THEMES } from "../../../lib/theme-context";
+import {
+  ThemeMode,
+  ColorTheme,
+  COLOR_THEMES,
+  useTheme,
+} from "../../../lib/theme-context";
 import ThemeDropdown from "../../ui/theme-dropdown";
 import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
+import { useVoiceAssistantSettings } from "@/contexts/voice-assistant-context";
+import VoiceAssistantSettings from "../voice-assistant-settings";
 
 interface AppSettingsSectionProps {
   debugTapCount: number;
@@ -25,7 +40,11 @@ export default function AppSettingsSection({
   setColorTheme,
 }: AppSettingsSectionProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [legalExpanded, setLegalExpanded] = useState(false);
+  const [voiceSettingsVisible, setVoiceSettingsVisible] = useState(false);
+  const { isEnabled: voiceEnabled, toggle: toggleVoice } =
+    useVoiceAssistantSettings();
 
   const isDarkMode = themeMode === "dark";
 
@@ -88,11 +107,75 @@ export default function AppSettingsSection({
           <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
         </View>
 
+        {/* Voice Assistant Setting */}
+        <TouchableOpacity
+          className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
+          onPress={() => setVoiceSettingsVisible(true)}
+          activeOpacity={0.7}
+        >
+          <View className="flex-row items-center flex-1">
+            <Ionicons
+              name="volume-high-outline"
+              size={20}
+              color={colors.text.muted}
+            />
+            <View className="ml-3 flex-1">
+              <Text className="text-sm text-text-primary">Voice Assistant</Text>
+              <Text className="text-xs text-text-muted">
+                {voiceEnabled ? "Enabled" : "Disabled"} • Tap to configure
+              </Text>
+            </View>
+          </View>
+          <View className="flex-row items-center">
+            <View
+              className="w-2 h-2 rounded-full mr-2"
+              style={{
+                backgroundColor: voiceEnabled
+                  ? colors.brand.primary
+                  : colors.neutral.medium[1],
+              }}
+            />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.text.muted}
+            />
+          </View>
+        </TouchableOpacity>
+
         <LegalSection
           expanded={legalExpanded}
           onToggle={() => setLegalExpanded(!legalExpanded)}
         />
       </View>
+
+      {/* Voice Assistant Settings Modal */}
+      <Modal
+        visible={voiceSettingsVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        statusBarTranslucent
+      >
+        <SafeAreaView
+          className={`flex-1 bg-background ${isDark ? "dark" : ""}`}
+        >
+          <View className="flex-row items-center justify-between p-4 border-b border-neutral-light-2">
+            <View className="w-6" />
+            <Text className="text-xl font-bold text-text-primary">
+              Voice Assistant
+            </Text>
+            <TouchableOpacity
+              onPress={() => setVoiceSettingsVisible(false)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
+          <VoiceAssistantSettings
+            onClose={() => setVoiceSettingsVisible(false)}
+          />
+        </SafeAreaView>
+      </Modal>
     </>
   );
 }

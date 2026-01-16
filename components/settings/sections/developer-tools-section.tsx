@@ -67,7 +67,11 @@ export default function DeveloperToolsSection({
         }}
       >
         <View className="flex-row items-center flex-1">
-          <Ionicons name="card-outline" size={20} color={colors.brand.primary} />
+          <Ionicons
+            name="card-outline"
+            size={20}
+            color={colors.brand.primary}
+          />
           <Text
             className="text-sm ml-3"
             style={{ color: colors.brand.primary }}
@@ -75,7 +79,11 @@ export default function DeveloperToolsSection({
             Test RevenueCat Paywall
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={colors.brand.primary}
+        />
       </TouchableOpacity>
 
       {/* Network Logger */}
@@ -96,7 +104,11 @@ export default function DeveloperToolsSection({
             Network Logger
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={colors.brand.primary}
+        />
       </TouchableOpacity>
 
       {/* AI Provider Selection (if secret activated) */}
@@ -122,7 +134,11 @@ export default function DeveloperToolsSection({
               AI Provider Selection
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={colors.brand.primary}
+          />
         </TouchableOpacity>
       )}
 
@@ -139,7 +155,10 @@ export default function DeveloperToolsSection({
               size={20}
               color={colors.brand.primary}
             />
-            <Text className="text-sm ml-3" style={{ color: colors.brand.primary }}>
+            <Text
+              className="text-sm ml-3"
+              style={{ color: colors.brand.primary }}
+            >
               Deactivate Debug Mode
             </Text>
           </View>

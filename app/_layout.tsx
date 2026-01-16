@@ -18,6 +18,7 @@ import {
 } from "@/contexts/background-job-context";
 import { WaiverProvider } from "@/contexts/waiver-context";
 import { MixpanelProvider } from "@/contexts/mixpanel-context";
+import { VoiceAssistantProvider } from "@/contexts/voice-assistant-context";
 import { useFonts } from "expo-font";
 import {
   Manrope_400Regular,
@@ -317,9 +318,11 @@ const StableProviderTree = React.memo(function StableProviderTree() {
           <WorkoutProvider>
             <AppDataProvider>
               <BackgroundJobProvider>
-                <SystemUIWrapper>
-                  <AppContent />
-                </SystemUIWrapper>
+                <VoiceAssistantProvider>
+                  <SystemUIWrapper>
+                    <AppContent />
+                  </SystemUIWrapper>
+                </VoiceAssistantProvider>
               </BackgroundJobProvider>
             </AppDataProvider>
           </WorkoutProvider>

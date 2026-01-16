@@ -21,6 +21,7 @@ import {
   markPlanDayAsComplete,
   getPlanDayLog,
   skipExercise,
+  getNextWorkoutPlanDayInfo,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
@@ -73,6 +74,8 @@ import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import { AppState } from "react-native";
 import { CustomDialog } from "@/components/ui";
 import type { DialogButton } from "@/components/ui";
+import { useWorkoutVoiceAssistant } from "@/hooks/use-workout-voice-assistant";
+import { VoiceToggleButton } from "@/components/voice-assistant";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -186,6 +189,13 @@ export default function WorkoutScreen() {
 
   // Background job tracking
   const { isGenerating, addJob } = useBackgroundJobs();
+
+  // Voice assistant for workout cues
+  const voiceAssistant = useWorkoutVoiceAssistant({
+    enabled: true,
+    onPauseCommand: () => setIsPaused(true),
+    onResumeCommand: () => setIsPaused(false),
+  });
 
   // Get data refresh functions
   const {
@@ -964,6 +974,25 @@ export default function WorkoutScreen() {
     setTimeout(() => {
       scrollToExerciseHeading(0);
     }, 100);
+
+    // Voice assistant: Announce workout start and first exercise
+    if (workout) {
+      voiceAssistant.announceWorkoutStart(workout, exercises.length);
+      
+      // Announce first block and exercise after a short delay
+      const firstBlock = workout.blocks[0];
+      const firstExercise = exercises[0];
+      if (firstBlock) {
+        setTimeout(() => {
+          voiceAssistant.announceBlockStart(firstBlock);
+          if (firstExercise) {
+            setTimeout(() => {
+              voiceAssistant.announceExerciseStart(firstExercise, firstBlock.blockType);
+            }, 2000);
+          }
+        }, 3000);
+      }
+    }
   };
 
   // Toggle pause
@@ -1082,6 +1111,32 @@ export default function WorkoutScreen() {
         // Move to next exercise or complete workout
         if (currentExerciseIndex < exercises.length - 1) {
           const nextIndex = currentExerciseIndex + 1;
+          const nextExercise = exercises[nextIndex];
+          
+          // Voice assistant: Announce exercise complete and next
+          voiceAssistant.announceExerciseComplete(
+            currentExercise.exercise?.name || "exercise",
+            true,
+            nextExercise?.exercise?.name
+          );
+          
+          // Check if moving to new block
+          const nextBlockForExercise = workout?.blocks.find((block) =>
+            block.exercises.some((ex) => ex.id === nextExercise?.id)
+          );
+          
+          if (nextBlockForExercise && nextBlockForExercise.id !== currentBlock?.id) {
+            setTimeout(() => {
+              voiceAssistant.announceBlockStart(nextBlockForExercise);
+            }, 2000);
+          }
+          
+          if (nextExercise) {
+            setTimeout(() => {
+              voiceAssistant.announceExerciseStart(nextExercise, nextBlockForExercise?.blockType);
+            }, 3500);
+          }
+          
           setCurrentExerciseIndex(nextIndex);
           setExerciseTimer(0);
           exerciseStartTime.current = Date.now();
@@ -1113,6 +1168,13 @@ export default function WorkoutScreen() {
               startDate: startDate.toISOString().split("T")[0],
               endDate: endDate.toISOString().split("T")[0],
             });
+            
+            // Voice assistant: Announce workout complete
+            voiceAssistant.announceWorkoutComplete(
+              workout.name || "Today's workout",
+              Math.round(finalDuration / 60),
+              completedExerciseCount
+            );
           }
 
           setCurrentExerciseIndex(exercises.length);
@@ -1265,6 +1327,37 @@ export default function WorkoutScreen() {
       // Move to next exercise or complete workout
       if (currentExerciseIndex < exercises.length - 1) {
         const nextIndex = currentExerciseIndex + 1;
+        const nextExercise = exercises[nextIndex];
+        
+        // Voice assistant: Announce exercise complete and next exercise
+        voiceAssistant.announceExerciseComplete(
+          currentExercise.exercise?.name || "exercise",
+          true,
+          nextExercise?.exercise?.name
+        );
+        
+        // Find if we're moving to a new block
+        const currentBlockForExercise = workout?.blocks.find((block) =>
+          block.exercises.some((ex) => ex.id === currentExercise.id)
+        );
+        const nextBlockForExercise = workout?.blocks.find((block) =>
+          block.exercises.some((ex) => ex.id === nextExercise?.id)
+        );
+        
+        // Announce new block if changed
+        if (nextBlockForExercise && nextBlockForExercise.id !== currentBlockForExercise?.id) {
+          setTimeout(() => {
+            voiceAssistant.announceBlockStart(nextBlockForExercise);
+          }, 2000);
+        }
+        
+        // Announce next exercise
+        if (nextExercise) {
+          setTimeout(() => {
+            voiceAssistant.announceExerciseStart(nextExercise, nextBlockForExercise?.blockType);
+          }, 3500);
+        }
+        
         setCurrentExerciseIndex(nextIndex);
         setExerciseTimer(0);
         exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
@@ -1304,6 +1397,25 @@ export default function WorkoutScreen() {
             startDate: startDate.toISOString().split("T")[0],
             endDate: endDate.toISOString().split("T")[0],
           });
+          
+          // Voice assistant: Announce workout complete
+          voiceAssistant.announceWorkoutComplete(
+            workout.name || "Today's workout",
+            Math.round(finalDuration / 60),
+            completedExerciseCount
+          );
+          
+          // Announce next workout info after a delay
+          setTimeout(async () => {
+            try {
+              const nextWorkoutInfo = await getNextWorkoutPlanDayInfo();
+              if (nextWorkoutInfo) {
+                voiceAssistant.announceNextWorkout(nextWorkoutInfo);
+              }
+            } catch (error) {
+              console.warn("Error announcing next workout:", error);
+            }
+          }, 5000);
         }
 
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
@@ -1650,6 +1762,14 @@ export default function WorkoutScreen() {
               <Text className="text-2xl font-bold text-text-primary flex-1 mr-3">
                 {workout.name}
               </Text>
+              {/* Voice Assistant Toggle */}
+              <VoiceToggleButton
+                isEnabled={voiceAssistant.isEnabled}
+                isSpeaking={voiceAssistant.isSpeaking}
+                isListening={voiceAssistant.isListening}
+                onToggle={voiceAssistant.toggle}
+                size="small"
+              />
               {/* TIMER DISPLAY HIDDEN: Main workout timer commented out */}
               {/* {isWorkoutStarted && (
                 <View className="bg-background rounded-xl px-3 py-1 min-w-[80px]">

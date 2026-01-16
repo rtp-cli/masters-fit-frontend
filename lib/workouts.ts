@@ -415,6 +415,54 @@ export function getNextWorkout(workouts: Workout[]): Workout | null {
   return futureWorkouts.length > 0 ? futureWorkouts[0] : null;
 }
 
+/**
+ * Get the next workout plan day info (for voice announcements)
+ */
+export async function getNextWorkoutPlanDayInfo(): Promise<{
+  workoutName: string;
+  date: string;
+  exerciseCount: number;
+  estimatedDuration?: number;
+  description?: string;
+} | null> {
+  try {
+    // Force refresh to get latest data
+    const workout = await fetchActiveWorkout(true);
+    
+    if (!workout?.planDays) {
+      return null;
+    }
+
+    const today = getTodayString();
+    
+    // Find the next incomplete plan day
+    const nextPlanDay = workout.planDays.find((day) => {
+      const dayDate = formatDateAsString(day.date);
+      return dayDate > today && !day.isComplete;
+    });
+
+    if (!nextPlanDay) {
+      return null;
+    }
+
+    // Count exercises across all blocks
+    const exerciseCount = nextPlanDay.blocks?.reduce(
+      (count, block) => count + (block.exercises?.length || 0),
+      0
+    ) || 0;
+
+    return {
+      workoutName: nextPlanDay.name || "your next workout",
+      date: formatDateAsString(nextPlanDay.date),
+      exerciseCount,
+      description: nextPlanDay.description,
+    };
+  } catch (error) {
+    console.error("Error getting next workout info:", error);
+    return null;
+  }
+}
+
 // New API functions for workout session functionality
 
 /**
