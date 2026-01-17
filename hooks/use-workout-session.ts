@@ -721,8 +721,16 @@ export function useWorkoutSession() {
     }
   }, [isWorkoutStarted, isWorkoutCompleted, setWorkoutInProgress]);
 
-  // Note: Workout abandonment handling removed due to race conditions
-  // The workout context (isWorkoutInProgress) is managed by the sync effect above
+  // Reset workout - called when leaving the workout tab
+  const resetWorkout = useCallback(() => {
+    if (isWorkoutStarted && !isWorkoutCompleted) {
+      setIsWorkoutStarted(false);
+      timers.resetTimers();
+      setCurrentExerciseIndex(0);
+      restTimer.cancelRestTimer();
+      setWorkoutInProgress(false);
+    }
+  }, [isWorkoutStarted, isWorkoutCompleted, timers, restTimer, setWorkoutInProgress]);
 
   // Auto-add first set when moving to a new exercise
   useEffect(() => {
@@ -824,5 +832,6 @@ export function useWorkoutSession() {
     completeExercise,
     skipCurrentExercise,
     updateProgress,
+    resetWorkout,
   };
 }

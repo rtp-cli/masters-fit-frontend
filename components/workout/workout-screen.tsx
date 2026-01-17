@@ -54,13 +54,16 @@ export default function WorkoutScreen() {
     loadWorkout,
     scrollViewRef,
     isWorkoutStarted,
+    resetWorkout,
   } = session;
 
-  // Use ref to always have latest loadWorkout function
+  // Use refs to always have latest functions
   const loadWorkoutRef = useRef(loadWorkout);
+  const resetWorkoutRef = useRef(resetWorkout);
   useEffect(() => {
     loadWorkoutRef.current = loadWorkout;
-  }, [loadWorkout]);
+    resetWorkoutRef.current = resetWorkout;
+  }, [loadWorkout, resetWorkout]);
 
   // Handle generate new workout with dialog feedback
   const handleGenerateNewWorkout = useCallback(async () => {
@@ -132,12 +135,17 @@ export default function WorkoutScreen() {
     loadWorkoutRef.current();
   }, []);
 
-  // Focus effect - only load if workout hasn't started
+  // Focus effect - load on focus, reset on blur (leaving tab)
   useFocusEffect(
     useCallback(() => {
-      // Use ref to get latest function that has current isWorkoutStarted value
+      // On focus: load workout data
       loadWorkoutRef.current(false);
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+
+      // Cleanup: reset workout when leaving the tab
+      return () => {
+        resetWorkoutRef.current();
+      };
     }, [scrollViewRef]),
   );
 
