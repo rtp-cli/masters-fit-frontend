@@ -1,692 +1,828 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
-import { AppState } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
+
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { useWorkout } from "@/contexts/workout-context";
+import { useCircuitSession } from "@/hooks/use-circuit-session";
+import { useRestTimer } from "@/hooks/use-rest-timer";
+import { useWorkoutTimers } from "@/hooks/use-workout-timers";
+import { trackWorkoutStarted } from "@/lib/analytics";
+import { getCurrentUser } from "@/lib/auth";
+import { logCircuitRound, markBlockExercisesComplete } from "@/lib/circuits";
+import { registerForPushNotifications } from "@/lib/notifications";
 import {
-  fetchActiveWorkout,
   createExerciseLog,
-  getExistingWorkoutLog,
-  getOrCreateWorkoutLog,
-  updateWorkoutLog,
-  getExerciseLogs,
-  getCompletedExercises,
-  markExerciseCompleted,
-  markWorkoutComplete,
-  subscribeToWorkoutUpdates,
+  fetchActiveWorkout,
+  generateWorkoutPlanAsync,
+  getPlanDayLog,
+  markPlanDayAsComplete,
+  skipExercise,
 } from "@/lib/workouts";
 import {
-  ExerciseSessionData,
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercise,
-  CreateExerciseLogParams,
-  PlanDayWithExercisesLegacy,
-} from "@/types/api";
-import { ExerciseSet } from "@/components/set-tracker";
-import { UseWorkoutSessionReturn } from "@/types/hooks";
-import { formatDateAsLocalString } from "@/utils";
-import { logger } from "../lib/logger";
-export function useWorkoutSession(): UseWorkoutSessionReturn {
-  const [activeWorkout, setActiveWorkout] = useState<PlanDayWithBlocks | null>(
-    null
-  );
+  type CircuitExerciseLog as CircuitExercise,
+  type CircuitSessionConfig,
+} from "@/types/api/circuit.types";
+import {
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercises,
+} from "@/types/api/workout.types";
+import { formatDateAsString, getCurrentDate } from "@/utils";
+import { isCircuitBlock, isWarmupCooldownBlock } from "@/utils/circuit-utils";
+import { type ExerciseSet } from "@/components/set-tracker";
+
+export interface ExerciseProgress {
+  setsCompleted: number;
+  repsCompleted: number;
+  roundsCompleted: number;
+  weightUsed: number;
+  sets: ExerciseSet[];
+  duration: number;
+  restTime: number;
+  notes: string;
+  isSkipped?: boolean;
+}
+
+export function useWorkoutSession() {
+  const router = useRouter();
+
+  // Contexts
+  const { setWorkoutInProgress, isWorkoutInProgress, setCurrentWorkoutData } =
+    useWorkout();
+  const { user, isLoading: authLoading } = useAuth();
+  const { isGenerating, addJob } = useBackgroundJobs();
+  const {
+    refresh: { refreshDashboard, reset },
+  } = useAppDataContext();
+
+  // Core state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [workout, setWorkout] = useState<PlanDayWithBlocks | null>(null);
+  const [hasActiveWorkoutPlan, setHasActiveWorkoutPlan] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
-  const [exerciseTimer, setExerciseTimer] = useState(0);
-  const [workoutTimer, setWorkoutTimer] = useState(0);
-  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [exerciseData, setExerciseData] = useState<ExerciseSessionData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
+  const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasCompletedWorkoutDuration, setHasCompletedWorkoutDuration] =
+    useState(false);
+  const [completedExercisesCount, setCompletedExercisesCount] = useState(0);
 
-  const exerciseTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const workoutTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const workoutStartTime = useRef<Date | null>(null);
-  const exerciseStartTime = useRef<Date | null>(null);
-  const appStateRef = useRef(AppState.currentState);
-
-  // Helper function to flatten blocks into exercises for backward compatibility
-  const getFlattenedExercises = useCallback(
-    (planDay: PlanDayWithBlocks | null) => {
-      if (!planDay || !planDay.blocks) return [];
-
-      const exercises: WorkoutBlockWithExercise[] = [];
-      planDay.blocks.forEach((block) => {
-        block.exercises.forEach((exercise) => {
-          exercises.push({
-            ...exercise,
-            blockInfo: {
-              blockId: block.id,
-              blockType: block.blockType,
-              blockName: block.blockName,
-              instructions: block.instructions,
-              rounds: block.rounds,
-              timeCapMinutes: block.timeCapMinutes,
-            },
-          });
-        });
-      });
-
-      return exercises;
-    },
-    []
+  // Exercise progress state
+  const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>(
+    [],
   );
+  const [skippedExercises, setSkippedExercises] = useState<number[]>([]);
 
-  // Get current exercise with block information
-  const getCurrentExercise = useCallback(() => {
-    if (!activeWorkout) return null;
-    const flattenedExercises = getFlattenedExercises(activeWorkout);
-    return flattenedExercises[currentExerciseIndex] || null;
-  }, [activeWorkout, currentExerciseIndex, getFlattenedExercises]);
+  // Modal state
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showRestCompleteModal, setShowRestCompleteModal] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [isCompletingExercise, setIsCompletingExercise] = useState(false);
+  const [isSkippingExercise, setIsSkippingExercise] = useState(false);
 
-  // Get current block information
-  const getCurrentBlock = useCallback(() => {
-    if (!activeWorkout || !activeWorkout.blocks) return null;
-    return activeWorkout.blocks[currentBlockIndex] || null;
-  }, [activeWorkout, currentBlockIndex]);
+  // UI refs
+  const scrollViewRef = useRef<ScrollView>(null);
+  const exerciseHeadingRef = useRef<View>(null);
+  const circuitHeadingRef = useRef<View>(null);
 
-  // Timer management with timestamp-based calculation
-  useEffect(() => {
-    if (isWorkoutActive && !isPaused) {
-      // Activate keep awake to prevent screen sleep
-      activateKeepAwake("workout-session-timer");
+  // Custom hooks for timers
+  const timers = useWorkoutTimers({
+    isWorkoutStarted,
+    isWorkoutCompleted,
+  });
 
-      // Initialize start times if not set
-      if (!workoutStartTime.current) {
-        workoutStartTime.current = new Date(Date.now() - workoutTimer * 1000);
-      }
-      if (!exerciseStartTime.current) {
-        exerciseStartTime.current = new Date(Date.now() - exerciseTimer * 1000);
-      }
-
-      // TIMER DISABLED: Workout timer interval commented out
-      // workoutTimerRef.current = setInterval(() => {
-      //   if (workoutStartTime.current) {
-      //     const elapsed = Math.floor(
-      //       (Date.now() - workoutStartTime.current.getTime()) / 1000
-      //     );
-      //     setWorkoutTimer(elapsed);
-      //   }
-      // }, 1000);
-
-      // TIMER DISABLED: Exercise timer interval commented out
-      // exerciseTimerRef.current = setInterval(() => {
-      //   if (exerciseStartTime.current) {
-      //     const elapsed = Math.floor(
-      //       (Date.now() - exerciseStartTime.current.getTime()) / 1000
-      //     );
-      //     setExerciseTimer(elapsed);
-      //   }
-      // }, 1000);
-    } else {
-      // Deactivate keep awake when timer stops
-      deactivateKeepAwake("workout-session-timer");
-
-      // TIMER DISABLED: Clear intervals commented out
-      // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-      // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
-    }
-
-    return () => {
-      deactivateKeepAwake("workout-session-timer");
-      // TIMER DISABLED: Clear intervals commented out
-      // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-      // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
-    };
-  }, [isWorkoutActive, isPaused]);
-
-  // Load active workout on mount
-  useEffect(() => {
-    loadActiveWorkout();
+  const handleRestComplete = useCallback(() => {
+    setShowRestCompleteModal(true);
   }, []);
 
-  // Handle app state changes to manage timers during background/foreground transitions
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (
-        appStateRef.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        // App came to foreground - recalculate timers based on timestamps
-        console.log(
-          "App came to foreground, recalculating workout session timers"
-        );
+  const restTimer = useRestTimer({
+    onRestComplete: handleRestComplete,
+  });
 
-        if (isWorkoutActive && !isPaused) {
-          if (workoutStartTime.current) {
-            const elapsed = Math.floor(
-              (Date.now() - workoutStartTime.current.getTime()) / 1000
-            );
-            setWorkoutTimer(elapsed);
-          }
-          if (exerciseStartTime.current) {
-            const elapsed = Math.floor(
-              (Date.now() - exerciseStartTime.current.getTime()) / 1000
-            );
-            setExerciseTimer(elapsed);
-          }
-        }
-      } else if (nextAppState.match(/inactive|background/)) {
-        console.log(
-          "App going to background, workout session timers will continue via timestamps"
-        );
+  // Get flattened exercises from blocks
+  const getFlattenedExercises = useCallback((): WorkoutBlockWithExercise[] => {
+    if (!workout?.blocks) return [];
+    return workout.blocks.flatMap((block) => block.exercises);
+  }, [workout]);
+
+  const exercises = getFlattenedExercises();
+  const currentExercise = exercises[currentExerciseIndex];
+  const currentProgress = exerciseProgress[currentExerciseIndex];
+
+  // Calculate progress percentage
+  const completedAndSkippedCount =
+    currentExerciseIndex + skippedExercises.length;
+  const progressPercent =
+    exercises.length > 0
+      ? (completedAndSkippedCount / exercises.length) * 100
+      : 0;
+
+  // Get current block for the current exercise
+  const getCurrentBlock = useCallback((): WorkoutBlockWithExercises | null => {
+    if (!workout?.blocks || !currentExercise) return null;
+    for (const block of workout.blocks) {
+      if (block.exercises.some((ex) => ex.id === currentExercise.id)) {
+        return block;
       }
-
-      appStateRef.current = nextAppState;
-    };
-
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
-    return () => subscription?.remove();
-  }, [isWorkoutActive, isPaused]);
-
-  const loadActiveWorkout = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetchActiveWorkout();
-
-      if (
-        response &&
-        response.workout &&
-        response.workout.planDays &&
-        response.workout.planDays.length > 0
-      ) {
-        const workout = response.workout;
-
-        // Find today's plan day
-        const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format
-
-        // Debug all plan days
-        workout.planDays.forEach((day: PlanDayWithBlocks, index: number) => {
-          const planDate = formatDateAsLocalString(day.date);
-          console.log(`Plan day ${index}:`, {
-            originalDate: day.date,
-            originalDateType: typeof day.date,
-            formattedDate: planDate,
-            matchesToday: planDate === today,
-            blocks: day.blocks?.length || 0,
-            exercises:
-              day.blocks?.reduce(
-                (total: number, block: WorkoutBlockWithExercise) =>
-                  total + (block.exercises?.length || 0),
-                0
-              ) || 0,
-          });
-        });
-
-        // Find today's plan day
-        const todaysPlan = workout.planDays.find((day: PlanDayWithBlocks) => {
-          const planDate = formatDateAsLocalString(day.date);
-          return planDate === today;
-        });
-
-        if (todaysPlan) {
-          console.log("Found today's plan:", {
-            id: todaysPlan.id,
-            name: todaysPlan.name,
-            blocks: todaysPlan.blocks?.length || 0,
-            totalExercises:
-              todaysPlan.blocks?.reduce(
-                (total: number, block: WorkoutBlockWithExercise) =>
-                  total + (block.exercises?.length || 0),
-                0
-              ) || 0,
-          });
-
-          setActiveWorkout(todaysPlan);
-
-          // Initialize exercise data
-          const exercises = getFlattenedExercises(todaysPlan);
-          const initialExerciseData: ExerciseSessionData[] = exercises.map(
-            (exercise) => ({
-              exerciseId: exercise.exerciseId,
-              planDayExerciseId: exercise.id,
-              targetSets: exercise.sets || 1,
-              targetReps: exercise.reps || 0,
-              targetRounds: exercise.blockInfo?.rounds || 1,
-              targetWeight: exercise.weight || 0,
-              targetDuration: exercise.duration || 0,
-              targetRestTime: exercise.restTime || 0,
-              setsCompleted: 0,
-              repsCompleted: 0,
-              roundsCompleted: 0,
-              weightUsed: 0,
-              sets: [] as ExerciseSet[],
-              duration: exercise.duration || 0,
-              restTime: exercise.restTime || 0,
-              timeTaken: 0,
-              notes: "",
-              isCompleted: false,
-              blockInfo: exercise.blockInfo,
-            })
-          );
-
-          setExerciseData(initialExerciseData);
-
-          // Check for existing logs
-          await checkExistingLogs(todaysPlan, initialExerciseData);
-        } else {
-          setActiveWorkout(null);
-        }
-      } else {
-        setActiveWorkout(null);
-      }
-    } catch (error) {
-      console.error("Error loading active workout:", error);
-      setActiveWorkout(null);
-    } finally {
-      setIsLoading(false);
     }
+    return null;
+  }, [workout, currentExercise]);
+
+  const currentBlock = getCurrentBlock();
+  const isCurrentBlockCircuit = currentBlock
+    ? isCircuitBlock(currentBlock.blockType)
+    : false;
+  const isCurrentBlockWarmupCooldown = currentBlock
+    ? isWarmupCooldownBlock(currentBlock.blockType)
+    : false;
+
+  // Circuit session setup
+  const dummyBlock: WorkoutBlockWithExercises = {
+    id: 0,
+    blockType: "circuit",
+    blockName: "dummy",
+    rounds: 1,
+    exercises: [],
+    created_at: new Date(),
+    updated_at: new Date(),
   };
 
-  // Refresh function that can be called externally
-  const refreshWorkout = useCallback(async () => {
-    // Clear current state first
-    setActiveWorkout(null);
-    setExerciseData([]);
-    setCurrentExerciseIndex(0);
-    setCurrentBlockIndex(0);
-    setExerciseTimer(0);
-    setWorkoutTimer(0);
-    setIsWorkoutActive(false);
-    setIsPaused(false);
+  const circuitConfig: CircuitSessionConfig = {
+    block: currentBlock || dummyBlock,
+    autoStartTimer: false,
+    allowPartialRounds: true,
+  };
 
-    // TIMER DISABLED: Clear any running timers commented out
-    // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-    // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
-    workoutStartTime.current = null;
-    exerciseStartTime.current = null;
+  const circuitSession = useCircuitSession(circuitConfig);
 
-    // Load fresh data
-    await loadActiveWorkout();
-  }, []);
+  // Helper function to scroll to exercise heading
+  const scrollToExerciseHeading = useCallback(
+    (exerciseIndex: number) => {
+      const nextExercise = exercises[exerciseIndex];
+      const nextBlock = workout?.blocks?.find((block) =>
+        block.exercises.some((ex) => ex.id === nextExercise?.id),
+      );
+      const isNextCircuit = nextBlock && isCircuitBlock(nextBlock.blockType);
 
-  // Subscribe to workout updates
-  useEffect(() => {
-    const unsubscribe = subscribeToWorkoutUpdates(() => {
-      refreshWorkout();
-    });
-
-    return unsubscribe;
-  }, [refreshWorkout]);
-
-  // Update block index when exercise index changes
-  useEffect(() => {
-    if (!activeWorkout || !activeWorkout.blocks) return;
-
-    let exerciseCount = 0;
-    let newBlockIndex = 0;
-
-    for (let i = 0; i < activeWorkout.blocks.length; i++) {
-      const blockExerciseCount = activeWorkout.blocks[i].exercises.length;
-      if (currentExerciseIndex < exerciseCount + blockExerciseCount) {
-        newBlockIndex = i;
-        break;
+      if (isNextCircuit && circuitHeadingRef.current && scrollViewRef.current) {
+        circuitHeadingRef.current.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) =>
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, y - 20),
+              animated: true,
+            }),
+          () => console.log("Failed to measure circuit heading"),
+        );
+      } else if (exerciseHeadingRef.current && scrollViewRef.current) {
+        exerciseHeadingRef.current.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) =>
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, y - 20),
+              animated: true,
+            }),
+          () => console.log("Failed to measure exercise heading"),
+        );
       }
-      exerciseCount += blockExerciseCount;
-    }
+    },
+    [exercises, workout],
+  );
 
-    if (newBlockIndex !== currentBlockIndex) {
-      setCurrentBlockIndex(newBlockIndex);
-    }
-  }, [currentExerciseIndex, activeWorkout, currentBlockIndex]);
+  // Update exercise progress
+  const updateProgress = useCallback(
+    <K extends keyof ExerciseProgress>(
+      field: K,
+      value: ExerciseProgress[K],
+    ) => {
+      setExerciseProgress((prev) => {
+        const updated = [...prev];
+        updated[currentExerciseIndex] = {
+          ...updated[currentExerciseIndex],
+          [field]: value,
+        };
+        return updated;
+      });
+    },
+    [currentExerciseIndex],
+  );
 
-  const checkExistingLogs = async (
-    planDay: PlanDayWithBlocks,
-    initialData: ExerciseSessionData[]
-  ) => {
-    try {
-      // Get existing workout log
-      const workoutLog = await getExistingWorkoutLog(planDay.workoutId);
-      if (workoutLog) {
-        // Note: Don't check workoutLog.isComplete here because that's for the entire
-        // multi-day workout. We need to check individual plan day completion instead.
+  // Update current block for abandonment tracking
+  const updateCurrentBlockForAbandonment = useCallback(
+    (exerciseIndex: number) => {
+      if (!workout || !exercises[exerciseIndex]) return;
 
-        // If workout is in progress, resume the timer
-        if (!workoutLog.isComplete) {
-          setWorkoutTimer(workoutLog.totalTimeTaken || 0);
-          setIsWorkoutActive(true);
-          workoutStartTime.current = new Date(
-            Date.now() - (workoutLog.totalTimeTaken || 0) * 1000
-          );
-        }
-      }
-
-      // Check completed exercises for THIS specific plan day
-      const completedData = await getCompletedExercises(planDay.workoutId);
-      const completedExerciseIds = completedData.completedExercises || [];
-
-      const exercisesArray = Array.isArray(planDay.exercises)
-        ? planDay.exercises
-        : [];
-      const todaysCompletedExercises = completedExerciseIds.filter(
-        (exerciseId: number) =>
-          exercisesArray.some(
-            (ex: WorkoutBlockWithExercise) => ex.id === exerciseId
-          )
+      const exercise = exercises[exerciseIndex];
+      const block = workout.blocks.find((b) =>
+        b.exercises?.some((ex) => ex.exerciseId === exercise.exerciseId),
       );
 
-      // Check if ALL exercises for this specific plan day are completed
-      const allTodaysExercisesCompleted =
-        exercisesArray.length > 0 &&
-        exercisesArray.every((ex: WorkoutBlockWithExercise) =>
-          todaysCompletedExercises.includes(ex.id)
-        );
+      if (block) {
+        setCurrentWorkoutData({
+          workout_id: workout.workoutId,
+          plan_day_id: workout.id,
+          block_id: block.id,
+          block_name: block.blockType || "unknown",
+        });
+      }
+    },
+    [workout, exercises, setCurrentWorkoutData],
+  );
 
-      // If all today's exercises are completed, show completion state but don't block loading
-      if (allTodaysExercisesCompleted) {
-        setIsWorkoutActive(false);
-        // Mark all exercises as completed in local state
-        const completedData = initialData.map((data) => ({
-          ...data,
-          isCompleted: true,
-        }));
-        setExerciseData(completedData);
+  // Load completed workout duration
+  const loadCompletedWorkoutDuration = useCallback(
+    async (planDayId: number) => {
+      try {
+        const planDayLog = await getPlanDayLog(planDayId);
+        if (planDayLog?.totalTimeMinutes) {
+          timers.setWorkoutTimer(planDayLog.totalTimeMinutes * 60);
+          setCompletedExercisesCount(planDayLog.exercisesCompleted || 0);
+          setHasCompletedWorkoutDuration(true);
+        } else {
+          timers.setWorkoutTimer(0);
+          setCompletedExercisesCount(0);
+          setHasCompletedWorkoutDuration(false);
+        }
+      } catch (error) {
+        console.error("Error loading completed workout duration:", error);
+        timers.setWorkoutTimer(0);
+        setCompletedExercisesCount(0);
+        setHasCompletedWorkoutDuration(false);
+      }
+    },
+    [timers],
+  );
+
+  // Load workout data
+  const loadWorkout = useCallback(
+    async (forceRefresh = false) => {
+      // Skip loading if workout is already in progress (prevents resetting active workout)
+      if (isWorkoutStarted && !forceRefresh) {
         return;
       }
 
-      // Check exercise logs and update local state
-      const updatedData = [...initialData];
-      let lastCompletedIndex = -1;
+      try {
+        if (!forceRefresh && !isWorkoutStarted) setLoading(true);
+        setError(null);
 
-      for (let i = 0; i < exercisesArray.length; i++) {
-        const exercise = exercisesArray[i];
-        const isCompleted = completedExerciseIds.includes(exercise.id);
+        const response = await fetchActiveWorkout(forceRefresh);
 
-        if (isCompleted) {
-          lastCompletedIndex = i;
-          // Get the latest exercise log for this exercise
-          const logs = await getExerciseLogs(exercise.id);
-          if (logs.length > 0) {
-            const lastLog = logs[logs.length - 1];
-            updatedData[i] = {
-              ...updatedData[i],
-              setsCompleted: lastLog.setsCompleted,
-              repsCompleted: lastLog.repsCompleted,
-              weightUsed: lastLog.weightUsed || updatedData[i].weightUsed,
-              timeTaken: lastLog.timeTaken || 0,
-              notes: lastLog.notes || "",
-              isCompleted: true,
-            };
-          } else {
-            updatedData[i] = {
-              ...updatedData[i],
-              isCompleted: true,
-            };
-          }
+        if (!response?.planDays?.length) {
+          setWorkout(null);
+          setHasActiveWorkoutPlan(false);
+          return;
         }
+
+        setHasActiveWorkoutPlan(true);
+        const today = getCurrentDate();
+        const todaysWorkout = response.planDays.find(
+          (day: PlanDayWithBlocks) => {
+            const normalizedDayDate = formatDateAsString(day.date);
+            return normalizedDayDate === today;
+          },
+        );
+
+        if (!todaysWorkout) {
+          setWorkout(null);
+          return;
+        }
+
+        if (todaysWorkout.isComplete) {
+          setWorkout(todaysWorkout);
+          setIsWorkoutCompleted(true);
+          setWorkoutInProgress(false);
+          await loadCompletedWorkoutDuration(todaysWorkout.id);
+          return;
+        }
+
+        setWorkout(todaysWorkout);
+
+        // Only initialize exercise progress if workout hasn't started
+        // This prevents resetting progress during an active workout
+        if (!isWorkoutStarted) {
+          const flatExercises = todaysWorkout.blocks.flatMap(
+            (block: WorkoutBlockWithExercises) => block.exercises,
+          );
+          const initialProgress: ExerciseProgress[] = flatExercises.map(
+            (exercise: WorkoutBlockWithExercise) => ({
+              setsCompleted: 0,
+              repsCompleted: 0,
+              roundsCompleted: 0,
+              weightUsed: exercise.weight || 0,
+              sets: [],
+              duration: exercise.duration || 0,
+              restTime: exercise.restTime || 0,
+              notes: "",
+            }),
+          );
+          setExerciseProgress(initialProgress);
+        }
+      } catch (err) {
+        console.error("Error loading workout:", err);
+        setError("Failed to load workout. Please try again.");
+      } finally {
+        setLoading(false);
+        if (forceRefresh) setRefreshing(false);
       }
+    },
+    [setWorkoutInProgress, loadCompletedWorkoutDuration, isWorkoutStarted],
+  );
 
-      // Set current exercise index to the next incomplete exercise
-      const nextIncompleteIndex = exercisesArray.findIndex(
-        (exercise: WorkoutBlockWithExercise, idx: number) =>
-          !completedExerciseIds.includes(exercise.id)
-      );
+  // Pull to refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadWorkout(true);
+  }, [loadWorkout]);
 
-      if (nextIncompleteIndex !== -1) {
-        setCurrentExerciseIndex(nextIncompleteIndex);
-      } else {
-        // All exercises completed for this day
-        setCurrentExerciseIndex(0);
-      }
+  // Generate new workout
+  const handleGenerateNewWorkout = useCallback(async () => {
+    if (!user?.id) return null;
 
-      setExerciseData(updatedData);
-    } catch (error) {
-      console.error("Error checking existing logs:", error);
+    if (isGenerating) {
+      return {
+        error: true,
+        title: "Generation in Progress",
+        description:
+          "A workout is already being generated. Please wait for it to complete.",
+        icon: "information-circle" as const,
+      };
     }
-  };
-
-  const startWorkout = useCallback(async () => {
-    if (!activeWorkout) return;
 
     try {
-      // Create or get the workout log when starting
-      await getOrCreateWorkoutLog(activeWorkout.workoutId);
+      await registerForPushNotifications();
+      const result = await generateWorkoutPlanAsync(user.id);
 
-      setIsWorkoutActive(true);
-      workoutStartTime.current = new Date();
-      exerciseStartTime.current = new Date();
-      setWorkoutTimer(0);
-      setExerciseTimer(0);
-
-      logger.businessEvent("Workout session started", {
-        workoutId: activeWorkout.workoutId,
-        planDayId: activeWorkout.id,
-      });
+      if (result?.success && result.jobId) {
+        await addJob(result.jobId, "generation");
+        router.replace("/");
+        return null;
+      } else {
+        return {
+          error: true,
+          title: "Generation Failed",
+          description:
+            "Unable to start workout generation. Please check your connection and try again.",
+          icon: "alert-circle" as const,
+        };
+      }
     } catch (error) {
-      logger.error("Error starting workout", {
-        error: error instanceof Error ? error.message : "Unknown error",
-        workoutId: activeWorkout?.workoutId,
+      return {
+        error: true,
+        title: "Generation Error",
+        description:
+          "An error occurred while starting workout generation. Please try again.",
+        icon: "alert-circle" as const,
+      };
+    }
+  }, [user, isGenerating, addJob, router]);
+
+  // Handle repeat workout success
+  const handleRepeatWorkoutSuccess = useCallback(() => {
+    loadWorkout(true);
+  }, [loadWorkout]);
+
+  // Start workout
+  const startWorkout = useCallback(async () => {
+    timers.startTimers();
+    setIsWorkoutStarted(true);
+
+    if (workout) {
+      const firstBlock = workout.blocks[0];
+      setCurrentWorkoutData({
+        workout_id: workout.workoutId,
+        plan_day_id: workout.id,
+        block_id: firstBlock?.id || 0,
+        block_name: firstBlock?.blockType || "unknown",
       });
     }
-  }, [activeWorkout]);
 
-  const updateExerciseData = useCallback(
-    <K extends keyof ExerciseSessionData>(
-      field: K,
-      value: ExerciseSessionData[K]
-    ) => {
-      setExerciseData((prev) =>
-        prev.map((data, index) =>
-          index === currentExerciseIndex ? { ...data, [field]: value } : data
-        )
-      );
-    },
-    [currentExerciseIndex]
-  );
+    setWorkoutInProgress(true);
 
-  const updateExerciseSets = useCallback(
-    (sets: ExerciseSet[]) => {
-      setExerciseData((prev) =>
-        prev.map((data, index) =>
-          index === currentExerciseIndex ? { ...data, sets } : data
-        )
-      );
-    },
-    [currentExerciseIndex]
-  );
-
-  const completeExercise = useCallback(
-    async (notes?: string): Promise<boolean> => {
-      const currentData = exerciseData[currentExerciseIndex];
-      if (!currentData || !activeWorkout) return false;
-
+    if (workout?.id) {
       try {
-        // When the user clicks "Complete Exercise", always mark as complete
-        // regardless of whether they hit the exact target sets/reps
-        const isComplete = true;
-
-        // Calculate total reps and weight for backwards compatibility
-        const currentSets = currentData.sets || [];
-
-        const exerciseLogParams: CreateExerciseLogParams = {
-          planDayExerciseId: currentData.planDayExerciseId,
-          sets: currentSets,
-          durationCompleted: currentData.duration,
-          timeTaken: exerciseTimer,
-          notes: notes || currentData.notes,
-          isComplete,
-        };
-
-        // Create exercise log
-        await createExerciseLog(exerciseLogParams);
-
-        // Mark exercise as completed in workout log
-        await markExerciseCompleted(
-          activeWorkout.workoutId,
-          currentData.planDayExerciseId
-        );
-
-        // Update local state
-        setExerciseData((prev) =>
-          prev.map((data, index) =>
-            index === currentExerciseIndex
-              ? {
-                  ...data,
-                  timeTaken: exerciseTimer,
-                  notes: notes || data.notes,
-                  isCompleted: true,
-                }
-              : data
-          )
-        );
-
-        return true;
+        await trackWorkoutStarted({
+          workout_id: workout.workoutId,
+          plan_day_id: workout.id,
+          workout_name: workout.name,
+        });
       } catch (error) {
-        console.error("Error completing exercise:", error);
-        return false;
+        console.warn("Failed to track workout started:", error);
       }
-    },
-    [exerciseData, currentExerciseIndex, activeWorkout, exerciseTimer]
-  );
+    }
 
-  const moveToNextExercise = useCallback(() => {
-    if (!activeWorkout) return;
+    setTimeout(() => scrollToExerciseHeading(0), 100);
+  }, [
+    timers,
+    workout,
+    setCurrentWorkoutData,
+    setWorkoutInProgress,
+    scrollToExerciseHeading,
+  ]);
 
-    const flattenedExercises = getFlattenedExercises(activeWorkout);
-    const nextExerciseIndex = currentExerciseIndex + 1;
-    if (nextExerciseIndex < flattenedExercises.length) {
-      setCurrentExerciseIndex(nextExerciseIndex);
-      setExerciseTimer(0);
-      exerciseStartTime.current = new Date();
+  // Complete workout day helper
+  const completeWorkoutDay = useCallback(async () => {
+    if (!workout?.id) return;
 
-      // Update block index if we've moved to a new block
-      const nextExercise = flattenedExercises[nextExerciseIndex];
-      if (nextExercise && nextExercise.blockInfo) {
-        const nextBlockIndex = activeWorkout.blocks?.findIndex(
-          (block) => block.id === nextExercise.blockInfo?.blockId
-        );
-        if (nextBlockIndex !== -1 && nextBlockIndex !== currentBlockIndex) {
-          setCurrentBlockIndex(nextBlockIndex);
+    const completedExerciseCount = exercises.length - skippedExercises.length;
+    const completedBlockCount = workout.blocks.length;
+    const finalDuration = timers.getWorkoutDurationForAnalytics();
+
+    await markPlanDayAsComplete(workout.id, {
+      totalTimeSeconds: finalDuration,
+      exercisesCompleted: completedExerciseCount,
+      blocksCompleted: completedBlockCount,
+    });
+
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 30);
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 7);
+
+    await refreshDashboard({
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    });
+
+    setCurrentExerciseIndex(exercises.length);
+    setIsWorkoutCompleted(true);
+    setWorkoutInProgress(false);
+  }, [
+    workout,
+    exercises,
+    skippedExercises,
+    timers,
+    refreshDashboard,
+    setWorkoutInProgress,
+  ]);
+
+  // Complete exercise
+  const completeExercise = useCallback(async (): Promise<{
+    success: boolean;
+    error?: { title: string; description: string };
+    workoutComplete?: boolean;
+  }> => {
+    if (!currentExercise || !currentProgress) {
+      return { success: false };
+    }
+
+    setIsCompletingExercise(true);
+
+    try {
+      const user = await getCurrentUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Handle warmup/cooldown completion
+      if (isCurrentBlockWarmupCooldown) {
+        await createExerciseLog({
+          planDayExerciseId: currentExercise.id,
+          sets: [
+            {
+              roundNumber: 1,
+              setNumber: 1,
+              weight: 0,
+              reps: currentExercise.reps || 1,
+            },
+          ],
+          durationCompleted: currentExercise.duration || 0,
+          isComplete: true,
+          timeTaken: timers.exerciseTimer,
+          notes: currentProgress.notes || "",
+        });
+
+        if (currentExerciseIndex < exercises.length - 1) {
+          const nextIndex = currentExerciseIndex + 1;
+          setCurrentExerciseIndex(nextIndex);
+          timers.resetExerciseTimer();
+          updateCurrentBlockForAbandonment(nextIndex);
+          scrollToExerciseHeading(nextIndex);
+        } else {
+          await completeWorkoutDay();
         }
+
+        setShowCompleteModal(false);
+        return { success: true };
+      }
+
+      // Handle circuit completion
+      if (isCurrentBlockCircuit && currentBlock) {
+        if (circuitSession?.actions.completeCircuit) {
+          await circuitSession.actions.completeCircuit();
+        }
+
+        const session = circuitSession?.sessionData;
+        if (workout?.workoutId && session) {
+          for (const round of session.rounds) {
+            const hasReps = round.exercises?.some(
+              (ex: CircuitExercise) => (ex.actualReps || 0) > 0,
+            );
+            if (hasReps || round.isCompleted) {
+              await logCircuitRound(workout.workoutId, currentBlock.id, round);
+            }
+          }
+          await markBlockExercisesComplete(workout.workoutId, currentBlock);
+        }
+
+        const circuitExerciseIds = currentBlock.exercises.map((ex) => ex.id);
+        const exerciseIndices = circuitExerciseIds
+          .map((exerciseId) =>
+            exercises.findIndex((ex) => ex.id === exerciseId),
+          )
+          .filter((index) => index !== -1);
+
+        const updatedProgress = [...exerciseProgress];
+        const roundsCompleted = (
+          circuitSession?.sessionData.rounds || []
+        ).filter((r) => r.isCompleted).length;
+        exerciseIndices.forEach((index) => {
+          updatedProgress[index] = {
+            ...updatedProgress[index],
+            setsCompleted: currentBlock.exercises[index]?.sets || 1,
+            repsCompleted: 0,
+            roundsCompleted,
+          };
+        });
+        setExerciseProgress(updatedProgress);
+
+        const maxCircuitIndex = Math.max(...exerciseIndices);
+        const nextExerciseIndex = maxCircuitIndex + 1;
+
+        if (nextExerciseIndex < exercises.length) {
+          setCurrentExerciseIndex(nextExerciseIndex);
+          timers.resetExerciseTimer();
+          scrollToExerciseHeading(nextExerciseIndex);
+        } else {
+          await completeWorkoutDay();
+        }
+
+        setShowCompleteModal(false);
+        return { success: true };
+      }
+
+      // Regular exercise completion
+      const hasSets = currentProgress.sets && currentProgress.sets.length > 0;
+      const hasDuration =
+        currentProgress.duration && currentProgress.duration > 0;
+      const isDurationBasedExercise =
+        currentExercise.duration &&
+        currentExercise.duration > 0 &&
+        (!currentExercise.reps || currentExercise.reps === 0);
+
+      if (!hasSets && !hasDuration && !isDurationBasedExercise) {
+        return {
+          success: false,
+          error: {
+            title: "No Progress Logged",
+            description:
+              "Please log your exercise progress before completing this exercise.",
+          },
+        };
+      }
+
+      let setsToLog = currentProgress.sets;
+      if (isDurationBasedExercise && (!setsToLog || setsToLog.length === 0)) {
+        setsToLog = [
+          {
+            roundNumber: 1,
+            setNumber: 1,
+            weight: currentExercise.weight || 0,
+            reps: 0,
+          },
+        ];
+      }
+
+      await createExerciseLog({
+        planDayExerciseId: currentExercise.id,
+        sets: setsToLog,
+        durationCompleted: currentProgress.duration,
+        isComplete: true,
+        timeTaken: timers.exerciseTimer,
+        notes: currentProgress.notes,
+      });
+
+      if (currentExerciseIndex < exercises.length - 1) {
+        const nextIndex = currentExerciseIndex + 1;
+        setCurrentExerciseIndex(nextIndex);
+        timers.resetExerciseTimer();
+        updateCurrentBlockForAbandonment(nextIndex);
+        scrollToExerciseHeading(nextIndex);
+        setShowCompleteModal(false);
+        return { success: true };
+      } else {
+        await completeWorkoutDay();
+        setShowCompleteModal(false);
+        return { success: true, workoutComplete: true };
+      }
+    } catch (err) {
+      console.error("Error completing exercise:", err);
+      return {
+        success: false,
+        error: {
+          title: "Error",
+          description: isCurrentBlockCircuit
+            ? "Failed to complete circuit. Please try again."
+            : "Failed to complete exercise. Please try again.",
+        },
+      };
+    } finally {
+      setIsCompletingExercise(false);
+    }
+  }, [
+    currentExercise,
+    currentProgress,
+    currentBlock,
+    isCurrentBlockWarmupCooldown,
+    isCurrentBlockCircuit,
+    exercises,
+    exerciseProgress,
+    currentExerciseIndex,
+    workout,
+    circuitSession,
+    timers,
+    updateCurrentBlockForAbandonment,
+    scrollToExerciseHeading,
+    completeWorkoutDay,
+  ]);
+
+  // Skip exercise
+  const skipCurrentExercise = useCallback(async (): Promise<{
+    success: boolean;
+    error?: { title: string; description: string };
+    workoutComplete?: boolean;
+  }> => {
+    if (!currentExercise || !workout) {
+      return { success: false };
+    }
+
+    setIsSkippingExercise(true);
+
+    try {
+      await skipExercise(workout.workoutId, currentExercise.id);
+      setSkippedExercises((prev) => [...prev, currentExercise.id]);
+
+      setExerciseProgress((prev) => {
+        const updated = [...prev];
+        updated[currentExerciseIndex] = {
+          ...updated[currentExerciseIndex],
+          isSkipped: true,
+        };
+        return updated;
+      });
+
+      if (currentExerciseIndex < exercises.length - 1) {
+        const nextIndex = currentExerciseIndex + 1;
+        setCurrentExerciseIndex(nextIndex);
+        timers.resetExerciseTimer();
+        updateCurrentBlockForAbandonment(nextIndex);
+        scrollToExerciseHeading(nextIndex);
+        setShowSkipModal(false);
+        return { success: true };
+      } else {
+        await completeWorkoutDay();
+        setShowSkipModal(false);
+        return { success: true, workoutComplete: true };
+      }
+    } catch (err) {
+      console.error("Error skipping exercise:", err);
+      return {
+        success: false,
+        error: {
+          title: "Error",
+          description: "Failed to skip exercise. Please try again.",
+        },
+      };
+    } finally {
+      setIsSkippingExercise(false);
+    }
+  }, [
+    currentExercise,
+    workout,
+    exercises,
+    currentExerciseIndex,
+    timers,
+    updateCurrentBlockForAbandonment,
+    scrollToExerciseHeading,
+    completeWorkoutDay,
+  ]);
+
+  // Sync context with workout state
+  useEffect(() => {
+    if (isWorkoutCompleted) {
+      setWorkoutInProgress(false);
+    } else if (isWorkoutStarted) {
+      setWorkoutInProgress(true);
+    } else {
+      setWorkoutInProgress(false);
+    }
+  }, [isWorkoutStarted, isWorkoutCompleted, setWorkoutInProgress]);
+
+  // Note: Workout abandonment handling removed due to race conditions
+  // The workout context (isWorkoutInProgress) is managed by the sync effect above
+
+  // Auto-add first set when moving to a new exercise
+  useEffect(() => {
+    if (
+      isWorkoutStarted &&
+      !isWorkoutCompleted &&
+      currentExercise &&
+      currentProgress
+    ) {
+      if (currentProgress.sets.length === 0) {
+        const firstSet = {
+          roundNumber: 1,
+          setNumber: 1,
+          weight: currentExercise.weight || 0,
+          reps: currentExercise.reps || 10,
+        };
+        updateProgress("sets", [firstSet]);
       }
     }
   }, [
     currentExerciseIndex,
-    currentBlockIndex,
-    activeWorkout,
-    getFlattenedExercises,
+    isWorkoutStarted,
+    isWorkoutCompleted,
+    currentExercise,
+    currentProgress,
+    updateProgress,
   ]);
 
-  const endWorkout = useCallback(
-    async (notes?: string): Promise<boolean> => {
-      if (!activeWorkout) return false;
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setWorkoutInProgress(false);
+      timers.stopTimers();
+    };
+  }, [setWorkoutInProgress, timers]);
 
-      try {
-        // Calculate total time
-        const totalTime = workoutTimer;
-
-        // Update workout log
-        await updateWorkoutLog(activeWorkout.workoutId, {
-          notes: notes || "",
-          totalTimeMinutes: Math.floor(totalTime / 60),
-          isComplete: true,
-        });
-
-        // Mark workout as complete with all exercise IDs
-        const flattenedExercises = getFlattenedExercises(activeWorkout);
-        const totalExerciseIds = flattenedExercises.map((ex) => ex.id);
-        await markWorkoutComplete(activeWorkout.workoutId, totalExerciseIds);
-
-        const completedExercises = exerciseData.filter(
-          (data) => data.isCompleted
-        ).length;
-        logger.businessEvent("Workout completed", {
-          workoutId: activeWorkout.workoutId,
-          duration: `${Math.floor(totalTime / 60)}m ${totalTime % 60}s`,
-          exercisesCompleted: completedExercises,
-          totalExercises: flattenedExercises.length,
-        });
-
-        return true;
-      } catch (error) {
-        logger.error("Error ending workout", {
-          error: error instanceof Error ? error.message : "Unknown error",
-          workoutId: activeWorkout?.workoutId,
-        });
-        return false;
-      }
-    },
-    [activeWorkout, workoutTimer, getFlattenedExercises]
-  );
-
-  const resetSession = useCallback(() => {
-    setCurrentExerciseIndex(0);
-    setCurrentBlockIndex(0);
-    setExerciseTimer(0);
-    setWorkoutTimer(0);
-    setIsWorkoutActive(false);
-    setExerciseData([]);
-
-    // TIMER DISABLED: Cleanup timers commented out
-    // if (workoutTimerRef.current) clearInterval(workoutTimerRef.current);
-    // if (exerciseTimerRef.current) clearInterval(exerciseTimerRef.current);
-    deactivateKeepAwake("workout-session-timer");
-
-    // Reset timestamps
-    workoutStartTime.current = null;
-    exerciseStartTime.current = null;
-    setIsPaused(false);
-  }, []);
-
-  const formatTime = useCallback((seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  }, []);
-
-  const togglePause = useCallback(() => {
-    setIsPaused(!isPaused);
-  }, [isPaused]);
-
-  // Computed values
-  const currentExercise = getCurrentExercise();
-  const currentData = exerciseData[currentExerciseIndex];
-  const completedCount = exerciseData.filter((data) => data.isCompleted).length;
-  const flattenedExercises = getFlattenedExercises(activeWorkout);
-  const totalExercises = flattenedExercises.length;
-  const progressPercentage =
-    totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0;
-
-  // Create backward compatible activeWorkout with exercises property
-  const activeWorkoutWithExercises = activeWorkout
-    ? ({
-        ...activeWorkout,
-        exercises: flattenedExercises,
-      } as PlanDayWithExercisesLegacy)
-    : null;
+  // Clear data on logout
+  useEffect(() => {
+    if (!user && !authLoading) {
+      reset();
+    }
+  }, [user, authLoading, reset]);
 
   return {
     // State
-    activeWorkout: activeWorkoutWithExercises,
+    loading,
+    error,
+    workout,
+    hasActiveWorkoutPlan,
     currentExerciseIndex,
-    currentBlockIndex,
-    exerciseTimer,
-    workoutTimer,
-    isWorkoutActive,
-    isPaused,
-    exerciseData,
-    isLoading,
+    isWorkoutStarted,
+    isWorkoutCompleted,
+    refreshing,
+    hasCompletedWorkoutDuration,
+    completedExercisesCount,
+    exerciseProgress,
+    skippedExercises,
+    
+    // Modal state
+    showCompleteModal,
+    setShowCompleteModal,
+    showRestCompleteModal,
+    setShowRestCompleteModal,
+    showSkipModal,
+    setShowSkipModal,
+    showRepeatModal,
+    setShowRepeatModal,
+    isCompletingExercise,
+    isSkippingExercise,
+    
+    // Derived data
+    exercises,
+    currentExercise,
+    currentProgress,
+    progressPercent,
+    currentBlock,
+    isCurrentBlockCircuit,
+    isCurrentBlockWarmupCooldown,
+    circuitSession,
+    
+    // Refs
+    scrollViewRef,
+    exerciseHeadingRef,
+    circuitHeadingRef,
+    
+    // Timers
+    timers,
+    restTimer,
+    
+    // Context data
+    isGenerating,
 
     // Actions
+    loadWorkout,
+    onRefresh,
+    handleGenerateNewWorkout,
+    handleRepeatWorkoutSuccess,
     startWorkout,
     completeExercise,
-    endWorkout,
-    updateExerciseData,
-    updateExerciseSets,
-    moveToNextExercise,
-    resetSession,
-    refreshWorkout,
-    togglePause,
-
-    // Computed values
-    currentExercise,
-    currentData,
-    completedCount,
-    totalExercises,
-    progressPercentage,
-    formatTime,
+    skipCurrentExercise,
+    updateProgress,
   };
 }
