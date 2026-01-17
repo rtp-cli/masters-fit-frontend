@@ -46,7 +46,7 @@ function DisabledTabButton({
   // Use NavigationContainerRefContext directly - it never throws, just returns undefined
   // when navigation context isn't available (e.g., during dark mode initialization)
   const navigationRef = useContext(NavigationContainerRefContext);
-  const currentRoute = navigationRef?.current?.getCurrentRoute()?.name;
+  const currentRoute = navigationRef?.getCurrentRoute()?.name;
   const [dialogVisible, setDialogVisible] = useState(false);
   const pendingEventRef = useRef<GestureResponderEvent | null>(null);
 
