@@ -7,9 +7,20 @@ import Purchases, {
   type PurchasesPackage,
 } from "react-native-purchases";
 
+// Type for offering metadata with benefits
+export interface OfferingMetadata {
+  benefits?: {
+    [packageId: string]: string[];
+  };
+  paywall_title?: string;
+  paywall_subtitle?: string;
+  [key: string]: unknown;
+}
+
 interface UseSubscriptionPlansReturn {
   offering: PurchasesOffering | null;
   packages: PurchasesPackage[];
+  metadata: OfferingMetadata | null;
   isLoading: boolean;
   error: string | null;
   customerInfo: CustomerInfo | null;
@@ -22,6 +33,7 @@ interface UseSubscriptionPlansReturn {
 export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  const [metadata, setMetadata] = useState<OfferingMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
@@ -38,6 +50,12 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       if (offerings.current) {
         setOffering(offerings.current);
         setPackages(offerings.current.availablePackages);
+
+        // Extract metadata from offering (for dynamic benefits, titles, etc.)
+        const offeringMetadata =
+          (offerings.current.metadata as OfferingMetadata) || null;
+        setMetadata(offeringMetadata);
+
         console.log(
           "[RevenueCat] Loaded offerings:",
           offerings.current.identifier
@@ -46,10 +64,14 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           "[RevenueCat] Available packages:",
           offerings.current.availablePackages.map((p) => p.identifier)
         );
+        if (offeringMetadata) {
+          console.log("[RevenueCat] Offering metadata:", offeringMetadata);
+        }
       } else {
         console.log("[RevenueCat] No current offering available");
         setOffering(null);
         setPackages([]);
+        setMetadata(null);
       }
 
       // Also get customer info
@@ -175,6 +197,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
   return {
     offering,
     packages,
+    metadata,
     isLoading,
     error,
     customerInfo,
