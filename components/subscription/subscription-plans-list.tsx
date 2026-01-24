@@ -3,33 +3,44 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PurchasesPackage, PACKAGE_TYPE } from "react-native-purchases";
 import { useThemeColors } from "@/lib/theme";
+import { OfferingMetadata } from "@/hooks/use-subscription-plans";
 
 interface SubscriptionPlansListProps {
   packages: PurchasesPackage[];
   selectedPackageId?: string;
   onPackageSelect: (pkg: PurchasesPackage) => void;
+  metadata?: OfferingMetadata | null;
 }
 
 export default function SubscriptionPlansList({
   packages,
   selectedPackageId,
   onPackageSelect,
+  metadata,
 }: SubscriptionPlansListProps) {
   const colors = useThemeColors();
   // Helper to determine if a package is annual
   const isAnnualPackage = (pkg: PurchasesPackage): boolean => {
+    const id = pkg.identifier.toLowerCase();
     return (
       pkg.packageType === PACKAGE_TYPE.ANNUAL ||
-      pkg.identifier.toLowerCase().includes("annual") ||
-      pkg.identifier.toLowerCase().includes("yearly")
+      id.includes("annual") ||
+      id.includes("yearly") ||
+      id.includes("_1y") ||
+      id.includes("_1y:") ||
+      id.includes(".1y")
     );
   };
 
   // Helper to determine if a package is monthly
   const isMonthlyPackage = (pkg: PurchasesPackage): boolean => {
+    const id = pkg.identifier.toLowerCase();
     return (
       pkg.packageType === PACKAGE_TYPE.MONTHLY ||
-      pkg.identifier.toLowerCase().includes("monthly")
+      id.includes("monthly") ||
+      id.includes("_1m") ||
+      id.includes("_1m:") ||
+      id.includes(".1m")
     );
   };
 
@@ -78,9 +89,48 @@ export default function SubscriptionPlansList({
     return "";
   };
 
+  // Default benefits (fallback if metadata not configured in RevenueCat)
+  const defaultAnnualBenefits = [
+    "Unlimited workout regenerations",
+    "Priority AI processing",
+    "Advanced analytics & insights",
+    "Early access to new features",
+    "Priority customer support",
+  ];
+
+  const defaultMonthlyBenefits = [
+    "Unlimited workout regenerations",
+    "AI-powered workout plans",
+    "Basic analytics",
+  ];
+
+  // Get benefits from metadata or use defaults
+  const getBenefitsForPackage = (
+    pkg: PurchasesPackage,
+    isAnnual: boolean
+  ): string[] => {
+    // Try to get benefits from metadata using package identifier
+    if (metadata?.benefits) {
+      // Try exact package identifier match (e.g., "$rc_annual", "$rc_monthly")
+      if (metadata.benefits[pkg.identifier]) {
+        return metadata.benefits[pkg.identifier];
+      }
+      // Try generic keys ("annual", "monthly")
+      if (isAnnual && metadata.benefits["annual"]) {
+        return metadata.benefits["annual"];
+      }
+      if (!isAnnual && metadata.benefits["monthly"]) {
+        return metadata.benefits["monthly"];
+      }
+    }
+    // Fall back to defaults
+    return isAnnual ? defaultAnnualBenefits : defaultMonthlyBenefits;
+  };
+
   const renderPackage = (pkg: PurchasesPackage, isAnnual: boolean = false) => {
     const isSelected = selectedPackageId === pkg.identifier;
     const isPopular = isAnnual && savingsInfo && savingsInfo.savingsPercent > 0;
+    const benefits = getBenefitsForPackage(pkg, isAnnual);
 
     return (
       <TouchableOpacity
@@ -140,36 +190,18 @@ export default function SubscriptionPlansList({
         </View>
 
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Ionicons
-              name="checkmark-circle"
-              size={16}
-              color={colors.brand.primary}
-            />
-            <Text className="text-sm text-text-secondary flex-1">
-              Unlimited workout regenerations
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <Ionicons
-              name="checkmark-circle"
-              size={16}
-              color={colors.brand.primary}
-            />
-            <Text className="text-sm text-text-secondary flex-1">
-              Priority AI processing
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <Ionicons
-              name="checkmark-circle"
-              size={16}
-              color={colors.brand.primary}
-            />
-            <Text className="text-sm text-text-secondary flex-1">
-              Advanced analytics
-            </Text>
-          </View>
+          {benefits.map((benefit, index) => (
+            <View key={index} className="flex-row items-center gap-2">
+              <Ionicons
+                name="checkmark-circle"
+                size={16}
+                color={colors.brand.primary}
+              />
+              <Text className="text-sm text-text-secondary flex-1">
+                {benefit}
+              </Text>
+            </View>
+          ))}
         </View>
       </TouchableOpacity>
     );

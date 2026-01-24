@@ -36,6 +36,7 @@ export default function PaymentWallModal({
   const colors = useThemeColors();
   const {
     packages,
+    metadata,
     isLoading,
     error,
     isPurchasing,
@@ -213,6 +214,7 @@ export default function PaymentWallModal({
                 packages={packages}
                 selectedPackageId={selectedPackage?.identifier}
                 onPackageSelect={handlePackageSelect}
+                metadata={metadata}
               />
             )}
           </View>
