@@ -989,20 +989,20 @@ export default function DashboardScreen() {
         onSuccess={handleRepeatWorkoutSuccess}
       />
 
-      {/* Premium Upgrade Payment Wall Modal */}
+      {/* Pro Upgrade Payment Wall Modal */}
       <PaymentWallModal
         visible={showPaymentWall}
         onClose={() => setShowPaymentWall(false)}
         paywallData={{
           type: "subscription_required",
           message:
-            "Upgrade to Premium to unlock unlimited workouts, advanced analytics, and exclusive features.",
+            "Upgrade to MastersFit Pro to unlock unlimited workouts, advanced analytics, and exclusive features.",
         }}
         onPurchaseSuccess={() => {
           setDialogConfig({
-            title: "Welcome to Premium!",
+            title: "Welcome to MastersFit Pro!",
             description:
-              "Your subscription is now active. Enjoy unlimited access to all premium features!",
+              "Your subscription is now active. Enjoy unlimited access to all Pro features!",
             primaryButton: {
               text: "OK",
               onPress: () => {

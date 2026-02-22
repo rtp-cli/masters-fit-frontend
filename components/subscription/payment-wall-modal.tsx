@@ -166,7 +166,7 @@ export default function PaymentWallModal({
 
           {/* Title */}
           <Text className="text-2xl font-bold text-text-primary text-center mb-3">
-            Unlock Premium
+            Get MastersFit Pro
           </Text>
 
           {/* Message */}
@@ -230,7 +230,10 @@ export default function PaymentWallModal({
               activeOpacity={0.8}
             >
               {isPurchasing ? (
-                <ActivityIndicator size="small" color={colors.contentOnPrimary} />
+                <ActivityIndicator
+                  size="small"
+                  color={colors.contentOnPrimary}
+                />
               ) : (
                 <Text className="text-content-on-primary text-lg font-bold">
                   {selectedPackage

@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, usePathname } from "expo-router";
+import { usePathname } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useThemeColors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
 import SettingsModal from "./settings/settings-modal";
-import SubscriptionDetailsModal from "./subscription/subscription-details-modal";
-import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 
 interface HeaderProps {
   workoutTitle?: string;
@@ -22,7 +20,6 @@ export default function Header({
   onSearchPress,
   onSettingsPress,
 }: HeaderProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
   const colors = useThemeColors();
@@ -30,11 +27,6 @@ export default function Header({
   // Modal state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
-  const [subscriptionDetailsVisible, setSubscriptionDetailsVisible] =
-    useState(false);
-
-  // Subscription status
-  const { isPro } = useSubscriptionStatus();
 
   // Determine which header to show based on current route
   const isDashboard = pathname === "/" || pathname.includes("dashboard");
@@ -72,23 +64,9 @@ export default function Header({
           {isDashboard && (
             <View className="flex-row items-center gap-2">
               <View className="flex-1">
-                <View className="flex-row items-center gap-2">
-                  <Text className="text-lg font-bold text-text-primary">
-                    Hey {user?.name || "User"}!
-                  </Text>
-                  {isPro && (
-                    <TouchableOpacity
-                      onPress={() => setSubscriptionDetailsVisible(true)}
-                      className="flex-row items-center bg-primary/15 px-2 py-1 rounded-xl gap-1"
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="star" size={14} color={colors.warning} />
-                      <Text className="text-[11px] font-bold text-primary tracking-wide">
-                        PRO
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+                <Text className="text-lg font-bold text-text-primary">
+                  Hey {user?.name || "User"}!
+                </Text>
                 {currentDate && (
                   <Text className="text-sm text-text-muted mt-1">
                     {currentDate}
@@ -98,23 +76,9 @@ export default function Header({
             </View>
           )}
           {isCalendar && (
-            <View className="flex-row items-center gap-2">
-              <Text className="text-lg font-bold text-text-primary">
-                {workoutTitle || "Workout Calendar"}
-              </Text>
-              {isPro && (
-                <TouchableOpacity
-                  onPress={() => setSubscriptionDetailsVisible(true)}
-                  className="flex-row items-center bg-primary/15 px-2 py-1 rounded-xl gap-1"
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="star" size={14} color={colors.warning} />
-                  <Text className="text-[11px] font-bold text-primary tracking-wide">
-                    PRO
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <Text className="text-lg font-bold text-text-primary">
+              {workoutTitle || "Workout Calendar"}
+            </Text>
           )}
         </View>
 
@@ -144,10 +108,6 @@ export default function Header({
       <SettingsModal
         visible={settingsModalVisible}
         onClose={() => setSettingsModalVisible(false)}
-      />
-      <SubscriptionDetailsModal
-        visible={subscriptionDetailsVisible}
-        onClose={() => setSubscriptionDetailsVisible(false)}
       />
     </View>
   );

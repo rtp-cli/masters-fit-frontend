@@ -9,6 +9,7 @@ interface SubscriptionSectionProps {
   productIdentifier?: string | null;
   expirationDate?: Date | null;
   onPress: () => void;
+  onUpgradePress?: () => void;
 }
 
 export default function SubscriptionSection({
@@ -17,8 +18,24 @@ export default function SubscriptionSection({
   productIdentifier,
   expirationDate,
   onPress,
+  onUpgradePress,
 }: SubscriptionSectionProps) {
   const colors = useThemeColors();
+
+  // Get plan name based on product identifier
+  const getPlanName = (identifier: string | null): string => {
+    if (!identifier) return "MastersFit Pro";
+    if (identifier.includes("annual") || identifier.includes("yearly")) {
+      return "MastersFit Pro (Annual)";
+    }
+    if (identifier.includes("monthly")) {
+      return "MastersFit Pro (Monthly)";
+    }
+    if (identifier.includes("weekly")) {
+      return "MastersFit Pro (Weekly)";
+    }
+    return "MastersFit Pro";
+  };
 
   return (
     <View className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden">
@@ -32,29 +49,20 @@ export default function SubscriptionSection({
           onPress={onPress}
           activeOpacity={0.7}
         >
-          <View className="flex-row items-center flex-1">
-            <View className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg mr-3">
-              <Ionicons name="star" size={16} color={colors.warning} />
-              <Text className="text-sm font-bold text-primary ml-1.5">PRO</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-semibold text-text-primary">
-                {productIdentifier
-                  ?.replace(/_/g, " ")
-                  .replace(/\b\w/g, (l) => l.toUpperCase()) ||
-                  "Premium Subscription"}
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-text-primary">
+              {getPlanName(productIdentifier ?? null)}
+            </Text>
+            {expirationDate && (
+              <Text className="text-xs text-text-muted mt-0.5">
+                {activeEntitlement.willRenew ? "Renews" : "Expires"}{" "}
+                {expirationDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </Text>
-              {expirationDate && (
-                <Text className="text-xs text-text-muted mt-0.5">
-                  {activeEntitlement.willRenew ? "Renews" : "Expires"}{" "}
-                  {expirationDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </Text>
-              )}
-            </View>
+            )}
           </View>
           <Ionicons
             name="chevron-forward"
@@ -64,9 +72,25 @@ export default function SubscriptionSection({
         </TouchableOpacity>
       ) : (
         <View className="px-4 py-3 border-t border-neutral-light-2">
-          <Text className="text-sm text-text-secondary">
-            No active subscription
-          </Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-text-primary">
+                MastersFit Lite
+              </Text>
+              <Text className="text-xs text-text-muted mt-0.5">
+                Limited workout generations
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={onUpgradePress}
+              activeOpacity={0.7}
+              className="bg-primary px-4 py-2 rounded-lg"
+            >
+              <Text className="text-xs font-semibold text-content-on-primary">
+                Upgrade
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>

@@ -39,17 +39,17 @@ export default function SubscriptionDetailsModal({
 
   // Extract product name from identifier (e.g., "masters_fit_monthly" -> "Monthly Premium")
   const getProductName = (identifier: string | null): string => {
-    if (!identifier) return "Premium Subscription";
+    if (!identifier) return "MastersFit Pro";
 
     // Try to extract readable name from identifier
     if (identifier.includes("annual") || identifier.includes("yearly")) {
-      return "Annual Premium";
+      return "MastersFit Pro (Annual)";
     }
     if (identifier.includes("monthly")) {
-      return "Monthly Premium";
+      return "MastersFit Pro (Monthly)";
     }
     if (identifier.includes("weekly")) {
-      return "Weekly Premium";
+      return "MastersFit Pro (Weekly)";
     }
 
     // Fallback: capitalize and format
@@ -90,14 +90,11 @@ export default function SubscriptionDetailsModal({
             paddingBottom: 40,
           }}
         >
-          {/* Pro Badge */}
+          {/* Plan Name */}
           <View className="items-center mb-8">
-            <View className="flex-row items-center bg-primary/10 px-5 py-3 rounded-3xl gap-2">
-              <Ionicons name="star" size={24} color={colors.warning} />
-              <Text className="text-lg font-bold text-primary tracking-wide">
-                PRO
-              </Text>
-            </View>
+            <Text className="text-xl font-bold text-primary">
+              MastersFit Pro
+            </Text>
           </View>
 
           {/* Subscription Info */}
@@ -154,7 +151,7 @@ export default function SubscriptionDetailsModal({
           {/* Features */}
           <View className="mb-8">
             <Text className="text-lg font-semibold text-text-primary mb-4">
-              Premium Benefits
+              MastersFit Pro Benefits
             </Text>
             <View className="gap-3">
               <View className="flex-row items-center gap-3">
@@ -164,17 +161,7 @@ export default function SubscriptionDetailsModal({
                   color={colors.brand.primary}
                 />
                 <Text className="text-sm text-text-secondary flex-1">
-                  Unlimited workout regenerations
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-3">
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-sm text-text-secondary flex-1">
-                  Priority AI processing
+                  Unlimited workout generations
                 </Text>
               </View>
               <View className="flex-row items-center gap-3">
@@ -185,6 +172,16 @@ export default function SubscriptionDetailsModal({
                 />
                 <Text className="text-sm text-text-secondary flex-1">
                   Advanced analytics
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={colors.brand.primary}
+                />
+                <Text className="text-sm text-text-secondary flex-1">
+                  Customizable themes
                 </Text>
               </View>
             </View>

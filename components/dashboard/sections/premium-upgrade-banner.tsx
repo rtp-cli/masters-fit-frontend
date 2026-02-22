@@ -44,7 +44,7 @@ const PremiumUpgradeBanner: React.FC<PremiumUpgradeBannerProps> = ({
             className="text-base font-bold mb-1"
             style={{ color: colors.contentOnPrimary }}
           >
-            Unlock Premium
+            Get MastersFit Pro
           </Text>
           <Text
             className="text-sm leading-5"

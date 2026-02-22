@@ -83,6 +83,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
   // Paywall test modal state
   const [showPaywallTest, setShowPaywallTest] = useState(false);
   const [showSubscriptionDetails, setShowSubscriptionDetails] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Subscription status
   const { isPro, activeEntitlement, productIdentifier, expirationDate } =
@@ -506,6 +507,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           productIdentifier={productIdentifier}
           expirationDate={expirationDate}
           onPress={() => setShowSubscriptionDetails(true)}
+          onUpgradePress={() => setShowUpgradeModal(true)}
         />
 
         {/* App Settings */}
@@ -574,6 +576,33 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       <SubscriptionDetailsModal
         visible={showSubscriptionDetails}
         onClose={() => setShowSubscriptionDetails(false)}
+      />
+
+      {/* Upgrade to Pro Modal */}
+      <PaymentWallModal
+        visible={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        paywallData={{
+          type: "subscription_required",
+          message:
+            "Upgrade to MastersFit Pro to unlock unlimited workouts, advanced analytics, and exclusive features.",
+        }}
+        onPurchaseSuccess={() => {
+          setDialogConfig({
+            title: "Welcome to MastersFit Pro!",
+            description:
+              "Your subscription is now active. Enjoy unlimited access to all Pro features!",
+            primaryButton: {
+              text: "OK",
+              onPress: () => {
+                setDialogVisible(false);
+                setShowUpgradeModal(false);
+              },
+            },
+            icon: "checkmark-circle",
+          });
+          setDialogVisible(true);
+        }}
       />
 
       {/* Custom Dialog */}
