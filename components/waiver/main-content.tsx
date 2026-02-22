@@ -1,5 +1,6 @@
 import { Image, Text, View } from "react-native";
 import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import { images } from "@/assets";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -9,16 +10,19 @@ interface MainContentProps {
 
 export default function MainContent({ isUpdate }: MainContentProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
 
   return (
     <>
       {/* Logo and Title */}
       <View className="px-6 items-center mb-8 mt-4">
-        <Image
-          source={images.icon}
-          className="w-24 h-24 mb-6 rounded-md"
-          resizeMode="contain"
-        />
+        <View className="w-24 h-24 mb-6 rounded-2xl bg-primary items-center justify-center">
+          <Image
+            source={isDark ? images.logoDark : images.logo}
+            className="w-16 h-16"
+            resizeMode="contain"
+          />
+        </View>
         <Text className="text-3xl font-bold text-text-primary text-center mb-2">
           {isUpdate ? "Updated Legal Agreement" : "Before You Begin"}
         </Text>

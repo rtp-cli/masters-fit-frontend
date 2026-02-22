@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemeColors } from "@lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import { Image } from "react-native";
 import { images } from "@/assets";
 
@@ -22,6 +23,7 @@ export default function WarmingUpScreen({
   duration = 8000,
 }: WarmingUpScreenProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   useEffect(() => {
@@ -39,12 +41,14 @@ export default function WarmingUpScreen({
       <View className="flex-1 justify-center items-center px-8">
         {/* Main Content */}
         <View className="items-center mb-12">
-          <Image
-            key="warming-up-logo"
-            source={images.icon}
-            className="w-48 h-48 mb-8 rounded-lg"
-            resizeMode="contain"
-          />
+          <View className="w-48 h-48 mb-8 rounded-3xl bg-primary items-center justify-center">
+            <Image
+              key="warming-up-logo"
+              source={isDark ? images.logoDark : images.logo}
+              className="w-32 h-32"
+              resizeMode="contain"
+            />
+          </View>
           {/* Title */}
           <Text className="text-2xl font-bold text-text-primary mb-4 text-center">
             Warming Up MastersFit

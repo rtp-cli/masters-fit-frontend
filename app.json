@@ -29,13 +29,13 @@
     },
     "android": {
       "splash": {
-        "image": "./assets/icon.png",
+        "image": "./assets/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#FFFFFF"
       },
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       },
       "package": "com.mastersfit.ai",
       "permissions": [

@@ -3,14 +3,12 @@
 
 export const images = {
   // App branding
-  icon: require('./icon.png'),
-  logo: require('./logo.png'),
-  logoDark: require('./logo-dark.png'),
-  splash: require('./splash.png'),
-  
+  logo: require("./logo.png"),
+  logoDark: require("./logo-dark.png"),
+  splash: require("./splash.png"),
   // UI images
-  home: require('./home.png'),
-  gymGeneric: require('./gym-generic.jpg'),
+  home: require("./home.png"),
+  gymGeneric: require("./gym-generic.jpg"),
 } as const;
 
 // Type-safe image keys
