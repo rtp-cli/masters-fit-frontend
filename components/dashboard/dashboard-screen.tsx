@@ -143,6 +143,7 @@ export default function DashboardScreen() {
       weightMetrics,
       totalVolumeMetrics,
       dailyWorkoutProgress,
+      lastDataRefreshTimestamp,
     },
     loading,
     refresh: {
@@ -507,6 +508,7 @@ export default function DashboardScreen() {
     hasLoadedInitialData,
     weeklySummary,
     dailyWorkoutProgress,
+    lastDataRefreshTimestamp,
     fetchWeightAccuracyByDate,
   ]);
 
@@ -533,6 +535,7 @@ export default function DashboardScreen() {
     hasLoadedInitialData,
     weeklySummary,
     dailyWorkoutProgress,
+    lastDataRefreshTimestamp,
     fetchWorkoutTypeByDate,
   ]);
 
@@ -559,6 +562,7 @@ export default function DashboardScreen() {
     hasLoadedInitialData,
     weeklySummary,
     dailyWorkoutProgress,
+    lastDataRefreshTimestamp,
     fetchWeightProgression,
   ]);
 

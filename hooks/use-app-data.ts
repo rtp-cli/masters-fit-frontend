@@ -37,6 +37,7 @@ interface AppDataState {
   workoutData: WorkoutWithDetails | null;
   profileData: Profile | null;
   historyData: WorkoutWithDetails[] | null; // Historical workout data
+  lastDataRefreshTimestamp: number; // Used to trigger dashboard chart refresh
 }
 
 // Loading states
@@ -96,6 +97,7 @@ export const useAppData = () => {
     workoutData: null,
     profileData: null,
     historyData: null,
+    lastDataRefreshTimestamp: 0,
   });
 
   // Loading states
@@ -718,6 +720,7 @@ export const useAppData = () => {
       workoutData: null,
       profileData: null,
       historyData: null,
+      lastDataRefreshTimestamp: 0,
     });
     setLoading({
       dashboardLoading: false,
@@ -739,6 +742,11 @@ export const useAppData = () => {
           refreshProfile(),
           refreshHistory(),
         ]);
+        // Update timestamp to trigger dashboard chart refresh
+        setData((prev) => ({
+          ...prev,
+          lastDataRefreshTimestamp: Date.now(),
+        }));
       } catch (err) {
         console.error("Error refreshing all data:", err);
       }
