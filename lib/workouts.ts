@@ -1080,3 +1080,69 @@ export async function replaceExercise(
     return null;
   }
 }
+
+/**
+ * Delete an exercise from a workout block
+ */
+export async function deleteExerciseFromBlock(
+  exerciseId: number
+): Promise<{ success: boolean } | null> {
+  try {
+    const response = await apiRequest<{ success: boolean }>(
+      `/workouts/exercises/${exerciseId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to delete exercise");
+    }
+  } catch (error) {
+    console.error("Error deleting exercise:", error);
+    return null;
+  }
+}
+
+/**
+ * Add an exercise to a workout block
+ */
+export async function addExerciseToBlock(
+  planDayId: number,
+  data: {
+    workoutBlockId: number;
+    exerciseId: number;
+    sets: number | null;
+    reps: number | null;
+    weight: number | null;
+    duration: number | null;
+    restTime: number | null;
+    order?: number;
+  }
+): Promise<{ success: boolean; workoutBlockExercise: any } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      workoutBlockExercise: any;
+    }>(`/workouts/days/${planDayId}/exercises`, {
+      method: "POST",
+      body: JSON.stringify({
+        ...data,
+        completed: false,
+      }),
+    });
+
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to add exercise");
+    }
+  } catch (error) {
+    console.error("Error adding exercise:", error);
+    return null;
+  }
+}

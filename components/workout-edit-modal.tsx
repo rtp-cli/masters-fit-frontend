@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ScrollView,
   TextInput,
   FlatList,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +20,11 @@ import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
-import { replaceExercise } from "@/lib/workouts";
+import {
+  replaceExercise,
+  deleteExerciseFromBlock,
+  addExerciseToBlock,
+} from "@/lib/workouts";
 import {
   PlanDayWithBlocks,
   WorkoutBlockWithExercise,
@@ -42,16 +47,12 @@ interface WorkoutEditModalProps {
   visible: boolean;
   onClose: () => void;
   planDay: PlanDayWithBlocks | null;
-  onSuccess?: () => void;
-  onError?: (error: string) => void;
 }
 
 export default function WorkoutEditModal({
   visible,
   onClose,
   planDay,
-  onSuccess,
-  onError,
 }: WorkoutEditModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -60,21 +61,39 @@ export default function WorkoutEditModal({
     refresh: { refreshWorkout },
   } = useAppDataContext();
 
-  const [modifiedExercises, setModifiedExercises] = useState<Set<number>>(
-    new Set(),
-  );
-  const [saving, setSaving] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<
     Record<number, boolean | undefined>
   >({});
 
   // Exercise replacement states
-  const [currentView, setCurrentView] = useState<"main" | "replace">("main");
+  const [currentView, setCurrentView] = useState<
+    "main" | "replace" | "add"
+  >("main");
   const [currentExercise, setCurrentExercise] =
     useState<WorkoutBlockWithExercise | null>(null);
   const [selectedExercise, setSelectedExercise] =
     useState<SearchExercise | null>(null);
   const [replacing, setReplacing] = useState(false);
+
+  // Add exercise states
+  const [addingToBlock, setAddingToBlock] = useState<{
+    blockId: number;
+    planDayId: number;
+  } | null>(null);
+  const [addParams, setAddParams] = useState({
+    sets: "",
+    reps: "",
+    weight: "",
+    duration: "",
+    restTime: "",
+  });
+  const [addingExercise, setAddingExercise] = useState(false);
+
+  // Delete exercise state — tracks the exercise ID being deleted (null = not deleting)
+  const [deletingExerciseId, setDeletingExerciseId] = useState<number | null>(null);
+
+  // Track whether modal has been initialized (prevents re-init on planDay prop changes)
+  const initializedRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchExercise[]>([]);
   const [searching, setSearching] = useState(false);
@@ -174,12 +193,12 @@ export default function WorkoutEditModal({
       .join(" ");
   };
 
-  // Initialize expanded blocks when modal opens
+  // Initialize expanded blocks when modal first opens (not on every planDay change)
   useEffect(() => {
-    if (visible && planDay) {
+    if (visible && planDay && !initializedRef.current) {
+      initializedRef.current = true;
       // All blocks expanded by default (undefined = expanded, false = collapsed)
       setExpandedBlocks({});
-      setModifiedExercises(new Set());
       setCurrentView("main");
       setCurrentExercise(null);
       setSelectedExercise(null);
@@ -187,6 +206,13 @@ export default function WorkoutEditModal({
       setSelectedEquipment([]);
       setSelectedMuscleGroups([]);
       setSelectedDifficulty(null);
+      setAddingToBlock(null);
+      setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+      setAddingExercise(false);
+      setDeletingExerciseId(null);
+    }
+    if (!visible) {
+      initializedRef.current = false;
     }
   }, [visible, planDay]);
 
@@ -209,7 +235,7 @@ export default function WorkoutEditModal({
 
   // Load initial suggestions when view changes or filters change
   useEffect(() => {
-    if (currentView === "replace") {
+    if (currentView === "replace" || currentView === "add") {
       searchExercises();
     }
   }, [
@@ -248,7 +274,7 @@ export default function WorkoutEditModal({
           selectedMuscleGroups.length > 0 ? selectedMuscleGroups : undefined,
         equipment: selectedEquipment.length > 0 ? selectedEquipment : undefined,
         difficulty: selectedDifficulty || undefined,
-        excludeId: currentExercise?.exercise.id,
+        excludeId: currentView === "replace" ? currentExercise?.exercise.id : undefined,
         userEquipmentOnly: selectedEquipment.length === 0, // Only use user equipment if no manual equipment filter
         limit: 20,
       });
@@ -324,13 +350,11 @@ export default function WorkoutEditModal({
       );
 
       if (result?.success) {
-        // Mark this exercise as modified
-        setModifiedExercises((prev) => new Set([...prev, currentExercise.id]));
-
-        // Close the modal completely to go back to calendar
-        onClose();
-
-        // Trigger refresh of workout data in background
+        // Return to main view immediately, refresh data in background
+        setCurrentView("main");
+        setCurrentExercise(null);
+        setSelectedExercise(null);
+        setSearchQuery("");
         refreshWorkout();
       } else {
         setDialogConfig({
@@ -358,6 +382,135 @@ export default function WorkoutEditModal({
       setDialogVisible(true);
     } finally {
       setReplacing(false);
+    }
+  };
+
+  const handleExerciseDelete = (exercise: WorkoutBlockWithExercise) => {
+    Alert.alert(
+      "Remove Exercise",
+      `Remove "${exercise.exercise.name}" from this workout?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingExerciseId(exercise.id);
+            try {
+              const result = await deleteExerciseFromBlock(exercise.id);
+              if (result?.success) {
+                // Refresh data in background — exercise disappears when data updates
+                refreshWorkout();
+              } else {
+                setDialogConfig({
+                  title: "Error",
+                  description:
+                    "Failed to remove exercise. Please try again.",
+                  primaryButton: {
+                    text: "OK",
+                    onPress: () => setDialogVisible(false),
+                  },
+                  icon: "alert-circle",
+                });
+                setDialogVisible(true);
+              }
+            } catch (error) {
+              console.error("Error deleting exercise:", error);
+              setDialogConfig({
+                title: "Error",
+                description:
+                  "Failed to remove exercise. Please try again.",
+                primaryButton: {
+                  text: "OK",
+                  onPress: () => setDialogVisible(false),
+                },
+                icon: "alert-circle",
+              });
+              setDialogVisible(true);
+            } finally {
+              setDeletingExerciseId(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleAddExercise = (blockId: number) => {
+    if (!planDay) return;
+    setAddingToBlock({ blockId, planDayId: planDay.id });
+    setSelectedExercise(null);
+    setSearchQuery("");
+    setSelectedEquipment([]);
+    setSelectedMuscleGroups([]);
+    setSelectedDifficulty(null);
+    setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+    setCurrentView("add");
+  };
+
+  const handleConfirmAdd = async () => {
+    if (!selectedExercise || !addingToBlock || !planDay) return;
+
+    setAddingExercise(true);
+    try {
+      // Calculate the next order number
+      const block = planDay.blocks.find(
+        (b) => b.id === addingToBlock.blockId,
+      );
+      const maxOrder = block?.exercises.reduce(
+        (max, ex) => Math.max(max, ex.order || 0),
+        0,
+      ) || 0;
+
+      const result = await addExerciseToBlock(addingToBlock.planDayId, {
+        workoutBlockId: addingToBlock.blockId,
+        exerciseId: selectedExercise.id,
+        sets: addParams.sets ? parseInt(addParams.sets, 10) : null,
+        reps: addParams.reps ? parseInt(addParams.reps, 10) : null,
+        weight: addParams.weight ? parseFloat(addParams.weight) : null,
+        duration: addParams.duration
+          ? parseInt(addParams.duration, 10)
+          : null,
+        restTime: addParams.restTime
+          ? parseInt(addParams.restTime, 10)
+          : null,
+        order: maxOrder + 1,
+      });
+
+      if (result?.success) {
+        // Return to main view immediately, refresh data in background
+        setCurrentView("main");
+        setAddingToBlock(null);
+        setSelectedExercise(null);
+        setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+        setSearchQuery("");
+        refreshWorkout();
+      } else {
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to add exercise. Please try again.",
+          primaryButton: {
+            text: "OK",
+            onPress: () => setDialogVisible(false),
+          },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
+      }
+    } catch (error) {
+      console.error("Error adding exercise:", error);
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to add exercise. Please try again.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
+    } finally {
+      setAddingExercise(false);
     }
   };
 
@@ -409,39 +562,6 @@ export default function WorkoutEditModal({
     return [...new Set(individual)];
   };
 
-  const handleSave = async () => {
-    if (modifiedExercises.size === 0) {
-      onClose();
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // TODO: Implement API calls for each modified exercise
-      // This will be done in Phase 4
-
-      await refreshWorkout();
-      setDialogConfig({
-        title: "Success",
-        description: "Workout updated successfully!",
-        primaryButton: {
-          text: "OK",
-          onPress: () => {
-            setDialogVisible(false);
-            onClose();
-            onSuccess?.();
-          },
-        },
-        icon: "checkmark-circle",
-      });
-      setDialogVisible(true);
-    } catch (error) {
-      onError?.("Failed to save changes. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleCancel = () => {
     if (currentView === "replace") {
       setCurrentView("main");
@@ -450,27 +570,15 @@ export default function WorkoutEditModal({
       return;
     }
 
-    if (modifiedExercises.size > 0) {
-      setDialogConfig({
-        title: "Discard Changes",
-        description: "Are you sure you want to discard your changes?",
-        secondaryButton: {
-          text: "Keep Editing",
-          onPress: () => setDialogVisible(false),
-        },
-        primaryButton: {
-          text: "Discard",
-          onPress: () => {
-            setDialogVisible(false);
-            onClose();
-          },
-        },
-        icon: "warning",
-      });
-      setDialogVisible(true);
-    } else {
-      onClose();
+    if (currentView === "add") {
+      setCurrentView("main");
+      setAddingToBlock(null);
+      setSelectedExercise(null);
+      setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+      return;
     }
+
+    onClose();
   };
 
   if (!planDay) {
@@ -539,14 +647,16 @@ export default function WorkoutEditModal({
                 <Text className="text-base font-semibold text-text-primary">
                   {currentView === "main"
                     ? "Edit Exercises"
-                    : "Replace Exercise"}
+                    : currentView === "replace"
+                      ? "Replace Exercise"
+                      : "Add Exercise"}
                 </Text>
                 <View className="w-8" />
               </View>
             </TouchableWithoutFeedback>
 
             {/* Content */}
-            {currentView === "main" ? (
+            {currentView === "main" && (
               <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ paddingBottom: 20 }}
@@ -573,7 +683,7 @@ export default function WorkoutEditModal({
 
                   {/* Edit Instructions */}
                   <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                    Tap any exercise to replace it with an alternative
+                    Tap to replace, swipe to delete, or add new exercises
                   </Text>
 
                   {/* Workout Details with Icons */}
@@ -612,23 +722,6 @@ export default function WorkoutEditModal({
                       </View>
                     </View>
 
-                    {/* Modified Count */}
-                    {modifiedExercises.size > 0 && (
-                      <View className="flex-row items-center">
-                        <Ionicons
-                          name="create"
-                          size={16}
-                          color={colors.warning}
-                        />
-                        <View className="ml-2">
-                          <View className="rounded-full px-2 py-1 bg-warning">
-                            <Text className="text-xs font-semibold text-neutral-white">
-                              {modifiedExercises.size} changed
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-                    )}
                   </View>
                 </View>
 
@@ -649,6 +742,9 @@ export default function WorkoutEditModal({
                             showDetails={true}
                             variant="calendar"
                             onExercisePress={handleExercisePress}
+                            onExerciseDelete={handleExerciseDelete}
+                            onAddExercise={handleAddExercise}
+                            deletingExerciseId={deletingExerciseId}
                           />
                         </View>
                       ))
@@ -664,7 +760,9 @@ export default function WorkoutEditModal({
                   )}
                 </View>
               </ScrollView>
-            ) : (
+            )}
+
+            {currentView === "replace" && (
               /* Exercise Replacement View */
               <View className="flex-1">
                 {/* Current Exercise Section */}
@@ -993,47 +1091,367 @@ export default function WorkoutEditModal({
               </View>
             )}
 
-            {/* Action Buttons */}
-            {modifiedExercises.size > 0 && (
-              <View className="px-5 pb-10 mb-5">
-                <View className="flex-row space-x-3">
-                  <TouchableOpacity
-                    className="flex-1 bg-surface border border-neutral-medium-1 py-4 rounded-md items-center"
-                    onPress={handleCancel}
-                    disabled={saving}
-                  >
-                    <Text className="text-text-primary font-semibold text-sm">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={`flex-1 bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                      saving ? "opacity-70" : ""
-                    }`}
-                    onPress={handleSave}
-                    disabled={saving}
-                  >
-                    {saving ? (
-                      <ActivityIndicator
-                        size="small"
-                        color={colors.neutral.white}
-                      />
-                    ) : (
-                      <>
+            {currentView === "add" && (
+              /* Add Exercise View */
+              <View className="flex-1">
+                {/* Search Section */}
+                <View className="flex-1">
+                  {/* Search Header and Input */}
+                  <View className="px-5 py-4 bg-surface">
+                    <View className="flex-row items-center gap-3">
+                      <View className="flex-1 flex-row items-center rounded-xl px-4 py-3 bg-neutral-light-2">
                         <Ionicons
-                          name="checkmark"
-                          size={18}
+                          name="search"
+                          size={20}
+                          color={colors.text.muted}
+                        />
+                        <TextInput
+                          className="flex-1 ml-3 text-base text-text-primary"
+                          placeholder="Search exercises..."
+                          placeholderTextColor={colors.text.muted}
+                          value={searchQuery}
+                          onChangeText={setSearchQuery}
+                          onSubmitEditing={searchExercises}
+                          returnKeyType="search"
+                        />
+                        {searchQuery.length > 0 && (
+                          <TouchableOpacity
+                            onPress={() => setSearchQuery("")}
+                          >
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color={colors.text.muted}
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        className="flex-row items-center justify-center px-4 py-3 rounded-xl border"
+                        style={{
+                          backgroundColor:
+                            selectedEquipment.length > 0 ||
+                            selectedMuscleGroups.length > 0 ||
+                            selectedDifficulty
+                              ? colors.brand.primary
+                              : colors.surface,
+                          borderColor: colors.brand.primary,
+                        }}
+                        onPress={openFilterModal}
+                      >
+                        <Ionicons
+                          name="options"
+                          size={20}
+                          color={
+                            selectedEquipment.length > 0 ||
+                            selectedMuscleGroups.length > 0 ||
+                            selectedDifficulty
+                              ? colors.contentOnPrimary
+                              : colors.brand.primary
+                          }
+                        />
+                        <Text
+                          className="text-sm font-medium ml-2"
+                          style={{
+                            color:
+                              selectedEquipment.length > 0 ||
+                              selectedMuscleGroups.length > 0 ||
+                              selectedDifficulty
+                                ? colors.contentOnPrimary
+                                : colors.brand.primary,
+                          }}
+                        >
+                          Filter
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View className="h-px mx-5 bg-neutral-medium-1" />
+
+                  {/* Search Results or Parameter Form */}
+                  <View className="flex-1">
+                    {selectedExercise ? (
+                      /* Parameter Form after selecting an exercise */
+                      <ScrollView
+                        className="flex-1"
+                        contentContainerStyle={{ padding: 20 }}
+                        keyboardShouldPersistTaps="handled"
+                      >
+                        {/* Selected Exercise Card */}
+                        <View className="p-4 rounded-xl border border-brand-primary mb-5 bg-surface">
+                          <View className="flex-row items-center justify-between">
+                            <View className="flex-1">
+                              <Text className="text-base font-semibold text-text-primary">
+                                {selectedExercise.name}
+                              </Text>
+                              {selectedExercise.description && (
+                                <Text className="text-sm text-text-muted mt-1">
+                                  {selectedExercise.description}
+                                </Text>
+                              )}
+                            </View>
+                            <TouchableOpacity
+                              onPress={() => setSelectedExercise(null)}
+                              className="ml-3 size-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                            >
+                              <Ionicons
+                                name="close"
+                                size={16}
+                                color={colors.text.muted}
+                              />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        {/* Parameter Inputs */}
+                        <Text className="text-base font-semibold text-text-primary mb-4">
+                          Exercise Parameters
+                        </Text>
+
+                        <View className="flex-row gap-3 mb-3">
+                          <View className="flex-1">
+                            <Text className="text-sm font-medium text-text-secondary mb-1">
+                              Sets
+                            </Text>
+                            <TextInput
+                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+                              placeholder="e.g. 3"
+                              placeholderTextColor={colors.text.muted}
+                              value={addParams.sets}
+                              onChangeText={(v) =>
+                                setAddParams((p) => ({ ...p, sets: v }))
+                              }
+                              keyboardType="number-pad"
+                            />
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-sm font-medium text-text-secondary mb-1">
+                              Reps
+                            </Text>
+                            <TextInput
+                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+                              placeholder="e.g. 10"
+                              placeholderTextColor={colors.text.muted}
+                              value={addParams.reps}
+                              onChangeText={(v) =>
+                                setAddParams((p) => ({ ...p, reps: v }))
+                              }
+                              keyboardType="number-pad"
+                            />
+                          </View>
+                        </View>
+
+                        <View className="mb-3">
+                          <Text className="text-sm font-medium text-text-secondary mb-1">
+                            Weight (lbs)
+                          </Text>
+                          <TextInput
+                            className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+                            placeholder="e.g. 135"
+                            placeholderTextColor={colors.text.muted}
+                            value={addParams.weight}
+                            onChangeText={(v) =>
+                              setAddParams((p) => ({ ...p, weight: v }))
+                            }
+                            keyboardType="decimal-pad"
+                          />
+                        </View>
+
+                        <View className="flex-row gap-3 mb-3">
+                          <View className="flex-1">
+                            <Text className="text-sm font-medium text-text-secondary mb-1">
+                              Duration (sec)
+                            </Text>
+                            <TextInput
+                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+                              placeholder="e.g. 30"
+                              placeholderTextColor={colors.text.muted}
+                              value={addParams.duration}
+                              onChangeText={(v) =>
+                                setAddParams((p) => ({
+                                  ...p,
+                                  duration: v,
+                                }))
+                              }
+                              keyboardType="number-pad"
+                            />
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-sm font-medium text-text-secondary mb-1">
+                              Rest (sec)
+                            </Text>
+                            <TextInput
+                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+                              placeholder="e.g. 60"
+                              placeholderTextColor={colors.text.muted}
+                              value={addParams.restTime}
+                              onChangeText={(v) =>
+                                setAddParams((p) => ({
+                                  ...p,
+                                  restTime: v,
+                                }))
+                              }
+                              keyboardType="number-pad"
+                            />
+                          </View>
+                        </View>
+
+                        <Text className="text-xs text-text-muted italic mt-1">
+                          Fill in the relevant fields. Leave empty if not
+                          applicable.
+                        </Text>
+                      </ScrollView>
+                    ) : searching ? (
+                      <View className="flex-1 justify-center items-center">
+                        <ActivityIndicator
+                          size="large"
+                          color={colors.brand.primary}
+                        />
+                        <Text className="mt-4 text-base text-text-muted">
+                          Searching exercises...
+                        </Text>
+                      </View>
+                    ) : (
+                      <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item.id.toString()}
+                        contentContainerStyle={{ padding: 20 }}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            className="mb-3 p-4 rounded-xl border bg-surface border-neutral-medium-1"
+                            onPress={() => setSelectedExercise(item)}
+                            activeOpacity={0.7}
+                          >
+                            <View className="flex-row items-start justify-between">
+                              <View className="flex-1">
+                                <Text className="text-base font-semibold text-text-primary mb-1">
+                                  {item.name}
+                                </Text>
+                                {item.description && (
+                                  <Text className="text-sm text-text-muted mb-3">
+                                    {item.description}
+                                  </Text>
+                                )}
+                                <View className="flex-row flex-wrap gap-3 mb-2">
+                                  {item.muscleGroups &&
+                                    item.muscleGroups.length > 0 && (
+                                      <View className="flex-row items-center">
+                                        <Ionicons
+                                          name="body"
+                                          size={14}
+                                          color={colors.text.muted}
+                                        />
+                                        <View className="flex-row flex-wrap ml-1">
+                                          {getIndividualMuscleGroups(
+                                            item.muscleGroups,
+                                          )
+                                            .slice(0, 2)
+                                            .map(
+                                              (muscle, muscleIndex) => (
+                                                <View
+                                                  key={muscleIndex}
+                                                  className="rounded-full px-2 py-1 mr-1 bg-primary"
+                                                >
+                                                  <Text className="text-xs font-semibold text-neutral-white">
+                                                    {muscle}
+                                                  </Text>
+                                                </View>
+                                              ),
+                                            )}
+                                          {getIndividualMuscleGroups(
+                                            item.muscleGroups,
+                                          ).length > 2 && (
+                                            <View className="rounded-full px-2 py-1 bg-primary">
+                                              <Text className="text-xs font-semibold text-neutral-white">
+                                                +
+                                                {getIndividualMuscleGroups(
+                                                  item.muscleGroups,
+                                                ).length - 2}
+                                              </Text>
+                                            </View>
+                                          )}
+                                        </View>
+                                      </View>
+                                    )}
+                                  {item.equipment && (
+                                    <View className="flex-row items-center">
+                                      <Ionicons
+                                        name="fitness"
+                                        size={14}
+                                        color={colors.text.muted}
+                                      />
+                                      <View className="ml-1">
+                                        <View className="rounded-full px-2 py-1 bg-primary">
+                                          <Text className="text-xs font-semibold text-neutral-white">
+                                            {formatEquipment(
+                                              item.equipment,
+                                            )}
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </View>
+                                  )}
+                                </View>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        ListEmptyComponent={
+                          <View className="flex-1 justify-center items-center py-12">
+                            <Ionicons
+                              name="search"
+                              size={48}
+                              color={colors.text.muted}
+                            />
+                            <Text className="text-base text-text-muted text-center mt-4">
+                              {searchQuery ||
+                              selectedEquipment.length > 0 ||
+                              selectedMuscleGroups.length > 0 ||
+                              selectedDifficulty
+                                ? "No exercises found matching your criteria"
+                                : "Enter a search term or adjust filters to find exercises"}
+                            </Text>
+                          </View>
+                        }
+                      />
+                    )}
+                  </View>
+                </View>
+
+                {/* Add Exercise Button */}
+                {selectedExercise && (
+                  <View className="px-5 py-4 border-t border-neutral-light-2">
+                    <TouchableOpacity
+                      className="bg-primary py-4 rounded-xl items-center"
+                      onPress={handleConfirmAdd}
+                      disabled={addingExercise}
+                    >
+                      {addingExercise ? (
+                        <ActivityIndicator
+                          size="small"
                           color={colors.neutral.white}
                         />
-                        <Text className="text-neutral-white font-semibold text-sm ml-2">
-                          Save Changes
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
+                      ) : (
+                        <View className="flex-row items-center">
+                          <Ionicons
+                            name="add-circle"
+                            size={20}
+                            color={colors.neutral.white}
+                          />
+                          <Text className="text-neutral-white font-semibold text-lg ml-2">
+                            Add Exercise
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             )}
+
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

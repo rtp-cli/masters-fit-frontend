@@ -515,7 +515,17 @@ export default function CalendarScreen() {
     }, 0);
   };
 
-  if (workoutLoading) {
+  // Derive live planDay from context data so the edit modal always has fresh data
+  const editModalPlanDay = useMemo(() => {
+    if (!showEditModal || !selectedPlanDay) return null;
+    if (!workoutPlan?.planDays) return selectedPlanDay;
+    return (
+      workoutPlan.planDays.find((d) => d.id === selectedPlanDay.id) ||
+      selectedPlanDay
+    );
+  }, [showEditModal, selectedPlanDay, workoutPlan]);
+
+  if (workoutLoading && !showEditModal) {
     return <CalendarSkeleton />;
   }
 
@@ -655,10 +665,7 @@ export default function CalendarScreen() {
           setShowEditModal(false);
           setSelectedPlanDay(null);
         }}
-        planDay={selectedPlanDay}
-        onSuccess={() => {
-          refreshWorkout();
-        }}
+        planDay={editModalPlanDay}
       />
 
       <PaymentWallModal

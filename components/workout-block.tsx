@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 import { useThemeColors } from "../lib/theme";
 import {
@@ -18,6 +18,9 @@ interface WorkoutBlockProps {
   showDetails?: boolean;
   variant?: "calendar" | "workout" | "compact";
   onExercisePress?: (exercise: WorkoutBlockWithExercise) => void;
+  onExerciseDelete?: (exercise: WorkoutBlockWithExercise) => void;
+  onAddExercise?: (blockId: number) => void;
+  deletingExerciseId?: number | null;
 }
 
 export default function WorkoutBlock({
@@ -27,6 +30,9 @@ export default function WorkoutBlock({
   showDetails = true,
   variant = "calendar",
   onExercisePress,
+  onExerciseDelete,
+  onAddExercise,
+  deletingExerciseId,
 }: WorkoutBlockProps) {
   const colors = useThemeColors();
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
@@ -113,6 +119,10 @@ export default function WorkoutBlock({
 
   const isCompactVariant = variant === "compact";
   const isWorkoutVariant = variant === "workout";
+
+  if (!block.exercises || block.exercises.length === 0) {
+    return null;
+  }
 
   return (
     <View
@@ -240,6 +250,29 @@ export default function WorkoutBlock({
                       </View>
                     </View>
 
+                    {/* Delete button (edit mode) */}
+                    {onExerciseDelete && (
+                      <TouchableOpacity
+                        className="ml-2 size-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          onExerciseDelete(exercise);
+                        }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        disabled={deletingExerciseId === exercise.id}
+                      >
+                        {deletingExerciseId === exercise.id ? (
+                          <ActivityIndicator size={14} color={colors.danger} />
+                        ) : (
+                          <Ionicons
+                            name="trash-outline"
+                            size={16}
+                            color={colors.danger}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    )}
+
                     {/* Exercise Status (for workout variant) */}
                     {isWorkoutVariant && (
                       <View className="ml-2">
@@ -350,6 +383,24 @@ export default function WorkoutBlock({
                 </View>
               )
             )}
+
+          {/* Add Exercise Button */}
+          {onAddExercise && (
+            <TouchableOpacity
+              className="flex-row items-center justify-center p-3 border-t border-neutral-light-2"
+              onPress={() => onAddExercise(block.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="add-circle-outline"
+                size={18}
+                color={colors.brand.primary}
+              />
+              <Text className="text-sm font-medium ml-2 text-primary">
+                Add Exercise
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
