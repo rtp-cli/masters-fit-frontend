@@ -92,7 +92,7 @@ function DisabledTabButton({
           },
         }}
         primaryButton={{
-          text: "Leave Anyway",
+          text: "Exit Workout",
           onPress: () => {
             setDialogVisible(false);
             abandonWorkout("navigation");
