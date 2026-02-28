@@ -250,8 +250,9 @@ export default function CircuitTracker({
 
             // Create next round if it doesn't exist
             if (!updatedSessionData.rounds[nextRound - 1]) {
+              const completedRound = updatedRounds[sessionData.currentRound - 1];
               updatedSessionData.rounds.push(
-                createNewRound(nextRound, block.exercises)
+                createNewRound(nextRound, block.exercises, completedRound)
               );
             }
 
@@ -288,16 +289,17 @@ export default function CircuitTracker({
   // Create a new round with all exercises
   const createNewRound = (
     roundNumber: number,
-    exercises: WorkoutBlockWithExercise[]
+    exercises: WorkoutBlockWithExercise[],
+    previousRound?: CircuitRound
   ): CircuitRound => ({
     roundNumber,
     exercises: exercises.map(
-      (exercise): CircuitExerciseLog => ({
+      (exercise, index): CircuitExerciseLog => ({
         exerciseId: exercise.exerciseId,
         planDayExerciseId: exercise.id,
         targetReps: exercise.reps || 0,
         actualReps: exercise.reps || 0,
-        weight: exercise.weight,
+        weight: previousRound?.exercises[index]?.weight ?? exercise.weight ?? 0,
         completed: false,
         notes: "",
       })

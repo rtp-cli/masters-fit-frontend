@@ -85,7 +85,7 @@ export function useCircuitSession(
           planDayExerciseId: exercise.id,
           targetReps: exercise.reps || 0,
           actualReps: exercise.reps || 0,
-          weight: previousRound?.exercises[index]?.weight || 0,
+          weight: previousRound?.exercises[index]?.weight ?? exercise.weight ?? 0,
           completed: false,
           notes: "",
         })
@@ -264,7 +264,8 @@ export function useCircuitSession(
           // Only AMRAP allows unlimited rounds, all others respect prescribed limits
           const shouldAdvanceRound =
             prev.blockType === "amrap" ||
-            (prev.targetRounds && prev.currentRound < prev.targetRounds);
+            !prev.targetRounds ||
+            prev.currentRound < prev.targetRounds;
 
           let newCurrentRound = prev.currentRound;
 
@@ -425,7 +426,8 @@ export function useCircuitSession(
           const nextRound = prev.currentRound + 1;
           const shouldCreateNextRound =
             prev.blockType === "amrap" ||
-            (prev.targetRounds && nextRound <= prev.targetRounds);
+            !prev.targetRounds ||
+            nextRound <= prev.targetRounds;
 
           if (shouldCreateNextRound && !updatedRounds[nextRound - 1]) {
             const currentRoundData = updatedRounds[prev.currentRound - 1];

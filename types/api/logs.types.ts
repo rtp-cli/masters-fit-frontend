@@ -27,7 +27,7 @@ export interface ExerciseSetLog {
 export interface PlanDayLog {
   id: number;
   planDayId: number;
-  totalTimeMinutes: number | null;
+  totalTimeSeconds: number | null;
   blocksCompleted: number | null;
   exercisesCompleted: number | null;
   totalVolume: number | null;

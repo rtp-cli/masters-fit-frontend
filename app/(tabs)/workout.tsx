@@ -646,13 +646,13 @@ export default function WorkoutScreen() {
     try {
       const planDayLog = await getPlanDayLog(planDayId);
 
-      if (planDayLog?.totalTimeMinutes) {
+      if (planDayLog?.totalTimeSeconds) {
         console.log("Loaded completed workout data:", {
-          totalTimeMinutes: planDayLog.totalTimeMinutes,
+          totalTimeSeconds: planDayLog.totalTimeSeconds,
           exercisesCompleted: planDayLog.exercisesCompleted,
           blocksCompleted: planDayLog.blocksCompleted,
         });
-        setWorkoutTimer(planDayLog.totalTimeMinutes * 60);
+        setWorkoutTimer(planDayLog.totalTimeSeconds);
         setCompletedExercisesCount(planDayLog.exercisesCompleted || 0);
         setHasCompletedWorkoutDuration(true);
       } else {
@@ -858,11 +858,14 @@ export default function WorkoutScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Don't force refresh on focus, rely on cache
-      loadWorkout(false);
+      // Don't reload if workout was just completed in this session —
+      // we already have all the data (timer, progress, exercises) in state
+      if (!isWorkoutCompleted) {
+        loadWorkout(false);
+      }
       // Scroll to top when tab is focused
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+    }, [isWorkoutCompleted])
   );
 
   // Listen for tab re-click events
@@ -1118,7 +1121,6 @@ export default function WorkoutScreen() {
 
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
-          setWorkoutInProgress(false);
         }
 
         setShowCompleteModal(false);
@@ -1208,7 +1210,6 @@ export default function WorkoutScreen() {
 
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
-          setWorkoutInProgress(false);
         }
 
         setShowCompleteModal(false);
@@ -1309,7 +1310,6 @@ export default function WorkoutScreen() {
 
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
         setIsWorkoutCompleted(true);
-        setWorkoutInProgress(false); // Notify context that workout ended
 
         setDialogConfig({
           title: "Workout Complete!",
@@ -1411,7 +1411,6 @@ export default function WorkoutScreen() {
           });
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
-          setWorkoutInProgress(false);
           setDialogConfig({
             title: "Workout Complete!",
             description: "You've finished today's workout.",
@@ -1510,7 +1509,9 @@ export default function WorkoutScreen() {
           className="bg-primary rounded-xl py-3 px-6"
           onPress={() => loadWorkout(true)}
         >
-          <Text className="text-content-on-primary font-semibold">Try Again</Text>
+          <Text className="text-content-on-primary font-semibold">
+            Try Again
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -1575,33 +1576,170 @@ export default function WorkoutScreen() {
 
   // Render workout completed state
   if (isWorkoutCompleted) {
+    const completedCount = hasCompletedWorkoutDuration
+      ? completedExercisesCount
+      : exercises.length - skippedExercises.length;
+
+    const getBlockIcon = (blockType?: string) => {
+      const icons: Record<string, string> = {
+        traditional: "barbell-outline",
+        amrap: "timer-outline",
+        emom: "stopwatch-outline",
+        for_time: "flash-outline",
+        circuit: "refresh-circle-outline",
+        tabata: "pulse-outline",
+        warmup: "sunny-outline",
+        cooldown: "moon-outline",
+        superset: "layers-outline",
+        flow: "water-outline",
+      };
+      return icons[blockType || ""] || "fitness-outline";
+    };
+
     return (
-      <View className="flex-1 bg-background justify-center items-center px-6">
-        <Ionicons
-          name="checkmark-circle"
-          size={80}
-          color={colors.brand.primary}
-        />
-        <Text className="text-2xl font-bold text-text-primary text-center mt-6 mb-4">
-          Workout Complete!
-        </Text>
-        <Text className="text-text-muted text-center mb-4 leading-6">
-          Amazing work! You completed{" "}
-          {hasCompletedWorkoutDuration
-            ? completedExercisesCount
-            : currentExerciseIndex}{" "}
-          exercises
-          {!hasCompletedWorkoutDuration &&
-            skippedExercises.length > 0 &&
-            ` (${skippedExercises.length} skipped)`}{" "}
-          {/* TIMER DISPLAY HIDDEN: Completion timer message commented out */}
-          {/* {hasCompletedWorkoutDuration
-            ? `in ${formatTime(workoutTimer)}.`
-            : "(duration not available)."} */}
-        </Text>
-        <Text className="text-text-muted text-center mb-8 leading-6">
-          Check back tomorrow for your next workout.
-        </Text>
+      <View className="flex-1 bg-background">
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {/* Header */}
+          <View className="items-center pt-10 pb-6 px-6">
+            <Ionicons
+              name="checkmark-circle"
+              size={48}
+              color={colors.brand.primary}
+            />
+            <Text className="text-2xl font-bold text-text-primary text-center mt-4 mb-2">
+              Workout Complete!
+            </Text>
+            <Text className="text-text-muted text-center text-sm">
+              {formatTime(workoutTimer)} · {completedCount} exercise
+              {completedCount !== 1 ? "s" : ""}
+              {skippedExercises.length > 0 &&
+                ` · ${skippedExercises.length} skipped`}
+            </Text>
+          </View>
+
+          {/* Block & Exercise Breakdown */}
+          <View className="px-4">
+            {workout?.blocks.map((block, blockIndex) => {
+              const blockExercises = block.exercises;
+
+              return (
+                <View key={block.id} className="mb-4">
+                  {/* Block Header */}
+                  <View className="bg-brand-light-2 p-4 rounded-t-xl">
+                    <View className="flex-row items-center">
+                      <View className="size-8 rounded-full bg-white/20 items-center justify-center mr-3">
+                        <Ionicons
+                          name={getBlockIcon(block.blockType) as any}
+                          size={16}
+                          color={colors.text.primary}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <View className="flex-row items-center">
+                          <Text className="font-bold text-text-primary text-base">
+                            {block.blockName ||
+                              getBlockTypeDisplayName(block.blockType)}
+                          </Text>
+                        </View>
+                        {block.instructions && (
+                          <Text className="text-text-secondary mt-1 text-sm">
+                            {block.instructions}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Exercises in Block */}
+                  <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2">
+                    {blockExercises.map((exercise, exerciseIndex) => {
+                      const globalIndex = exercises.findIndex(
+                        (ex) => ex.id === exercise.id
+                      );
+                      const progress = exerciseProgress[globalIndex];
+                      const isSkipped = skippedExercises.includes(exercise.id);
+                      const isLast =
+                        exerciseIndex === blockExercises.length - 1;
+
+                      return (
+                        <View
+                          key={exercise.id}
+                          className={`p-4 ${!isLast ? "border-b border-neutral-light-2" : ""}`}
+                        >
+                          {/* Exercise Header */}
+                          <View className="flex-row items-center mb-1">
+                            <View
+                              className={`size-6 rounded-full items-center justify-center mr-2 ${
+                                isSkipped
+                                  ? "bg-neutral-medium-1"
+                                  : "bg-brand-primary"
+                              }`}
+                            >
+                              <Ionicons
+                                name={
+                                  isSkipped ? "play-skip-forward" : "checkmark"
+                                }
+                                size={12}
+                                color={colors.contentOnPrimary}
+                              />
+                            </View>
+                            <Text className="font-semibold text-text-primary text-sm flex-1">
+                              {exercise.exercise.name}
+                            </Text>
+                          </View>
+
+                          {/* Logged Data */}
+                          {isSkipped ? (
+                            <Text className="text-text-muted text-xs ml-8">
+                              Skipped
+                            </Text>
+                          ) : progress?.sets && progress.sets.length > 0 ? (
+                            <View className="ml-8">
+                              {progress.sets.map((set, setIdx) => (
+                                <Text
+                                  key={setIdx}
+                                  className="text-text-muted text-xs leading-5"
+                                >
+                                  Set {set.setNumber}:{" "}
+                                  {set.weight > 0 ? `${set.weight} lbs × ` : ""}
+                                  {set.reps} reps
+                                </Text>
+                              ))}
+                            </View>
+                          ) : progress?.duration ? (
+                            <Text className="text-text-muted text-xs ml-8">
+                              Duration: {progress.duration}s
+                            </Text>
+                          ) : (
+                            <Text className="text-text-muted text-xs ml-8">
+                              Completed
+                            </Text>
+                          )}
+
+                          {/* Notes */}
+                          {progress?.notes ? (
+                            <Text className="text-text-muted text-xs italic ml-8 mt-1">
+                              {progress.notes}
+                            </Text>
+                          ) : null}
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Footer */}
+          <Text className="text-text-muted text-center text-sm px-6 mt-4">
+            Check back tomorrow for your next workout.
+          </Text>
+        </ScrollView>
       </View>
     );
   }
@@ -1860,7 +1998,9 @@ export default function WorkoutScreen() {
                                         : "border-neutral-medium-1 bg-background"
                                     }`}
                                     onPress={() => {
-                                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                      Haptics.impactAsync(
+                                        Haptics.ImpactFeedbackStyle.Light
+                                      );
                                       updateProgress("roundsCompleted", i + 1);
                                     }}
                                   >
@@ -2141,7 +2281,9 @@ export default function WorkoutScreen() {
                   size={20}
                   color={colors.contentOnPrimary}
                 />
-                <Text className="text-content-on-primary font-semibold ml-2">Skip</Text>
+                <Text className="text-content-on-primary font-semibold ml-2">
+                  Skip
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -2182,7 +2324,9 @@ export default function WorkoutScreen() {
 
       {/* Complete Exercise Modal */}
       <Modal visible={showCompleteModal} transparent animationType="fade">
-        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+        <View
+          className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
+        >
           <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               {isCurrentBlockCircuit
@@ -2251,7 +2395,9 @@ export default function WorkoutScreen() {
 
       {/* Skip Exercise Modal */}
       <Modal visible={showSkipModal} transparent animationType="fade">
-        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+        <View
+          className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
+        >
           <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               Skip Exercise
@@ -2301,7 +2447,9 @@ export default function WorkoutScreen() {
 
       {/* Rest Complete Modal */}
       <Modal visible={showRestCompleteModal} transparent animationType="fade">
-        <View className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}>
+        <View
+          className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
+        >
           <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
             {/* TIMER DISPLAY HIDDEN: Timer icon commented out */}
             {/* <View className="items-center mb-4">

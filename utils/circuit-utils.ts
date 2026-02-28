@@ -185,8 +185,8 @@ export function getRoundCompleteButtonText(
       }
       return null; // EMOM rounds auto-complete, no manual button needed
     case 'for_time':
-      // Hide button if reached prescribed rounds
-      if (totalRounds && currentRound >= totalRounds) {
+      // Hide button after completing all prescribed rounds
+      if (totalRounds && currentRound > totalRounds) {
         return null;
       }
       return 'Complete Round';
@@ -198,8 +198,8 @@ export function getRoundCompleteButtonText(
       return 'Complete Interval';
     case 'circuit':
     default:
-      // Hide button if reached prescribed rounds
-      if (totalRounds && currentRound >= totalRounds) {
+      // Hide button after completing all prescribed rounds
+      if (totalRounds && currentRound > totalRounds) {
         return null;
       }
       return 'Complete Round';
