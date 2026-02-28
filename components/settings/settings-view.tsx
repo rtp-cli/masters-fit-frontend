@@ -518,6 +518,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           setThemeMode={setThemeMode}
           colorTheme={colorTheme}
           setColorTheme={setColorTheme}
+          onClose={onClose}
         />
 
         {/* Debug Mode Section - Only visible when debug mode is activated */}

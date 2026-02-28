@@ -7,11 +7,13 @@ import { useThemeColors } from "../../../lib/theme";
 interface LegalSectionProps {
   expanded: boolean;
   onToggle: () => void;
+  onBeforeNavigate?: () => void;
 }
 
 export default function LegalSection({
   expanded,
   onToggle,
+  onBeforeNavigate,
 }: LegalSectionProps) {
   const router = useRouter();
   const colors = useThemeColors();
@@ -42,12 +44,13 @@ export default function LegalSection({
         <View className="bg-neutral-light-1">
           <TouchableOpacity
             className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-            onPress={() =>
+            onPress={() => {
+              onBeforeNavigate?.();
               router.push({
                 pathname: "/legal-document",
                 params: { type: "terms" },
-              } as any)
-            }
+              } as any);
+            }}
           >
             <View className="flex-row items-center flex-1">
               <Ionicons
@@ -68,12 +71,13 @@ export default function LegalSection({
 
           <TouchableOpacity
             className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-            onPress={() =>
+            onPress={() => {
+              onBeforeNavigate?.();
               router.push({
                 pathname: "/legal-document",
                 params: { type: "privacy" },
-              } as any)
-            }
+              } as any);
+            }}
           >
             <View className="flex-row items-center flex-1">
               <Ionicons
@@ -94,12 +98,13 @@ export default function LegalSection({
 
           <TouchableOpacity
             className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
-            onPress={() =>
+            onPress={() => {
+              onBeforeNavigate?.();
               router.push({
                 pathname: "/legal-document",
                 params: { type: "waiver" },
-              } as any)
-            }
+              } as any);
+            }}
           >
             <View className="flex-row items-center flex-1">
               <Ionicons

@@ -14,6 +14,7 @@ interface AppSettingsSectionProps {
   setThemeMode: (mode: ThemeMode) => void;
   colorTheme: ColorTheme;
   setColorTheme: (theme: ColorTheme) => void;
+  onClose?: () => void;
 }
 
 export default function AppSettingsSection({
@@ -23,6 +24,7 @@ export default function AppSettingsSection({
   setThemeMode,
   colorTheme,
   setColorTheme,
+  onClose,
 }: AppSettingsSectionProps) {
   const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
@@ -91,6 +93,7 @@ export default function AppSettingsSection({
         <LegalSection
           expanded={legalExpanded}
           onToggle={() => setLegalExpanded(!legalExpanded)}
+          onBeforeNavigate={onClose}
         />
       </View>
     </>
