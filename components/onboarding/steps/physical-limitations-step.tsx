@@ -32,128 +32,128 @@ export default function PhysicalLimitationsStep({
   const colors = useThemeColors();
 
   const getLimitationConfig = (limitationKey: string) => {
-  switch (limitationKey) {
-    case PHYSICAL_LIMITATIONS.KNEE_PAIN:
-      return {
-        icon: "walk-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-        description: "Pain or discomfort in the knee joint",
-      };
-    case PHYSICAL_LIMITATIONS.SHOULDER_PAIN:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-red-100",
-        description: "Pain or discomfort in the shoulder area",
-      };
-    case PHYSICAL_LIMITATIONS.LOWER_BACK_PAIN:
-      return {
-        icon: "arrow-down-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-orange-100",
-        description: "Pain or discomfort in the lower back",
-      };
-    case PHYSICAL_LIMITATIONS.NECK_PAIN:
-      return {
-        icon: "arrow-up-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-purple-100",
-        description: "Pain or stiffness in neck area",
-      };
-    case PHYSICAL_LIMITATIONS.HIP_PAIN:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-indigo-100",
-        description: "Pain or limited mobility in hips",
-      };
-    case PHYSICAL_LIMITATIONS.ANKLE_INSTABILITY:
-      return {
-        icon: "walk-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-pink-100",
-        description: "Weak or unstable ankles",
-      };
-    case PHYSICAL_LIMITATIONS.WRIST_PAIN:
-      return {
-        icon: "hand-left-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-yellow-100",
-        description: "Pain or weakness in wrists",
-      };
-    case PHYSICAL_LIMITATIONS.ELBOW_PAIN:
-      return {
-        icon: "remove-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-teal-100",
-        description: "Tennis elbow or other elbow issues",
-      };
-    case PHYSICAL_LIMITATIONS.ARTHRITIS:
-      return {
-        icon: "medical-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-        description: "Joint inflammation and stiffness",
-      };
-    case PHYSICAL_LIMITATIONS.OSTEOPOROSIS:
-      return {
-        icon: "pulse-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-red-100",
-        description: "Weak or brittle bones",
-      };
-    case PHYSICAL_LIMITATIONS.SCIATICA:
-      return {
-        icon: "flash-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-orange-100",
-        description: "Nerve pain down leg from lower back",
-      };
-    case PHYSICAL_LIMITATIONS.LIMITED_RANGE_OF_MOTION:
-      return {
-        icon: "resize-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-purple-100",
-        description: "Restricted movement in joints",
-      };
-    case PHYSICAL_LIMITATIONS.POST_SURGERY_RECOVERY:
-      return {
-        icon: "medical-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-indigo-100",
-        description: "Recovering from a recent surgery",
-      };
-    case PHYSICAL_LIMITATIONS.BALANCE_ISSUES:
-      return {
-        icon: "analytics-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-pink-100",
-        description: "Difficulty with balance and stability",
-      };
-    case PHYSICAL_LIMITATIONS.CHRONIC_FATIGUE:
-      return {
-        icon: "battery-half-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-yellow-100",
-        description: "Persistent and extreme tiredness",
-      };
-    case PHYSICAL_LIMITATIONS.BREATHING_ISSUES:
-      return {
-        icon: "heart-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-teal-100",
-        description: "Asthma or other breathing conditions",
-      };
-    default:
-      return {
-        icon: "warning-outline",
-        color: colors.text.muted,
-        bgColor: "bg-brand-light-1",
-        description: "Physical limitation",
-      };
-  }
-};
+    switch (limitationKey) {
+      case PHYSICAL_LIMITATIONS.KNEE_PAIN:
+        return {
+          icon: "walk-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "Pain or discomfort in the knee joint",
+        };
+      case PHYSICAL_LIMITATIONS.SHOULDER_PAIN:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-red-100",
+          description: "Pain or discomfort in the shoulder area",
+        };
+      case PHYSICAL_LIMITATIONS.LOWER_BACK_PAIN:
+        return {
+          icon: "arrow-down-outline",
+          color: "black",
+          bgColor: "bg-orange-100",
+          description: "Pain or discomfort in the lower back",
+        };
+      case PHYSICAL_LIMITATIONS.NECK_PAIN:
+        return {
+          icon: "arrow-up-outline",
+          color: "black",
+          bgColor: "bg-purple-100",
+          description: "Pain or stiffness in neck area",
+        };
+      case PHYSICAL_LIMITATIONS.HIP_PAIN:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-indigo-100",
+          description: "Pain or limited mobility in hips",
+        };
+      case PHYSICAL_LIMITATIONS.ANKLE_INSTABILITY:
+        return {
+          icon: "walk-outline",
+          color: "black",
+          bgColor: "bg-pink-100",
+          description: "Weak or unstable ankles",
+        };
+      case PHYSICAL_LIMITATIONS.WRIST_PAIN:
+        return {
+          icon: "hand-left-outline",
+          color: "black",
+          bgColor: "bg-yellow-100",
+          description: "Pain or weakness in wrists",
+        };
+      case PHYSICAL_LIMITATIONS.ELBOW_PAIN:
+        return {
+          icon: "remove-outline",
+          color: "black",
+          bgColor: "bg-teal-100",
+          description: "Tennis elbow or other elbow issues",
+        };
+      case PHYSICAL_LIMITATIONS.ARTHRITIS:
+        return {
+          icon: "medical-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "Joint inflammation and stiffness",
+        };
+      case PHYSICAL_LIMITATIONS.OSTEOPOROSIS:
+        return {
+          icon: "pulse-outline",
+          color: "black",
+          bgColor: "bg-red-100",
+          description: "Weak or brittle bones",
+        };
+      case PHYSICAL_LIMITATIONS.SCIATICA:
+        return {
+          icon: "flash-outline",
+          color: "black",
+          bgColor: "bg-orange-100",
+          description: "Nerve pain down leg from lower back",
+        };
+      case PHYSICAL_LIMITATIONS.LIMITED_RANGE_OF_MOTION:
+        return {
+          icon: "resize-outline",
+          color: "black",
+          bgColor: "bg-purple-100",
+          description: "Restricted movement in joints",
+        };
+      case PHYSICAL_LIMITATIONS.POST_SURGERY_RECOVERY:
+        return {
+          icon: "medical-outline",
+          color: "black",
+          bgColor: "bg-indigo-100",
+          description: "Recovering from a recent surgery",
+        };
+      case PHYSICAL_LIMITATIONS.BALANCE_ISSUES:
+        return {
+          icon: "analytics-outline",
+          color: "black",
+          bgColor: "bg-pink-100",
+          description: "Difficulty with balance and stability",
+        };
+      case PHYSICAL_LIMITATIONS.CHRONIC_FATIGUE:
+        return {
+          icon: "battery-half-outline",
+          color: "black",
+          bgColor: "bg-yellow-100",
+          description: "Persistent and extreme tiredness",
+        };
+      case PHYSICAL_LIMITATIONS.BREATHING_ISSUES:
+        return {
+          icon: "heart-outline",
+          color: "black",
+          bgColor: "bg-teal-100",
+          description: "Asthma or other breathing conditions",
+        };
+      default:
+        return {
+          icon: "warning-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "Physical limitation",
+        };
+    }
+  };
 
   return (
     <ScrollView
@@ -188,7 +188,9 @@ export default function PhysicalLimitationsStep({
               </Text>
               <Text
                 className={`text-xs ${
-                  isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                  isSelected
+                    ? "text-content-on-primary"
+                    : "text-neutral-medium-4"
                 }`}
               >
                 {config.description}

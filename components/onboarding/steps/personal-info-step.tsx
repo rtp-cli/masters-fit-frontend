@@ -67,9 +67,7 @@ export default function PersonalInfoStep({
                 name="male"
                 size={14}
                 color={
-                  formData.gender === GENDER.MALE
-                    ? colors.brand.primary
-                    : colors.text.muted
+                  formData.gender === GENDER.MALE ? "black" : colors.text.muted
                 }
               />
             </View>
@@ -102,7 +100,7 @@ export default function PersonalInfoStep({
                 size={14}
                 color={
                   formData.gender === GENDER.FEMALE
-                    ? colors.brand.primary
+                    ? "black"
                     : colors.text.muted
                 }
               />

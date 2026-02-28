@@ -26,86 +26,86 @@ export default function WorkoutStyleStep({
   const colors = useThemeColors();
 
   const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
-  switch (styleKey) {
-    case PREFERRED_STYLES.HIIT:
-      return {
-        icon: "flash-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-red-100",
-        description: "High-intensity interval training",
-      };
-    case PREFERRED_STYLES.STRENGTH:
-      return {
-        icon: "barbell-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-blue-100",
-        description: "Build muscle and increase strength",
-      };
-    case PREFERRED_STYLES.CARDIO:
-      return {
-        icon: "heart-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-        description: "Improve cardiovascular health",
-      };
-    case PREFERRED_STYLES.REHAB:
-      return {
-        icon: "medkit-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-purple-100",
-        description: "Recovery and rehabilitation",
-      };
-    case PREFERRED_STYLES.CROSSFIT:
-      return {
-        icon: "stopwatch-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-orange-100",
-        description: "High-intensity functional training",
-      };
-    case PREFERRED_STYLES.FUNCTIONAL:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-yellow-100",
-        description: "Real-world movement patterns",
-      };
-    case PREFERRED_STYLES.PILATES:
-      return {
-        icon: "accessibility-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-pink-100",
-        description: "Core strength and flexibility",
-      };
-    case PREFERRED_STYLES.YOGA:
-      return {
-        icon: "leaf-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-teal-100",
-        description: "Mind-body connection and flexibility",
-      };
-    case PREFERRED_STYLES.BALANCE:
-      return {
-        icon: "infinite-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-indigo-100",
-        description: "Stability and coordination training",
-      };
-    case PREFERRED_STYLES.MOBILITY:
-      return {
-        icon: "move-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-cyan-100",
-        description: "Joint mobility and movement quality",
-      };
-    default:
-      return {
-        icon: "fitness-outline",
-        color: "#6B7280",
-        bgColor: "bg-neutral-light-2",
-        description: "General workout style",
-      };
-  }
-};
+    switch (styleKey) {
+      case PREFERRED_STYLES.HIIT:
+        return {
+          icon: "flash-outline",
+          color: "black",
+          bgColor: "bg-red-100",
+          description: "High-intensity interval training",
+        };
+      case PREFERRED_STYLES.STRENGTH:
+        return {
+          icon: "barbell-outline",
+          color: "black",
+          bgColor: "bg-blue-100",
+          description: "Build muscle and increase strength",
+        };
+      case PREFERRED_STYLES.CARDIO:
+        return {
+          icon: "heart-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "Improve cardiovascular health",
+        };
+      case PREFERRED_STYLES.REHAB:
+        return {
+          icon: "medkit-outline",
+          color: "black",
+          bgColor: "bg-purple-100",
+          description: "Recovery and rehabilitation",
+        };
+      case PREFERRED_STYLES.CROSSFIT:
+        return {
+          icon: "stopwatch-outline",
+          color: "black",
+          bgColor: "bg-orange-100",
+          description: "High-intensity functional training",
+        };
+      case PREFERRED_STYLES.FUNCTIONAL:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-yellow-100",
+          description: "Real-world movement patterns",
+        };
+      case PREFERRED_STYLES.PILATES:
+        return {
+          icon: "accessibility-outline",
+          color: "black",
+          bgColor: "bg-pink-100",
+          description: "Core strength and flexibility",
+        };
+      case PREFERRED_STYLES.YOGA:
+        return {
+          icon: "leaf-outline",
+          color: "black",
+          bgColor: "bg-teal-100",
+          description: "Mind-body connection and flexibility",
+        };
+      case PREFERRED_STYLES.BALANCE:
+        return {
+          icon: "infinite-outline",
+          color: "black",
+          bgColor: "bg-indigo-100",
+          description: "Stability and coordination training",
+        };
+      case PREFERRED_STYLES.MOBILITY:
+        return {
+          icon: "move-outline",
+          color: "black",
+          bgColor: "bg-cyan-100",
+          description: "Joint mobility and movement quality",
+        };
+      default:
+        return {
+          icon: "fitness-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "General workout style",
+        };
+    }
+  };
 
   return (
     <View className="flex-1 px-6 pb-6">
@@ -182,14 +182,18 @@ export default function WorkoutStyleStep({
               <View className="flex-1 ml-3">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}

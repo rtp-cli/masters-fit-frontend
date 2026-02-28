@@ -25,163 +25,163 @@ export default function WorkoutEnvironmentStep({
 
   // Helper function to get environment configuration
   const getEnvironmentConfig = (envKey: WORKOUT_ENVIRONMENTS) => {
-  switch (envKey) {
-    case WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM:
-      return {
-        icon: "business-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-        description: "Full gym with all equipment available",
-      };
-    case WORKOUT_ENVIRONMENTS.HOME_GYM:
-      return {
-        icon: "home-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-purple-100",
-        description: "Personal home gym setup",
-      };
-    case WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-blue-100",
-        description: "No equipment needed, just your body",
-      };
-    default:
-      return {
-        icon: "fitness-outline",
-        color: "#6B7280",
-        bgColor: "bg-neutral-light-2",
-        description: "Workout environment",
-      };
-  }
-};
+    switch (envKey) {
+      case WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM:
+        return {
+          icon: "business-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "Full gym with all equipment available",
+        };
+      case WORKOUT_ENVIRONMENTS.HOME_GYM:
+        return {
+          icon: "home-outline",
+          color: "black",
+          bgColor: "bg-purple-100",
+          description: "Personal home gym setup",
+        };
+      case WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-blue-100",
+          description: "No equipment needed, just your body",
+        };
+      default:
+        return {
+          icon: "fitness-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+          description: "Workout environment",
+        };
+    }
+  };
 
-// Helper function to get equipment configuration
-const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
-  switch (equipKey) {
-    case AVAILABLE_EQUIPMENT.BARBELLS:
-      return {
-        icon: "barbell-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-      };
-    case AVAILABLE_EQUIPMENT.DUMBBELLS:
-      return {
-        icon: "barbell-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-red-100",
-      };
-    case AVAILABLE_EQUIPMENT.KETTLEBELLS:
-      return {
-        icon: "barbell-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-orange-100",
-      };
-    case AVAILABLE_EQUIPMENT.BENCH:
-      return {
-        icon: "remove-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-pink-100",
-      };
-    case AVAILABLE_EQUIPMENT.INCLINE_DECLINE_BENCH:
-      return {
-        icon: "remove-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-yellow-100",
-      };
-    case AVAILABLE_EQUIPMENT.PULL_UP_BAR:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-indigo-100",
-      };
-    case AVAILABLE_EQUIPMENT.BIKE:
-      return {
-        icon: "bicycle-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-red-100",
-      };
-    case AVAILABLE_EQUIPMENT.MEDICINE_BALLS:
-      return {
-        icon: "basketball-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-indigo-100",
-      };
-    case AVAILABLE_EQUIPMENT.PLYO_BOX:
-      return {
-        icon: "apps-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-pink-100",
-      };
-    case AVAILABLE_EQUIPMENT.RINGS:
-      return {
-        icon: "radio-button-off-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-yellow-100",
-      };
-    case AVAILABLE_EQUIPMENT.RESISTANCE_BANDS:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-purple-100",
-      };
-    case AVAILABLE_EQUIPMENT.STABILITY_BALL:
-      return {
-        icon: "radio-button-off-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-teal-100",
-      };
-    case AVAILABLE_EQUIPMENT.SQUAT_RACK:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-teal-100",
-      };
-    case AVAILABLE_EQUIPMENT.DIP_BAR:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-      };
-    case AVAILABLE_EQUIPMENT.ROWING_MACHINE:
-      return {
-        icon: "boat-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-orange-100",
-      };
-    case AVAILABLE_EQUIPMENT.SLAM_BALLS:
-      return {
-        icon: "basketball-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-red-100",
-      };
-    case AVAILABLE_EQUIPMENT.CABLE_MACHINE:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
-      };
-    case AVAILABLE_EQUIPMENT.JUMP_ROPE:
-      return {
-        icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-purple-100",
-      };
-    case AVAILABLE_EQUIPMENT.FOAM_ROLLER:
-      return {
-        icon: "radio-button-off-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-orange-100",
-      };
-    default:
-      return {
-        icon: "fitness-outline",
-        color: "#6B7280",
-        bgColor: "bg-neutral-light-2",
-      };
-  }
-};
+  // Helper function to get equipment configuration
+  const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
+    switch (equipKey) {
+      case AVAILABLE_EQUIPMENT.BARBELLS:
+        return {
+          icon: "barbell-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+        };
+      case AVAILABLE_EQUIPMENT.DUMBBELLS:
+        return {
+          icon: "barbell-outline",
+          color: "black",
+          bgColor: "bg-red-100",
+        };
+      case AVAILABLE_EQUIPMENT.KETTLEBELLS:
+        return {
+          icon: "barbell-outline",
+          color: "black",
+          bgColor: "bg-orange-100",
+        };
+      case AVAILABLE_EQUIPMENT.BENCH:
+        return {
+          icon: "remove-outline",
+          color: "black",
+          bgColor: "bg-pink-100",
+        };
+      case AVAILABLE_EQUIPMENT.INCLINE_DECLINE_BENCH:
+        return {
+          icon: "remove-outline",
+          color: "black",
+          bgColor: "bg-yellow-100",
+        };
+      case AVAILABLE_EQUIPMENT.PULL_UP_BAR:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-indigo-100",
+        };
+      case AVAILABLE_EQUIPMENT.BIKE:
+        return {
+          icon: "bicycle-outline",
+          color: "black",
+          bgColor: "bg-red-100",
+        };
+      case AVAILABLE_EQUIPMENT.MEDICINE_BALLS:
+        return {
+          icon: "basketball-outline",
+          color: "black",
+          bgColor: "bg-indigo-100",
+        };
+      case AVAILABLE_EQUIPMENT.PLYO_BOX:
+        return {
+          icon: "apps-outline",
+          color: "black",
+          bgColor: "bg-pink-100",
+        };
+      case AVAILABLE_EQUIPMENT.RINGS:
+        return {
+          icon: "radio-button-off-outline",
+          color: "black",
+          bgColor: "bg-yellow-100",
+        };
+      case AVAILABLE_EQUIPMENT.RESISTANCE_BANDS:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-purple-100",
+        };
+      case AVAILABLE_EQUIPMENT.STABILITY_BALL:
+        return {
+          icon: "radio-button-off-outline",
+          color: "black",
+          bgColor: "bg-teal-100",
+        };
+      case AVAILABLE_EQUIPMENT.SQUAT_RACK:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-teal-100",
+        };
+      case AVAILABLE_EQUIPMENT.DIP_BAR:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+        };
+      case AVAILABLE_EQUIPMENT.ROWING_MACHINE:
+        return {
+          icon: "boat-outline",
+          color: "black",
+          bgColor: "bg-orange-100",
+        };
+      case AVAILABLE_EQUIPMENT.SLAM_BALLS:
+        return {
+          icon: "basketball-outline",
+          color: "black",
+          bgColor: "bg-red-100",
+        };
+      case AVAILABLE_EQUIPMENT.CABLE_MACHINE:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+        };
+      case AVAILABLE_EQUIPMENT.JUMP_ROPE:
+        return {
+          icon: "body-outline",
+          color: "black",
+          bgColor: "bg-purple-100",
+        };
+      case AVAILABLE_EQUIPMENT.FOAM_ROLLER:
+        return {
+          icon: "radio-button-off-outline",
+          color: "black",
+          bgColor: "bg-orange-100",
+        };
+      default:
+        return {
+          icon: "fitness-outline",
+          color: "black",
+          bgColor: "bg-green-100",
+        };
+    }
+  };
 
   return (
     <View className="flex-1 px-6 pb-6">
@@ -269,7 +269,9 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
                     <View className="h-2" />
                     <Text
                       className={`font-medium text-sm text-center ${
-                        isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                        isSelected
+                          ? "text-content-on-primary"
+                          : "text-neutral-dark-1"
                       }`}
                       numberOfLines={2}
                     >
@@ -308,7 +310,9 @@ const getEquipmentConfig = (equipKey: AVAILABLE_EQUIPMENT) => {
                       <View className="h-2" />
                       <Text
                         className={`font-medium text-sm text-center ${
-                          isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                          isSelected
+                            ? "text-content-on-primary"
+                            : "text-neutral-dark-1"
                         }`}
                         numberOfLines={2}
                       >

@@ -35,29 +35,29 @@ export default function FitnessLevelStep({
       case FITNESS_LEVELS.BEGINNER:
         return {
           icon: "walk-outline",
-          color: colors.contentOnPrimary,
-          bgColor: "bg-brand-light-1",
+          color: "black",
+          bgColor: "bg-green-100",
           description: "New to fitness or returning after a long break",
         };
       case FITNESS_LEVELS.INTERMEDIATE:
         return {
           icon: "fitness-outline",
-          color: colors.contentOnPrimary,
+          color: "black",
           bgColor: "bg-yellow-100",
           description: "Consistent exercise for 6+ months",
         };
       case FITNESS_LEVELS.ADVANCED:
         return {
           icon: "flame-outline",
-          color: colors.contentOnPrimary,
+          color: "black",
           bgColor: "bg-red-100",
           description: "Regular challenging workouts for 1+ years",
         };
       default:
         return {
           icon: "fitness-outline",
-          color: "#6B7280",
-          bgColor: "bg-neutral-light-2",
+          color: "black",
+          bgColor: "bg-green-100",
           description: "Fitness level",
         };
     }
@@ -69,29 +69,29 @@ export default function FitnessLevelStep({
       case INTENSITY_LEVELS.LOW:
         return {
           icon: "walk-outline",
-          color: colors.contentOnPrimary,
-          bgColor: "bg-brand-light-1",
+          color: "black",
+          bgColor: "bg-green-100",
           description: "Light, comfortable pace",
         };
       case INTENSITY_LEVELS.MODERATE:
         return {
           icon: "fitness-outline",
-          color: colors.contentOnPrimary,
+          color: "black",
           bgColor: "bg-yellow-100",
           description: "Moderate challenge, can still talk",
         };
       case INTENSITY_LEVELS.HIGH:
         return {
           icon: "flash-outline",
-          color: colors.contentOnPrimary,
+          color: "black",
           bgColor: "bg-red-100",
           description: "High intensity, challenging workouts",
         };
       default:
         return {
           icon: "pulse-outline",
-          color: "#6B7280",
-          bgColor: "bg-neutral-light-2",
+          color: "black",
+          bgColor: "bg-green-100",
           description: "Intensity level",
         };
     }
@@ -124,14 +124,18 @@ export default function FitnessLevelStep({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(value)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -239,14 +243,18 @@ export default function FitnessLevelStep({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}

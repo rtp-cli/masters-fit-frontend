@@ -34,29 +34,29 @@ const getIntensityLevelConfig = (intensityKey: string, colors: any) => {
     case "LOW":
       return {
         icon: "walk-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
+        color: "black",
+        bgColor: "bg-green-100",
         description: "Light, comfortable pace",
       };
     case "MODERATE":
       return {
         icon: "fitness-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-yellow-100",
         description: "Moderate challenge, can still talk",
       };
     case "HIGH":
       return {
         icon: "flash-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-red-100",
         description: "High intensity, challenging workouts",
       };
     default:
       return {
         icon: "pulse-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-neutral-light-2",
+        color: "black",
+        bgColor: "bg-green-100",
         description: "Intensity level",
       };
   }
@@ -68,78 +68,78 @@ const getStyleConfig = (styleKey: string, colors: any) => {
     case "HIIT":
       return {
         icon: "flash-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-red-100",
         description: "High-intensity interval training",
       };
     case "STRENGTH":
       return {
         icon: "barbell-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-blue-100",
         description: "Build muscle and increase strength",
       };
     case "CARDIO":
       return {
         icon: "heart-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
+        color: "black",
+        bgColor: "bg-green-100",
         description: "Improve cardiovascular health",
       };
     case "REHAB":
       return {
         icon: "medkit-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-purple-100",
         description: "Recovery and rehabilitation",
       };
     case "CROSSFIT":
       return {
         icon: "stopwatch-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-orange-100",
         description: "High-intensity functional training",
       };
     case "FUNCTIONAL":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-yellow-100",
         description: "Real-world movement patterns",
       };
     case "PILATES":
       return {
         icon: "accessibility-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-pink-100",
         description: "Core strength and flexibility",
       };
     case "YOGA":
       return {
         icon: "leaf-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-teal-100",
         description: "Mind-body connection and flexibility",
       };
     case "BALANCE":
       return {
         icon: "infinite-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-indigo-100",
         description: "Stability and coordination training",
       };
     case "MOBILITY":
       return {
         icon: "move-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-cyan-100",
         description: "Joint mobility and movement quality",
       };
     default:
       return {
         icon: "fitness-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-neutral-light-2",
+        color: "black",
+        bgColor: "bg-green-100",
         description: "General workout style",
       };
   }
@@ -151,29 +151,29 @@ const getEnvironmentConfig = (envKey: string, colors: any) => {
     case "COMMERCIAL_GYM":
       return {
         icon: "business-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
+        color: "black",
+        bgColor: "bg-green-100",
         description: "Full gym with all equipment available",
       };
     case "HOME_GYM":
       return {
         icon: "home-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-purple-100",
         description: "Personal home gym setup",
       };
     case "BODYWEIGHT_ONLY":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-blue-100",
         description: "No equipment needed, just your body",
       };
     default:
       return {
         icon: "fitness-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-neutral-light-2",
+        color: "black",
+        bgColor: "bg-green-100",
         description: "",
       };
   }
@@ -185,121 +185,121 @@ const getEquipmentConfig = (equipKey: string, colors: any) => {
     case "BARBELLS":
       return {
         icon: "barbell-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
+        color: "black",
+        bgColor: "bg-green-100",
       };
     case "DUMBBELLS":
       return {
         icon: "barbell-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-red-100",
       };
     case "KETTLEBELLS":
       return {
         icon: "barbell-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-orange-100",
       };
     case "BENCH":
       return {
         icon: "remove-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-pink-100",
       };
     case "INCLINE_DECLINE_BENCH":
       return {
         icon: "remove-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-yellow-100",
       };
     case "PULL_UP_BAR":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-indigo-100",
       };
     case "BIKE":
       return {
         icon: "bicycle-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-red-100",
       };
     case "MEDICINE_BALLS":
       return {
         icon: "basketball-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-indigo-100",
       };
     case "PLYO_BOX":
       return {
         icon: "apps-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-pink-100",
       };
     case "RINGS":
       return {
         icon: "radio-button-off-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-yellow-100",
       };
     case "RESISTANCE_BANDS":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-purple-100",
       };
     case "STABILITY_BALL":
       return {
         icon: "radio-button-off-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-teal-100",
       };
     case "SQUAT_RACK":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-teal-100",
       };
     case "DIP_BAR":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
+        color: "black",
+        bgColor: "bg-green-100",
       };
     case "ROWING_MACHINE":
       return {
         icon: "boat-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-orange-100",
       };
     case "SLAM_BALLS":
       return {
         icon: "basketball-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-red-100",
       };
     case "CABLE_MACHINE":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
-        bgColor: "bg-brand-light-1",
+        color: "black",
+        bgColor: "bg-green-100",
       };
     case "JUMP_ROPE":
       return {
         icon: "body-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-purple-100",
       };
     case "FOAM_ROLLER":
       return {
         icon: "radio-button-off-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-orange-100",
       };
     default:
       return {
         icon: "fitness-outline",
-        color: colors.contentOnPrimary,
+        color: "black",
         bgColor: "bg-neutral-light-2",
       };
   }
@@ -362,14 +362,18 @@ export default function ProfileOverrideForm({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -415,14 +419,18 @@ export default function ProfileOverrideForm({
               <View className="flex-1 ml-3">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs mt-0.5 ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -458,14 +466,18 @@ export default function ProfileOverrideForm({
               <View className="flex-1">
                 <Text
                   className={`font-medium text-sm ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-dark-1"
                   }`}
                 >
                   {formatEnumValue(key)}
                 </Text>
                 <Text
                   className={`text-xs ${
-                    isSelected ? "text-content-on-primary" : "text-neutral-medium-4"
+                    isSelected
+                      ? "text-content-on-primary"
+                      : "text-neutral-medium-4"
                   }`}
                 >
                   {config.description}
@@ -514,7 +526,9 @@ export default function ProfileOverrideForm({
                     <View className="h-2" />
                     <Text
                       className={`font-medium text-sm text-center ${
-                        isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                        isSelected
+                          ? "text-content-on-primary"
+                          : "text-neutral-dark-1"
                       }`}
                       numberOfLines={2}
                     >
@@ -560,7 +574,9 @@ export default function ProfileOverrideForm({
                       <View className="h-2" />
                       <Text
                         className={`font-medium text-sm text-center ${
-                          isSelected ? "text-content-on-primary" : "text-neutral-dark-1"
+                          isSelected
+                            ? "text-content-on-primary"
+                            : "text-neutral-dark-1"
                         }`}
                         numberOfLines={2}
                       >
