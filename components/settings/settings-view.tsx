@@ -557,19 +557,19 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             "Testing RevenueCat integration. Select a plan to test the purchase flow.",
         }}
         onPurchaseSuccess={() => {
-          setDialogConfig({
-            title: "Success",
-            description: "Purchase completed successfully!",
-            primaryButton: {
-              text: "OK",
-              onPress: () => {
-                setDialogVisible(false);
-                setShowPaywallTest(false);
+          setShowPaywallTest(false);
+          setTimeout(() => {
+            setDialogConfig({
+              title: "Success",
+              description: "Purchase completed successfully!",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
               },
-            },
-            icon: "checkmark-circle",
-          });
-          setDialogVisible(true);
+              icon: "checkmark-circle",
+            });
+            setDialogVisible(true);
+          }, 100);
         }}
       />
 
@@ -589,20 +589,20 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             "Upgrade to MastersFit Pro to unlock unlimited workouts, advanced analytics, and exclusive features.",
         }}
         onPurchaseSuccess={() => {
-          setDialogConfig({
-            title: "Welcome to MastersFit Pro!",
-            description:
-              "Your subscription is now active. Enjoy unlimited access to all Pro features!",
-            primaryButton: {
-              text: "OK",
-              onPress: () => {
-                setDialogVisible(false);
-                setShowUpgradeModal(false);
+          setShowUpgradeModal(false);
+          setTimeout(() => {
+            setDialogConfig({
+              title: "Welcome to MastersFit Pro!",
+              description:
+                "Your subscription is now active. Enjoy unlimited access to all Pro features!",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
               },
-            },
-            icon: "checkmark-circle",
-          });
-          setDialogVisible(true);
+              icon: "checkmark-circle",
+            });
+            setDialogVisible(true);
+          }, 100);
         }}
       />
 

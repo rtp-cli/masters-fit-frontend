@@ -38,7 +38,6 @@ import {
   PlanDayWithBlocks,
   WorkoutWithDetails,
   WorkoutBlockWithExercises,
-  SubscriptionPlan,
 } from "@/types/api";
 import { RegenerationData } from "@/types/calendar.types";
 import CalendarViewSection from "./sections/calendar-view";
@@ -677,10 +676,9 @@ export default function CalendarScreen() {
             limits: {},
           }
         }
-        onPlanSelect={(plan: SubscriptionPlan) => {
-          // In the future, this will trigger RevenueCat purchase flow
-          console.log("Plan selected for purchase:", plan.planId);
-          // TODO: Integrate RevenueCat purchase flow here
+        onPurchaseSuccess={() => {
+          setShowPaymentWall(false);
+          setPaywallData(null);
         }}
       />
 

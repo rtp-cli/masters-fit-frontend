@@ -999,20 +999,22 @@ export default function DashboardScreen() {
             "Upgrade to MastersFit Pro to unlock unlimited workouts, advanced analytics, and exclusive features.",
         }}
         onPurchaseSuccess={() => {
-          setDialogConfig({
-            title: "Welcome to MastersFit Pro!",
-            description:
-              "Your subscription is now active. Enjoy unlimited access to all Pro features!",
-            primaryButton: {
-              text: "OK",
-              onPress: () => {
-                setDialogVisible(false);
-                setShowPaymentWall(false);
+          // Modal is already dismissed at this point (onDismiss fired)
+          setShowPaymentWall(false);
+          // Small delay to let the view hierarchy settle before showing a new dialog
+          setTimeout(() => {
+            setDialogConfig({
+              title: "Welcome to MastersFit Pro!",
+              description:
+                "Your subscription is now active. Enjoy unlimited access to all Pro features!",
+              primaryButton: {
+                text: "OK",
+                onPress: () => setDialogVisible(false),
               },
-            },
-            icon: "checkmark-circle",
-          });
-          setDialogVisible(true);
+              icon: "checkmark-circle",
+            });
+            setDialogVisible(true);
+          }, 100);
         }}
       />
 

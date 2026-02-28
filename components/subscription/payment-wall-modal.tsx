@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
+  Platform,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
   ScrollView,
   ActivityIndicator,
@@ -14,7 +16,13 @@ import { useThemeColors } from "@/lib/theme";
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
 import { PaywallLimits } from "@/types/api";
 import SubscriptionPlansList from "./subscription-plans-list";
-import { CustomDialog, DialogButton } from "../ui";
+
+interface ResultState {
+  type: "success" | "info" | "error";
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
 
 interface PaymentWallModalProps {
   visible: boolean;
@@ -46,51 +54,63 @@ export default function PaymentWallModal({
   } = useSubscriptionPlans();
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(null);
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState<{
-    title: string;
-    description: string;
-    primaryButton: DialogButton;
-    secondaryButton?: DialogButton;
-    icon?: keyof typeof Ionicons.glyphMap;
-  } | null>(null);
+  const [resultState, setResultState] = useState<ResultState | null>(null);
+  const pendingSuccessRef = useRef(false);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (visible) {
+      setResultState(null);
+      pendingSuccessRef.current = false;
+    }
+  }, [visible]);
 
   const handlePackageSelect = (pkg: PurchasesPackage) => {
     setSelectedPackage(pkg);
   };
 
+  const handleResultDismiss = () => {
+    if (resultState?.type === "success") {
+      setResultState(null);
+      if (Platform.OS === "android") {
+        // On Android, onDismiss doesn't fire on Modal, so call
+        // onPurchaseSuccess after onClose with a microtask delay
+        onClose();
+        setTimeout(() => {
+          onPurchaseSuccess?.();
+        }, 0);
+      } else {
+        // On iOS, use the onDismiss callback for proper sequencing
+        pendingSuccessRef.current = true;
+        onClose();
+      }
+    } else {
+      // For info/error, just clear the overlay
+      setResultState(null);
+    }
+  };
+
   const handlePurchase = async () => {
     if (!selectedPackage) {
-      setDialogConfig({
+      setResultState({
+        type: "info",
         title: "Select a Plan",
         description: "Please select a subscription plan first.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
         icon: "information-circle",
       });
-      setDialogVisible(true);
       return;
     }
 
     const success = await purchasePackage(selectedPackage);
 
     if (success) {
-      setDialogConfig({
+      setResultState({
+        type: "success",
         title: "Success!",
-        description: "Your subscription is now active. Enjoy unlimited access!",
-        primaryButton: {
-          text: "OK",
-          onPress: () => {
-            setDialogVisible(false);
-            onPurchaseSuccess?.();
-            onClose();
-          },
-        },
+        description:
+          "Your subscription is now active. Enjoy unlimited access!",
         icon: "checkmark-circle",
       });
-      setDialogVisible(true);
     }
   };
 
@@ -98,31 +118,20 @@ export default function PaymentWallModal({
     const success = await restorePurchases();
 
     if (success) {
-      setDialogConfig({
+      setResultState({
+        type: "success",
         title: "Purchases Restored",
         description: "Your previous purchases have been restored.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => {
-            setDialogVisible(false);
-            onPurchaseSuccess?.();
-            onClose();
-          },
-        },
         icon: "checkmark-circle",
       });
-      setDialogVisible(true);
     } else {
-      setDialogConfig({
+      setResultState({
+        type: "error",
         title: "No Purchases Found",
-        description: "We couldn't find any previous purchases to restore.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
+        description:
+          "We couldn't find any previous purchases to restore.",
         icon: "alert-circle",
       });
-      setDialogVisible(true);
     }
   };
 
@@ -132,6 +141,12 @@ export default function PaymentWallModal({
       animationType="slide"
       onRequestClose={onClose}
       statusBarTranslucent
+      onDismiss={() => {
+        if (pendingSuccessRef.current) {
+          pendingSuccessRef.current = false;
+          onPurchaseSuccess?.();
+        }
+      }}
     >
       <SafeAreaView edges={["top"]} className="flex-1 bg-background">
         {/* Header with Close Button */}
@@ -266,17 +281,50 @@ export default function PaymentWallModal({
         </ScrollView>
       </SafeAreaView>
 
-      {/* Custom Dialog */}
-      {dialogConfig && (
-        <CustomDialog
-          visible={dialogVisible}
-          onClose={() => setDialogVisible(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          primaryButton={dialogConfig.primaryButton}
-          secondaryButton={dialogConfig.secondaryButton}
-          icon={dialogConfig.icon}
-        />
+      {/* Inline Result Overlay (replaces nested CustomDialog Modal) */}
+      {resultState && (
+        <TouchableWithoutFeedback onPress={handleResultDismiss}>
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 24,
+              zIndex: 100,
+            }}
+          >
+            <TouchableWithoutFeedback>
+              <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
+                <View className="size-16 rounded-full bg-primary/10 items-center justify-center mb-4">
+                  <Ionicons
+                    name={resultState.icon}
+                    size={32}
+                    color={colors.brand.primary}
+                  />
+                </View>
+                <Text className="text-xl font-bold text-text-primary mb-2 text-center">
+                  {resultState.title}
+                </Text>
+                <Text className="text-base text-text-secondary text-center mb-6 leading-6">
+                  {resultState.description}
+                </Text>
+                <TouchableOpacity
+                  className="bg-primary rounded-xl py-3 px-8 w-full items-center justify-center"
+                  onPress={handleResultDismiss}
+                >
+                  <Text className="text-content-on-primary font-semibold text-base">
+                    OK
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       )}
     </Modal>
   );
