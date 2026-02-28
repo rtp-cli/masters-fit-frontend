@@ -83,6 +83,7 @@ interface WorkoutRegenerationModalProps {
   isRestDay?: boolean; // Add isRestDay prop to indicate rest day modal
   noActiveWorkoutDay?: boolean; // Add noActiveWorkoutDay prop for days outside workout plan
   selectedDate?: string; // The date for rest day workout generation
+  singleTabOnly?: boolean; // When true, hides tab toggle and locks to single day mode
 }
 
 export default function WorkoutRegenerationModal({
@@ -97,6 +98,7 @@ export default function WorkoutRegenerationModal({
   isRestDay = false,
   noActiveWorkoutDay = false,
   selectedDate,
+  singleTabOnly = false,
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -154,10 +156,16 @@ export default function WorkoutRegenerationModal({
       setTempOverridesBackup(null);
       // For rest days and no active workout days, always default to "week" tab
       setSelectedType(
-        isRestDay ? "day" : noActiveWorkoutDay ? "week" : regenerationType
+        singleTabOnly
+          ? "day"
+          : isRestDay
+            ? "day"
+            : noActiveWorkoutDay
+              ? "week"
+              : regenerationType
       );
     }
-  }, [visible, regenerationType, isRestDay, noActiveWorkoutDay]);
+  }, [visible, regenerationType, isRestDay, noActiveWorkoutDay, singleTabOnly]);
 
   // Initialize temporary overrides when profile loads
   useEffect(() => {
@@ -966,11 +974,12 @@ export default function WorkoutRegenerationModal({
                   </Text>
                 )}
 
-                {/* Week/Day Toggle - Fixed shadow issue */}
+                {/* Week/Day Toggle - Hidden when singleTabOnly */}
+                {!singleTabOnly && (
                 <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
                   <TouchableOpacity
                     className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                      selectedType === "day" ? "bg-surface" : "bg-transparent"
+                      selectedType === "day" ? "bg-primary" : "bg-transparent"
                     } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
                     style={
                       selectedType === "day"
@@ -991,7 +1000,7 @@ export default function WorkoutRegenerationModal({
                     <Text
                       className={`font-medium text-sm ${
                         selectedType === "day"
-                          ? "text-secondary"
+                          ? "text-content-on-primary"
                           : "text-text-muted"
                       }`}
                     >
@@ -1000,7 +1009,7 @@ export default function WorkoutRegenerationModal({
                     <Text
                       className={`text-xs mt-1 text-center ${
                         selectedType === "day"
-                          ? "text-secondary"
+                          ? "text-content-on-primary"
                           : "text-text-muted"
                       }`}
                     >
@@ -1009,7 +1018,7 @@ export default function WorkoutRegenerationModal({
                   </TouchableOpacity>
                   <TouchableOpacity
                     className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                      selectedType === "week" ? "bg-surface" : "bg-transparent"
+                      selectedType === "week" ? "bg-primary" : "bg-transparent"
                     }`}
                     style={
                       selectedType === "week"
@@ -1027,7 +1036,7 @@ export default function WorkoutRegenerationModal({
                     <Text
                       className={`font-medium text-sm ${
                         selectedType === "week"
-                          ? "text-secondary"
+                          ? "text-content-on-primary"
                           : "text-text-muted"
                       }`}
                     >
@@ -1036,7 +1045,7 @@ export default function WorkoutRegenerationModal({
                     <Text
                       className={`text-xs mt-1 text-center ${
                         selectedType === "week"
-                          ? "text-secondary"
+                          ? "text-content-on-primary"
                           : "text-text-muted"
                       }`}
                     >
@@ -1044,6 +1053,7 @@ export default function WorkoutRegenerationModal({
                     </Text>
                   </TouchableOpacity>
                 </View>
+                )}
 
                 {noActiveWorkoutDay && (
                   <Text className="text-xs text-text-muted mb-4 text-center">

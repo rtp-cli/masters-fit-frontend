@@ -58,6 +58,7 @@ import { useWorkout } from "@/contexts/workout-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import {
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
@@ -239,6 +240,7 @@ export default function WorkoutScreen() {
 
   // New modal states for repeat workout
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showRegenerationModal, setShowRegenerationModal] = useState(false);
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -1551,6 +1553,27 @@ export default function WorkoutScreen() {
                 <Text className="text-text-muted text-center mb-8 leading-6">
                   No workout scheduled for today. Take time to rest and recover!
                 </Text>
+                <TouchableOpacity
+                  className={`rounded-xl py-3 px-6 flex-row items-center justify-center ${
+                    isGenerating ? "bg-primary/50 opacity-50" : "bg-primary"
+                  }`}
+                  onPress={isGenerating ? undefined : () => setShowRegenerationModal(true)}
+                  disabled={isGenerating}
+                >
+                  <Ionicons
+                    name="sparkles"
+                    size={18}
+                    color={isGenerating ? colors.contentOnPrimary + "70" : colors.contentOnPrimary}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    className={`font-semibold text-sm ${
+                      isGenerating ? "text-content-on-primary/70" : "text-content-on-primary"
+                    }`}
+                  >
+                    {isGenerating ? "Generating Workout..." : "Generate Workout"}
+                  </Text>
+                </TouchableOpacity>
               </>
             ) : (
               // No active workout plan at all
@@ -1569,6 +1592,22 @@ export default function WorkoutScreen() {
           visible={showRepeatModal}
           onClose={() => setShowRepeatModal(false)}
           onSuccess={handleRepeatWorkoutSuccess}
+        />
+
+        {/* Rest Day Regeneration Modal */}
+        <WorkoutRegenerationModal
+          visible={showRegenerationModal}
+          onClose={() => setShowRegenerationModal(false)}
+          onRegenerate={() => {}}
+          regenerationType="day"
+          isRestDay={true}
+          selectedDate={getCurrentDate()}
+          singleTabOnly={true}
+          onSuccess={() => {
+            invalidateActiveWorkoutCache();
+            setShowRegenerationModal(false);
+            router.replace("/(tabs)/dashboard");
+          }}
         />
       </View>
     );
