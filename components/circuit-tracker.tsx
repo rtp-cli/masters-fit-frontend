@@ -368,7 +368,7 @@ export default function CircuitTracker({
           <View className="items-center">
             <Text className="text-lg font-bold text-text-primary">
               Round {sessionData.currentRound}
-              {sessionData.targetRounds && `/${sessionData.targetRounds}`}
+              {sessionData.targetRounds && block.blockType !== "amrap" && `/${sessionData.targetRounds}`}
             </Text>
           </View>
         </View>

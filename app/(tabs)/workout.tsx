@@ -2153,7 +2153,7 @@ export default function WorkoutScreen() {
               ref={circuitHeadingRef}
               className="bg-card rounded-2xl p-6 border border-neutral-light-2 mb-6"
             >
-              <View className="flex-row items-center justify-between mb-4">
+              <View className="mb-4">
                 <Text className="text-lg font-bold text-text-primary">
                   {currentBlock.blockName}
                 </Text>
@@ -2165,7 +2165,7 @@ export default function WorkoutScreen() {
                         animated: true,
                       })
                     }
-                    className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full"
+                    className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full self-start mt-2"
                   >
                     <Ionicons
                       name="play-circle-outline"
