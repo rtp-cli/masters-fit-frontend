@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
   fetchPreviousWorkouts,
@@ -508,8 +509,9 @@ export default function WorkoutRepeatModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+      <SafeAreaView edges={["top"]} className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
@@ -609,7 +611,7 @@ export default function WorkoutRepeatModal({
             </TouchableOpacity>
           </View>
         )}
-      </View>
+      </SafeAreaView>
 
       {/* Custom Dialog */}
       {dialogConfig && (

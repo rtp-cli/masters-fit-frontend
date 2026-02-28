@@ -12,6 +12,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ProfileOverrideForm, {
   TemporaryOverrides,
@@ -800,13 +801,14 @@ export default function WorkoutRegenerationModal({
         visible={visible}
         animationType="slide"
         presentationStyle="pageSheet"
+        statusBarTranslucent
       >
-        <View className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}>
+        <SafeAreaView edges={["top"]} className={`flex-1 justify-center items-center bg-background ${isDark ? "dark" : ""}`}>
           <ActivityIndicator size="large" color={colors.brand.primary} />
           <Text className="mt-4 text-base text-primary font-medium">
             Loading your preferences...
           </Text>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   }
@@ -818,8 +820,9 @@ export default function WorkoutRegenerationModal({
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setShowOnboardingForm(false)}
+        statusBarTranslucent
       >
-        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+        <SafeAreaView edges={["top"]} className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
           {/* Custom Header with Save/Cancel Options */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity
@@ -860,7 +863,7 @@ export default function WorkoutRegenerationModal({
               excludePersonalInfo={true}
             />
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   }
@@ -872,8 +875,9 @@ export default function WorkoutRegenerationModal({
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={handleCancelDailyOverrides}
+        statusBarTranslucent
       >
-        <View className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
+        <SafeAreaView edges={["top"]} className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
           {/* Custom Header with Cancel/Apply Options */}
           <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
             <TouchableOpacity
@@ -910,7 +914,7 @@ export default function WorkoutRegenerationModal({
               />
             </ScrollView>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   }
@@ -921,12 +925,14 @@ export default function WorkoutRegenerationModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        className={`flex-1 ${isDark ? "dark" : ""}`}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View className="flex-1 bg-background">
+      <SafeAreaView edges={["top"]} className="flex-1">
+        <KeyboardAvoidingView
+          className={`flex-1 ${isDark ? "dark" : ""}`}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View className="flex-1 bg-background">
           {/* Header */}
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
@@ -1167,6 +1173,7 @@ export default function WorkoutRegenerationModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+      </SafeAreaView>
 
       {/* Custom Dialog */}
       {dialogConfig && (

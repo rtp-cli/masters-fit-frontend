@@ -4,9 +4,9 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
@@ -67,7 +67,7 @@ export default function SubscriptionDetailsModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView edges={["top"]} className="flex-1 bg-background">
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <View className="w-9" />

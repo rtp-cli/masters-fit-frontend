@@ -6,8 +6,8 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { PurchasesPackage } from "react-native-purchases";
 import { useThemeColors } from "@/lib/theme";
@@ -133,7 +133,7 @@ export default function PaymentWallModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView edges={["top"]} className="flex-1 bg-background">
         {/* Header with Close Button */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
