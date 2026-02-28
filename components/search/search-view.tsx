@@ -586,12 +586,19 @@ export default function SearchView() {
                   className="mr-3"
                 />
                 <TextInput
-                  className="flex-1 text-text-primary text-sm"
+                  className="flex-1 text-text-primary text-sm min-w-0"
                   placeholder="Search exercises"
                   value={exerciseQuery}
                   onChangeText={setExerciseQuery}
                   onSubmitEditing={performExerciseSearch}
                   placeholderTextColor={colors.neutral.medium[3]}
+                  style={{
+                    paddingVertical: 0,
+                    paddingHorizontal: 8,
+                  }}
+                  {...(Platform.OS === "android" && {
+                    includeFontPadding: false,
+                  })}
                 />
                 {exerciseQuery.length > 0 ? (
                   <TouchableOpacity
