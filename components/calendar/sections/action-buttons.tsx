@@ -42,7 +42,7 @@ export default function CalendarActionButtons({
             color={colors.neutral.light[1]}
           />
           <Text className="text-neutral-light-1 font-semibold text-sm ml-2">
-            Edit Workout Plan
+            Regenerate Workout
           </Text>
         </TouchableOpacity>
 
@@ -57,7 +57,7 @@ export default function CalendarActionButtons({
               color={colors.brand.primary}
             />
             <Text className="text-primary font-semibold text-sm ml-2">
-              Replace Exercises
+              Edit Workout
             </Text>
           </TouchableOpacity>
         )}

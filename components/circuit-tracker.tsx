@@ -214,6 +214,8 @@ export default function CircuitTracker({
   const handleCompleteRound = async () => {
     if (isCurrentRoundCompleted) return;
 
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     try {
       if (circuitActions?.completeRound) {
         await circuitActions.completeRound(localRoundNotes);
@@ -271,6 +273,8 @@ export default function CircuitTracker({
 
   // Handle circuit completion
   const handleCompleteCircuit = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     try {
       if (circuitActions?.completeCircuit) {
         await circuitActions.completeCircuit();

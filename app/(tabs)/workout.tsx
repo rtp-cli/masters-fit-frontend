@@ -1053,6 +1053,7 @@ export default function WorkoutScreen() {
   const completeExercise = async () => {
     if (!currentExercise || !currentProgress) return;
 
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setIsCompletingExercise(true);
 
     try {
@@ -1858,9 +1859,10 @@ export default function WorkoutScreen() {
                                         ? "border-primary bg-primary"
                                         : "border-neutral-medium-1 bg-background"
                                     }`}
-                                    onPress={() =>
-                                      updateProgress("roundsCompleted", i + 1)
-                                    }
+                                    onPress={() => {
+                                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                      updateProgress("roundsCompleted", i + 1);
+                                    }}
                                   >
                                     {isCompleted ? (
                                       <Ionicons
