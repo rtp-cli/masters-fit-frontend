@@ -67,8 +67,6 @@ import { registerForPushNotifications } from "@/lib/notifications";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { trackWorkoutStarted } from "@/lib/analytics";
-import { setPaywallCallback } from "@/lib/api";
-import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -255,26 +253,6 @@ export default function WorkoutScreen() {
     secondaryButton?: DialogButton;
     icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
-
-  // Paywall state
-  const [showPaymentWall, setShowPaymentWall] = useState(false);
-  const [paywallData, setPaywallData] = useState<{
-    type: string;
-    message: string;
-    limits: any;
-  } | null>(null);
-
-  // Set up paywall callback
-  useEffect(() => {
-    setPaywallCallback((data) => {
-      setPaywallData(data);
-      setShowPaymentWall(true);
-    });
-
-    return () => {
-      setPaywallCallback(() => {});
-    };
-  }, []);
 
   // Helper function to show error dialog
   const showErrorDialog = useCallback((title: string, description: string) => {
@@ -1640,25 +1618,6 @@ export default function WorkoutScreen() {
           }}
         />
 
-        <PaymentWallModal
-          visible={showPaymentWall}
-          onClose={() => {
-            setShowPaymentWall(false);
-            setPaywallData(null);
-          }}
-          paywallData={
-            paywallData || {
-              type: "subscription_required",
-              message:
-                "A subscription is required to access this feature.",
-              limits: {},
-            }
-          }
-          onPurchaseSuccess={() => {
-            setShowPaymentWall(false);
-            setPaywallData(null);
-          }}
-        />
       </View>
     );
   }
@@ -2622,25 +2581,6 @@ export default function WorkoutScreen() {
         />
       )}
 
-      <PaymentWallModal
-        visible={showPaymentWall}
-        onClose={() => {
-          setShowPaymentWall(false);
-          setPaywallData(null);
-        }}
-        paywallData={
-          paywallData || {
-            type: "subscription_required",
-            message:
-              "A subscription is required to access this feature.",
-            limits: {},
-          }
-        }
-        onPurchaseSuccess={() => {
-          setShowPaymentWall(false);
-          setPaywallData(null);
-        }}
-      />
     </View>
   );
 }

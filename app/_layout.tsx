@@ -25,9 +25,11 @@ import {
   Manrope_600SemiBold,
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
+import { setPaywallCallback } from "@/lib/api";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import {
   registerForPushNotifications,
   addNotificationResponseListener,
@@ -114,6 +116,24 @@ function AppContent() {
 
   // State to track notification-triggered refreshes
   const [isNotificationRefresh, setIsNotificationRefresh] = useState(false);
+
+  // Global paywall state — registered once so it works on all screens
+  const [showPaymentWall, setShowPaymentWall] = useState(false);
+  const [paywallData, setPaywallData] = useState<{
+    type: string;
+    message: string;
+    limits: any;
+  } | null>(null);
+
+  useEffect(() => {
+    setPaywallCallback((data) => {
+      setPaywallData(data);
+      setShowPaymentWall(true);
+    });
+    return () => {
+      setPaywallCallback(() => {});
+    };
+  }, []);
 
   // Check if we need full app refresh and data is loading
   // For notification-triggered refreshes, we want to show warming up even if loading states aren't immediately true
@@ -247,6 +267,16 @@ function AppContent() {
     hasActiveJobs,
   ]);
 
+  // Trigger data refresh when needsFullAppRefresh becomes true
+  // (e.g., background job completion calls triggerWorkoutReady which sets the flag)
+  const prevNeedsRefreshRef = useRef(false);
+  useEffect(() => {
+    if (needsFullAppRefresh && !prevNeedsRefreshRef.current) {
+      refreshAll();
+    }
+    prevNeedsRefreshRef.current = needsFullAppRefresh;
+  }, [needsFullAppRefresh, refreshAll]);
+
   // Clear full app refresh flag when loading completes
   useEffect(() => {
     if (
@@ -304,6 +334,24 @@ function AppContent() {
         />
       </Stack>
       <FloatingNetworkLoggerButton />
+      <PaymentWallModal
+        visible={showPaymentWall}
+        onClose={() => {
+          setShowPaymentWall(false);
+          setPaywallData(null);
+        }}
+        paywallData={
+          paywallData || {
+            type: "subscription_required",
+            message: "A subscription is required to access this feature.",
+            limits: {},
+          }
+        }
+        onPurchaseSuccess={() => {
+          setShowPaymentWall(false);
+          setPaywallData(null);
+        }}
+      />
     </View>
   );
 }

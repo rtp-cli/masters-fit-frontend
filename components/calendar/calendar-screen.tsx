@@ -22,12 +22,11 @@ import {
 } from "@lib/workouts";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { getCurrentUser } from "@lib/auth";
-import { setPaywallCallback } from "@/lib/api";
+import { PaywallError } from "@/lib/api";
 import Header from "@/components/header";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
-import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
@@ -79,13 +78,6 @@ export default function CalendarScreen() {
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [calendarKey, setCalendarKey] = useState(0);
-  const [showPaymentWall, setShowPaymentWall] = useState(false);
-  const [paywallData, setPaywallData] = useState<{
-    type: string;
-    message: string;
-    limits: any;
-  } | null>(null);
-  const paywallErrorOccurredRef = useRef(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -94,35 +86,6 @@ export default function CalendarScreen() {
     secondaryButton?: DialogButton;
     icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
-
-  // Set up paywall callback
-  useEffect(() => {
-    console.log("[CALENDAR] Setting up paywall callback");
-    setPaywallCallback((data) => {
-      console.log("[CALENDAR] Paywall callback triggered with data:", data);
-      paywallErrorOccurredRef.current = true;
-      setPaywallData(data);
-      setShowPaymentWall(true);
-      console.log(
-        "[CALENDAR] Payment wall state updated - showPaymentWall:",
-        true
-      );
-      // Reset the flag after a short delay to allow state to update
-      setTimeout(() => {
-        paywallErrorOccurredRef.current = false;
-      }, 1000);
-    });
-
-    return () => {
-      setPaywallCallback(() => {});
-    };
-  }, []);
-
-  // Debug: Log when showPaymentWall changes
-  useEffect(() => {
-    console.log("[CALENDAR] showPaymentWall changed:", showPaymentWall);
-    console.log("[CALENDAR] paywallData:", paywallData);
-  }, [showPaymentWall, paywallData]);
 
   const workoutPlan = useMemo(() => {
     if (!workoutData) {
@@ -260,7 +223,7 @@ export default function CalendarScreen() {
         } else {
           setIsGeneratingWorkout(false);
           // Don't show alert if paywall error occurred (modal is already showing)
-          if (!paywallErrorOccurredRef.current) {
+          {
             setDialogConfig({
               title: "Regeneration Failed",
               description:
@@ -277,8 +240,8 @@ export default function CalendarScreen() {
       }
     } catch (err) {
       setIsGeneratingWorkout(false);
-      // Don't show alert if paywall error occurred (modal is already showing)
-      if (!paywallErrorOccurredRef.current) {
+      // Don't show error dialog if paywall modal is already handling it
+      if (!(err instanceof PaywallError)) {
         setDialogConfig({
           title: "Regeneration Error",
           description:
@@ -668,26 +631,6 @@ export default function CalendarScreen() {
         planDay={editModalPlanDay}
       />
 
-      <PaymentWallModal
-        visible={showPaymentWall}
-        onClose={() => {
-          console.log("[CALENDAR] Closing payment wall modal");
-          setShowPaymentWall(false);
-          setPaywallData(null);
-        }}
-        paywallData={
-          paywallData || {
-            type: "subscription_required",
-            message:
-              "A subscription is required to generate new workout plans.",
-            limits: {},
-          }
-        }
-        onPurchaseSuccess={() => {
-          setShowPaymentWall(false);
-          setPaywallData(null);
-        }}
-      />
 
       {/* Custom Dialog */}
       {dialogConfig && (
