@@ -2615,6 +2615,26 @@ export default function WorkoutScreen() {
           icon={dialogConfig.icon}
         />
       )}
+
+      <PaymentWallModal
+        visible={showPaymentWall}
+        onClose={() => {
+          setShowPaymentWall(false);
+          setPaywallData(null);
+        }}
+        paywallData={
+          paywallData || {
+            type: "subscription_required",
+            message:
+              "A subscription is required to access this feature.",
+            limits: {},
+          }
+        }
+        onPurchaseSuccess={() => {
+          setShowPaymentWall(false);
+          setPaywallData(null);
+        }}
+      />
     </View>
   );
 }
