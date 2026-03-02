@@ -739,6 +739,12 @@ export default function WorkoutScreen() {
         return;
       }
 
+      // Rest day plan days have no blocks — treat as rest day
+      if (!todaysWorkout.blocks || todaysWorkout.blocks.length === 0) {
+        setWorkout(null);
+        return;
+      }
+
       setWorkout(todaysWorkout);
 
       // Check if there's an existing workout session in progress

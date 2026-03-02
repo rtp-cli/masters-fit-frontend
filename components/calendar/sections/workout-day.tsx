@@ -56,7 +56,7 @@ export default function WorkoutDaySection({
     (workoutPlan?.endDate &&
       selectedDate > formatDateAsString(workoutPlan.endDate));
 
-  if (!currentSelectedPlanDay) {
+  if (!currentSelectedPlanDay || !currentSelectedPlanDay.blocks?.length) {
     return (
       <View className="px-lg">
         {noActiveWorkout ? (
