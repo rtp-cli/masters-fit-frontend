@@ -45,7 +45,20 @@ export async function fetchWorkoutExercises(
 }
 
 /**
- * Filter exercises by various criteria
+ * Collapse spaces, dashes, and underscores into a single space for
+ * separator-agnostic comparison.
+ */
+function normalizeSeparators(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\s\-_]+/g, " ")
+    .trim();
+}
+
+/**
+ * Filter exercises by various criteria.
+ * Query matching treats spaces, dashes, and underscores as interchangeable
+ * so "Pull up" matches "Pull-up", etc.
  */
 export function filterExercises(
   exercises: Exercise[],
@@ -61,14 +74,15 @@ export function filterExercises(
     equipment?: string;
   }
 ): Exercise[] {
+  const normalizedQuery = normalizeSeparators(query);
+
   return exercises.filter((exercise) => {
-    // Filter by search query
     const matchesQuery =
-      query === "" ||
-      exercise.name.toLowerCase().includes(query.toLowerCase()) ||
-      exercise.description.toLowerCase().includes(query.toLowerCase()) ||
+      normalizedQuery === "" ||
+      normalizeSeparators(exercise.name).includes(normalizedQuery) ||
+      normalizeSeparators(exercise.description).includes(normalizedQuery) ||
       exercise.muscleGroups.some((muscle) =>
-        muscle.toLowerCase().includes(query.toLowerCase())
+        normalizeSeparators(muscle).includes(normalizedQuery)
       );
 
     // Filter by muscle group

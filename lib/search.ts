@@ -18,6 +18,77 @@ export type {
 } from "@/types/api";
 
 /**
+ * Normalize a search query so spaces, dashes, and underscores are treated as
+ * interchangeable by the backend's ILIKE operator. The underscore `_` acts as
+ * a single-character wildcard in SQL ILIKE, matching any of those separators.
+ */
+export function normalizeSearchQuery(query: string): string {
+  return query.trim().replace(/[\s\-_]+/g, "_");
+}
+
+/**
+ * Normalize text for client-side comparison by collapsing all separator
+ * characters (space, dash, underscore) into a single space and lowercasing.
+ */
+function normalizeForComparison(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\s\-_]+/g, " ")
+    .trim();
+}
+
+/**
+ * Score an exercise against the original query for relevance ranking.
+ * Higher score = more relevant.
+ */
+function scoreExercise(exercise: SearchExercise, rawQuery: string): number {
+  const normalizedQuery = normalizeForComparison(rawQuery);
+  const normalizedName = normalizeForComparison(exercise.name || "");
+
+  if (normalizedName === normalizedQuery) return 100;
+  if (normalizedName.startsWith(normalizedQuery)) return 80;
+
+  const queryWords = normalizedQuery.split(" ");
+  const nameWords = normalizedName.split(" ");
+  const allWordsPresent = queryWords.every((qw) =>
+    nameWords.some((nw) => nw.startsWith(qw))
+  );
+  if (allWordsPresent) return 60;
+
+  if (normalizedName.includes(normalizedQuery)) return 40;
+
+  const normalizedDesc = normalizeForComparison(exercise.description || "");
+  if (normalizedDesc.includes(normalizedQuery)) return 20;
+
+  const muscles = [
+    ...(exercise.muscleGroups || []),
+    ...(exercise.targetMuscles || []),
+  ];
+  if (
+    muscles.some((m) => normalizeForComparison(m).includes(normalizedQuery))
+  ) {
+    return 10;
+  }
+
+  return 0;
+}
+
+/**
+ * Sort exercises by relevance to the original query, with shorter (more
+ * specific) names used as a tiebreaker.
+ */
+export function sortExercisesByRelevance(
+  exercises: SearchExercise[],
+  rawQuery: string
+): SearchExercise[] {
+  return [...exercises].sort((a, b) => {
+    const scoreDiff = scoreExercise(b, rawQuery) - scoreExercise(a, rawQuery);
+    if (scoreDiff !== 0) return scoreDiff;
+    return (a.name?.length || 0) - (b.name?.length || 0);
+  });
+}
+
+/**
  * Search for workout by date
  */
 export async function searchByDateAPI(
@@ -59,15 +130,25 @@ export async function searchExerciseAPI(
 }
 
 /**
- * Search exercises by name or muscle group
+ * Search exercises by name or muscle group.
+ * The query is normalized so that spaces, dashes, and underscores are treated
+ * as interchangeable (e.g. "Pull up" finds "Pull-up"). Results are sorted by
+ * relevance to the original query.
  */
 export async function searchExercisesAPI(
   query: string
 ): Promise<ExercisesSearchResponse> {
   try {
+    const normalized = normalizeSearchQuery(query);
     const result = await apiRequest<ExercisesSearchResponse>(
-      `/search/exercises?query=${encodeURIComponent(query)}`
+      `/search/exercises?query=${encodeURIComponent(normalized)}`
     );
+
+    if (result.success && result.exercises) {
+      result.exercises = sortExercisesByRelevance(result.exercises, query);
+      result.data = result.exercises;
+    }
+
     return result;
   } catch (error) {
     console.error("Search exercises error:", error);
@@ -118,7 +199,7 @@ export async function searchExercisesWithFiltersAPI(
     // Build query parameters
     const queryParams = new URLSearchParams();
 
-    if (query) queryParams.append("query", query);
+    if (query) queryParams.append("query", normalizeSearchQuery(query));
     if (muscleGroups && muscleGroups.length > 0) {
       queryParams.append("muscleGroups", muscleGroups.join(","));
     }
@@ -135,6 +216,11 @@ export async function searchExercisesWithFiltersAPI(
     const result = await apiRequest<EnhancedSearchResponse>(
       `/search/exercises/filtered/${userId}?${queryParams.toString()}`
     );
+
+    if (result.success && result.exercises && query) {
+      result.exercises = sortExercisesByRelevance(result.exercises, query);
+    }
+
     return result;
   } catch (error) {
     console.error("Enhanced search exercises error:", error);
