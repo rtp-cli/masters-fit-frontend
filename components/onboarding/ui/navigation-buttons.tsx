@@ -42,7 +42,7 @@ export default function NavigationButtons({
             onPress={onPrevious}
             disabled={isLoading}
           >
-            <Text className="text-text-primary font-semibold text-lg">
+            <Text className="text-text-primary font-semibold text-md">
               Back
             </Text>
           </TouchableOpacity>
@@ -58,7 +58,7 @@ export default function NavigationButtons({
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.neutral.white} />
           ) : (
-            <Text className="text-neutral-white font-bold text-lg">
+            <Text className="text-neutral-white font-bold text-md">
               {isLastStep ? submitButtonText : "Continue"}
             </Text>
           )}

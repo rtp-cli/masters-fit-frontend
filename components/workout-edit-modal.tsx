@@ -66,9 +66,9 @@ export default function WorkoutEditModal({
   >({});
 
   // Exercise replacement states
-  const [currentView, setCurrentView] = useState<
-    "main" | "replace" | "add"
-  >("main");
+  const [currentView, setCurrentView] = useState<"main" | "replace" | "add">(
+    "main"
+  );
   const [currentExercise, setCurrentExercise] =
     useState<WorkoutBlockWithExercise | null>(null);
   const [selectedExercise, setSelectedExercise] =
@@ -90,7 +90,9 @@ export default function WorkoutEditModal({
   const [addingExercise, setAddingExercise] = useState(false);
 
   // Delete exercise state — tracks the exercise ID being deleted (null = not deleting)
-  const [deletingExerciseId, setDeletingExerciseId] = useState<number | null>(null);
+  const [deletingExerciseId, setDeletingExerciseId] = useState<number | null>(
+    null
+  );
 
   // Track whether modal has been initialized (prevents re-init on planDay prop changes)
   const initializedRef = useRef(false);
@@ -99,10 +101,10 @@ export default function WorkoutEditModal({
   const [searching, setSearching] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<string[]>(
-    [],
+    []
   );
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
-    null,
+    null
   );
   const [showFilters, setShowFilters] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -144,7 +146,7 @@ export default function WorkoutEditModal({
     if (showMuscleGroupSearch && muscleGroupSearchQuery.trim()) {
       const searchLower = muscleGroupSearchQuery.toLowerCase();
       filtered = filtered.filter((group) =>
-        group.toLowerCase().includes(searchLower),
+        group.toLowerCase().includes(searchLower)
       );
     }
 
@@ -207,7 +209,13 @@ export default function WorkoutEditModal({
       setSelectedMuscleGroups([]);
       setSelectedDifficulty(null);
       setAddingToBlock(null);
-      setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+      setAddParams({
+        sets: "",
+        reps: "",
+        weight: "",
+        duration: "",
+        restTime: "",
+      });
       setAddingExercise(false);
       setDeletingExerciseId(null);
     }
@@ -274,7 +282,8 @@ export default function WorkoutEditModal({
           selectedMuscleGroups.length > 0 ? selectedMuscleGroups : undefined,
         equipment: selectedEquipment.length > 0 ? selectedEquipment : undefined,
         difficulty: selectedDifficulty || undefined,
-        excludeId: currentView === "replace" ? currentExercise?.exercise.id : undefined,
+        excludeId:
+          currentView === "replace" ? currentExercise?.exercise.id : undefined,
         userEquipmentOnly: selectedEquipment.length === 0, // Only use user equipment if no manual equipment filter
         limit: 20,
       });
@@ -346,7 +355,7 @@ export default function WorkoutEditModal({
 
       const result = await replaceExercise(
         currentExercise.id,
-        selectedExercise.id,
+        selectedExercise.id
       );
 
       if (result?.success) {
@@ -404,8 +413,7 @@ export default function WorkoutEditModal({
               } else {
                 setDialogConfig({
                   title: "Error",
-                  description:
-                    "Failed to remove exercise. Please try again.",
+                  description: "Failed to remove exercise. Please try again.",
                   primaryButton: {
                     text: "OK",
                     onPress: () => setDialogVisible(false),
@@ -418,8 +426,7 @@ export default function WorkoutEditModal({
               console.error("Error deleting exercise:", error);
               setDialogConfig({
                 title: "Error",
-                description:
-                  "Failed to remove exercise. Please try again.",
+                description: "Failed to remove exercise. Please try again.",
                 primaryButton: {
                   text: "OK",
                   onPress: () => setDialogVisible(false),
@@ -432,7 +439,7 @@ export default function WorkoutEditModal({
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -444,7 +451,13 @@ export default function WorkoutEditModal({
     setSelectedEquipment([]);
     setSelectedMuscleGroups([]);
     setSelectedDifficulty(null);
-    setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+    setAddParams({
+      sets: "",
+      reps: "",
+      weight: "",
+      duration: "",
+      restTime: "",
+    });
     setCurrentView("add");
   };
 
@@ -454,13 +467,10 @@ export default function WorkoutEditModal({
     setAddingExercise(true);
     try {
       // Calculate the next order number
-      const block = planDay.blocks.find(
-        (b) => b.id === addingToBlock.blockId,
-      );
-      const maxOrder = block?.exercises.reduce(
-        (max, ex) => Math.max(max, ex.order || 0),
-        0,
-      ) || 0;
+      const block = planDay.blocks.find((b) => b.id === addingToBlock.blockId);
+      const maxOrder =
+        block?.exercises.reduce((max, ex) => Math.max(max, ex.order || 0), 0) ||
+        0;
 
       const result = await addExerciseToBlock(addingToBlock.planDayId, {
         workoutBlockId: addingToBlock.blockId,
@@ -468,12 +478,8 @@ export default function WorkoutEditModal({
         sets: addParams.sets ? parseInt(addParams.sets, 10) : null,
         reps: addParams.reps ? parseInt(addParams.reps, 10) : null,
         weight: addParams.weight ? parseFloat(addParams.weight) : null,
-        duration: addParams.duration
-          ? parseInt(addParams.duration, 10)
-          : null,
-        restTime: addParams.restTime
-          ? parseInt(addParams.restTime, 10)
-          : null,
+        duration: addParams.duration ? parseInt(addParams.duration, 10) : null,
+        restTime: addParams.restTime ? parseInt(addParams.restTime, 10) : null,
         order: maxOrder + 1,
       });
 
@@ -482,7 +488,13 @@ export default function WorkoutEditModal({
         setCurrentView("main");
         setAddingToBlock(null);
         setSelectedExercise(null);
-        setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+        setAddParams({
+          sets: "",
+          reps: "",
+          weight: "",
+          duration: "",
+          restTime: "",
+        });
         setSearchQuery("");
         refreshWorkout();
       } else {
@@ -553,8 +565,8 @@ export default function WorkoutEditModal({
           m
             .trim()
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase()),
-        ),
+            .replace(/\b\w/g, (l) => l.toUpperCase())
+        )
       )
       .filter((m) => m.length > 0);
 
@@ -574,7 +586,13 @@ export default function WorkoutEditModal({
       setCurrentView("main");
       setAddingToBlock(null);
       setSelectedExercise(null);
-      setAddParams({ sets: "", reps: "", weight: "", duration: "", restTime: "" });
+      setAddParams({
+        sets: "",
+        reps: "",
+        weight: "",
+        duration: "",
+        restTime: "",
+      });
       return;
     }
 
@@ -618,7 +636,7 @@ export default function WorkoutEditModal({
 
   const totalExercises = planDay.blocks.reduce(
     (total, block) => total + (block.exercises?.length || 0),
-    0,
+    0
   );
 
   return (
@@ -715,13 +733,12 @@ export default function WorkoutEditModal({
                         <View className="rounded-full px-2 py-1 bg-primary">
                           <Text className="text-xs font-semibold text-neutral-white">
                             {formatWorkoutDuration(
-                              calculatePlanDayDuration(planDay),
+                              calculatePlanDayDuration(planDay)
                             )}
                           </Text>
                         </View>
                       </View>
                     </View>
-
                   </View>
                 </View>
 
@@ -802,7 +819,7 @@ export default function WorkoutEditModal({
                             />
                             <View className="flex-row flex-wrap ml-2">
                               {getIndividualMuscleGroups(
-                                currentExercise.exercise.muscles_targeted,
+                                currentExercise.exercise.muscles_targeted
                               ).map((muscle, index) => (
                                 <View
                                   key={index}
@@ -829,7 +846,7 @@ export default function WorkoutEditModal({
                               <View className="rounded-full px-2 py-1 bg-primary">
                                 <Text className="text-xs font-semibold text-neutral-white">
                                   {formatEquipment(
-                                    currentExercise.exercise.equipment,
+                                    currentExercise.exercise.equipment
                                   )}
                                 </Text>
                               </View>
@@ -974,7 +991,7 @@ export default function WorkoutEditModal({
                                         />
                                         <View className="flex-row flex-wrap ml-1">
                                           {getIndividualMuscleGroups(
-                                            item.muscleGroups,
+                                            item.muscleGroups
                                           )
                                             .slice(0, 2)
                                             .map((muscle, muscleIndex) => (
@@ -988,13 +1005,13 @@ export default function WorkoutEditModal({
                                               </View>
                                             ))}
                                           {getIndividualMuscleGroups(
-                                            item.muscleGroups,
+                                            item.muscleGroups
                                           ).length > 2 && (
                                             <View className="rounded-full px-2 py-1 bg-primary">
                                               <Text className="text-xs font-semibold text-neutral-white">
                                                 +
                                                 {getIndividualMuscleGroups(
-                                                  item.muscleGroups,
+                                                  item.muscleGroups
                                                 ).length - 2}
                                               </Text>
                                             </View>
@@ -1062,7 +1079,7 @@ export default function WorkoutEditModal({
 
                 {/* Replace Button */}
                 {selectedExercise && (
-                  <View className="px-5 py-4 border-t border-neutral-light-2">
+                  <View className="px-5 py-4 border-t border-neutral-light-2 mb-4">
                     <TouchableOpacity
                       className="bg-primary py-4 rounded-xl items-center"
                       onPress={handleConfirmReplace}
@@ -1093,7 +1110,7 @@ export default function WorkoutEditModal({
 
             {currentView === "add" && (
               /* Add Exercise View */
-              <View className="flex-1">
+              <View className="flex-1 pb-4">
                 {/* Search Section */}
                 <View className="flex-1">
                   {/* Search Header and Input */}
@@ -1115,9 +1132,7 @@ export default function WorkoutEditModal({
                           returnKeyType="search"
                         />
                         {searchQuery.length > 0 && (
-                          <TouchableOpacity
-                            onPress={() => setSearchQuery("")}
-                          >
+                          <TouchableOpacity onPress={() => setSearchQuery("")}>
                             <Ionicons
                               name="close-circle"
                               size={20}
@@ -1346,29 +1361,27 @@ export default function WorkoutEditModal({
                                         />
                                         <View className="flex-row flex-wrap ml-1">
                                           {getIndividualMuscleGroups(
-                                            item.muscleGroups,
+                                            item.muscleGroups
                                           )
                                             .slice(0, 2)
-                                            .map(
-                                              (muscle, muscleIndex) => (
-                                                <View
-                                                  key={muscleIndex}
-                                                  className="rounded-full px-2 py-1 mr-1 bg-primary"
-                                                >
-                                                  <Text className="text-xs font-semibold text-neutral-white">
-                                                    {muscle}
-                                                  </Text>
-                                                </View>
-                                              ),
-                                            )}
+                                            .map((muscle, muscleIndex) => (
+                                              <View
+                                                key={muscleIndex}
+                                                className="rounded-full px-2 py-1 mr-1 bg-primary"
+                                              >
+                                                <Text className="text-xs font-semibold text-neutral-white">
+                                                  {muscle}
+                                                </Text>
+                                              </View>
+                                            ))}
                                           {getIndividualMuscleGroups(
-                                            item.muscleGroups,
+                                            item.muscleGroups
                                           ).length > 2 && (
                                             <View className="rounded-full px-2 py-1 bg-primary">
                                               <Text className="text-xs font-semibold text-neutral-white">
                                                 +
                                                 {getIndividualMuscleGroups(
-                                                  item.muscleGroups,
+                                                  item.muscleGroups
                                                 ).length - 2}
                                               </Text>
                                             </View>
@@ -1386,9 +1399,7 @@ export default function WorkoutEditModal({
                                       <View className="ml-1">
                                         <View className="rounded-full px-2 py-1 bg-primary">
                                           <Text className="text-xs font-semibold text-neutral-white">
-                                            {formatEquipment(
-                                              item.equipment,
-                                            )}
+                                            {formatEquipment(item.equipment)}
                                           </Text>
                                         </View>
                                       </View>
@@ -1451,7 +1462,6 @@ export default function WorkoutEditModal({
                 )}
               </View>
             )}
-
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -1517,7 +1527,7 @@ export default function WorkoutEditModal({
                       setTempEquipment((prev) =>
                         prev.includes(equipment)
                           ? prev.filter((e) => e !== equipment)
-                          : [...prev, equipment],
+                          : [...prev, equipment]
                       )
                     }
                   >
@@ -1608,7 +1618,7 @@ export default function WorkoutEditModal({
                       setTempMuscleGroups((prev) =>
                         prev.includes(muscleGroup)
                           ? prev.filter((m) => m !== muscleGroup)
-                          : [...prev, muscleGroup],
+                          : [...prev, muscleGroup]
                       )
                     }
                   >
@@ -1675,7 +1685,7 @@ export default function WorkoutEditModal({
                     }}
                     onPress={() =>
                       setTempDifficulty(
-                        tempDifficulty === difficulty ? null : difficulty,
+                        tempDifficulty === difficulty ? null : difficulty
                       )
                     }
                   >

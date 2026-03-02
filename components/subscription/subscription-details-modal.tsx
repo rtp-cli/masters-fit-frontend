@@ -1,12 +1,6 @@
 import React from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Modal, View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
@@ -21,6 +15,7 @@ export default function SubscriptionDetailsModal({
   onClose,
 }: SubscriptionDetailsModalProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const { activeEntitlement, productIdentifier, expirationDate, willRenew } =
     useSubscriptionStatus();
 
@@ -65,9 +60,8 @@ export default function SubscriptionDetailsModal({
       visible={visible}
       animationType="slide"
       onRequestClose={onClose}
-      statusBarTranslucent
     >
-      <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <View className="w-9" />
@@ -202,7 +196,7 @@ export default function SubscriptionDetailsModal({
             </View>
           )}
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
