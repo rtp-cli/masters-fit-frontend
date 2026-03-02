@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   CircuitSessionData,
   CircuitRound,
@@ -14,6 +14,7 @@ import {
 } from "@/types/api/workout.types";
 import { calculateCircuitScore } from "@/utils/circuit-utils";
 import { logger } from "@/lib/logger";
+import * as Haptics from "expo-haptics";
 
 export function useCircuitSession(
   config: CircuitSessionConfig
@@ -24,6 +25,9 @@ export function useCircuitSession(
     initializeSession(block)
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [canUndoRound, setCanUndoRound] = useState(false);
+  const undoSnapshotRef = useRef<CircuitSessionData | null>(null);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize session data
   function initializeSession(
@@ -226,6 +230,25 @@ export function useCircuitSession(
     []
   );
 
+  const clearUndoTimer = useCallback(() => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  }, []);
+
+  const startUndoTimer = useCallback(() => {
+    clearUndoTimer();
+    undoTimerRef.current = setTimeout(() => {
+      undoSnapshotRef.current = null;
+      setCanUndoRound(false);
+    }, 5000);
+  }, [clearUndoTimer]);
+
+  useEffect(() => {
+    return () => clearUndoTimer();
+  }, [clearUndoTimer]);
+
   // Complete current round
   const completeRound = useCallback(
     async (notes?: string): Promise<void> => {
@@ -245,6 +268,22 @@ export function useCircuitSession(
         if (!hasProgress) {
           throw new Error("Complete at least one exercise to finish the round");
         }
+
+        // Snapshot state before completing so we can undo
+        undoSnapshotRef.current = JSON.parse(JSON.stringify(sessionData));
+        // Restore Date objects lost during JSON serialization
+        if (undoSnapshotRef.current) {
+          const snap = undoSnapshotRef.current;
+          if (snap.startedAt) snap.startedAt = new Date(snap.startedAt);
+          if (snap.completedAt) snap.completedAt = new Date(snap.completedAt);
+          if (snap.timer.startTime) snap.timer.startTime = new Date(snap.timer.startTime);
+          if (snap.timer.pausedAt) snap.timer.pausedAt = new Date(snap.timer.pausedAt);
+          snap.rounds.forEach((r) => {
+            if (r.completedAt) r.completedAt = new Date(r.completedAt);
+          });
+        }
+        setCanUndoRound(true);
+        startUndoTimer();
 
         setSessionData((prev) => {
           const updatedRounds = [...prev.rounds];
@@ -400,10 +439,27 @@ export function useCircuitSession(
       getCurrentRoundData,
       allowPartialRounds,
       block.exercises,
-      sessionData.blockId,
-      sessionData.currentRound,
+      sessionData,
+      startUndoTimer,
     ]
   );
+
+  // Undo the last round completion
+  const undoCompleteRound = useCallback(() => {
+    if (!undoSnapshotRef.current) return;
+
+    setSessionData(undoSnapshotRef.current);
+    undoSnapshotRef.current = null;
+    setCanUndoRound(false);
+    clearUndoTimer();
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    logger.businessEvent("Circuit round completion undone", {
+      blockId: sessionData.blockId,
+      roundNumber: sessionData.currentRound,
+    });
+  }, [clearUndoTimer, sessionData.blockId, sessionData.currentRound]);
 
   // Skip current round
   const skipRound = useCallback(
@@ -631,10 +687,12 @@ export function useCircuitSession(
       completeCircuit,
       toggleTimer,
       resetSession,
+      undoCompleteRound,
     },
     isLoading,
     canCompleteRound,
     canCompleteCircuit,
-    updateTimerState, // Expose for timer component
+    canUndoRound,
+    updateTimerState,
   };
 }

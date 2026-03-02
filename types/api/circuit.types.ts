@@ -253,11 +253,14 @@ export interface UseCircuitSessionReturn {
     toggleTimer: () => void;
     /** Reset session */
     resetSession: () => void;
+    /** Undo the last round completion */
+    undoCompleteRound: () => void;
   };
   /** State flags */
   isLoading: boolean;
   canCompleteRound: boolean;
   canCompleteCircuit: boolean;
+  canUndoRound: boolean;
   /** Update timer state (used by timer UI) */
   updateTimerState: (state: CircuitTimerState) => void;
 }

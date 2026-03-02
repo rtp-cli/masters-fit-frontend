@@ -121,6 +121,7 @@ function CircuitLoggingInterface({
     isLoading,
     canCompleteRound,
     canCompleteCircuit,
+    canUndoRound,
     updateTimerState,
   } = circuitSession;
 
@@ -166,6 +167,7 @@ function CircuitLoggingInterface({
           circuitActions={actions}
           updateTimerState={updateTimerState}
           shouldShowTimer={shouldShowTimer}
+          canUndoRound={canUndoRound}
         />
         {/* Circuit Timer - Only show when there's a time cap */}
       </View>

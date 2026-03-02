@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Dimensions,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -30,10 +31,11 @@ export default function CircuitTracker({
   onRoundComplete,
   onCircuitComplete,
   isActive,
-  circuitActions, // Add circuit actions from the hook
+  circuitActions,
   updateTimerState,
   shouldShowTimer,
-}: CircuitTrackerProps & { circuitActions?: CircuitActions }) {
+  canUndoRound = false,
+}: CircuitTrackerProps & { circuitActions?: CircuitActions; canUndoRound?: boolean }) {
   const colors = useThemeColors();
   // TIMER DISPLAY HIDDEN: Override shouldShowTimer to false
   const hideTimers = false;
@@ -59,6 +61,36 @@ export default function CircuitTracker({
   const cardSpacing = 16;
   const cardWidth = Math.min(containerWidth * 0.88, containerWidth);
   const sideInset = (containerWidth - cardWidth) / 2;
+
+  // Undo banner animation
+  const undoBannerOpacity = useRef(new Animated.Value(0)).current;
+  const undoProgressAnim = useRef(new Animated.Value(1)).current;
+  const undoProgressRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (canUndoRound) {
+      undoBannerOpacity.setValue(0);
+      undoProgressAnim.setValue(1);
+      Animated.timing(undoBannerOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      undoProgressRef.current = Animated.timing(undoProgressAnim, {
+        toValue: 0,
+        duration: 5000,
+        useNativeDriver: false,
+      });
+      undoProgressRef.current.start();
+    } else {
+      Animated.timing(undoBannerOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      undoProgressRef.current?.stop();
+    }
+  }, [canUndoRound]);
 
   // Tabata exercise work timer state
   const [exerciseWorkActive, setExerciseWorkActive] = useState(false);
@@ -804,6 +836,49 @@ export default function CircuitTracker({
             )}
           </View>
         )}
+
+      {/* Undo Round Completion Banner */}
+      {canUndoRound && circuitActions?.undoCompleteRound && (
+        <Animated.View
+          style={{ opacity: undoBannerOpacity }}
+          className="mb-6 rounded-xl overflow-hidden border border-neutral-medium-1"
+        >
+          <View className="flex-row items-center justify-between px-4 py-3 bg-card">
+            <View className="flex-row items-center flex-1">
+              <Ionicons
+                name="arrow-undo-outline"
+                size={18}
+                color={colors.text.primary}
+              />
+              <Text className="text-sm text-text-primary ml-2">
+                Round completed
+              </Text>
+            </View>
+            <TouchableOpacity
+              className="py-1.5 px-4 rounded-lg"
+              style={{ backgroundColor: colors.brand.primary }}
+              onPress={() => circuitActions.undoCompleteRound()}
+            >
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: colors.contentOnPrimary }}
+              >
+                Undo
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <Animated.View
+            style={{
+              height: 3,
+              backgroundColor: colors.brand.primary,
+              width: undoProgressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0%", "100%"],
+              }),
+            }}
+          />
+        </Animated.View>
+      )}
     </ScrollView>
   );
 }
