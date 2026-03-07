@@ -62,20 +62,13 @@ export default function CircuitTracker({
   const cardWidth = Math.min(containerWidth * 0.88, containerWidth);
   const sideInset = (containerWidth - cardWidth) / 2;
 
-  // Undo banner animation
-  const undoBannerOpacity = useRef(new Animated.Value(0)).current;
+  // Undo progress bar animation
   const undoProgressAnim = useRef(new Animated.Value(1)).current;
   const undoProgressRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (canUndoRound) {
-      undoBannerOpacity.setValue(0);
       undoProgressAnim.setValue(1);
-      Animated.timing(undoBannerOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
       undoProgressRef.current = Animated.timing(undoProgressAnim, {
         toValue: 0,
         duration: 5000,
@@ -83,11 +76,6 @@ export default function CircuitTracker({
       });
       undoProgressRef.current.start();
     } else {
-      Animated.timing(undoBannerOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
       undoProgressRef.current?.stop();
     }
   }, [canUndoRound]);
@@ -696,21 +684,48 @@ export default function CircuitTracker({
         </View>
       )}
 
-      {/* EMOM manual finish button below navigation */}
-      {isActive && !isCurrentRoundCompleted && block.blockType === "emom" && (
+      {/* EMOM manual finish button / Undo */}
+      {isActive && block.blockType === "emom" &&
+        (canUndoRound || !isCurrentRoundCompleted) && (
         <View className="mb-6">
-          <TouchableOpacity
-            className={`py-4 rounded-xl items-center bg-brand-primary`}
-            onPress={handleCompleteRound}
-          >
-            <Text className={`text-lg font-semibold text-neutral-white`}>
-              {getRoundCompleteButtonText(
-                "for_time",
-                sessionData.currentRound,
-                sessionData.targetRounds
-              )}
-            </Text>
-          </TouchableOpacity>
+          {canUndoRound && circuitActions?.undoCompleteRound ? (
+            <View>
+              <TouchableOpacity
+                className="py-4 rounded-xl items-center flex-row justify-center border border-neutral-medium-1 bg-card"
+                onPress={() => circuitActions.undoCompleteRound()}
+              >
+                <Ionicons name="arrow-undo" size={18} color={colors.text.primary} />
+                <Text className="text-base font-semibold text-text-primary ml-2">
+                  Undo Round
+                </Text>
+              </TouchableOpacity>
+              <Animated.View
+                style={{
+                  height: 3,
+                  borderRadius: 12,
+                  backgroundColor: colors.brand.primary,
+                  marginTop: 4,
+                  width: undoProgressAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0%", "100%"],
+                  }),
+                }}
+              />
+            </View>
+          ) : (
+            <TouchableOpacity
+              className="py-4 rounded-xl items-center bg-brand-primary"
+              onPress={handleCompleteRound}
+            >
+              <Text className="text-lg font-semibold text-neutral-white">
+                {getRoundCompleteButtonText(
+                  "for_time",
+                  sessionData.currentRound,
+                  sessionData.targetRounds
+                )}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -783,27 +798,49 @@ export default function CircuitTracker({
         </View>
       )}
 
-      {/* Complete Round Button - Hidden for EMOM (auto-completes) */}
+      {/* Complete Round / Undo — only one shows at a time */}
       {isActive &&
-        !isCurrentRoundCompleted &&
         !sessionData.isCompleted &&
-        getRoundCompleteButtonText(
-          block.blockType || "circuit",
-          sessionData.currentRound,
-          sessionData.targetRounds
-        ) && (
+        (canUndoRound || !isCurrentRoundCompleted) && (
           <View className="mb-6">
-            {/* Show both buttons for AMRAP after first round, or for circuits beyond prescribed rounds */}
-            {(block.blockType === "amrap" && sessionData.currentRound >= 1) ||
-            (sessionData.targetRounds &&
-              sessionData.currentRound > sessionData.targetRounds &&
-              block.blockType === "circuit") ? (
-              <View className="gap-2">
+            {canUndoRound && circuitActions?.undoCompleteRound ? (
+              <View>
                 <TouchableOpacity
-                  className={`py-3 px-4 rounded-lg items-center bg-brand-primary`}
+                  className="py-3 px-4 rounded-xl items-center flex-row justify-center border border-neutral-medium-1 bg-card"
+                  onPress={() => circuitActions.undoCompleteRound()}
+                >
+                  <Ionicons name="arrow-undo" size={18} color={colors.text.primary} />
+                  <Text className="text-sm font-semibold text-text-primary ml-2">
+                    Undo Round
+                  </Text>
+                </TouchableOpacity>
+                <Animated.View
+                  style={{
+                    height: 3,
+                    borderRadius: 12,
+                    backgroundColor: colors.brand.primary,
+                    marginTop: 4,
+                    width: undoProgressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0%", "100%"],
+                    }),
+                  }}
+                />
+              </View>
+            ) : !!getRoundCompleteButtonText(
+                block.blockType || "circuit",
+                sessionData.currentRound,
+                sessionData.targetRounds
+              ) ? (
+              (block.blockType === "amrap" && sessionData.currentRound >= 1) ||
+              (sessionData.targetRounds &&
+                sessionData.currentRound > sessionData.targetRounds &&
+                block.blockType === "circuit") ? (
+                <TouchableOpacity
+                  className="py-3 px-4 rounded-xl items-center bg-brand-primary"
                   onPress={handleCompleteRound}
                 >
-                  <Text className={`text-sm font-semibold text-neutral-white`}>
+                  <Text className="text-sm font-semibold text-neutral-white">
                     {getRoundCompleteButtonText(
                       block.blockType || "circuit",
                       sessionData.currentRound,
@@ -811,74 +848,30 @@ export default function CircuitTracker({
                     )}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                className={`py-3 px-4 rounded-lg items-center bg-brand-primary`}
-                onPress={
-                  // For AMRAP, always complete round. For others, follow original logic
-                  block.blockType === "amrap"
-                    ? handleCompleteRound
-                    : !sessionData.targetRounds ||
-                        sessionData.currentRound >= sessionData.targetRounds
-                      ? handleCompleteCircuit
-                      : handleCompleteRound
-                }
-              >
-                <Text className={`text-sm font-semibold text-neutral-white`}>
-                  {getRoundCompleteButtonText(
-                    block.blockType || "circuit",
-                    sessionData.currentRound,
-                    sessionData.targetRounds
-                  )}
-                </Text>
-              </TouchableOpacity>
-            )}
+              ) : (
+                <TouchableOpacity
+                  className="py-3 px-4 rounded-xl items-center bg-brand-primary"
+                  onPress={
+                    block.blockType === "amrap"
+                      ? handleCompleteRound
+                      : !sessionData.targetRounds ||
+                          sessionData.currentRound >= sessionData.targetRounds
+                        ? handleCompleteCircuit
+                        : handleCompleteRound
+                  }
+                >
+                  <Text className="text-sm font-semibold text-neutral-white">
+                    {getRoundCompleteButtonText(
+                      block.blockType || "circuit",
+                      sessionData.currentRound,
+                      sessionData.targetRounds
+                    )}
+                  </Text>
+                </TouchableOpacity>
+              )
+            ) : null}
           </View>
         )}
-
-      {/* Undo Round Completion Banner */}
-      {canUndoRound && circuitActions?.undoCompleteRound && (
-        <Animated.View
-          style={{ opacity: undoBannerOpacity }}
-          className="mb-6 rounded-xl overflow-hidden border border-neutral-medium-1"
-        >
-          <View className="flex-row items-center justify-between px-4 py-3 bg-card">
-            <View className="flex-row items-center flex-1">
-              <Ionicons
-                name="arrow-undo-outline"
-                size={18}
-                color={colors.text.primary}
-              />
-              <Text className="text-sm text-text-primary ml-2">
-                Round completed
-              </Text>
-            </View>
-            <TouchableOpacity
-              className="py-1.5 px-4 rounded-lg"
-              style={{ backgroundColor: colors.brand.primary }}
-              onPress={() => circuitActions.undoCompleteRound()}
-            >
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: colors.contentOnPrimary }}
-              >
-                Undo
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Animated.View
-            style={{
-              height: 3,
-              backgroundColor: colors.brand.primary,
-              width: undoProgressAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: ["0%", "100%"],
-              }),
-            }}
-          />
-        </Animated.View>
-      )}
     </ScrollView>
   );
 }
