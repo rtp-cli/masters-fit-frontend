@@ -216,7 +216,7 @@ export default function WorkoutScreen() {
 
   // Exercise progress state
   const [exerciseProgress, setExerciseProgress] = useState<ExerciseProgress[]>(
-    []
+    [],
   );
 
   // Skip state
@@ -287,7 +287,7 @@ export default function WorkoutScreen() {
   const scrollToExerciseHeading = (exerciseIndex: number) => {
     const nextExercise = exercises[exerciseIndex];
     const nextBlock = workout?.blocks?.find((block) =>
-      block.exercises.some((ex) => ex.id === nextExercise?.id)
+      block.exercises.some((ex) => ex.id === nextExercise?.id),
     );
     const isNextCircuit =
       nextBlock &&
@@ -305,7 +305,7 @@ export default function WorkoutScreen() {
             y: Math.max(0, y - 20),
             animated: true,
           }),
-        () => console.log("Failed to measure circuit heading")
+        () => console.log("Failed to measure circuit heading"),
       );
     } else if (exerciseHeadingRef.current && scrollViewRef.current) {
       exerciseHeadingRef.current.measureLayout(
@@ -315,7 +315,7 @@ export default function WorkoutScreen() {
             y: Math.max(0, y - 20),
             animated: true,
           }),
-        () => console.log("Failed to measure exercise heading")
+        () => console.log("Failed to measure exercise heading"),
       );
     }
   };
@@ -360,7 +360,7 @@ export default function WorkoutScreen() {
         }
         if (exerciseStartTime.current) {
           setExerciseTimer(
-            Math.floor((now - exerciseStartTime.current) / 1000)
+            Math.floor((now - exerciseStartTime.current) / 1000),
           );
         }
       }, 1000);
@@ -493,12 +493,12 @@ export default function WorkoutScreen() {
           const now = Date.now();
           if (workoutStartTime.current) {
             setWorkoutTimer(
-              Math.floor((now - workoutStartTime.current) / 1000)
+              Math.floor((now - workoutStartTime.current) / 1000),
             );
           }
           if (exerciseStartTime.current) {
             setExerciseTimer(
-              Math.floor((now - exerciseStartTime.current) / 1000)
+              Math.floor((now - exerciseStartTime.current) / 1000),
             );
           }
         }
@@ -510,7 +510,7 @@ export default function WorkoutScreen() {
 
           if (restTimerStartTime.current) {
             const elapsed = Math.floor(
-              (now - restTimerStartTime.current) / 1000
+              (now - restTimerStartTime.current) / 1000,
             );
             const remaining = Math.max(0, targetDuration - elapsed);
             setRestTimerCountdown(remaining);
@@ -525,7 +525,7 @@ export default function WorkoutScreen() {
               // Add haptic feedback for completion
               try {
                 Haptics.notificationAsync(
-                  Haptics.NotificationFeedbackType.Success
+                  Haptics.NotificationFeedbackType.Success,
                 );
               } catch (error) {
                 console.log("Haptic feedback error:", error);
@@ -536,7 +536,7 @@ export default function WorkoutScreen() {
       } else if (nextAppState.match(/inactive|background/)) {
         // App going to background - timers will continue based on timestamps
         console.log(
-          "App going to background, timers will continue via timestamps"
+          "App going to background, timers will continue via timestamps",
         );
       }
 
@@ -545,7 +545,7 @@ export default function WorkoutScreen() {
 
     const subscription = AppState.addEventListener(
       "change",
-      handleAppStateChange
+      handleAppStateChange,
     );
     return () => subscription?.remove();
   }, [
@@ -730,7 +730,7 @@ export default function WorkoutScreen() {
 
       // Initialize exercise progress (including warmup/cooldown)
       const flatExercises = todaysWorkout.blocks.flatMap(
-        (block: WorkoutBlockWithExercises) => block.exercises
+        (block: WorkoutBlockWithExercises) => block.exercises,
       );
       const initialProgress: ExerciseProgress[] = flatExercises.map(
         (exercise: WorkoutBlockWithExercise) => ({
@@ -742,7 +742,7 @@ export default function WorkoutScreen() {
           duration: exercise.duration || 0,
           restTime: exercise.restTime || 0,
           notes: "",
-        })
+        }),
       );
       setExerciseProgress(initialProgress);
     } catch (err) {
@@ -866,16 +866,25 @@ export default function WorkoutScreen() {
     }
   }, [user, authLoading, reset]);
 
+  const hasLoadedOnce = useRef(false);
+
   useFocusEffect(
     React.useCallback(() => {
-      // Don't reload if workout was just completed in this session —
-      // we already have all the data (timer, progress, exercises) in state
       if (!isWorkoutCompleted) {
         loadWorkout(false);
       }
-      // Scroll to top when tab is focused
-      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, [isWorkoutCompleted])
+      // Only scroll to top on subsequent tab focuses, not on initial load
+      // or when isWorkoutCompleted changes mid-session
+      if (hasLoadedOnce.current) {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      }
+      hasLoadedOnce.current = true;
+
+      return () => {
+        // Reset so the next focus event scrolls to top
+        hasLoadedOnce.current = false;
+      };
+    }, [isWorkoutCompleted]),
   );
 
   // Listen for tab re-click events
@@ -895,7 +904,7 @@ export default function WorkoutScreen() {
   // Update exercise progress
   const updateProgress = <K extends keyof ExerciseProgress>(
     field: K,
-    value: ExerciseProgress[K]
+    value: ExerciseProgress[K],
   ) => {
     setExerciseProgress((prev) => {
       const updated = [...prev];
@@ -923,8 +932,8 @@ export default function WorkoutScreen() {
     const currentExercise = exercises[exerciseIndex];
     const currentBlock = workout.blocks.find((block) =>
       block.exercises?.some(
-        (ex) => ex.exerciseId === currentExercise.exerciseId
-      )
+        (ex) => ex.exerciseId === currentExercise.exerciseId,
+      ),
     );
 
     if (currentBlock) {
@@ -1100,7 +1109,7 @@ export default function WorkoutScreen() {
           setExerciseTimer(0);
           exerciseStartTime.current = Date.now();
           updateCurrentBlockForAbandonment(nextIndex);
-          scrollToExerciseHeading(nextIndex);
+          setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
         } else {
           // All exercises completed, complete the workout
           if (workout?.id) {
@@ -1149,7 +1158,7 @@ export default function WorkoutScreen() {
           // Log each round that has any reps or is marked completed
           for (const round of session.rounds) {
             const hasReps = round.exercises?.some(
-              (ex: CircuitExercise) => (ex.actualReps || 0) > 0
+              (ex: CircuitExercise) => (ex.actualReps || 0) > 0,
             );
             if (hasReps || round.isCompleted) {
               await logCircuitRound(workout.workoutId, currentBlock.id, round);
@@ -1164,7 +1173,7 @@ export default function WorkoutScreen() {
         const circuitExerciseIds = currentBlock.exercises.map((ex) => ex.id);
         const exerciseIndices = circuitExerciseIds
           .map((exerciseId) =>
-            exercises.findIndex((ex) => ex.id === exerciseId)
+            exercises.findIndex((ex) => ex.id === exerciseId),
           )
           .filter((index) => index !== -1);
 
@@ -1189,7 +1198,7 @@ export default function WorkoutScreen() {
           setCurrentExerciseIndex(nextExerciseIndex);
           setExerciseTimer(0);
           exerciseStartTime.current = Date.now();
-          scrollToExerciseHeading(nextExerciseIndex);
+          setTimeout(() => scrollToExerciseHeading(nextExerciseIndex), 150);
         } else {
           // All exercises completed, complete the workout day
           if (workout?.id) {
@@ -1279,9 +1288,9 @@ export default function WorkoutScreen() {
         const nextIndex = currentExerciseIndex + 1;
         setCurrentExerciseIndex(nextIndex);
         setExerciseTimer(0);
-        exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
+        exerciseStartTime.current = Date.now();
         updateCurrentBlockForAbandonment(nextIndex);
-        scrollToExerciseHeading(nextIndex);
+        setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
       } else {
         // All exercises completed, so mark the plan day as complete
         if (workout?.id) {
@@ -1339,7 +1348,7 @@ export default function WorkoutScreen() {
         isCurrentBlockCircuit
           ? "Error completing circuit:"
           : "Error completing exercise:",
-        err
+        err,
       );
       setDialogConfig({
         title: "Error",
@@ -1386,16 +1395,16 @@ export default function WorkoutScreen() {
         const nextIndex = currentExerciseIndex + 1;
         setCurrentExerciseIndex(nextIndex);
         setExerciseTimer(0);
-        exerciseStartTime.current = Date.now(); // Reset exercise timer timestamp
+        exerciseStartTime.current = Date.now();
         updateCurrentBlockForAbandonment(nextIndex);
-        scrollToExerciseHeading(nextIndex);
+        setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
       } else {
         // Check if all exercises are completed or skipped
         const allProcessed = exercises.every(
           (ex, index) =>
             index < currentExerciseIndex ||
             skippedExercises.includes(ex.id) ||
-            index === currentExerciseIndex
+            index === currentExerciseIndex,
         );
 
         if (allProcessed && workout?.id) {
@@ -1565,21 +1574,33 @@ export default function WorkoutScreen() {
                   className={`rounded-xl py-3 px-6 flex-row items-center justify-center ${
                     isGenerating ? "bg-primary/50 opacity-50" : "bg-primary"
                   }`}
-                  onPress={isGenerating ? undefined : () => setShowRegenerationModal(true)}
+                  onPress={
+                    isGenerating
+                      ? undefined
+                      : () => setShowRegenerationModal(true)
+                  }
                   disabled={isGenerating}
                 >
                   <Ionicons
                     name="sparkles"
                     size={18}
-                    color={isGenerating ? colors.contentOnPrimary + "70" : colors.contentOnPrimary}
+                    color={
+                      isGenerating
+                        ? colors.contentOnPrimary + "70"
+                        : colors.contentOnPrimary
+                    }
                     style={{ marginRight: 8 }}
                   />
                   <Text
                     className={`font-semibold text-sm ${
-                      isGenerating ? "text-content-on-primary/70" : "text-content-on-primary"
+                      isGenerating
+                        ? "text-content-on-primary/70"
+                        : "text-content-on-primary"
                     }`}
                   >
-                    {isGenerating ? "Generating Workout..." : "Generate Workout"}
+                    {isGenerating
+                      ? "Generating Workout..."
+                      : "Generate Workout"}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -1617,7 +1638,6 @@ export default function WorkoutScreen() {
             router.replace("/(tabs)/dashboard");
           }}
         />
-
       </View>
     );
   }
@@ -1706,7 +1726,7 @@ export default function WorkoutScreen() {
                   <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2">
                     {blockExercises.map((exercise, exerciseIndex) => {
                       const globalIndex = exercises.findIndex(
-                        (ex) => ex.id === exercise.id
+                        (ex) => ex.id === exercise.id,
                       );
                       const progress = exerciseProgress[globalIndex];
                       const isSkipped = skippedExercises.includes(exercise.id);
@@ -2047,7 +2067,7 @@ export default function WorkoutScreen() {
                                     }`}
                                     onPress={() => {
                                       Haptics.impactAsync(
-                                        Haptics.ImpactFeedbackStyle.Light
+                                        Haptics.ImpactFeedbackStyle.Light,
                                       );
                                       updateProgress("roundsCompleted", i + 1);
                                     }}
@@ -2065,7 +2085,7 @@ export default function WorkoutScreen() {
                                     )}
                                   </TouchableOpacity>
                                 );
-                              }
+                              },
                             )}
                           </View>
                         </View>
@@ -2080,7 +2100,7 @@ export default function WorkoutScreen() {
                           onProgressUpdate={(progress) => {
                             updateProgress(
                               "setsCompleted",
-                              progress.setsCompleted
+                              progress.setsCompleted,
                             );
                             updateProgress("duration", progress.duration);
                             // Note: Removed auto-completion - user now manually completes exercise
@@ -2219,7 +2239,7 @@ export default function WorkoutScreen() {
 
                 {block.exercises.map((exercise, exerciseIndex) => {
                   const globalIndex = exercises.findIndex(
-                    (ex) => ex.id === exercise.id
+                    (ex) => ex.id === exercise.id,
                   );
                   const isCompleted = globalIndex < currentExerciseIndex;
                   const isCurrent = globalIndex === currentExerciseIndex;
@@ -2580,7 +2600,6 @@ export default function WorkoutScreen() {
           icon={dialogConfig.icon}
         />
       )}
-
     </View>
   );
 }
