@@ -87,7 +87,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
                   ) : day.status === "upcoming" ? (
                     <Text className="text-xs text-text-muted">-</Text>
                   ) : day.completionRate > 0 ? (
-                    <Text className="text-xs text-accent font-medium">
+                    <Text className="text-xs text-brand-primary font-medium">
                       {Math.round(day.completionRate)}%
                     </Text>
                   ) : (

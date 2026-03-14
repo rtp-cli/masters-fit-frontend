@@ -21,6 +21,7 @@ import {
   markPlanDayAsComplete,
   getPlanDayLog,
   skipExercise,
+  fetchExerciseLogsForPlanDay,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
@@ -170,8 +171,12 @@ export default function WorkoutScreen() {
   const { isDark } = useTheme();
 
   // Get workout context for tab disabling
-  const { setWorkoutInProgress, isWorkoutInProgress, setCurrentWorkoutData } =
-    useWorkout();
+  const {
+    setWorkoutInProgress,
+    isWorkoutInProgress,
+    setCurrentWorkoutData,
+    setEndWorkoutEarlyHandler,
+  } = useWorkout();
 
   // Get user from auth context
   const { user, isLoading: authLoading } = useAuth();
@@ -182,7 +187,7 @@ export default function WorkoutScreen() {
 
   // Get data refresh functions
   const {
-    refresh: { refreshDashboard, reset, refreshAll },
+    refresh: { refreshDashboard, refreshWorkout, reset, refreshAll },
   } = useAppDataContext();
 
   // Core state
@@ -226,6 +231,8 @@ export default function WorkoutScreen() {
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
   const [isSkippingExercise, setIsSkippingExercise] = useState(false);
+  const [isEndingEarly, setIsEndingEarly] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
 
   // New modal states for repeat workout
   const [showRepeatModal, setShowRepeatModal] = useState(false);
@@ -268,6 +275,7 @@ export default function WorkoutScreen() {
   // UI state
   const scrollViewRef = useRef<ScrollView>(null);
   const exerciseHeadingRef = useRef<View>(null);
+  const isResumingRef = useRef(false);
   const circuitHeadingRef = useRef<View>(null);
 
   // Helper function to scroll to exercise heading
@@ -681,10 +689,7 @@ export default function WorkoutScreen() {
 
       setWorkout(todaysWorkout);
 
-      // Check if there's an existing workout session in progress
-      // (You might need to add logic here to detect if a workout was previously started)
-
-      // Initialize exercise progress (including warmup/cooldown)
+      // Initialize exercise progress
       const flatExercises = todaysWorkout.blocks.flatMap(
         (block: WorkoutBlockWithExercises) => block.exercises,
       );
@@ -701,6 +706,7 @@ export default function WorkoutScreen() {
         }),
       );
       setExerciseProgress(initialProgress);
+
     } catch (err) {
       console.error("Error loading workout:", err);
       setError("Failed to load workout. Please try again.");
@@ -826,9 +832,10 @@ export default function WorkoutScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      if (!isWorkoutCompleted) {
+      if (!isWorkoutCompleted && !isResumingRef.current) {
         loadWorkout(false);
       }
+      isResumingRef.current = false;
       // Only scroll to top on subsequent tab focuses, not on initial load
       // or when isWorkoutCompleted changes mid-session
       if (hasLoadedOnce.current) {
@@ -1413,6 +1420,94 @@ export default function WorkoutScreen() {
     }
   };
 
+  // End workout early — mark complete with partial data
+  const endWorkoutEarly = async () => {
+    if (!workout?.id) return;
+
+    setIsEndingEarly(true);
+    try {
+      const completedExerciseCount = currentExerciseIndex;
+
+      const completedBlockIds = new Set<number>();
+      exercises.slice(0, currentExerciseIndex).forEach((ex) => {
+        const block = workout.blocks.find((b) =>
+          b.exercises.some((e) => e.id === ex.id),
+        );
+        if (block) completedBlockIds.add(block.id);
+      });
+
+      const finalDuration = getWorkoutDurationForAnalytics();
+
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 30);
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7);
+
+      await markPlanDayAsComplete(workout.id, {
+        totalTimeSeconds: finalDuration,
+        exercisesCompleted: completedExerciseCount,
+        blocksCompleted: completedBlockIds.size,
+      });
+
+      // Refresh app-wide data so calendar updates
+      // Invalidate cache and reload fresh workout data (with updated isSkipped flags)
+      invalidateActiveWorkoutCache();
+      const freshResponse = await fetchActiveWorkout(true);
+      if (freshResponse?.planDays) {
+        const todayStr = getCurrentDate();
+        const freshPlanDay = freshResponse.planDays.find(
+          (day: PlanDayWithBlocks) => formatDateAsString(day.date) === todayStr,
+        );
+        if (freshPlanDay) {
+          setWorkout(freshPlanDay);
+        }
+      }
+
+      await Promise.all([
+        refreshWorkout(),
+        refreshDashboard({
+          startDate: startDate.toISOString().split("T")[0],
+          endDate: endDate.toISOString().split("T")[0],
+        }),
+      ]);
+
+      setCurrentExerciseIndex(exercises.length);
+      setIsWorkoutCompleted(true);
+    } catch (err) {
+      console.error("Error ending workout early:", err);
+      showErrorDialog("Error", "Failed to end workout. Please try again.");
+    } finally {
+      setIsEndingEarly(false);
+    }
+  };
+
+  // Register endWorkoutEarly with context so _layout.tsx can call it
+  useEffect(() => {
+    setEndWorkoutEarlyHandler(endWorkoutEarly);
+  }, [workout?.id, currentExerciseIndex]);
+
+  const showEndEarlyDialog = () => {
+    setDialogConfig({
+      title: "End Workout Early?",
+      description:
+        "Your progress so far will be saved. Exercises not yet completed will be marked as not attempted.",
+      primaryButton: {
+        text: "End Workout",
+        onPress: () => {
+          setDialogVisible(false);
+          endWorkoutEarly();
+        },
+      },
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      icon: "flag-outline",
+    });
+    setDialogVisible(true);
+  };
+
   // Get current block for the current exercise
   const getCurrentBlock = (): WorkoutBlockWithExercises | null => {
     if (!workout?.blocks || !currentExercise) return null;
@@ -1594,11 +1689,85 @@ export default function WorkoutScreen() {
     );
   }
 
+  // Check if this is today's workout (for resume eligibility)
+  const isToday =
+    formatDateAsString(workout.date) === getCurrentDate();
+
+  // Resume handler: start from first unfinished exercise (plan day stays complete)
+  const handleResume = async () => {
+    setIsResuming(true);
+
+    // Fetch existing logs to find where to resume
+    const existingLogs = await fetchExerciseLogsForPlanDay(workout.id);
+
+    // Find first unfinished exercise, treating circuit blocks as a unit
+    let resumeIndex = 0;
+    for (let i = 0; i < exercises.length; i++) {
+      const exercise = exercises[i];
+      const hasLogs = (existingLogs[exercise.id] || []).length > 0;
+
+      if (!hasLogs) {
+        // Skip past explicitly skipped exercises
+        if (exercise.isSkipped) continue;
+
+        // Check if part of a circuit block that was completed
+        const block = workout.blocks.find((b) =>
+          b.exercises.some((e) => e.id === exercise.id),
+        );
+        if (block && isCircuitBlock(block.blockType)) {
+          const anyInBlockHasLogs = block.exercises.some(
+            (e) => (existingLogs[e.id] || []).length > 0,
+          );
+          if (anyInBlockHasLogs) continue;
+        }
+        resumeIndex = i;
+        break;
+      }
+    }
+
+    // Re-initialize exercise progress (may not have been set if workout loaded as complete)
+    const flatExercises = workout.blocks.flatMap(
+      (block: WorkoutBlockWithExercises) => block.exercises,
+    );
+    const freshProgress: ExerciseProgress[] = flatExercises.map(
+      (exercise: WorkoutBlockWithExercise) => ({
+        setsCompleted: 0,
+        repsCompleted: 0,
+        roundsCompleted: 0,
+        weightUsed: exercise.weight || 0,
+        sets: [],
+        duration: exercise.duration || 0,
+        restTime: exercise.restTime || 0,
+        notes: "",
+      }),
+    );
+    setExerciseProgress(freshProgress);
+
+    // Prevent useFocusEffect from calling loadWorkout which would override our state
+    isResumingRef.current = true;
+
+    // Reset state and start from resume point
+    setIsWorkoutCompleted(false);
+    setCurrentExerciseIndex(resumeIndex);
+    setIsWorkoutStarted(true);
+    setWorkoutInProgress(true);
+
+    const now = Date.now();
+    workoutStartTime.current = now;
+    exerciseStartTime.current = now;
+
+    setIsResuming(false);
+    updateCurrentBlockForAbandonment(resumeIndex);
+    setTimeout(() => scrollToExerciseHeading(resumeIndex), 300);
+  };
+
   // Render workout completed state
   if (isWorkoutCompleted) {
     return (
       <WorkoutSummary
         workout={workout}
+        onResume={isToday ? handleResume : undefined}
+        isResuming={isResuming}
         footer={
           <Text className="text-text-muted text-center text-sm px-6 mt-4">
             Check back tomorrow for your next workout.
@@ -1653,14 +1822,6 @@ export default function WorkoutScreen() {
               <Text className="text-2xl font-bold text-text-primary flex-1 mr-3">
                 {workout.name}
               </Text>
-              {/* TIMER DISPLAY HIDDEN: Main workout timer commented out */}
-              {/* {isWorkoutStarted && (
-                <View className="bg-background rounded-xl px-3 py-1 min-w-[80px]">
-                  <Text className="text-lg font-bold text-text-primary text-center">
-                    {formatTime(workoutTimer)}
-                  </Text>
-                </View>
-              )} */}
             </View>
             {workout.instructions ? (
               <Text className="text-base text-text-secondary leading-6">
@@ -2183,6 +2344,28 @@ export default function WorkoutScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* End Early link */}
+        {isWorkoutStarted && !isWorkoutCompleted && (
+          <TouchableOpacity
+            onPress={showEndEarlyDialog}
+            className="items-center mt-4 pb-1"
+            disabled={isEndingEarly}
+          >
+            {isEndingEarly ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="#ef4444" />
+                <Text className="text-sm text-red-500 ml-2">
+                  Ending...
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-sm text-red-500">
+                End Workout Early
+              </Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
 

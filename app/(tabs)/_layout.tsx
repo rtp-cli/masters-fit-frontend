@@ -42,7 +42,7 @@ function DisabledTabButton({
   disabled: boolean;
   routeName: string;
 }) {
-  const { abandonWorkout } = useWorkout();
+  const { abandonWorkout, endWorkoutEarly } = useWorkout();
   // Use NavigationContainerRefContext directly - it never throws, just returns undefined
   // when navigation context isn't available (e.g., during dark mode initialization)
   const navigationRef = useContext(NavigationContainerRefContext);
@@ -83,24 +83,33 @@ function DisabledTabButton({
           pendingEventRef.current = null;
         }}
         title="Workout In Progress"
-        description="You have a workout in progress. Leaving will require you to start the workout over again."
-        secondaryButton={{
-          text: "Cancel",
+        description="End now to save progress and mark the workout as done. Or leave and pick up where you left off next time."
+        primaryButton={{
+          text: "Continue Workout",
           onPress: () => {
             setDialogVisible(false);
             pendingEventRef.current = null;
           },
         }}
-        primaryButton={{
-          text: "Exit Workout",
+        tertiaryButton={{
+          text: "Finish & Save Progress",
+          onPress: async () => {
+            setDialogVisible(false);
+            await endWorkoutEarly();
+            const event = pendingEventRef.current;
+            pendingEventRef.current = null;
+            if (event && onPress) onPress(event);
+          },
+        }}
+        secondaryButton={{
+          text: "Abandon Workout",
+          destructive: true,
           onPress: () => {
             setDialogVisible(false);
             abandonWorkout("navigation");
             const event = pendingEventRef.current;
             pendingEventRef.current = null;
-            if (event && onPress) {
-              onPress(event);
-            }
+            if (event && onPress) onPress(event);
           },
         }}
         icon="warning"

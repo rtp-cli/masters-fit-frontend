@@ -4,3 +4,4 @@ node_modules
 /android/
 /ios/
 .claude/settings.local.json
+docs/superpowers/*

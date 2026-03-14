@@ -13,6 +13,7 @@ import { useThemeColors } from "../../lib/theme";
 export interface DialogButton {
   text: string;
   onPress: () => void;
+  destructive?: boolean;
 }
 
 export interface CustomDialogProps {
@@ -22,6 +23,7 @@ export interface CustomDialogProps {
   description: string;
   primaryButton: DialogButton;
   secondaryButton?: DialogButton;
+  tertiaryButton?: DialogButton;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
   dismissOnBackdropPress?: boolean;
@@ -34,6 +36,7 @@ export default function CustomDialog({
   description,
   primaryButton,
   secondaryButton,
+  tertiaryButton,
   icon,
   iconColor,
   dismissOnBackdropPress = true,
@@ -45,6 +48,7 @@ export default function CustomDialog({
     }
   };
 
+  const hasThreeButtons = !!secondaryButton && !!tertiaryButton;
   const hasSecondaryButton = !!secondaryButton;
 
   return (
@@ -75,7 +79,39 @@ export default function CustomDialog({
               </Text>
 
               {/* Buttons */}
-              {hasSecondaryButton ? (
+              {hasThreeButtons ? (
+                <View className="w-full gap-2">
+                  {/* Primary Button (Top) */}
+                  <TouchableOpacity
+                    className="bg-primary rounded-xl py-3 px-6 items-center justify-center"
+                    onPress={primaryButton.onPress}
+                  >
+                    <Text className="text-content-on-primary font-semibold text-base">
+                      {primaryButton.text}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Tertiary Button (Middle) */}
+                  <TouchableOpacity
+                    className="bg-neutral-light-2 border border-neutral-medium-1 rounded-xl py-3 px-6 items-center justify-center"
+                    onPress={tertiaryButton.onPress}
+                  >
+                    <Text className="text-text-secondary font-semibold text-base">
+                      {tertiaryButton.text}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Secondary Button (Bottom - text only) */}
+                  <TouchableOpacity
+                    className="py-2 items-center justify-center"
+                    onPress={secondaryButton.onPress}
+                  >
+                    <Text className={`font-medium text-sm ${secondaryButton.destructive ? "text-red-500" : "text-text-muted"}`}>
+                      {secondaryButton.text}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : hasSecondaryButton ? (
                 <View className="flex-row gap-3 w-full">
                   {/* Secondary Button (Left) */}
                   <TouchableOpacity

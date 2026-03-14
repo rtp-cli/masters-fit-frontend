@@ -25,6 +25,8 @@ interface WorkoutContextType {
     workoutData?: WorkoutAbandonmentData
   ) => void;
   setCurrentWorkoutData: (data: WorkoutAbandonmentData | null) => void;
+  endWorkoutEarly: () => Promise<void>;
+  setEndWorkoutEarlyHandler: (handler: () => Promise<void>) => void;
 }
 
 // Create the context
@@ -49,6 +51,17 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     useState<WorkoutAbandonmentData | null>(null);
   const { user } = useAuth();
   const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const endWorkoutEarlyRef = useRef<(() => Promise<void>) | null>(null);
+
+  const endWorkoutEarly = async () => {
+    if (endWorkoutEarlyRef.current) {
+      await endWorkoutEarlyRef.current();
+    }
+  };
+
+  const setEndWorkoutEarlyHandler = (handler: () => Promise<void>) => {
+    endWorkoutEarlyRef.current = handler;
+  };
 
   // Debug function to log workout data changes
   const setCurrentWorkoutDataWithLogging = (
@@ -106,6 +119,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setWorkoutInProgress,
     abandonWorkout,
     setCurrentWorkoutData: setCurrentWorkoutDataWithLogging,
+    endWorkoutEarly,
+    setEndWorkoutEarlyHandler,
   };
 
   // Provide the context to children components

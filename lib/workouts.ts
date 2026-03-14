@@ -342,6 +342,22 @@ export async function markPlanDayAsComplete(
 }
 
 /**
+ * Reopen a completed plan day so the user can resume the workout
+ */
+export async function reopenPlanDay(planDayId: number): Promise<boolean> {
+  try {
+    await apiRequest(`/logs/workout/day/${planDayId}/reopen`, {
+      method: "POST",
+    });
+    invalidateActiveWorkoutCache();
+    return true;
+  } catch (error) {
+    console.error(`Error reopening plan day ${planDayId}:`, error);
+    return false;
+  }
+}
+
+/**
  * Fetch active workout
  */
 export async function fetchActiveWorkout(
@@ -362,8 +378,9 @@ export async function fetchActiveWorkout(
     if (!user) {
       return null;
     }
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const response = await apiRequest<ActiveWorkoutResponse>(
-      `/workouts/${user.id}/active-workout`
+      `/workouts/${user.id}/active-workout?timezone=${encodeURIComponent(timezone)}`
     );
 
     // Check if response indicates no active workout (this is normal, not an error)

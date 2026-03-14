@@ -123,6 +123,7 @@ export interface WorkoutBlockExercise {
   duration?: number;
   restTime?: number;
   completed: boolean;
+  isSkipped?: boolean;
   notes?: string;
   order?: number;
   created_at: Date;

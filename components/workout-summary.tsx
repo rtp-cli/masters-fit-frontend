@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import {
@@ -93,12 +99,18 @@ interface WorkoutSummaryProps {
   footer?: React.ReactNode;
   /** Compact header for inline use (e.g. calendar tab) */
   compact?: boolean;
+  /** Called when user taps "Resume Workout" — only shown for ended-early workouts */
+  onResume?: () => void;
+  /** Whether resume is in progress */
+  isResuming?: boolean;
 }
 
 export default function WorkoutSummary({
   workout,
   footer,
   compact = false,
+  onResume,
+  isResuming = false,
 }: WorkoutSummaryProps) {
   const colors = useThemeColors();
   const [planDayLog, setPlanDayLog] = useState<PlanDayLog | null>(null);
@@ -135,19 +147,24 @@ export default function WorkoutSummary({
     return <SummarySkeleton compact={compact} />;
   }
 
-  // Determine skip/complete status from logs
+  // Determine status for each exercise:
+  // - has logs → completed
+  // - no logs + isSkipped flag → explicitly skipped by user
+  // - no logs + not skipped → not attempted (workout ended early)
   const allExercises = workout.blocks.flatMap((b) => b.exercises);
-  const completedCount = allExercises.filter(
-    (e) => (exerciseLogs[e.id] || []).length > 0
-  ).length;
-  const skippedCount = allExercises.filter(
-    (e) => (exerciseLogs[e.id] || []).length === 0
-  ).length;
   const duration = planDayLog?.totalTimeSeconds || 0;
 
-  const isExerciseSkipped = (exerciseId: number): boolean => {
-    return (exerciseLogs[exerciseId] || []).length === 0;
+  type ExerciseStatus = "completed" | "skipped" | "not_attempted";
+  const getExerciseStatus = (exercise: (typeof allExercises)[0]): ExerciseStatus => {
+    if ((exerciseLogs[exercise.id] || []).length > 0) return "completed";
+    if (exercise.isSkipped) return "skipped";
+    return "not_attempted";
   };
+
+  const completedCount = allExercises.filter((e) => getExerciseStatus(e) === "completed").length;
+  const skippedCount = allExercises.filter((e) => getExerciseStatus(e) === "skipped").length;
+  const notAttemptedCount = allExercises.filter((e) => getExerciseStatus(e) === "not_attempted").length;
+  const wasEndedEarly = notAttemptedCount > 0;
 
   const getRoundCount = (block: WorkoutBlockWithExercises): number => {
     if (!isCircuitBlock(block.blockType)) return 0;
@@ -193,6 +210,11 @@ export default function WorkoutSummary({
                     {" "}· {skippedCount} skipped
                   </Text>
                 )}
+                {notAttemptedCount > 0 && (
+                  <Text className="text-text-muted text-xs">
+                    {" "}· {notAttemptedCount} not attempted
+                  </Text>
+                )}
               </View>
             </View>
           </View>
@@ -204,9 +226,9 @@ export default function WorkoutSummary({
               color={colors.brand.primary}
             />
             <Text className="text-2xl font-bold text-text-primary text-center mt-4 mb-2">
-              Workout Complete!
+              {wasEndedEarly ? "Workout Ended Early" : "Workout Complete!"}
             </Text>
-            <View className="flex-row items-center justify-center">
+            <View className="flex-row items-center justify-center flex-wrap">
               {duration > 0 && (
                 <>
                   <Ionicons name="time-outline" size={14} color={colors.text.muted} />
@@ -224,7 +246,36 @@ export default function WorkoutSummary({
                   {" "}· {skippedCount} skipped
                 </Text>
               )}
+              {notAttemptedCount > 0 && (
+                <Text className="text-text-muted text-sm">
+                  {" "}· {notAttemptedCount} not attempted
+                </Text>
+              )}
             </View>
+          </View>
+        )}
+
+        {/* Resume button for ended-early workouts */}
+        {wasEndedEarly && onResume && !compact && (
+          <View className="px-4 mb-4">
+            <TouchableOpacity
+              className={`bg-primary rounded-xl py-3 items-center flex-row justify-center ${isResuming ? "opacity-70" : ""}`}
+              onPress={onResume}
+              disabled={isResuming}
+            >
+              {isResuming ? (
+                <>
+                  <ActivityIndicator size="small" color={colors.contentOnPrimary} />
+                  <Text className="text-content-on-primary font-semibold text-base ml-2">
+                    Resuming...
+                  </Text>
+                </>
+              ) : (
+                <Text className="text-content-on-primary font-semibold text-base">
+                  Resume Workout
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
         )}
 
@@ -273,7 +324,7 @@ export default function WorkoutSummary({
                   <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2">
                     {blockExercises.map((exercise, exerciseIndex) => {
                       const logs = exerciseLogs[exercise.id] || [];
-                      const skipped = isExerciseSkipped(exercise.id);
+                      const status = getExerciseStatus(exercise);
                       const isLast =
                         exerciseIndex === blockExercises.length - 1;
 
@@ -284,6 +335,13 @@ export default function WorkoutSummary({
                         }))
                       );
 
+                      const statusIcon =
+                        status === "completed"
+                          ? "checkmark"
+                          : status === "skipped"
+                            ? "play-skip-forward"
+                            : "remove";
+
                       return (
                         <View
                           key={exercise.id}
@@ -293,15 +351,13 @@ export default function WorkoutSummary({
                           <View className="flex-row items-center mb-1">
                             <View
                               className={`size-6 rounded-full items-center justify-center mr-2 ${
-                                skipped
-                                  ? "bg-neutral-medium-1"
-                                  : "bg-brand-primary"
+                                status === "completed"
+                                  ? "bg-brand-primary"
+                                  : "bg-neutral-medium-1"
                               }`}
                             >
                               <Ionicons
-                                name={
-                                  skipped ? "play-skip-forward" : "checkmark"
-                                }
+                                name={statusIcon}
                                 size={12}
                                 color={colors.contentOnPrimary}
                               />
@@ -312,9 +368,13 @@ export default function WorkoutSummary({
                           </View>
 
                           {/* Logged Data */}
-                          {skipped ? (
+                          {status === "skipped" ? (
                             <Text className="text-text-muted text-xs ml-8">
                               Skipped
+                            </Text>
+                          ) : status === "not_attempted" ? (
+                            <Text className="text-text-muted text-xs ml-8">
+                              Not attempted
                             </Text>
                           ) : isWarmupCooldown ? (
                             <Text className="text-text-muted text-xs ml-8">
@@ -354,7 +414,7 @@ export default function WorkoutSummary({
                             </Text>
                           ) : (
                             <Text className="text-text-muted text-xs ml-8">
-                              No data
+                              Not attempted
                             </Text>
                           )}
 
