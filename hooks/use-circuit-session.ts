@@ -16,6 +16,9 @@ import { calculateCircuitScore } from "@/utils/circuit-utils";
 import { logger } from "@/lib/logger";
 import * as Haptics from "expo-haptics";
 
+/** Duration in ms for the undo round window — used by both the timeout and the UI animation */
+export const UNDO_DURATION_MS = 3000;
+
 export function useCircuitSession(
   config: CircuitSessionConfig
 ): UseCircuitSessionReturn {
@@ -242,7 +245,7 @@ export function useCircuitSession(
     undoTimerRef.current = setTimeout(() => {
       undoSnapshotRef.current = null;
       setCanUndoRound(false);
-    }, 5000);
+    }, UNDO_DURATION_MS);
   }, [clearUndoTimer]);
 
   useEffect(() => {

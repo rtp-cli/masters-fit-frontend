@@ -36,6 +36,7 @@ export interface UpdateWorkoutParams {
 
 export interface CreateExerciseLogParams {
   planDayExerciseId: number;
+  roundNumber?: number;
   sets: Array<{
     roundNumber: number;
     setNumber: number;

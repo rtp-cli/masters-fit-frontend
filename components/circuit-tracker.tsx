@@ -19,6 +19,7 @@ import {
 } from "@/types/api/circuit.types";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { getRoundCompleteButtonText } from "@/utils/circuit-utils";
+import { UNDO_DURATION_MS } from "@/hooks/use-circuit-session";
 import CircuitTimer from "./circuit-timer";
 
 // Type alias for circuit actions
@@ -53,33 +54,36 @@ export default function CircuitTracker({
 
   // Local state for round notes to prevent re-rendering issues
   const [localRoundNotes, setLocalRoundNotes] = useState(
-    currentRoundData?.notes || "",
+    currentRoundData?.notes || ""
   );
 
   // Horizontal scroll ref for exercise navigation
   const exerciseScrollRef = useRef<ScrollView>(null);
   const [containerWidth, setContainerWidth] = useState(
-    Dimensions.get("window").width,
+    Dimensions.get("window").width
   );
   const cardSpacing = 16;
   const cardWidth = Math.min(containerWidth * 0.88, containerWidth);
   const sideInset = (containerWidth - cardWidth) / 2;
 
-  // Undo progress bar animation
+  // Undo progress bar animation (1 = empty, 0 = full)
   const undoProgressAnim = useRef(new Animated.Value(1)).current;
   const undoProgressRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (canUndoRound) {
+      // Start empty, fill to full over UNDO_DURATION_MS
       undoProgressAnim.setValue(1);
       undoProgressRef.current = Animated.timing(undoProgressAnim, {
         toValue: 0,
-        duration: 5000,
+        duration: UNDO_DURATION_MS,
         useNativeDriver: false,
       });
-      undoProgressRef.current.start();
+      // Small delay to avoid flicker on mount
+      requestAnimationFrame(() => undoProgressRef.current?.start());
     } else {
       undoProgressRef.current?.stop();
+      undoProgressAnim.setValue(1);
     }
   }, [canUndoRound]);
 
@@ -101,7 +105,7 @@ export default function CircuitTracker({
     currentExerciseIndex < (currentRoundData?.exercises.length || 0) - 1;
   const canGoPrev = currentExerciseIndex > 0;
   const completedRounds = sessionData.rounds.filter(
-    (r) => r.isCompleted,
+    (r) => r.isCompleted
   ).length;
 
   // Format timer display for compact view
@@ -276,7 +280,7 @@ export default function CircuitTracker({
               const completedRound =
                 updatedRounds[sessionData.currentRound - 1];
               updatedSessionData.rounds.push(
-                createNewRound(nextRound, block.exercises, completedRound),
+                createNewRound(nextRound, block.exercises, completedRound)
               );
             }
 
@@ -314,7 +318,7 @@ export default function CircuitTracker({
   const createNewRound = (
     roundNumber: number,
     exercises: WorkoutBlockWithExercise[],
-    previousRound?: CircuitRound,
+    previousRound?: CircuitRound
   ): CircuitRound => ({
     roundNumber,
     exercises: exercises.map(
@@ -326,7 +330,7 @@ export default function CircuitTracker({
         weight: previousRound?.exercises[index]?.weight ?? exercise.weight ?? 0,
         completed: false,
         notes: "",
-      }),
+      })
     ),
     isCompleted: false,
     notes: "",
@@ -420,7 +424,7 @@ export default function CircuitTracker({
           >
             {currentRoundData.exercises.map((exercise, index) => {
               const blockExercise = block.exercises.find(
-                (ex) => ex.id === exercise.planDayExerciseId,
+                (ex) => ex.id === exercise.planDayExerciseId
               );
               if (!blockExercise) return null;
 
@@ -459,7 +463,7 @@ export default function CircuitTracker({
                         onPress={() => {
                           updateExerciseReps(
                             exercise.exerciseId,
-                            exercise.targetReps,
+                            exercise.targetReps
                           );
                           updateExerciseWeight(exercise.exerciseId, 0);
                         }}
@@ -483,7 +487,7 @@ export default function CircuitTracker({
                           onPress={() =>
                             updateExerciseWeight(
                               exercise.exerciseId,
-                              Math.max(0, (exercise.weight || 0) - 5),
+                              Math.max(0, (exercise.weight || 0) - 5)
                             )
                           }
                         >
@@ -499,7 +503,7 @@ export default function CircuitTracker({
                             onChangeText={(text) =>
                               updateExerciseWeight(
                                 exercise.exerciseId,
-                                parseFloat(text) || 0,
+                                parseFloat(text) || 0
                               )
                             }
                             keyboardType="numeric"
@@ -514,7 +518,7 @@ export default function CircuitTracker({
                           onPress={() =>
                             updateExerciseWeight(
                               exercise.exerciseId,
-                              (exercise.weight || 0) + 5,
+                              (exercise.weight || 0) + 5
                             )
                           }
                         >
@@ -539,7 +543,7 @@ export default function CircuitTracker({
                           onPress={() =>
                             updateExerciseReps(
                               exercise.exerciseId,
-                              Math.max(0, exercise.actualReps - 1),
+                              Math.max(0, exercise.actualReps - 1)
                             )
                           }
                         >
@@ -557,7 +561,7 @@ export default function CircuitTracker({
                             onChangeText={(text) =>
                               updateExerciseReps(
                                 exercise.exerciseId,
-                                parseInt(text) || 0,
+                                parseInt(text) || 0
                               )
                             }
                             keyboardType="numeric"
@@ -572,7 +576,7 @@ export default function CircuitTracker({
                           onPress={() =>
                             updateExerciseReps(
                               exercise.exerciseId,
-                              exercise.actualReps + 1,
+                              exercise.actualReps + 1
                             )
                           }
                         >
@@ -696,33 +700,30 @@ export default function CircuitTracker({
         (canUndoRound || !isCurrentRoundCompleted) && (
           <View className="mb-6">
             {canUndoRound && circuitActions?.undoCompleteRound ? (
-              <View>
-                <TouchableOpacity
-                  className="py-4 rounded-xl items-center flex-row justify-center border border-neutral-medium-1 bg-card"
-                  onPress={() => circuitActions.undoCompleteRound()}
-                >
-                  <Ionicons
-                    name="arrow-undo"
-                    size={18}
-                    color={colors.text.primary}
-                  />
-                  <Text className="text-base font-semibold text-text-primary ml-2">
-                    Undo Round
-                  </Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                className="rounded-xl overflow-hidden"
+                style={{ backgroundColor: colors.surface }}
+                onPress={() => circuitActions.undoCompleteRound()}
+              >
                 <Animated.View
                   style={{
-                    height: 3,
-                    borderRadius: 12,
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
                     backgroundColor: colors.brand.primary,
-                    marginTop: 4,
                     width: undoProgressAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
+                      outputRange: ["100%", "0%"],
                     }),
                   }}
                 />
-              </View>
+                <View className="py-4 flex-row items-center justify-center">
+                  <Text className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                    Undo Round
+                  </Text>
+                </View>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 className="py-4 rounded-xl items-center bg-brand-primary"
@@ -732,7 +733,7 @@ export default function CircuitTracker({
                   {getRoundCompleteButtonText(
                     "for_time",
                     sessionData.currentRound,
-                    sessionData.targetRounds,
+                    sessionData.targetRounds
                   )}
                 </Text>
               </TouchableOpacity>
@@ -795,7 +796,7 @@ export default function CircuitTracker({
                   ) {
                     try {
                       await circuitActions.completeRound(
-                        "Auto-completed: minute ended",
+                        "Auto-completed: minute ended"
                       );
                     } catch (error) {
                       console.error("Error auto-completing EMOM round:", error);
@@ -815,37 +816,34 @@ export default function CircuitTracker({
         (canUndoRound || !isCurrentRoundCompleted) && (
           <View className="mb-6">
             {canUndoRound && circuitActions?.undoCompleteRound ? (
-              <View>
-                <TouchableOpacity
-                  className="py-3 px-4 rounded-xl items-center flex-row justify-center border border-neutral-medium-1 bg-card"
-                  onPress={() => circuitActions.undoCompleteRound()}
-                >
-                  <Ionicons
-                    name="arrow-undo"
-                    size={18}
-                    color={colors.text.primary}
-                  />
-                  <Text className="text-sm font-semibold text-text-primary ml-2">
-                    Undo Round
-                  </Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                className="rounded-xl overflow-hidden"
+                style={{ backgroundColor: colors.surface }}
+                onPress={() => circuitActions.undoCompleteRound()}
+              >
                 <Animated.View
                   style={{
-                    height: 3,
-                    borderRadius: 12,
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
                     backgroundColor: colors.brand.primary,
-                    marginTop: 4,
                     width: undoProgressAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
+                      outputRange: ["100%", "0%"],
                     }),
                   }}
                 />
-              </View>
+                <View className="py-3 px-4 flex-row items-center justify-center">
+                  <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                    Undo Round
+                  </Text>
+                </View>
+              </TouchableOpacity>
             ) : !!getRoundCompleteButtonText(
                 block.blockType || "circuit",
                 sessionData.currentRound,
-                sessionData.targetRounds,
+                sessionData.targetRounds
               ) ? (
               (block.blockType === "amrap" && sessionData.currentRound >= 1) ||
               (sessionData.targetRounds &&
@@ -859,7 +857,7 @@ export default function CircuitTracker({
                     {getRoundCompleteButtonText(
                       block.blockType || "circuit",
                       sessionData.currentRound,
-                      sessionData.targetRounds,
+                      sessionData.targetRounds
                     )}
                   </Text>
                 </TouchableOpacity>
@@ -879,7 +877,7 @@ export default function CircuitTracker({
                     {getRoundCompleteButtonText(
                       block.blockType || "circuit",
                       sessionData.currentRound,
-                      sessionData.targetRounds,
+                      sessionData.targetRounds
                     )}
                   </Text>
                 </TouchableOpacity>

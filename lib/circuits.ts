@@ -1,219 +1,91 @@
 import { apiRequest } from "./api";
-import { CircuitSessionData, CircuitRound } from "@/types/api/circuit.types";
+import { CircuitRound } from "@/types/api/circuit.types";
 import {
   CreateExerciseLogParams,
   WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { logger } from "./logger";
 
-// Note: Backend does not expose block-level log endpoints. We only log per-round, per-exercise.
-
 /**
- * Create exercise logs for a completed circuit round
+ * Collect exercise log data from a circuit round (pure data, no API calls)
  */
-export async function createCircuitExerciseLogs(
-  workoutId: number,
+function collectRoundExerciseLogs(
   roundData: CircuitRound
-): Promise<void> {
-  try {
-    const logPromises = roundData.exercises.map(async (exercise) => {
-      if (exercise.actualReps > 0 || exercise.completed) {
-        // Create the exercise log entry
-        const exerciseLogParams: CreateExerciseLogParams = {
-          planDayExerciseId: exercise.planDayExerciseId,
-          sets: [
-            {
-              roundNumber: roundData.roundNumber,
-              setNumber: 1, // Circuit exercises are typically one "set" per round
-              weight: exercise.weight || 0,
-              reps: exercise.actualReps,
-            },
-          ],
-          durationCompleted: exercise.timeSeconds,
-          isComplete: exercise.completed,
-          timeTaken: roundData.roundTimeSeconds,
-          notes: exercise.notes,
-        };
-
-        await apiRequest(`/logs/exercise`, {
-          method: "POST",
-          body: JSON.stringify(exerciseLogParams),
-        });
-
-        // Mark exercise as completed in the workout log
-        await apiRequest(
-          `/logs/workout/${workoutId}/exercise/${exercise.planDayExerciseId}`,
-          { method: "POST" }
-        );
-
-        return true;
-      }
-    });
-
-    await Promise.all(logPromises.filter(Boolean));
-  } catch (error) {
-    logger.error("Error creating circuit exercise logs", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      workoutId,
+): CreateExerciseLogParams[] {
+  return roundData.exercises
+    .filter((exercise) => exercise.actualReps > 0 || exercise.completed)
+    .map((exercise) => ({
+      planDayExerciseId: exercise.planDayExerciseId,
       roundNumber: roundData.roundNumber,
-    });
-    throw error;
-  }
+      sets: [
+        {
+          roundNumber: roundData.roundNumber,
+          setNumber: 1,
+          weight: exercise.weight || 0,
+          reps: exercise.actualReps,
+        },
+      ],
+      durationCompleted: exercise.timeSeconds,
+      isComplete: true,
+      timeTaken: roundData.roundTimeSeconds,
+      notes: exercise.notes,
+    }));
 }
 
 /**
- * Mark all exercises in a circuit block as complete in the workout log
+ * Log all circuit rounds + mark exercises complete in minimal API calls.
+ * Uses batch endpoint for exercise logs (1 call) + parallel mark-complete (N exercises).
  */
-export async function markBlockExercisesComplete(
+export async function logCircuitCompletion(
   workoutId: number,
+  rounds: CircuitRound[],
   block: WorkoutBlockWithExercises
 ): Promise<void> {
-  const seen = new Set<number>();
-  for (const ex of block.exercises) {
-    const id = ex.id;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    try {
-      await apiRequest(`/logs/workout/${workoutId}/exercise/${id}`, {
+  try {
+    // Collect all exercise log data from all completed rounds
+    const completedRounds = rounds.filter((r) => {
+      const hasReps = r.exercises?.some((ex) => (ex.actualReps || 0) > 0);
+      return hasReps || r.isCompleted;
+    });
+
+    const allLogs = completedRounds.flatMap((round) =>
+      collectRoundExerciseLogs(round)
+    );
+
+    // Mark all unique exercises and the block as complete
+    const uniqueExerciseIds = [
+      ...new Set(block.exercises.map((ex) => ex.id)),
+    ];
+
+    await Promise.all([
+      // 1 batch call for all exercise logs
+      allLogs.length > 0
+        ? apiRequest(`/logs/exercise/batch`, {
+            method: "POST",
+            body: JSON.stringify({ logs: allLogs }),
+          })
+        : Promise.resolve(),
+      // 1 call to mark all exercises + block complete (no race condition)
+      apiRequest(`/logs/workout/${workoutId}/exercises/complete`, {
         method: "POST",
-      });
-    } catch (error) {
-      logger.error("Error marking circuit exercise complete", {
-        error: error instanceof Error ? error.message : "Unknown error",
-        workoutId,
-        planDayExerciseId: id,
-      });
-      throw error;
-    }
-  }
-}
+        body: JSON.stringify({
+          planDayExerciseIds: uniqueExerciseIds,
+          workoutBlockId: block.id,
+        }),
+      }),
+    ]);
 
-/**
- * Log a complete circuit session to the backend (per-round exercise logs only)
- */
-export async function logCircuitSession(
-  workoutId: number,
-  sessionData: CircuitSessionData
-): Promise<void> {
-  try {
-    logger.businessEvent("Logging circuit session", {
-      blockId: sessionData.blockId,
-      blockType: sessionData.blockType,
-      roundsCompleted: sessionData.rounds.filter((r) => r.isCompleted).length,
-    });
-
-    // Create exercise logs for each completed round
-    const completedRounds = sessionData.rounds.filter((r) => r.isCompleted);
-    for (const round of completedRounds) {
-      await createCircuitExerciseLogs(workoutId, round);
-    }
-
-    logger.businessEvent("Circuit session logged successfully", {
-      blockId: sessionData.blockId,
+    logger.businessEvent("Circuit completion logged", {
       roundsCompleted: completedRounds.length,
+      exerciseLogs: allLogs.length,
+      exercisesMarkedComplete: uniqueExerciseIds.length,
     });
   } catch (error) {
-    logger.error("Error logging circuit session", {
+    logger.error("Error logging circuit completion", {
       error: error instanceof Error ? error.message : "Unknown error",
       workoutId,
-      blockId: sessionData.blockId,
     });
     throw error;
-  }
-}
-
-/**
- * Log an individual circuit round (for incremental logging)
- */
-export async function logCircuitRound(
-  workoutId: number,
-  blockId: number,
-  roundData: CircuitRound
-): Promise<void> {
-  try {
-    await createCircuitExerciseLogs(workoutId, roundData);
-
-    logger.businessEvent("Circuit round logged", {
-      blockId,
-      roundNumber: roundData.roundNumber,
-      totalReps: roundData.exercises.reduce(
-        (sum, ex) => sum + ex.actualReps,
-        0
-      ),
-    });
-  } catch (error) {
-    logger.error("Error logging circuit round", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      workoutId,
-      blockId,
-      roundNumber: roundData.roundNumber,
-    });
-    throw error;
-  }
-}
-
-/**
- * Get existing circuit logs for a workout block
- */
-// Deprecated: backend does not expose block log endpoints
-
-/**
- * Get the latest circuit log for a workout block
- */
-// Deprecated: backend does not expose block log endpoints
-
-/**
- * Get exercise logs for a circuit block
- */
-// Deprecated: backend does not expose exercise logs by block
-
-/**
- * Resume a circuit session from existing logs
- */
-// Deprecated: resume circuit from logs not supported with current backend API
-
-/**
- * Calculate session score for logging
- */
-function calculateSessionScore(sessionData: CircuitSessionData): string {
-  const completedRounds = sessionData.rounds.filter(
-    (r) => r.isCompleted
-  ).length;
-  const totalReps = sessionData.rounds.reduce(
-    (total, round) =>
-      total +
-      round.exercises.reduce((roundTotal, ex) => roundTotal + ex.actualReps, 0),
-    0
-  );
-  const timeMinutes = sessionData.timer.currentTime / 60;
-
-  switch (sessionData.blockType) {
-    case "amrap":
-      // AMRAP score: rounds + partial reps
-      const avgRepsPerRound =
-        completedRounds > 0 ? Math.floor(totalReps / completedRounds) : 0;
-      const extraReps = totalReps % avgRepsPerRound || 0;
-      return `${completedRounds}${extraReps > 0 ? `+${extraReps}` : ""}`;
-
-    case "for_time":
-      // For Time score: completion time
-      const minutes = Math.floor(timeMinutes);
-      const seconds = Math.round((timeMinutes - minutes) * 60);
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-
-    case "emom":
-      // EMOM score: rounds completed / total minutes
-      const targetMinutes = sessionData.targetRounds || completedRounds;
-      return `${completedRounds}/${targetMinutes}`;
-
-    case "tabata":
-      // Tabata score: total reps
-      return `${totalReps} reps`;
-
-    case "circuit":
-    default:
-      // Generic circuit score: rounds completed
-      return `${completedRounds} rounds`;
   }
 }
 

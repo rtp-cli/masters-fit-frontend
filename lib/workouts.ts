@@ -428,6 +428,7 @@ export async function createExerciseLog(
       method: "POST",
       body: JSON.stringify({
         planDayExerciseId: params.planDayExerciseId,
+        roundNumber: params.roundNumber,
         sets: params.sets,
         durationCompleted: params.durationCompleted,
         isComplete: params.isComplete,

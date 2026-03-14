@@ -49,11 +49,7 @@ import {
   isWarmupCooldownBlock,
 } from "@/utils/circuit-utils";
 import { useCircuitSession } from "@/hooks/use-circuit-session";
-import {
-  logCircuitSession,
-  logCircuitRound,
-  markBlockExercisesComplete,
-} from "@/lib/circuits";
+import { logCircuitCompletion } from "@/lib/circuits";
 import { useWorkout } from "@/contexts/workout-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
@@ -125,22 +121,15 @@ function CircuitLoggingInterface({
     updateTimerState,
   } = circuitSession;
 
-  const handleRoundComplete = async (roundData: CircuitRound) => {
-    try {
-      await logCircuitRound(workout.workoutId, block.id, roundData);
-    } catch (error) {
-      onError("Error", "Failed to log round. Please try again.");
-    }
+  // Round/circuit completion callbacks are no-ops for logging — all logging
+  // is batched into a single call via logCircuitCompletion() when the user
+  // presses "Complete Circuit" in the exercise completion flow.
+  const handleRoundComplete = async (_roundData: CircuitRound) => {
+    // No incremental API calls — data is logged in batch at circuit completion
   };
 
-  const handleCircuitComplete = async (sessionData: CircuitSessionData) => {
-    try {
-      // Log the circuit session; advancement is handled by bottom "Complete Circuit"
-      await logCircuitSession(workout.workoutId, sessionData);
-    } catch (error) {
-      console.error("Error completing circuit:", error);
-      onError("Error", "Failed to complete circuit. Please try again.");
-    }
+  const handleCircuitComplete = async (_sessionData: CircuitSessionData) => {
+    // No incremental API calls — data is logged in batch at circuit completion
   };
 
   // TIMER DISPLAY HIDDEN: Timer display disabled
@@ -153,7 +142,7 @@ function CircuitLoggingInterface({
   return (
     <View className="space-y-6">
       {/* Circuit Tracker */}
-      <View className="bg-card rounded-2xl p-6 border border-neutral-light-2">
+      <View className="bg-card rounded-2xl p-3">
         <CircuitTracker
           block={block}
           sessionData={sessionData}
@@ -1120,22 +1109,23 @@ export default function WorkoutScreen() {
             // Get duration for analytics (simple start to end time)
             const finalDuration = getWorkoutDurationForAnalytics();
 
-            await markPlanDayAsComplete(workout.id, {
-              totalTimeSeconds: finalDuration,
-              exercisesCompleted: completedExerciseCount,
-              blocksCompleted: completedBlockCount,
-            });
-
             const today = new Date();
             const startDate = new Date(today);
             startDate.setDate(today.getDate() - 30);
             const endDate = new Date(today);
             endDate.setDate(today.getDate() + 7);
 
-            await refreshDashboard({
-              startDate: startDate.toISOString().split("T")[0],
-              endDate: endDate.toISOString().split("T")[0],
-            });
+            await Promise.all([
+              markPlanDayAsComplete(workout.id, {
+                totalTimeSeconds: finalDuration,
+                exercisesCompleted: completedExerciseCount,
+                blocksCompleted: completedBlockCount,
+              }),
+              refreshDashboard({
+                startDate: startDate.toISOString().split("T")[0],
+                endDate: endDate.toISOString().split("T")[0],
+              }),
+            ]);
           }
 
           setCurrentExerciseIndex(exercises.length);
@@ -1155,18 +1145,12 @@ export default function WorkoutScreen() {
 
         const session = circuitSession?.sessionData;
         if (workout?.workoutId && session) {
-          // Log each round that has any reps or is marked completed
-          for (const round of session.rounds) {
-            const hasReps = round.exercises?.some(
-              (ex: CircuitExercise) => (ex.actualReps || 0) > 0,
-            );
-            if (hasReps || round.isCompleted) {
-              await logCircuitRound(workout.workoutId, currentBlock.id, round);
-            }
-          }
-
-          // Ensure all exercises in the block are marked complete in workout log
-          await markBlockExercisesComplete(workout.workoutId, currentBlock);
+          // Batch log all rounds + mark exercises complete in minimal API calls
+          await logCircuitCompletion(
+            workout.workoutId,
+            session.rounds,
+            currentBlock,
+          );
         }
 
         // Update local progress and advance
@@ -1209,22 +1193,23 @@ export default function WorkoutScreen() {
             // Get duration for analytics (simple start to end time)
             const finalDuration = getWorkoutDurationForAnalytics();
 
-            await markPlanDayAsComplete(workout.id, {
-              totalTimeSeconds: finalDuration,
-              exercisesCompleted: completedExerciseCount,
-              blocksCompleted: completedBlockCount,
-            });
-
             const today = new Date();
             const startDate = new Date(today);
             startDate.setDate(today.getDate() - 30);
             const endDate = new Date(today);
             endDate.setDate(today.getDate() + 7);
 
-            await refreshDashboard({
-              startDate: startDate.toISOString().split("T")[0],
-              endDate: endDate.toISOString().split("T")[0],
-            });
+            await Promise.all([
+              markPlanDayAsComplete(workout.id, {
+                totalTimeSeconds: finalDuration,
+                exercisesCompleted: completedExerciseCount,
+                blocksCompleted: completedBlockCount,
+              }),
+              refreshDashboard({
+                startDate: startDate.toISOString().split("T")[0],
+                endDate: endDate.toISOString().split("T")[0],
+              }),
+            ]);
           }
 
           setCurrentExerciseIndex(exercises.length);
@@ -1308,23 +1293,23 @@ export default function WorkoutScreen() {
           // Get duration for analytics (simple start to end time)
           const finalDuration = getWorkoutDurationForAnalytics();
 
-          await markPlanDayAsComplete(workout.id, {
-            totalTimeSeconds: finalDuration,
-            exercisesCompleted: completedExerciseCount,
-            blocksCompleted: completedBlockCount,
-          });
-          // Refresh dashboard data with current date range to ensure today's data is included
-          // Include both past workouts and upcoming planned workouts for weekly progress
           const today = new Date();
           const startDate = new Date(today);
-          startDate.setDate(today.getDate() - 30); // 30 days back for historical data
+          startDate.setDate(today.getDate() - 30);
           const endDate = new Date(today);
-          endDate.setDate(today.getDate() + 7); // 7 days forward for planned workouts
+          endDate.setDate(today.getDate() + 7);
 
-          await refreshDashboard({
-            startDate: startDate.toISOString().split("T")[0],
-            endDate: endDate.toISOString().split("T")[0],
-          });
+          await Promise.all([
+            markPlanDayAsComplete(workout.id, {
+              totalTimeSeconds: finalDuration,
+              exercisesCompleted: completedExerciseCount,
+              blocksCompleted: completedBlockCount,
+            }),
+            refreshDashboard({
+              startDate: startDate.toISOString().split("T")[0],
+              endDate: endDate.toISOString().split("T")[0],
+            }),
+          ]);
         }
 
         setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
