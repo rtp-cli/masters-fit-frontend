@@ -1,6 +1,7 @@
 export interface ExerciseLog {
   id: number;
   planDayExerciseId: number;
+  roundNumber: number;
   durationCompleted: number | null;
   timeTaken: number | null;
   isComplete: boolean;

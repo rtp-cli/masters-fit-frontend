@@ -258,6 +258,7 @@ export default function CalendarScreen() {
   };
 
   const handleOpenRegeneration = (planDay?: PlanDayWithBlocks) => {
+    if (planDay?.isComplete) return;
     setSelectedPlanDay(planDay || null);
     setShowRegenerationModal(true);
   };
@@ -566,6 +567,7 @@ export default function CalendarScreen() {
           currentSelectedPlanDay={currentSelectedPlanDay}
           onOpenRegeneration={handleOpenRegeneration}
           onOpenEditExercises={(planDay) => {
+            if (planDay.isComplete) return;
             setSelectedPlanDay(planDay);
             setShowEditModal(true);
           }}

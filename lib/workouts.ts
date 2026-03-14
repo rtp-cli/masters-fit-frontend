@@ -486,6 +486,42 @@ export async function getExerciseLogs(
 }
 
 /**
+ * Fetch all exercise logs for a plan day (all exercises, all rounds)
+ * Returns logs grouped by planDayExerciseId for easy lookup
+ */
+export async function fetchExerciseLogsForPlanDay(
+  planDayId: number
+): Promise<Record<number, import("@/types/api/logs.types").ExerciseLog[]>> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      logs: import("@/types/api/logs.types").ExerciseLog[];
+    }>(`/logs/exercise/${planDayId}`);
+
+    const logs = response?.logs || [];
+
+    // Group by planDayExerciseId
+    const grouped: Record<number, import("@/types/api/logs.types").ExerciseLog[]> = {};
+    for (const log of logs) {
+      if (!grouped[log.planDayExerciseId]) {
+        grouped[log.planDayExerciseId] = [];
+      }
+      grouped[log.planDayExerciseId].push(log);
+    }
+
+    // Sort each group by roundNumber
+    for (const key of Object.keys(grouped)) {
+      grouped[Number(key)].sort((a, b) => a.roundNumber - b.roundNumber);
+    }
+
+    return grouped;
+  } catch (error) {
+    console.error("Error fetching exercise logs for plan day:", error);
+    return {};
+  }
+}
+
+/**
  * Get workout logs for a specific workout
  */
 export async function getWorkoutLogs(workoutId: number): Promise<WorkoutLog[]> {

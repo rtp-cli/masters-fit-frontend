@@ -23,7 +23,7 @@ export default function CalendarActionButtons({
 }: CalendarActionButtonsProps) {
   const colors = useThemeColors();
 
-  if (!workoutPlan || isHistoricalWorkout || isPastDate) {
+  if (!workoutPlan || isHistoricalWorkout || isPastDate || currentSelectedPlanDay?.isComplete) {
     return null;
   }
 

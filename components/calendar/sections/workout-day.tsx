@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import WorkoutBlock from "@/components/workout-block";
+import WorkoutSummary from "@/components/workout-summary";
 import {
   calculatePlanDayDuration,
   formatDateAsString,
@@ -82,6 +83,11 @@ export default function WorkoutDaySection({
     );
   }
 
+  // Show summary view for completed plan days
+  if (currentSelectedPlanDay.isComplete) {
+    return <WorkoutSummary workout={currentSelectedPlanDay} compact />;
+  }
+
   return (
     <View className="px-lg">
       <View className="mb-lg">
@@ -102,21 +108,6 @@ export default function WorkoutDaySection({
                     calculatePlanDayDuration(currentSelectedPlanDay)
                   )}
                 </Text>
-                {currentSelectedPlanDay.isComplete && (
-                  <>
-                    <Text className="text-xs text-text-muted mx-2">•</Text>
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={12}
-                        color={colors.brand.primary}
-                      />
-                      <Text className="text-xs text-brand-primary ml-1 font-medium">
-                        Completed
-                      </Text>
-                    </View>
-                  </>
-                )}
               </View>
             </View>
             <View className="flex-row items-center space-x-sm">
