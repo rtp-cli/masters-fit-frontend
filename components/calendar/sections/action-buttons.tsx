@@ -31,7 +31,7 @@ export default function CalendarActionButtons({
     <View className="px-lg my-lg">
       <View className="flex-row space-x-3">
         <TouchableOpacity
-          className="flex-1 bg-primary py-3 rounded-lg items-center flex-row justify-center"
+          className="flex-1 bg-primary py-3 px-3 rounded-lg items-center flex-row justify-center"
           onPress={() =>
             onOpenRegeneration(currentSelectedPlanDay || undefined)
           }
@@ -40,23 +40,37 @@ export default function CalendarActionButtons({
             name="settings-outline"
             size={16}
             color={colors.neutral.light[1]}
+            style={{ flexShrink: 0 }}
           />
-          <Text className="text-neutral-light-1 font-semibold text-sm ml-2">
+          <Text
+            className="text-neutral-light-1 font-semibold text-sm ml-2"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            maxFontSizeMultiplier={1.2}
+            style={{ flexShrink: 1 }}
+          >
             Regenerate Workout
           </Text>
         </TouchableOpacity>
 
         {currentSelectedPlanDay && (
           <TouchableOpacity
-            className="flex-1 ml-2 bg-surface border border-primary py-3 rounded-lg items-center flex-row justify-center"
+            className="flex-1 ml-2 bg-surface border border-primary py-3 px-3 rounded-lg items-center flex-row justify-center"
             onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
           >
             <Ionicons
               name="create-outline"
               size={16}
               color={colors.brand.primary}
+              style={{ flexShrink: 0 }}
             />
-            <Text className="text-primary font-semibold text-sm ml-2">
+            <Text
+              className="text-primary font-semibold text-sm ml-2"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              maxFontSizeMultiplier={1.2}
+              style={{ flexShrink: 1 }}
+            >
               Edit Workout
             </Text>
           </TouchableOpacity>

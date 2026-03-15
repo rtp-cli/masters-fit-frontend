@@ -1158,8 +1158,15 @@ export default function WorkoutRegenerationModal({
                       name="refresh"
                       size={18}
                       color={colors.neutral.white}
+                      style={{ flexShrink: 0 }}
                     />
-                    <Text className="text-neutral-white font-semibold text-sm ml-2">
+                    <Text
+                      className="text-neutral-white font-semibold text-sm ml-2"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      maxFontSizeMultiplier={1.2}
+                      style={{ flexShrink: 1 }}
+                    >
                       {selectedType === "week"
                         ? "Regenerate Weekly Plan"
                         : "Regenerate Today's Workout"}
