@@ -1420,16 +1420,107 @@ export default function WorkoutScreen() {
     }
   };
 
-  // End workout early — mark complete with partial data
+  // End workout early — save in-progress data, then mark complete
   const endWorkoutEarly = async () => {
     if (!workout?.id) return;
 
     setIsEndingEarly(true);
     try {
-      const completedExerciseCount = currentExerciseIndex;
+      // Flush the current exercise's unsaved progress before marking complete
+      const currentEx = exercises[currentExerciseIndex];
+      const currentProg = exerciseProgress[currentExerciseIndex];
+      let savedCurrentExercise = false;
+      let savedCircuitExerciseCount = 0;
+
+      if (currentEx && currentProg) {
+        const block = workout.blocks.find((b) =>
+          b.exercises.some((e) => e.id === currentEx.id),
+        );
+
+        try {
+          if (block && isCircuitBlock(block.blockType)) {
+            const session = circuitSession?.sessionData;
+            if (workout.workoutId && session) {
+              const hasProgress = session.rounds.some(
+                (r) =>
+                  r.isCompleted ||
+                  r.exercises?.some((ex) => (ex.actualReps || 0) > 0),
+              );
+              if (hasProgress) {
+                await logCircuitCompletion(
+                  workout.workoutId,
+                  session.rounds,
+                  block,
+                );
+                savedCurrentExercise = true;
+                savedCircuitExerciseCount = block.exercises.length;
+              }
+            }
+          } else if (block && isWarmupCooldownBlock(block.blockType)) {
+            await createExerciseLog({
+              planDayExerciseId: currentEx.id,
+              sets: [
+                {
+                  roundNumber: 1,
+                  setNumber: 1,
+                  weight: 0,
+                  reps: currentEx.reps || 1,
+                },
+              ],
+              durationCompleted: currentEx.duration || 0,
+              isComplete: false,
+              timeTaken: exerciseTimer,
+              notes: currentProg.notes || "",
+            });
+            savedCurrentExercise = true;
+          } else {
+            const hasSets = currentProg.sets && currentProg.sets.length > 0;
+            const hasDuration =
+              currentProg.duration && currentProg.duration > 0;
+            const isDurationBased =
+              currentEx.duration &&
+              currentEx.duration > 0 &&
+              (!currentEx.reps || currentEx.reps === 0);
+
+            if (hasSets || hasDuration || isDurationBased) {
+              let setsToLog = currentProg.sets;
+              if (isDurationBased && (!setsToLog || setsToLog.length === 0)) {
+                setsToLog = [
+                  {
+                    roundNumber: 1,
+                    setNumber: 1,
+                    weight: currentEx.weight || 0,
+                    reps: 0,
+                  },
+                ];
+              }
+
+              if (setsToLog && setsToLog.length > 0) {
+                await createExerciseLog({
+                  planDayExerciseId: currentEx.id,
+                  sets: setsToLog,
+                  durationCompleted: currentProg.duration,
+                  isComplete: false,
+                  timeTaken: exerciseTimer,
+                  notes: currentProg.notes,
+                });
+                savedCurrentExercise = true;
+              }
+            }
+          }
+        } catch (saveErr) {
+          console.error("Error saving current exercise on early end:", saveErr);
+        }
+      }
+
+      const extraExercises = savedCurrentExercise
+        ? Math.max(savedCircuitExerciseCount, 1)
+        : 0;
+      const completedExerciseCount = currentExerciseIndex + extraExercises;
 
       const completedBlockIds = new Set<number>();
-      exercises.slice(0, currentExerciseIndex).forEach((ex) => {
+      const sliceEnd = currentExerciseIndex + (savedCurrentExercise ? 1 : 0);
+      exercises.slice(0, sliceEnd).forEach((ex) => {
         const block = workout.blocks.find((b) =>
           b.exercises.some((e) => e.id === ex.id),
         );
