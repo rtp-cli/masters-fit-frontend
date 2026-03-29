@@ -12,7 +12,7 @@ const getApiUrl = (): string => {
       return `http://localhost:5000/api`;
     }
     // Default development API URL
-    return "http://localhost:5001/api";
+    return "http://localhost:5000/api";
   }
 
   // For production, use the production URL

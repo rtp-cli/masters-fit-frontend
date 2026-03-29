@@ -73,6 +73,7 @@ export default function CalendarScreen() {
     useState<PlanDayWithBlocks | null>(null);
 
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showSingleDayGenModal, setShowSingleDayGenModal] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
   );
@@ -588,6 +589,7 @@ export default function CalendarScreen() {
           }}
           onRepeatWorkout={() => setShowRepeatModal(true)}
           onGenerateWorkout={handleGenerateNewWorkout}
+          onGenerateSingleDay={() => setShowSingleDayGenModal(true)}
         />
       </ScrollView>
 
@@ -615,6 +617,20 @@ export default function CalendarScreen() {
         selectedDate={selectedDate}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
+        }}
+      />
+
+      <WorkoutRegenerationModal
+        visible={showSingleDayGenModal}
+        onClose={() => setShowSingleDayGenModal(false)}
+        onRegenerate={() => {}}
+        regenerationType="day"
+        isRestDay={true}
+        selectedDate={selectedDate}
+        singleTabOnly={true}
+        onSuccess={() => {
+          invalidateActiveWorkoutCache();
+          setShowSingleDayGenModal(false);
         }}
       />
 

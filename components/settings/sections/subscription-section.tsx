@@ -75,7 +75,7 @@ export default function SubscriptionSection({
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
               <Text className="text-sm font-semibold text-text-primary">
-                MastersFit Lite
+                MastersFit
               </Text>
               <Text className="text-xs text-text-muted mt-0.5">
                 Limited workout generations
