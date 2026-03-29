@@ -1657,6 +1657,7 @@ export default function WorkoutScreen() {
                 isGenerating={isGenerating}
                 onRepeatWorkout={() => setShowRepeatModal(true)}
                 onGenerateWorkout={handleGenerateNewWorkout}
+                onGenerateSingleDay={() => setShowRegenerationModal(true)}
                 variant="workout"
               />
             )}
