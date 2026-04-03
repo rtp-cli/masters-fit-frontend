@@ -8,6 +8,7 @@ interface NoActiveWorkoutCardProps {
   onRepeatWorkout: () => void;
   onGenerateWorkout: () => void;
   onGenerateSingleDay?: () => void;
+  onRepeatPastDay?: () => void;
   title?: string;
   subtitle?: string;
   variant?: "dashboard" | "workout" | "calendar";
@@ -20,6 +21,7 @@ export default function NoActiveWorkoutCard({
   onRepeatWorkout,
   onGenerateWorkout,
   onGenerateSingleDay,
+  onRepeatPastDay,
   title = "No Active Workout",
   subtitle = "You don't have a workout scheduled for this week.",
   variant = "dashboard",
@@ -28,6 +30,7 @@ export default function NoActiveWorkoutCard({
 }: NoActiveWorkoutCardProps) {
   const colors = useThemeColors();
   const [showGenerateChoice, setShowGenerateChoice] = useState(false);
+  const [showSingleDayChoice, setShowSingleDayChoice] = useState(false);
   // Variant-specific styling and icons
   const getVariantStyles = () => {
     switch (variant) {
@@ -167,7 +170,7 @@ export default function NoActiveWorkoutCard({
                 className="bg-primary rounded-xl py-4 px-4 flex-row items-center"
                 onPress={() => {
                   setShowGenerateChoice(false);
-                  onGenerateSingleDay?.();
+                  setShowSingleDayChoice(true);
                 }}
               >
                 <View
@@ -214,6 +217,105 @@ export default function NoActiveWorkoutCard({
               <TouchableOpacity
                 className="py-3 items-center mt-1"
                 onPress={() => setShowGenerateChoice(false)}
+              >
+                <Text className="text-text-muted font-medium text-sm">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Single Day Sub-Choice Modal */}
+      <Modal
+        visible={showSingleDayChoice}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSingleDayChoice(false)}
+      >
+        <Pressable
+          className="flex-1 justify-center items-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onPress={() => setShowSingleDayChoice(false)}
+        >
+          <Pressable
+            className="bg-surface rounded-2xl mx-6 w-[85%] overflow-hidden"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 8,
+            }}
+          >
+            <View className="px-6 pt-6 pb-4 items-center">
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center mb-3"
+                style={{ backgroundColor: colors.brand.primary + "15" }}
+              >
+                <Ionicons name="today-outline" size={22} color={colors.brand.primary} />
+              </View>
+              <Text className="text-lg font-semibold text-text-primary mb-1">
+                Single Day Workout
+              </Text>
+              <Text className="text-sm text-text-muted text-center">
+                Generate a new workout or repeat one you've done before
+              </Text>
+            </View>
+
+            <View className="px-5 pb-5 space-y-3">
+              <TouchableOpacity
+                className="bg-primary rounded-xl py-4 px-4 flex-row items-center"
+                onPress={() => {
+                  setShowSingleDayChoice(false);
+                  onGenerateSingleDay?.();
+                }}
+              >
+                <View
+                  className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                  style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                >
+                  <Ionicons name="sparkles" size={20} color={colors.contentOnPrimary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-content-on-primary font-semibold text-base">
+                    Generate New
+                  </Text>
+                  <Text className="text-content-on-primary/70 text-xs mt-0.5">
+                    AI creates a fresh workout for today
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.contentOnPrimary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="bg-secondary rounded-xl py-4 px-4 mt-2 flex-row items-center"
+                onPress={() => {
+                  setShowSingleDayChoice(false);
+                  onRepeatPastDay?.();
+                }}
+              >
+                <View
+                  className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                  style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                >
+                  <Ionicons name="repeat" size={20} color={colors.background} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-background font-semibold text-base">
+                    Repeat a Past Workout
+                  </Text>
+                  <Text className="text-background/70 text-xs mt-0.5">
+                    Pick from your completed workouts
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.background} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="py-3 items-center mt-1"
+                onPress={() => setShowSingleDayChoice(false)}
               >
                 <Text className="text-text-muted font-medium text-sm">
                   Cancel

@@ -22,6 +22,7 @@ type ActiveWorkoutCardProps = {
   onRepeatWorkout: () => void;
   onGenerateWorkout: () => void;
   onGenerateSingleDay?: () => void;
+  onRepeatPastDay?: () => void;
 };
 
 const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
@@ -36,6 +37,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   onRepeatWorkout,
   onGenerateWorkout,
   onGenerateSingleDay,
+  onRepeatPastDay,
 }) => {
   const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
@@ -144,6 +146,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
             onRepeatWorkout={onRepeatWorkout}
             onGenerateWorkout={onGenerateWorkout}
             onGenerateSingleDay={onGenerateSingleDay}
+            onRepeatPastDay={onRepeatPastDay}
             variant="dashboard"
           />
         )}

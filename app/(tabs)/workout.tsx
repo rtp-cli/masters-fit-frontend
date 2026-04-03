@@ -57,6 +57,7 @@ import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutSummary from "@/components/workout-summary";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import PastWorkoutPicker from "@/components/past-workout-picker";
 import {
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
@@ -236,6 +237,7 @@ export default function WorkoutScreen() {
 
   // New modal states for repeat workout
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showPastWorkoutPicker, setShowPastWorkoutPicker] = useState(false);
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
 
   // Dialog state
@@ -1749,6 +1751,7 @@ export default function WorkoutScreen() {
                 onRepeatWorkout={() => setShowRepeatModal(true)}
                 onGenerateWorkout={handleGenerateNewWorkout}
                 onGenerateSingleDay={() => setShowRegenerationModal(true)}
+                onRepeatPastDay={() => setShowPastWorkoutPicker(true)}
                 variant="workout"
               />
             )}
@@ -1760,6 +1763,16 @@ export default function WorkoutScreen() {
           visible={showRepeatModal}
           onClose={() => setShowRepeatModal(false)}
           onSuccess={handleRepeatWorkoutSuccess}
+        />
+
+        <PastWorkoutPicker
+          visible={showPastWorkoutPicker}
+          onClose={() => setShowPastWorkoutPicker(false)}
+          onSuccess={() => {
+            setShowPastWorkoutPicker(false);
+            invalidateActiveWorkoutCache();
+            loadWorkout(true);
+          }}
         />
 
         {/* Rest Day Regeneration Modal */}

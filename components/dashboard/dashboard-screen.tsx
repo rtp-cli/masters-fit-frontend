@@ -47,6 +47,7 @@ import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import PastWorkoutPicker from "@/components/past-workout-picker";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
@@ -127,6 +128,7 @@ export default function DashboardScreen() {
 
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showPastWorkoutPicker, setShowPastWorkoutPicker] = useState(false);
   const [showSingleDayRegenModal, setShowSingleDayRegenModal] = useState(false);
   const [showPaywallTest, setShowPaywallTest] = useState(false);
   const [showPaymentWall, setShowPaymentWall] = useState(false);
@@ -939,6 +941,7 @@ export default function DashboardScreen() {
           onRepeatWorkout={() => setShowRepeatModal(true)}
           onGenerateWorkout={handleGenerateNewWorkout}
           onGenerateSingleDay={() => setShowSingleDayRegenModal(true)}
+          onRepeatPastDay={() => setShowPastWorkoutPicker(true)}
         />
 
         {weeklySummary && (
@@ -1033,6 +1036,16 @@ export default function DashboardScreen() {
         onSuccess={() => {
           invalidateActiveWorkoutCache();
           setShowSingleDayRegenModal(false);
+          handleRefresh();
+        }}
+      />
+
+      <PastWorkoutPicker
+        visible={showPastWorkoutPicker}
+        onClose={() => setShowPastWorkoutPicker(false)}
+        onSuccess={() => {
+          setShowPastWorkoutPicker(false);
+          invalidateActiveWorkoutCache();
           handleRefresh();
         }}
       />

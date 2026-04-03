@@ -31,6 +31,7 @@ type WorkoutDaySectionProps = {
   onRepeatWorkout: () => void;
   onGenerateWorkout: () => void;
   onGenerateSingleDay?: () => void;
+  onRepeatPastDay?: () => void;
 };
 
 export default function WorkoutDaySection({
@@ -47,6 +48,7 @@ export default function WorkoutDaySection({
   onRepeatWorkout,
   onGenerateWorkout,
   onGenerateSingleDay,
+  onRepeatPastDay,
 }: WorkoutDaySectionProps) {
   const colors = useThemeColors();
 
@@ -68,6 +70,7 @@ export default function WorkoutDaySection({
             onRepeatWorkout={onRepeatWorkout}
             onGenerateWorkout={onGenerateWorkout}
             onGenerateSingleDay={onGenerateSingleDay}
+            onRepeatPastDay={onRepeatPastDay}
             variant="calendar"
             showActionsOnlyForToday={true}
             isToday={isToday}
