@@ -210,80 +210,6 @@ export function getWorkoutsForWeek(
 }
 
 /**
- * Generate a workout plan for the current user
- */
-export async function generateWorkoutPlan(
-  userId: number
-): Promise<WorkoutResponse | null> {
-  try {
-    const response = await apiRequest<WorkoutResponse>(
-      `/workouts/${userId}/generate`,
-      {
-        method: "POST",
-      }
-    );
-
-    if (response?.success) {
-      // Invalidate cache to force fresh data fetch
-      invalidateActiveWorkoutCache();
-      return response;
-    } else {
-      throw new Error(response?.message || "Failed to generate workout plan");
-    }
-  } catch (error) {
-    console.error("Error generating workout plan:", error);
-    return null;
-  }
-}
-
-/**
- * Regenerate a workout plan with custom preferences and feedback
- */
-export async function regenerateWorkoutPlan(
-  userId: number,
-  data: {
-    customFeedback?: string;
-    profileData?: {
-      age?: number;
-      height?: number;
-      weight?: number;
-      gender?: string;
-      goals?: string[];
-      limitations?: string[];
-      fitnessLevel?: string;
-      environment?: string[];
-      equipment?: string[];
-      workoutStyles?: string[];
-      availableDays?: string[];
-      workoutDuration?: number;
-      intensityLevel?: number;
-      medicalNotes?: string;
-    };
-  }
-): Promise<AsyncJobResponse | null> {
-  try {
-    const response = await apiRequest<AsyncJobResponse>(
-      `/workouts/${userId}/regenerate`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (response?.success) {
-      // Invalidate cache to force fresh data fetch
-      invalidateActiveWorkoutCache();
-      return response;
-    } else {
-      throw new Error(response?.message || "Failed to regenerate workout plan");
-    }
-  } catch (error) {
-    console.error("Error regenerating workout plan:", error);
-    return null;
-  }
-}
-
-/**
  * Get plan day log for a completed plan day
  */
 export async function getPlanDayLog(
@@ -679,30 +605,6 @@ export async function markWorkoutComplete(
     return response.log || null;
   } catch (error) {
     console.error("Error marking workout as complete:", error);
-    return null;
-  }
-}
-
-/**
- * Regenerate a single day's workout
- */
-export async function regenerateDailyWorkout(
-  userId: number,
-  planDayId: number,
-  regenerationReason: string
-): Promise<{ success: boolean; planDay: PlanDayWithBlocks } | null> {
-  invalidateActiveWorkoutCache();
-  try {
-    const response = await apiRequest<{
-      success: boolean;
-      planDay: PlanDayWithBlocks;
-    }>(`/workouts/${userId}/days/${planDayId}/regenerate`, {
-      method: "POST",
-      body: JSON.stringify({ reason: regenerationReason }),
-    });
-    return response;
-  } catch (error) {
-    console.error("Error regenerating daily workout:", error);
     return null;
   }
 }

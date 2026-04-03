@@ -192,9 +192,9 @@ export const VerifyScreen = () => {
               position: "absolute",
               left: -9999,
               top: -9999,
-              opacity: 0,
-              height: 0,
-              width: 0,
+              opacity: 0.01,
+              height: 1,
+              width: 1,
             }}
             value={otp.join("")}
             onChangeText={handleHiddenInputChange}

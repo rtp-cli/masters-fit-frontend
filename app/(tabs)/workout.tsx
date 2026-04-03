@@ -1580,7 +1580,7 @@ export default function WorkoutScreen() {
 
   const showEndEarlyDialog = () => {
     setDialogConfig({
-      title: "End Workout Early?",
+      title: "End Workout?",
       description:
         "Your progress so far will be saved. Exercises not yet completed will be marked as not attempted.",
       primaryButton: {
@@ -2454,7 +2454,7 @@ export default function WorkoutScreen() {
               </View>
             ) : (
               <Text className="text-sm text-red-500">
-                End Workout Early
+                End Workout
               </Text>
             )}
           </TouchableOpacity>
