@@ -7,13 +7,21 @@ import {
 import { logger } from "./logger";
 
 /**
- * Collect exercise log data from a circuit round (pure data, no API calls)
+ * Collect exercise log data from a circuit round (pure data, no API calls).
+ * If the round is marked complete, log ALL exercises (including duration-based
+ * cardio exercises that may have actualReps=0).
+ * For incomplete rounds, only log exercises that have some recorded data.
  */
 function collectRoundExerciseLogs(
   roundData: CircuitRound
 ): CreateExerciseLogParams[] {
   return roundData.exercises
-    .filter((exercise) => exercise.actualReps > 0 || exercise.completed)
+    .filter(
+      (exercise) =>
+        roundData.isCompleted ||
+        exercise.actualReps > 0 ||
+        exercise.completed
+    )
     .map((exercise) => ({
       planDayExerciseId: exercise.planDayExerciseId,
       roundNumber: roundData.roundNumber,
@@ -42,10 +50,14 @@ export async function logCircuitCompletion(
   block: WorkoutBlockWithExercises
 ): Promise<void> {
   try {
-    // Collect all exercise log data from all completed rounds
+    // Collect all rounds that have any user interaction:
+    // completed rounds, rounds with reps logged, or rounds with weight changes
     const completedRounds = rounds.filter((r) => {
-      const hasReps = r.exercises?.some((ex) => (ex.actualReps || 0) > 0);
-      return hasReps || r.isCompleted;
+      if (r.isCompleted) return true;
+      const hasActivity = r.exercises?.some(
+        (ex) => (ex.actualReps || 0) > 0 || ex.completed || (ex.weight || 0) > 0
+      );
+      return hasActivity;
     });
 
     const allLogs = completedRounds.flatMap((round) =>

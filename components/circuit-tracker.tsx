@@ -300,11 +300,17 @@ export default function CircuitTracker({
     }
   };
 
-  // Handle circuit completion
+  // Handle circuit completion — complete the current round first so its data is saved,
+  // then mark the whole circuit as done.
   const handleCompleteCircuit = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     try {
+      // Complete the current round if it hasn't been completed yet
+      if (!isCurrentRoundCompleted && circuitActions?.completeRound) {
+        await circuitActions.completeRound(localRoundNotes);
+      }
+
       if (circuitActions?.completeCircuit) {
         await circuitActions.completeCircuit();
         onCircuitComplete(sessionData);
