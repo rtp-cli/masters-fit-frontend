@@ -27,7 +27,6 @@ import Header from "@/components/header";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
-import PastWorkoutPicker from "@/components/past-workout-picker";
 import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
@@ -74,7 +73,6 @@ export default function CalendarScreen() {
     useState<PlanDayWithBlocks | null>(null);
 
   const [showRepeatModal, setShowRepeatModal] = useState(false);
-  const [showPastWorkoutPicker, setShowPastWorkoutPicker] = useState(false);
   const [showSingleDayGenModal, setShowSingleDayGenModal] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
@@ -592,7 +590,6 @@ export default function CalendarScreen() {
           onRepeatWorkout={() => setShowRepeatModal(true)}
           onGenerateWorkout={handleGenerateNewWorkout}
           onGenerateSingleDay={() => setShowSingleDayGenModal(true)}
-          onRepeatPastDay={() => setShowPastWorkoutPicker(true)}
         />
       </ScrollView>
 
@@ -652,15 +649,6 @@ export default function CalendarScreen() {
         planDay={editModalPlanDay}
       />
 
-      <PastWorkoutPicker
-        visible={showPastWorkoutPicker}
-        onClose={() => setShowPastWorkoutPicker(false)}
-        onSuccess={() => {
-          setShowPastWorkoutPicker(false);
-          invalidateActiveWorkoutCache();
-          handleRefresh();
-        }}
-      />
 
       {/* Custom Dialog */}
       {dialogConfig && (
