@@ -18,13 +18,16 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6747976247"
+        "ascAppId": "6752777203"
       }
     }
   }
