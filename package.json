@@ -25,6 +25,7 @@
     "@miblanchard/react-native-slider": "^2.6.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.4",
+    "@sentry/react-native": "~7.2.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "expo": "^54.0.22",
     "expo-build-properties": "^0.12.3",

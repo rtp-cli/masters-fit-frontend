@@ -6,6 +6,7 @@ import {
   useColorScheme as useSystemColorScheme,
 } from "react-native";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import { initSentry, Sentry } from "@/lib/sentry";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { WorkoutProvider } from "@/contexts/workout-context";
 import {
@@ -45,6 +46,9 @@ import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-lo
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import * as TrackingTransparency from "expo-tracking-transparency";
+
+// Initialize Sentry as early as possible
+initSentry();
 
 const THEME_KEY = "@theme_preference";
 const COLOR_THEME_KEY = "@color_theme";
@@ -128,7 +132,12 @@ function AppContent() {
   useEffect(() => {
     setPaywallCallback((data) => {
       setPaywallData(data);
-      setShowPaymentWall(true);
+      // Delay showing paywall modal to let any currently-dismissing modal
+      // finish its iOS animation — presenting two modals in the same tick
+      // causes iOS to silently drop the second one
+      setTimeout(() => {
+        setShowPaymentWall(true);
+      }, 500);
     });
     return () => {
       setPaywallCallback(() => {});
@@ -377,7 +386,7 @@ const StableProviderTree = React.memo(function StableProviderTree() {
   );
 });
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -511,3 +520,6 @@ export default function RootLayout() {
     </View>
   );
 }
+
+// Wrap with Sentry to capture React render errors and navigation breadcrumbs
+export default Sentry.wrap(RootLayout);

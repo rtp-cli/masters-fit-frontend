@@ -296,13 +296,16 @@ export default function WorkoutRegenerationModal({
 
             // Success callback
             onSuccess?.();
-          } else {
+          } else if (result !== null) {
+            // Only show error for genuine failures, not paywall-intercepted nulls
             setIsGeneratingWorkout(false);
             onError?.("Regeneration failed to start");
           }
         } catch (error) {
-          setIsGeneratingWorkout(false);
-          onError?.("An error occurred while starting regeneration");
+          if (!(error instanceof PaywallError)) {
+            setIsGeneratingWorkout(false);
+            onError?.("An error occurred while starting regeneration");
+          }
         }
       } else {
         // Daily regeneration: call regenerateDailyWorkout directly
@@ -328,7 +331,8 @@ export default function WorkoutRegenerationModal({
               // Close modal and let FAB handle progress
               onClose();
               onSuccess?.();
-            } else {
+            } else if (result !== null) {
+              // Only show error dialog for genuine failures, not paywall-intercepted nulls
               setDialogConfig({
                 title: "Daily Regeneration Failed",
                 description:
@@ -414,7 +418,8 @@ export default function WorkoutRegenerationModal({
 
             // Success callback
             onSuccess?.();
-          } else {
+          } else if (result !== null) {
+            // Only show error for genuine failures, not paywall-intercepted nulls
             onError?.("Regeneration failed to start");
           }
         }
@@ -448,7 +453,8 @@ export default function WorkoutRegenerationModal({
 
               // Success callback
               onSuccess?.();
-            } else {
+            } else if (result !== null) {
+              // Only show error dialog for genuine failures, not paywall-intercepted nulls
               setDialogConfig({
                 title: "Rest Day Workout Failed",
                 description:
@@ -481,7 +487,8 @@ export default function WorkoutRegenerationModal({
 
               // Success callback
               onSuccess?.();
-            } else {
+            } else if (result !== null) {
+              // Only show error dialog for genuine failures, not paywall-intercepted nulls
               setDialogConfig({
                 title: "Daily Regeneration Failed",
                 description:

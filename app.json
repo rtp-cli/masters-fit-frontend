@@ -78,6 +78,13 @@
             "minSdkVersion": 26
           }
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "mastersfit",
+          "project": "mastersfit-mobile"
+        }
       ]
     ],
     "extra": {

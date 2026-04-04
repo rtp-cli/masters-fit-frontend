@@ -629,7 +629,8 @@ export default function DashboardScreen() {
       const result = await generateWorkoutPlanAsync(user.id);
       if (result?.success && result.jobId) {
         await addJob(result.jobId, "generation");
-      } else {
+      } else if (result !== null) {
+        // Only show error dialog for genuine failures, not paywall-intercepted nulls
         setDialogConfig({
           title: "Generation Failed",
           description:

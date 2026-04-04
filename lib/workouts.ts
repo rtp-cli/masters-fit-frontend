@@ -772,6 +772,11 @@ export async function generateWorkoutPlanAsync(
       throw new Error("Failed to start async workout generation");
     }
   } catch (error) {
+    // Don't log PaywallError as a regular error - the paywall modal will handle it
+    if (error instanceof PaywallError) {
+      // Paywall callback has already been triggered, just return null
+      return null;
+    }
     console.error("Error starting async workout generation:", error);
     return null;
   }

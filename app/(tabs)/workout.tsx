@@ -758,8 +758,8 @@ export default function WorkoutScreen() {
         // Data refresh will happen when generation completes
         // Navigate to dashboard to show the FAB
         router.replace("/");
-      } else {
-        // Only show error alerts for actual failures
+      } else if (result !== null) {
+        // Only show error dialog for genuine failures, not paywall-intercepted nulls
         setDialogConfig({
           title: "Generation Failed",
           description:

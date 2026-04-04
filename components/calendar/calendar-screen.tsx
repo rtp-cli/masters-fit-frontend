@@ -221,22 +221,20 @@ export default function CalendarScreen() {
         if (response?.success && response.jobId) {
           await addJob(response.jobId, "regeneration");
           router.replace("/(tabs)/dashboard");
-        } else {
+        } else if (response !== null) {
           setIsGeneratingWorkout(false);
-          // Don't show alert if paywall error occurred (modal is already showing)
-          {
-            setDialogConfig({
-              title: "Regeneration Failed",
-              description:
-                "Unable to start workout regeneration. Please check your connection and try again.",
-              primaryButton: {
-                text: "OK",
-                onPress: () => setDialogVisible(false),
-              },
-              icon: "alert-circle",
-            });
-            setDialogVisible(true);
-          }
+          // Only show error dialog for genuine failures, not paywall-intercepted nulls
+          setDialogConfig({
+            title: "Regeneration Failed",
+            description:
+              "Unable to start workout regeneration. Please check your connection and try again.",
+            primaryButton: {
+              text: "OK",
+              onPress: () => setDialogVisible(false),
+            },
+            icon: "alert-circle",
+          });
+          setDialogVisible(true);
         }
       }
     } catch (err) {
@@ -289,7 +287,8 @@ export default function CalendarScreen() {
       if (result?.success && result.jobId) {
         await addJob(result.jobId, "generation");
         router.replace("/(tabs)/dashboard");
-      } else {
+      } else if (result !== null) {
+        // Only show error dialog for genuine failures, not paywall-intercepted nulls
         setDialogConfig({
           title: "Generation Failed",
           description:
