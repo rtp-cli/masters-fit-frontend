@@ -96,8 +96,11 @@ export const VerifyScreen = () => {
     e: NativeSyntheticEvent<TextInputKeyPressEventData>,
     index: number
   ) => {
-    // Move to previous input on backspace
+    // Move to previous input on backspace and clear it
     if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      const newOtp = [...otp];
+      newOtp[index - 1] = "";
+      setOtp(newOtp);
       inputs.current[index - 1].focus();
     }
   };
