@@ -83,7 +83,7 @@
         "@sentry/react-native/expo",
         {
           "organization": "mastersfit",
-          "project": "mastersfit-mobile"
+          "project": "mastersfit-frontend"
         }
       ]
     ],
