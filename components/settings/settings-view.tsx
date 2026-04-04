@@ -300,10 +300,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       },
       primaryButton: {
         text: "Logout",
-        onPress: async () => {
+        onPress: () => {
           setDialogVisible(false);
-          await logout();
           onClose?.();
+          logout();
           router.replace("/");
         },
       },
