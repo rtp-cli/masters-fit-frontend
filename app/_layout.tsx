@@ -130,6 +130,7 @@ function AppContent() {
   }, [user?.id]);
 
   // Initialize RevenueCat
+  const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
   useEffect(() => {
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
@@ -151,6 +152,7 @@ function AppContent() {
     }
 
     Purchases.configure({ apiKey });
+    setIsRevenueCatReady(true);
   }, []);
 
   useEffect(() => {
@@ -382,7 +384,7 @@ function AppContent() {
         />
       </Stack>
       <FloatingNetworkLoggerButton />
-      <PaymentWallModal
+      {isRevenueCatReady && <PaymentWallModal
         visible={showPaymentWall}
         onClose={() => {
           setShowPaymentWall(false);
@@ -399,7 +401,7 @@ function AppContent() {
           setShowPaymentWall(false);
           setPaywallData(null);
         }}
-      />
+      />}
     </View>
   );
 }
