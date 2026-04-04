@@ -64,9 +64,35 @@ export const VerifyScreen = () => {
 
   // Handle manual input from visible inputs
   const handleOtpChange = (text: string, index: number) => {
-    // Only handle single digit input for visible inputs
+    // Handle autofill/paste: multiple digits entered at once
+    if (text.length > 1) {
+      const digits = text.replace(/[^0-9]/g, "").slice(0, 4).split("");
+      const newOtp = ["", "", "", ""];
+      digits.forEach((d, i) => {
+        newOtp[i] = d;
+      });
+      setOtp(newOtp);
+
+      const lastIndex = Math.min(digits.length - 1, 3);
+      inputs.current[lastIndex]?.focus();
+
+      const code = newOtp.join("");
+      if (
+        code.length === 4 &&
+        !isLoading &&
+        !isVerifyingRef.current &&
+        code !== lastVerifiedCodeRef.current
+      ) {
+        setTimeout(() => {
+          handleVerifyWithCode(code);
+        }, 100);
+      }
+      return;
+    }
+
+    // Single digit manual input
     const newOtp = [...otp];
-    newOtp[index] = text.slice(-1); // Take only the last character
+    newOtp[index] = text.slice(-1);
     setOtp(newOtp);
 
     // Move to next input
@@ -76,11 +102,9 @@ export const VerifyScreen = () => {
 
     // Auto-submit when last digit is entered
     if (text && index === 3) {
-      const completeCode = [...newOtp];
-      completeCode[index] = text.slice(-1);
-      const code = completeCode.join("");
+      const code = newOtp.join("");
       if (
-        completeCode.every((digit) => digit !== "") &&
+        newOtp.every((digit) => digit !== "") &&
         !isLoading &&
         !isVerifyingRef.current &&
         code !== lastVerifiedCodeRef.current
