@@ -45,6 +45,23 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
     setError(null);
 
     try {
+      // Wait for RevenueCat to be configured before fetching
+      const isConfigured = await Purchases.isConfigured();
+      if (!isConfigured) {
+        console.warn("[RevenueCat] SDK not configured yet, retrying in 1s...");
+        // Retry after a short delay to allow configure() to complete
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const retryConfigured = await Purchases.isConfigured();
+        if (!retryConfigured) {
+          Sentry.captureMessage("RevenueCat: SDK not configured after retry", {
+            level: "error",
+          });
+          setError("Payment system not available. Please restart the app.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Get offerings from RevenueCat
       const offerings = await Purchases.getOfferings();
 

@@ -384,7 +384,7 @@ function AppContent() {
         />
       </Stack>
       <FloatingNetworkLoggerButton />
-      {isRevenueCatReady && <PaymentWallModal
+      <PaymentWallModal
         visible={showPaymentWall}
         onClose={() => {
           setShowPaymentWall(false);
@@ -401,7 +401,7 @@ function AppContent() {
           setShowPaymentWall(false);
           setPaywallData(null);
         }}
-      />}
+      />
     </View>
   );
 }

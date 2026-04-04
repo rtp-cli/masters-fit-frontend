@@ -32,7 +32,6 @@ export const VerifyScreen = () => {
   } = useVerifyController();
 
   const inputs = useRef<TextInput[]>([]);
-  const hiddenInputRef = useRef<TextInput>(null);
   const isVerifyingRef = useRef(false);
   const lastVerifiedCodeRef = useRef<string>("");
 
@@ -43,26 +42,7 @@ export const VerifyScreen = () => {
     }
   }, [email]);
 
-  // Handle autofill from hidden input
-  const handleHiddenInputChange = (text: string) => {
-    // Prevent re-verification of the same code
-    if (
-      text.length === 4 &&
-      !isVerifyingRef.current &&
-      !isLoading &&
-      text !== lastVerifiedCodeRef.current
-    ) {
-      const digits = text.split("");
-      setOtp(digits);
-
-      // Auto-submit if we have 4 digits
-      setTimeout(() => {
-        handleVerifyWithCode(text);
-      }, 100);
-    }
-  };
-
-  // Handle manual input from visible inputs
+  // Handle manual input from visible inputs (also handles autofill)
   const handleOtpChange = (text: string, index: number) => {
     // Handle autofill/paste: multiple digits entered at once
     if (text.length > 1) {
@@ -154,10 +134,6 @@ export const VerifyScreen = () => {
       if (!res.success) {
         // Reset OTP on failure to match previous UX
         setOtp(["", "", "", ""]);
-        // Clear hidden input to prevent re-triggering
-        if (hiddenInputRef.current) {
-          hiddenInputRef.current.setNativeProps({ text: "" });
-        }
         // Clear the last verified code after a delay to allow new attempts
         setTimeout(() => {
           lastVerifiedCodeRef.current = "";
@@ -212,26 +188,6 @@ export const VerifyScreen = () => {
             expire in 10 minutes.
           </Text>
 
-          {/* Hidden input for iOS autofill */}
-          <TextInput
-            ref={hiddenInputRef}
-            style={{
-              position: "absolute",
-              left: -9999,
-              top: -9999,
-              opacity: 0.01,
-              height: 1,
-              width: 1,
-            }}
-            value={otp.join("")}
-            onChangeText={handleHiddenInputChange}
-            textContentType="oneTimeCode"
-            keyboardType="number-pad"
-            maxLength={4}
-            editable={!isLoading}
-            autoComplete="sms-otp"
-          />
-
           {/* OTP Input Boxes */}
           <View className="flex-row justify-center space-x-6 my-lg">
             {otp.map((digit, index) => (
@@ -245,9 +201,11 @@ export const VerifyScreen = () => {
                 onChangeText={(text) => handleOtpChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 keyboardType="number-pad"
-                maxLength={1}
+                maxLength={index === 0 ? 4 : 1}
                 editable={!isLoading}
                 autoFocus={index === 0}
+                textContentType={index === 0 ? "oneTimeCode" : "none"}
+                autoComplete={index === 0 ? "sms-otp" : "off"}
               />
             ))}
           </View>
