@@ -19,9 +19,7 @@ type ActiveWorkoutCardProps = {
   todayCompletionRate: number;
   isGenerating: boolean;
   onViewWorkout: () => void;
-  onRepeatWorkout: () => void;
-  onGenerateWorkout: () => void;
-  onGenerateSingleDay?: () => void;
+  onShowWorkoutChoice: () => void;
 };
 
 const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
@@ -33,9 +31,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   todayCompletionRate,
   isGenerating,
   onViewWorkout,
-  onRepeatWorkout,
-  onGenerateWorkout,
-  onGenerateSingleDay,
+  onShowWorkoutChoice,
 }) => {
   const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
@@ -112,17 +108,20 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
                 </View>
               </View>
             ) : isWorkoutCompleted ? (
-              <View className="bg-accent/10 border border-accent/20 rounded-xl p-4 flex-row items-center">
+              <View
+                className="rounded-xl p-4 flex-row items-center"
+                style={{ backgroundColor: colors.brand.primary + "15", borderColor: colors.brand.primary + "30", borderWidth: 1 }}
+              >
                 <Ionicons
                   name="checkmark-circle"
                   size={24}
-                  color={colors.brand.dark[1]}
+                  color={colors.brand.primary}
                 />
                 <View className="ml-3 flex-1">
-                  <Text className="text-sm font-semibold text-accent">
+                  <Text className="text-sm font-semibold text-text-primary">
                     Workout Completed!
                   </Text>
-                  <Text className="text-xs text-accent/70">
+                  <Text className="text-xs text-text-muted">
                     Great job! {formatNumber(todayCompletionRate)}% completed
                   </Text>
                 </View>
@@ -141,9 +140,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
         ) : (
           <NoActiveWorkoutCard
             isGenerating={isGenerating}
-            onRepeatWorkout={onRepeatWorkout}
-            onGenerateWorkout={onGenerateWorkout}
-            onGenerateSingleDay={onGenerateSingleDay}
+            onShowWorkoutChoice={onShowWorkoutChoice}
             variant="dashboard"
           />
         )}

@@ -28,9 +28,7 @@ type WorkoutDaySectionProps = {
   onToggleBlock: (blockId: number) => void;
   getTotalExerciseCount: (blocks: WorkoutBlockWithExercises[]) => number;
   onStartWorkout: () => void;
-  onRepeatWorkout: () => void;
-  onGenerateWorkout: () => void;
-  onGenerateSingleDay?: () => void;
+  onShowWorkoutChoice: () => void;
 };
 
 export default function WorkoutDaySection({
@@ -44,9 +42,7 @@ export default function WorkoutDaySection({
   onToggleBlock,
   getTotalExerciseCount,
   onStartWorkout,
-  onRepeatWorkout,
-  onGenerateWorkout,
-  onGenerateSingleDay,
+  onShowWorkoutChoice,
 }: WorkoutDaySectionProps) {
   const colors = useThemeColors();
 
@@ -65,9 +61,7 @@ export default function WorkoutDaySection({
         {noActiveWorkout ? (
           <NoActiveWorkoutCard
             isGenerating={isGenerating}
-            onRepeatWorkout={onRepeatWorkout}
-            onGenerateWorkout={onGenerateWorkout}
-            onGenerateSingleDay={onGenerateSingleDay}
+            onShowWorkoutChoice={onShowWorkoutChoice}
             variant="calendar"
             showActionsOnlyForToday={true}
             isToday={isToday}

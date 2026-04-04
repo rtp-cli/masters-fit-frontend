@@ -954,14 +954,22 @@ export default function WorkoutRegenerationModal({
               removeClippedSubviews={true}
             >
               <View className="px-5 py-5">
-                {isRestDay ? (
+                {isRestDay && selectedType === "day" ? (
                   <View className="mb-6">
                     <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
                       Today is a Rest Day
                     </Text>
                     <Text className="text-sm text-text-muted mb-4 text-center">
-                      You can generate an optional workout for today, or
-                      regenerate your entire weekly plan.
+                      Generate an optional workout for today.
+                    </Text>
+                  </View>
+                ) : isRestDay && selectedType === "week" ? (
+                  <View className="mb-6">
+                    <Text className="text-lg font-semibold text-text-primary mb-2 text-center">
+                      Generate a New Weekly Plan
+                    </Text>
+                    <Text className="text-sm text-text-muted mb-4 text-center">
+                      Create a fresh workout plan for the upcoming week.
                     </Text>
                   </View>
                 ) : noActiveWorkoutDay ? (

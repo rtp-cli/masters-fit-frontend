@@ -139,6 +139,7 @@ export default function PaymentWallModal({
     <Modal
       visible={visible}
       animationType="slide"
+      presentationStyle="pageSheet"
       onRequestClose={onClose}
       statusBarTranslucent
       onDismiss={() => {

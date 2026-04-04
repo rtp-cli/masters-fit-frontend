@@ -54,9 +54,10 @@ import { logCircuitCompletion } from "@/lib/circuits";
 import { useWorkout } from "@/contexts/workout-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
-import WorkoutRepeatModal from "@/components/workout-repeat-modal";
 import WorkoutSummary from "@/components/workout-summary";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import WorkoutChoiceModal from "@/components/workout-choice-modal";
+import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import {
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
@@ -235,8 +236,9 @@ export default function WorkoutScreen() {
   const [isResuming, setIsResuming] = useState(false);
 
   // New modal states for repeat workout
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
+  const [showRepeatPicker, setShowRepeatPicker] = useState(false);
+  const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -1715,12 +1717,12 @@ export default function WorkoutScreen() {
                   onPress={
                     isGenerating
                       ? undefined
-                      : () => setShowRegenerationModal(true)
+                      : () => setShowWorkoutChoice(true)
                   }
                   disabled={isGenerating}
                 >
                   <Ionicons
-                    name="sparkles"
+                    name="fitness-outline"
                     size={18}
                     color={
                       isGenerating
@@ -1737,8 +1739,8 @@ export default function WorkoutScreen() {
                     }`}
                   >
                     {isGenerating
-                      ? "Generating Workout..."
-                      : "Generate Workout"}
+                      ? "Creating Workout..."
+                      : "Create a New Workout"}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -1746,21 +1748,12 @@ export default function WorkoutScreen() {
               // No active workout plan at all
               <NoActiveWorkoutCard
                 isGenerating={isGenerating}
-                onRepeatWorkout={() => setShowRepeatModal(true)}
-                onGenerateWorkout={handleGenerateNewWorkout}
-                onGenerateSingleDay={() => setShowRegenerationModal(true)}
+                onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
                 variant="workout"
               />
             )}
           </View>
         </ScrollView>
-
-        {/* Workout Repeat Modal */}
-        <WorkoutRepeatModal
-          visible={showRepeatModal}
-          onClose={() => setShowRepeatModal(false)}
-          onSuccess={handleRepeatWorkoutSuccess}
-        />
 
         {/* Rest Day Regeneration Modal */}
         <WorkoutRegenerationModal
@@ -1768,13 +1761,31 @@ export default function WorkoutScreen() {
           onClose={() => setShowRegenerationModal(false)}
           onRegenerate={() => {}}
           regenerationType="day"
-          isRestDay={true}
-          selectedDate={getCurrentDate()}
           singleTabOnly={true}
+          isRestDay={!workout}
+          selectedDate={getCurrentDate()}
           onSuccess={() => {
             invalidateActiveWorkoutCache();
             setShowRegenerationModal(false);
             router.replace("/(tabs)/dashboard");
+          }}
+        />
+
+        <WorkoutChoiceModal
+          visible={showWorkoutChoice}
+          onClose={() => setShowWorkoutChoice(false)}
+          onGenerateNew={() => setShowRegenerationModal(true)}
+          onRepeatPast={() => setShowRepeatPicker(true)}
+        />
+
+        <WorkoutRepeatPicker
+          visible={showRepeatPicker}
+          singleDayOnly={true}
+          onClose={() => setShowRepeatPicker(false)}
+          onSuccess={() => {
+            invalidateActiveWorkoutCache();
+            setShowRepeatPicker(false);
+            loadWorkout(true);
           }}
         />
       </View>

@@ -45,8 +45,9 @@ import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
-import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
@@ -126,8 +127,9 @@ export default function DashboardScreen() {
     useState<WorkoutTypeMetrics | null>(null);
 
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showSingleDayRegenModal, setShowSingleDayRegenModal] = useState(false);
+  const [showRepeatPicker, setShowRepeatPicker] = useState(false);
+  const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
   const [showPaywallTest, setShowPaywallTest] = useState(false);
   const [showPaymentWall, setShowPaymentWall] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -937,9 +939,7 @@ export default function DashboardScreen() {
           todayCompletionRate={todayCompletionRate}
           isGenerating={isGenerating}
           onViewWorkout={() => router.push("/workout")}
-          onRepeatWorkout={() => setShowRepeatModal(true)}
-          onGenerateWorkout={handleGenerateNewWorkout}
-          onGenerateSingleDay={() => setShowSingleDayRegenModal(true)}
+          onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
         />
 
         {weeklySummary && (
@@ -988,12 +988,6 @@ export default function DashboardScreen() {
         />
       </ScrollView>
 
-      <WorkoutRepeatModal
-        visible={showRepeatModal}
-        onClose={() => setShowRepeatModal(false)}
-        onSuccess={handleRepeatWorkoutSuccess}
-      />
-
       {/* Pro Upgrade Payment Wall Modal */}
       <PaymentWallModal
         visible={showPaymentWall}
@@ -1028,12 +1022,29 @@ export default function DashboardScreen() {
         onClose={() => setShowSingleDayRegenModal(false)}
         onRegenerate={() => {}}
         regenerationType="day"
-        isRestDay={true}
+        isRestDay={!!workoutInfo && !todaysWorkout}
+        noActiveWorkoutDay={!workoutInfo}
         selectedDate={getCurrentDate()}
-        singleTabOnly={true}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
           setShowSingleDayRegenModal(false);
+          handleRefresh();
+        }}
+      />
+
+      <WorkoutChoiceModal
+        visible={showWorkoutChoice}
+        onClose={() => setShowWorkoutChoice(false)}
+        onGenerateNew={() => setShowSingleDayRegenModal(true)}
+        onRepeatPast={() => setShowRepeatPicker(true)}
+      />
+
+      <WorkoutRepeatPicker
+        visible={showRepeatPicker}
+        onClose={() => setShowRepeatPicker(false)}
+        onSuccess={() => {
+          invalidateActiveWorkoutCache();
+          setShowRepeatPicker(false);
           handleRefresh();
         }}
       />

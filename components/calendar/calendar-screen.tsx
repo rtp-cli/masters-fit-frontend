@@ -25,7 +25,7 @@ import { getCurrentUser } from "@lib/auth";
 import { PaywallError } from "@/lib/api";
 import Header from "@/components/header";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
-import WorkoutRepeatModal from "@/components/workout-repeat-modal";
+import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutEditModal from "@/components/workout-edit-modal";
 import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
@@ -42,6 +42,7 @@ import { RegenerationData } from "@/types/calendar.types";
 import CalendarViewSection from "./sections/calendar-view";
 import CalendarActionButtons from "./sections/action-buttons";
 import WorkoutDaySection from "./sections/workout-day";
+import WorkoutChoiceModal from "@/components/workout-choice-modal";
 
 export default function CalendarScreen() {
   const colors = useThemeColors();
@@ -72,8 +73,8 @@ export default function CalendarScreen() {
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
 
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
-  const [showSingleDayGenModal, setShowSingleDayGenModal] = useState(false);
+  const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
+  const [showRepeatPicker, setShowRepeatPicker] = useState(false);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
   );
@@ -565,7 +566,7 @@ export default function CalendarScreen() {
           isHistoricalWorkout={isHistoricalWorkout}
           isPastDate={isPastDate()}
           currentSelectedPlanDay={currentSelectedPlanDay}
-          onOpenRegeneration={handleOpenRegeneration}
+          onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
           onOpenEditExercises={(planDay) => {
             if (planDay.isComplete) return;
             setSelectedPlanDay(planDay);
@@ -586,9 +587,7 @@ export default function CalendarScreen() {
           onStartWorkout={() => {
             router.push("/(tabs)/workout");
           }}
-          onRepeatWorkout={() => setShowRepeatModal(true)}
-          onGenerateWorkout={handleGenerateNewWorkout}
-          onGenerateSingleDay={() => setShowSingleDayGenModal(true)}
+          onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
         />
       </ScrollView>
 
@@ -619,24 +618,21 @@ export default function CalendarScreen() {
         }}
       />
 
-      <WorkoutRegenerationModal
-        visible={showSingleDayGenModal}
-        onClose={() => setShowSingleDayGenModal(false)}
-        onRegenerate={() => {}}
-        regenerationType="day"
-        isRestDay={true}
-        selectedDate={selectedDate}
-        singleTabOnly={true}
-        onSuccess={() => {
-          invalidateActiveWorkoutCache();
-          setShowSingleDayGenModal(false);
-        }}
+      <WorkoutChoiceModal
+        visible={showWorkoutChoice}
+        onClose={() => setShowWorkoutChoice(false)}
+        onGenerateNew={() => setShowRegenerationModal(true)}
+        onRepeatPast={() => setShowRepeatPicker(true)}
       />
 
-      <WorkoutRepeatModal
-        visible={showRepeatModal}
-        onClose={() => setShowRepeatModal(false)}
-        onSuccess={handleRepeatWorkoutSuccess}
+      <WorkoutRepeatPicker
+        visible={showRepeatPicker}
+        onClose={() => setShowRepeatPicker(false)}
+        onSuccess={() => {
+          invalidateActiveWorkoutCache();
+          setShowRepeatPicker(false);
+          refreshWorkout();
+        }}
       />
 
       <WorkoutEditModal

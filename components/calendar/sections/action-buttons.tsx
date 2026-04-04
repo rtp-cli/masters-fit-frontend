@@ -9,7 +9,7 @@ type CalendarActionButtonsProps = {
   isHistoricalWorkout: boolean;
   isPastDate: boolean;
   currentSelectedPlanDay: PlanDayWithBlocks | null;
-  onOpenRegeneration: (planDay?: PlanDayWithBlocks) => void;
+  onShowWorkoutChoice: () => void;
   onOpenEditExercises: (planDay: PlanDayWithBlocks) => void;
 };
 
@@ -18,12 +18,12 @@ export default function CalendarActionButtons({
   isHistoricalWorkout,
   isPastDate,
   currentSelectedPlanDay,
-  onOpenRegeneration,
+  onShowWorkoutChoice,
   onOpenEditExercises,
 }: CalendarActionButtonsProps) {
   const colors = useThemeColors();
 
-  if (!workoutPlan || isHistoricalWorkout || isPastDate || currentSelectedPlanDay?.isComplete) {
+  if (!workoutPlan || !currentSelectedPlanDay || isHistoricalWorkout || isPastDate || currentSelectedPlanDay.isComplete) {
     return null;
   }
 
@@ -31,18 +31,16 @@ export default function CalendarActionButtons({
     <View className="px-lg my-lg">
       <View className="flex-row" style={{ gap: 8 }}>
         <TouchableOpacity
-          className="flex-1 bg-primary py-3 px-3 rounded-lg items-center flex-row justify-center"
-          onPress={() =>
-            onOpenRegeneration(currentSelectedPlanDay || undefined)
-          }
+          className="flex-1 bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
+          onPress={() => onShowWorkoutChoice()}
         >
           <Ionicons
             name="settings-outline"
             size={16}
-            color={colors.neutral.light[1]}
+            color={colors.contentOnPrimary}
           />
           <Text
-            className="text-neutral-light-1 font-semibold text-sm ml-2"
+            className="text-content-on-primary font-semibold text-sm ml-2"
             maxFontSizeMultiplier={1.3}
           >
             Regenerate Workout
@@ -51,7 +49,7 @@ export default function CalendarActionButtons({
 
         {currentSelectedPlanDay && (
           <TouchableOpacity
-            className="flex-1 bg-surface border border-primary py-3 px-3 rounded-lg items-center flex-row justify-center"
+            className="flex-1 bg-card border border-neutral-light-2 py-3 px-3 rounded-xl items-center flex-row justify-center"
             onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
           >
             <Ionicons

@@ -1,6 +1,6 @@
 import { apiRequest, PaywallError } from "./api";
 import { getCurrentUser } from "./auth";
-import { formatDateAsString, getTodayString } from "../utils";
+import { formatDateAsString, getTodayString, getCurrentDate } from "../utils";
 import { TIMEOUTS, LIMITS } from "@/constants";
 import {
   Workout,
@@ -679,6 +679,60 @@ export async function repeatPreviousWeekWorkout(
     }
   } catch (error) {
     console.error("Error repeating previous week workout:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch past completed plan days with blocks and exercises for the repeat picker.
+ */
+export async function fetchPastCompletedDays(): Promise<PlanDayWithBlocks[]> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("User not authenticated");
+
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      planDays: PlanDayWithBlocks[];
+    }>(`/workouts/${user.id}/past-completed-days`);
+
+    if (response?.success) {
+      return response.planDays || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching past completed days:", error);
+    return [];
+  }
+}
+
+/**
+ * Copy a past plan day's workout to a new date.
+ * Creates a new single-day active workout with the same blocks and exercises.
+ */
+export async function repeatPastDay(
+  planDayId: number
+): Promise<WorkoutResponse | null> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("User not authenticated");
+
+  try {
+    const response = await apiRequest<WorkoutResponse>(
+      `/workouts/${user.id}/repeat-day/${planDayId}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ newDate: getCurrentDate() }),
+      }
+    );
+
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to repeat past day workout");
+    }
+  } catch (error) {
+    console.error("Error repeating past day workout:", error);
     return null;
   }
 }
