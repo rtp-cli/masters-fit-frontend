@@ -121,11 +121,16 @@ export async function verify(params: {
           "user",
           JSON.stringify(userWithOnboardingStatus)
         );
-        // Seed AsyncStorage with theme preferences from backend (reinstall restore)
-        if (data.user.themeMode) {
+        // Seed AsyncStorage with theme preferences from backend ONLY if not already set (reinstall restore)
+        // This avoids overwriting the user's local theme choice with stale backend values
+        const [existingThemeMode, existingColorTheme] = await Promise.all([
+          AsyncStorage.getItem("@theme_preference"),
+          AsyncStorage.getItem("@color_theme"),
+        ]);
+        if (!existingThemeMode && data.user.themeMode) {
           AsyncStorage.setItem("@theme_preference", data.user.themeMode).catch(() => {});
         }
-        if (data.user.colorTheme) {
+        if (!existingColorTheme && data.user.colorTheme) {
           AsyncStorage.setItem("@color_theme", data.user.colorTheme).catch(() => {});
         }
       }
@@ -271,6 +276,9 @@ export async function logout(): Promise<void> {
       SecureStore.deleteItemAsync("user"),
       SecureStore.deleteItemAsync("pendingEmail"),
       SecureStore.deleteItemAsync("pendingUserId"),
+      // Clear theme preferences so the next user gets their own theme
+      AsyncStorage.removeItem("@theme_preference"),
+      AsyncStorage.removeItem("@color_theme"),
     ]);
   } catch (error) {
     console.error("Logout error:", error);

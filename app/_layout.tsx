@@ -99,19 +99,35 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
-  const { setThemeMode: applyThemeMode, setColorTheme: applyColorTheme, mode: currentMode, colorTheme: currentColorTheme } = useTheme();
+  const { setThemeMode: applyThemeMode, setColorTheme: applyColorTheme } = useTheme();
 
-  // Sync theme from backend user object after login (handles reinstall scenario)
+  // Sync theme when user changes (login/logout)
+  const prevUserIdRef = useRef<number | null | undefined>(undefined);
   useEffect(() => {
-    if (user) {
-      if (user.themeMode && ["light", "dark", "auto"].includes(user.themeMode) && user.themeMode !== currentMode) {
+    const currentUserId = user?.id ?? null;
+    // Skip on initial mount (loadTheme handles that)
+    if (prevUserIdRef.current === undefined) {
+      prevUserIdRef.current = currentUserId;
+      return;
+    }
+    // Only act when user identity actually changes
+    if (currentUserId === prevUserIdRef.current) return;
+    prevUserIdRef.current = currentUserId;
+
+    if (!currentUserId) {
+      // Logged out — reset to defaults (AsyncStorage already cleared by logout())
+      applyThemeMode("auto");
+      applyColorTheme("original");
+    } else {
+      // Logged in — apply theme from backend user object
+      if (user?.themeMode && ["light", "dark", "auto"].includes(user.themeMode)) {
         applyThemeMode(user.themeMode as ThemeMode);
       }
-      if (user.colorTheme && ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(user.colorTheme) && user.colorTheme !== currentColorTheme) {
+      if (user?.colorTheme && ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(user.colorTheme)) {
         applyColorTheme(user.colorTheme as ColorTheme);
       }
     }
-  }, [user?.id]); // Only run when user identity changes (login), not on every user object update
+  }, [user?.id]);
 
   // Initialize RevenueCat
   useEffect(() => {
