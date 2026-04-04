@@ -6,6 +6,7 @@ import Purchases, {
   type PurchasesOffering,
   type PurchasesPackage,
 } from "react-native-purchases";
+import { Sentry } from "@/lib/sentry";
 
 // Type for offering metadata with benefits
 export interface OfferingMetadata {
@@ -47,11 +48,20 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       // Get offerings from RevenueCat
       const offerings = await Purchases.getOfferings();
 
+      Sentry.addBreadcrumb({
+        category: "revenuecat",
+        message: "Offerings fetched",
+        data: {
+          hasCurrent: !!offerings.current,
+          allOfferingIds: Object.keys(offerings.all || {}),
+        },
+        level: "info",
+      });
+
       if (offerings.current) {
         setOffering(offerings.current);
         setPackages(offerings.current.availablePackages);
 
-        // Extract metadata from offering (for dynamic benefits, titles, etc.)
         const offeringMetadata =
           (offerings.current.metadata as OfferingMetadata) || null;
         setMetadata(offeringMetadata);
@@ -64,17 +74,21 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           "[RevenueCat] Available packages:",
           offerings.current.availablePackages.map((p) => p.identifier)
         );
-        if (offeringMetadata) {
-          console.log("[RevenueCat] Offering metadata:", offeringMetadata);
-        }
       } else {
-        console.log("[RevenueCat] No current offering available");
+        // This is the silent failure — capture it explicitly
+        Sentry.captureMessage("RevenueCat: No current offering available", {
+          level: "warning",
+          extra: {
+            allOfferingIds: Object.keys(offerings.all || {}),
+            offeringsRaw: JSON.stringify(offerings),
+          },
+        });
+        console.warn("[RevenueCat] No current offering available");
         setOffering(null);
         setPackages([]);
         setMetadata(null);
       }
 
-      // Also get customer info
       const info = await Purchases.getCustomerInfo();
       setCustomerInfo(info);
       console.log(
@@ -87,6 +101,10 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           ? err.message
           : "Failed to fetch subscription plans";
       console.error("[RevenueCat] Error fetching offerings:", err);
+      Sentry.captureException(err, {
+        tags: { component: "revenuecat" },
+        extra: { operation: "fetchOfferings" },
+      });
       setError(errorMessage);
       setOffering(null);
       setPackages([]);

@@ -103,15 +103,24 @@ function AppContent() {
   useEffect(() => {
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
-    if (Platform.OS === "ios") {
-      Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+    const apiKey = Platform.OS === "ios"
+      ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
+      : process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY;
+
+    if (!apiKey) {
+      Sentry.captureMessage("RevenueCat: API key is missing", {
+        level: "error",
+        extra: {
+          platform: Platform.OS,
+          iosKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+          androidKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
+        },
       });
-    } else if (Platform.OS === "android") {
-      Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
-      });
+      console.error("[RevenueCat] API key is missing for platform:", Platform.OS);
+      return;
     }
+
+    Purchases.configure({ apiKey });
   }, []);
 
   useEffect(() => {
