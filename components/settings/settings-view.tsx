@@ -302,8 +302,8 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         text: "Logout",
         onPress: async () => {
           setDialogVisible(false);
-          onClose?.();
           await logout();
+          onClose?.();
           router.replace("/");
         },
       },
