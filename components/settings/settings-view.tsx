@@ -33,7 +33,6 @@ import HealthInformationSection from "./sections/health-information-section";
 import SubscriptionSection from "./sections/subscription-section";
 import LogoutSection from "./sections/logout-section";
 import AppVersionSection from "./sections/app-version-section";
-import { getHealthConnection } from "@/utils/health";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -238,40 +237,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       loadUserData();
     }
   }, [user?.id, profileData]);
-
-  // Health connect status
-  const loadHealthStatus = useCallback(async () => {
-    try {
-      const connected = await getHealthConnection();
-      setHealthConnected(connected);
-      if (connected) setHealthError(null);
-    } catch {
-      setHealthConnected(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadHealthStatus();
-  }, [loadHealthStatus]);
-
-  const handleConnectHealth = useCallback(async () => {
-    setHealthError(null);
-    setHealthLoading(true);
-    try {
-      const granted = await connectHealth();
-      if (granted) {
-        setHealthConnected(true);
-      } else {
-        setHealthConnected(false);
-        setHealthError("Health permissions not granted");
-      }
-    } catch (err: any) {
-      setHealthConnected(false);
-      setHealthError(err?.message || "Unable to connect health right now.");
-    } finally {
-      setHealthLoading(false);
-    }
-  }, []);
 
   // Show coming soon modal
   const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
