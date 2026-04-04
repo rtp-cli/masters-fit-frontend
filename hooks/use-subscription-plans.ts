@@ -40,30 +40,18 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const fetchOfferings = useCallback(async () => {
+  const fetchOfferings = useCallback(async (retryCount = 0) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Wait for RevenueCat to be configured before fetching
-      const isConfigured = await Purchases.isConfigured();
-      if (!isConfigured) {
-        console.warn("[RevenueCat] SDK not configured yet, retrying in 1s...");
-        // Retry after a short delay to allow configure() to complete
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const retryConfigured = await Purchases.isConfigured();
-        if (!retryConfigured) {
-          Sentry.captureMessage("RevenueCat: SDK not configured after retry", {
-            level: "error",
-          });
-          setError("Payment system not available. Please restart the app.");
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Get offerings from RevenueCat
-      const offerings = await Purchases.getOfferings();
+      // Get offerings from RevenueCat (with timeout to prevent infinite hang)
+      const offerings = await Promise.race([
+        Purchases.getOfferings(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("RevenueCat getOfferings timed out after 10s")), 10000)
+        ),
+      ]);
 
       Sentry.addBreadcrumb({
         category: "revenuecat",
@@ -118,9 +106,18 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           ? err.message
           : "Failed to fetch subscription plans";
       console.error("[RevenueCat] Error fetching offerings:", err);
+
+      // If SDK isn't configured yet, retry up to 3 times with delay
+      const isNotConfigured = errorMessage.includes("singleton") || errorMessage.includes("configure");
+      if (isNotConfigured && retryCount < 3) {
+        console.warn(`[RevenueCat] SDK not ready, retrying in ${(retryCount + 1)}s... (attempt ${retryCount + 1}/3)`);
+        await new Promise((resolve) => setTimeout(resolve, (retryCount + 1) * 1000));
+        return fetchOfferings(retryCount + 1);
+      }
+
       Sentry.captureException(err, {
         tags: { component: "revenuecat" },
-        extra: { operation: "fetchOfferings" },
+        extra: { operation: "fetchOfferings", retryCount },
       });
       setError(errorMessage);
       setOffering(null);
