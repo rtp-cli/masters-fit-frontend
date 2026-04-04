@@ -763,6 +763,24 @@ export async function fetchSubscriptionPlans(): Promise<{
 }
 
 /**
+ * Sync theme preferences to backend
+ */
+export async function updateThemeAPI(params: {
+  themeMode?: string;
+  colorTheme?: string;
+}): Promise<{ success: boolean }> {
+  try {
+    return await apiRequest<{ success: boolean }>("/auth/theme", {
+      method: "PUT",
+      body: JSON.stringify(params),
+    });
+  } catch (error) {
+    console.error("Failed to sync theme to backend:", error);
+    return { success: false };
+  }
+}
+
+/**
  * Delete user account
  */
 export async function deleteAccountAPI(): Promise<{

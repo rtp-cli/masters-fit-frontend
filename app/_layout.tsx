@@ -29,7 +29,8 @@ import {
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
-import { setPaywallCallback } from "@/lib/api";
+import { setPaywallCallback, updateThemeAPI } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import {
   registerForPushNotifications,
@@ -98,6 +99,19 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
+  const { setThemeMode: applyThemeMode, setColorTheme: applyColorTheme, mode: currentMode, colorTheme: currentColorTheme } = useTheme();
+
+  // Sync theme from backend user object after login (handles reinstall scenario)
+  useEffect(() => {
+    if (user) {
+      if (user.themeMode && ["light", "dark", "auto"].includes(user.themeMode) && user.themeMode !== currentMode) {
+        applyThemeMode(user.themeMode as ThemeMode);
+      }
+      if (user.colorTheme && ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(user.colorTheme) && user.colorTheme !== currentColorTheme) {
+        applyColorTheme(user.colorTheme as ColorTheme);
+      }
+    }
+  }, [user?.id]); // Only run when user identity changes (login), not on every user object update
 
   // Initialize RevenueCat
   useEffect(() => {
@@ -443,24 +457,42 @@ function RootLayout() {
           AsyncStorage.getItem(COLOR_THEME_KEY),
         ]);
 
+        let resolvedMode: ThemeMode = "auto";
+        let resolvedColorTheme: ColorTheme = "original";
+
         if (savedMode && ["light", "dark", "auto"].includes(savedMode)) {
-          setMode(savedMode as ThemeMode);
-          // Sync with NativeWind
-          if (savedMode === "auto") {
-            setColorScheme("system");
-          } else {
-            setColorScheme(savedMode as "light" | "dark");
-          }
+          resolvedMode = savedMode as ThemeMode;
         }
 
         if (
           savedColorTheme &&
-          ["original", "steel-blue", "dusty-denim", "dusty-sage"].includes(
-            savedColorTheme
-          )
+          ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(savedColorTheme)
         ) {
-          setColorThemeState(savedColorTheme as ColorTheme);
+          resolvedColorTheme = savedColorTheme as ColorTheme;
         }
+
+        // If AsyncStorage had no values, try to restore from the user object (reinstall scenario)
+        if (!savedMode || !savedColorTheme) {
+          const storedUser = await getCurrentUser();
+          if (storedUser) {
+            if (!savedMode && storedUser.themeMode && ["light", "dark", "auto"].includes(storedUser.themeMode)) {
+              resolvedMode = storedUser.themeMode as ThemeMode;
+              AsyncStorage.setItem(THEME_KEY, resolvedMode).catch(() => {});
+            }
+            if (!savedColorTheme && storedUser.colorTheme && ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(storedUser.colorTheme)) {
+              resolvedColorTheme = storedUser.colorTheme as ColorTheme;
+              AsyncStorage.setItem(COLOR_THEME_KEY, resolvedColorTheme).catch(() => {});
+            }
+          }
+        }
+
+        setMode(resolvedMode);
+        if (resolvedMode === "auto") {
+          setColorScheme("system");
+        } else {
+          setColorScheme(resolvedMode as "light" | "dark");
+        }
+        setColorThemeState(resolvedColorTheme);
       } catch (error) {
         console.error("Failed to load theme:", error);
       } finally {
@@ -482,6 +514,8 @@ function RootLayout() {
       AsyncStorage.setItem(THEME_KEY, newMode).catch((error) => {
         console.error("Failed to save theme:", error);
       });
+      // Fire-and-forget sync to backend
+      updateThemeAPI({ themeMode: newMode }).catch(() => {});
     },
     [setColorScheme]
   );
@@ -492,6 +526,8 @@ function RootLayout() {
     AsyncStorage.setItem(COLOR_THEME_KEY, newColorTheme).catch((error) => {
       console.error("Failed to save color theme:", error);
     });
+    // Fire-and-forget sync to backend
+    updateThemeAPI({ colorTheme: newColorTheme }).catch(() => {});
   }, []);
 
   // Memoize context value to prevent unnecessary re-renders

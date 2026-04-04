@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User, AuthResponse, OnboardingData } from "./types";
 import {
   checkEmailAPI,
@@ -120,6 +121,13 @@ export async function verify(params: {
           "user",
           JSON.stringify(userWithOnboardingStatus)
         );
+        // Seed AsyncStorage with theme preferences from backend (reinstall restore)
+        if (data.user.themeMode) {
+          AsyncStorage.setItem("@theme_preference", data.user.themeMode).catch(() => {});
+        }
+        if (data.user.colorTheme) {
+          AsyncStorage.setItem("@color_theme", data.user.colorTheme).catch(() => {});
+        }
       }
     } else {
       console.warn("[Auth] Verify failed or no token received");

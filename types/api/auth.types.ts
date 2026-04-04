@@ -6,6 +6,8 @@ export interface User {
   needsOnboarding?: boolean;
   waiverAcceptedAt?: Date | string | null;
   waiverVersion?: string | null;
+  themeMode?: string | null;
+  colorTheme?: string | null;
 }
 
 export interface AuthResponse {
