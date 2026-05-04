@@ -9,6 +9,7 @@ export interface ThemeContextType {
   colorTheme: ColorTheme;
   setThemeMode: (mode: ThemeMode) => void;
   setColorTheme: (theme: ColorTheme) => void;
+  _setUserThemeUpdater?: (updater: any) => void; // Internal use only
 }
 
 // Default value for when provider isn't available yet (during Expo Router pre-rendering)

@@ -93,6 +93,7 @@ function AppContent() {
     isPreloadingData,
     setIsPreloadingData,
     user,
+    setUserData,
   } = useAuth();
   const {
     refresh: { reset, refreshAll },
@@ -105,6 +106,7 @@ function AppContent() {
   const prevUserIdRef = useRef<number | null | undefined>(undefined);
   useEffect(() => {
     const currentUserId = user?.id ?? null;
+
     // Skip on initial mount (loadTheme handles that)
     if (prevUserIdRef.current === undefined) {
       prevUserIdRef.current = currentUserId;
@@ -128,6 +130,14 @@ function AppContent() {
       }
     }
   }, [user?.id]);
+
+  // Provide setUserData and user to RootLayout theme setters
+  const { _setUserThemeUpdater } = useTheme();
+  useEffect(() => {
+    if (_setUserThemeUpdater) {
+      _setUserThemeUpdater({ setUserData, user });
+    }
+  }, [_setUserThemeUpdater, setUserData, user]);
 
   // Initialize RevenueCat
   const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
@@ -442,6 +452,9 @@ function RootLayout() {
   const systemColorScheme = useSystemColorScheme();
   const { setColorScheme } = useNativeWindColorScheme();
 
+  // Ref to store user theme updater (will be set by AppContent)
+  const userThemeUpdaterRef = useRef<{ setUserData: any; user: any } | null>(null);
+
   // Calculate isDark based on mode and system preference
   const isDark =
     mode === "auto" ? systemColorScheme === "dark" : mode === "dark";
@@ -529,30 +542,49 @@ function RootLayout() {
       } else {
         setColorScheme(newMode);
       }
-      AsyncStorage.setItem(THEME_KEY, newMode).catch((error) => {
-        console.error("Failed to save theme:", error);
-      });
-      // Fire-and-forget sync to backend
-      updateThemeAPI({ themeMode: newMode }).catch(() => {});
+
+      AsyncStorage.setItem(THEME_KEY, newMode).catch(console.error);
+
+      // Update user object in auth context to keep SecureStore in sync
+      const userThemeUpdate = userThemeUpdaterRef.current;
+      if (userThemeUpdate?.user && userThemeUpdate?.setUserData) {
+        const updatedUser = { ...userThemeUpdate.user, themeMode: newMode };
+        userThemeUpdate.setUserData(updatedUser);
+      }
+
+      // Sync to backend
+      updateThemeAPI({ themeMode: newMode }).catch(console.error);
     },
-    [setColorScheme]
+    [setColorScheme, mode]
   );
 
   // Function to update color theme
   const setColorTheme = useCallback((newColorTheme: ColorTheme) => {
     setColorThemeState(newColorTheme);
-    AsyncStorage.setItem(COLOR_THEME_KEY, newColorTheme).catch((error) => {
-      console.error("Failed to save color theme:", error);
-    });
-    // Fire-and-forget sync to backend
-    updateThemeAPI({ colorTheme: newColorTheme }).catch(() => {});
+
+    AsyncStorage.setItem(COLOR_THEME_KEY, newColorTheme).catch(console.error);
+
+    // Update user object in auth context to keep SecureStore in sync
+    const userThemeUpdate = userThemeUpdaterRef.current;
+    if (userThemeUpdate?.user && userThemeUpdate?.setUserData) {
+      const updatedUser = { ...userThemeUpdate.user, colorTheme: newColorTheme };
+      userThemeUpdate.setUserData(updatedUser);
+    }
+
+    // Sync to backend
+    updateThemeAPI({ colorTheme: newColorTheme }).catch(console.error);
+  }, [colorTheme]);
+
+  // Callback to set the user theme updater (called by AppContent)
+  const setUserThemeUpdater = useCallback((updater: { setUserData: any; user: any } | null) => {
+    userThemeUpdaterRef.current = updater;
   }, []);
 
   // Memoize context value to prevent unnecessary re-renders
   // This fixes navigation context errors when toggling theme
   const themeContextValue = useMemo(
-    () => ({ mode, isDark, colorTheme, setThemeMode, setColorTheme }),
-    [mode, isDark, colorTheme, setThemeMode, setColorTheme]
+    () => ({ mode, isDark, colorTheme, setThemeMode, setColorTheme, _setUserThemeUpdater: setUserThemeUpdater }),
+    [mode, isDark, colorTheme, setThemeMode, setColorTheme, setUserThemeUpdater]
   );
 
   // Generate combined theme key for selecting the correct theme variant
@@ -573,7 +605,6 @@ function RootLayout() {
 
   return (
     <View
-      key={`theme-${themeKey}`}
       className="flex-1"
       style={themes[themeKey]}
     >

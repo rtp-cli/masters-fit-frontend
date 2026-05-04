@@ -17,6 +17,10 @@ export default function SettingsModal({
   const colors = useThemeColors();
   const { isDark } = useTheme();
 
+  const handleClose = () => {
+    onClose();
+  };
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" statusBarTranslucent>
       <SafeAreaView edges={["top"]} className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
@@ -24,7 +28,7 @@ export default function SettingsModal({
           <View className="w-6" />
           <Text className="text-xl font-bold text-text-primary">Account</Text>
           <TouchableOpacity
-            onPress={onClose}
+            onPress={handleClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close" size={24} color={colors.text.primary} />
