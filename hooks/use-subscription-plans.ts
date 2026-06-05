@@ -7,6 +7,7 @@ import Purchases, {
   type PurchasesPackage,
 } from "react-native-purchases";
 import { Sentry } from "@/lib/sentry";
+import { useRevenueCatReady } from "@/contexts/revenue-cat-context";
 
 // Type for offering metadata with benefits
 export interface OfferingMetadata {
@@ -32,6 +33,7 @@ interface UseSubscriptionPlansReturn {
 }
 
 export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
+  const isRevenueCatReady = useRevenueCatReady();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [metadata, setMetadata] = useState<OfferingMetadata | null>(null);
@@ -209,8 +211,9 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
   }, []);
 
   useEffect(() => {
+    if (!isRevenueCatReady) return;
     fetchOfferings();
-  }, [fetchOfferings]);
+  }, [isRevenueCatReady, fetchOfferings]);
 
   // Listen for customer info updates
   useEffect(() => {

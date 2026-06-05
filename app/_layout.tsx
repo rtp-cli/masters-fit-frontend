@@ -5,8 +5,8 @@ import {
   View,
   useColorScheme as useSystemColorScheme,
 } from "react-native";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { initSentry, Sentry } from "@/lib/sentry";
+import { RevenueCatProvider, useRevenueCatReady } from "@/contexts/revenue-cat-context";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { WorkoutProvider } from "@/contexts/workout-context";
 import {
@@ -26,6 +26,7 @@ import {
   Manrope_600SemiBold,
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
+import { Inter_400Regular_Italic } from "@expo-google-fonts/inter";
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
@@ -139,31 +140,7 @@ function AppContent() {
     }
   }, [_setUserThemeUpdater, setUserData, user]);
 
-  // Initialize RevenueCat
-  const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
-  useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-
-    const apiKey = Platform.OS === "ios"
-      ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
-      : process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY;
-
-    if (!apiKey) {
-      Sentry.captureMessage("RevenueCat: API key is missing", {
-        level: "error",
-        extra: {
-          platform: Platform.OS,
-          iosKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
-          androidKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
-        },
-      });
-      console.error("[RevenueCat] API key is missing for platform:", Platform.OS);
-      return;
-    }
-
-    Purchases.configure({ apiKey });
-    setIsRevenueCatReady(true);
-  }, []);
+  const isRevenueCatReady = useRevenueCatReady();
 
   useEffect(() => {
     ensureHealthConnectInitialized();
@@ -419,21 +396,23 @@ function AppContent() {
 // Memoized provider tree to prevent re-mounting when theme class changes
 const StableProviderTree = React.memo(function StableProviderTree() {
   return (
-    <MixpanelProvider>
-      <AuthProvider>
-        <WaiverProvider>
-          <WorkoutProvider>
-            <AppDataProvider>
-              <BackgroundJobProvider>
-                <SystemUIWrapper>
-                  <AppContent />
-                </SystemUIWrapper>
-              </BackgroundJobProvider>
-            </AppDataProvider>
-          </WorkoutProvider>
-        </WaiverProvider>
-      </AuthProvider>
-    </MixpanelProvider>
+    <RevenueCatProvider>
+      <MixpanelProvider>
+        <AuthProvider>
+          <WaiverProvider>
+            <WorkoutProvider>
+              <AppDataProvider>
+                <BackgroundJobProvider>
+                  <SystemUIWrapper>
+                    <AppContent />
+                  </SystemUIWrapper>
+                </BackgroundJobProvider>
+              </AppDataProvider>
+            </WorkoutProvider>
+          </WaiverProvider>
+        </AuthProvider>
+      </MixpanelProvider>
+    </RevenueCatProvider>
   );
 });
 
@@ -443,6 +422,7 @@ function RootLayout() {
     Manrope_500Medium,
     Manrope_600SemiBold,
     Manrope_700Bold,
+    Inter_400Regular_Italic,
   });
 
   // Theme state managed at absolute root level

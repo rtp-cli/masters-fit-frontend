@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Purchases, { type CustomerInfo } from "react-native-purchases";
+import { useRevenueCatReady } from "@/contexts/revenue-cat-context";
 
 // Extract EntitlementInfo type from CustomerInfo
 type EntitlementInfo = CustomerInfo["entitlements"]["active"][string];
@@ -15,6 +16,7 @@ interface SubscriptionStatus {
 }
 
 export function useSubscriptionStatus() {
+  const isRevenueCatReady = useRevenueCatReady();
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<SubscriptionStatus>({
       isPro: false,
@@ -123,9 +125,9 @@ export function useSubscriptionStatus() {
   }, []);
 
   useEffect(() => {
+    if (!isRevenueCatReady) return;
     fetchSubscriptionStatus();
 
-    // Listen for subscription updates
     const customerInfoListener = (info: CustomerInfo) => {
       setCustomerInfo(info);
       fetchSubscriptionStatus();
@@ -136,7 +138,7 @@ export function useSubscriptionStatus() {
     return () => {
       Purchases.removeCustomerInfoUpdateListener(customerInfoListener);
     };
-  }, [fetchSubscriptionStatus]);
+  }, [isRevenueCatReady, fetchSubscriptionStatus]);
 
   return {
     ...subscriptionStatus,
