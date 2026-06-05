@@ -23,27 +23,27 @@ const hexToRgb = (hex: string): string => {
 };
 
 // ============================================
-// THEME: Original (Lime Green)
+// THEME: Original (xAI / Midnight)
 // ============================================
 export const colors = {
   brand: {
-    primary: "#9BB875",
-    secondary: "#181917",
+    primary: "#000000",
+    secondary: "#131313",
     light: {
-      1: "#E5EFD4",
-      2: "#F0F9D3",
+      1: "#E8E8E8",
+      2: "#F0F0F0",
     },
     medium: {
-      1: "#E8F8B8",
-      2: "#D4E5A1",
+      1: "#BDBDBD",
+      2: "#9E9E9E",
     },
     dark: {
-      0: "#98BE26",
-      1: "#8CAF25",
-      2: "#7D9D1F",
-      3: "#668019",
-      4: "#506415",
-      5: "#37460B",
+      0: "#2C2C2C",
+      1: "#3D3D3D",
+      2: "#4E4E4E",
+      3: "#606060",
+      4: "#737373",
+      5: "#8A8A8A",
     },
   },
   neutral: {
@@ -63,12 +63,12 @@ export const colors = {
     },
   },
   text: {
-    primary: "#181917",
+    primary: "#131313",
     secondary: "#525252",
     muted: "#8A93A2",
   },
-  background: "#F8FAF5",
-  surface: "#F8FAF5",
+  background: "#FFFFFF",
+  surface: "#F5F5F5",
   danger: "#EF4444",
   warning: "#F59E0B",
   contentOnPrimary: "#FFFFFF",
@@ -76,34 +76,34 @@ export const colors = {
 
 export const darkColors = {
   brand: {
-    primary: "#B8E5A1",
-    secondary: "#F5F8F7",
+    primary: "#FFFFFF",
+    secondary: "#E8E8E8",
     light: {
-      1: "#5A7350",
-      2: "#647D5A",
+      1: "#1A1A1A",
+      2: "#242424",
     },
     medium: {
-      1: "#3C3C3C",
-      2: "#505050",
+      1: "#2E2E2E",
+      2: "#3A3A3A",
     },
     dark: {
-      0: "#B8E5A1",
-      1: "#A8D491",
-      2: "#9BB875",
-      3: "#8CAF25",
-      4: "#7D9D1F",
-      5: "#668019",
+      0: "#C0C0C0",
+      1: "#CCCCCC",
+      2: "#D4D4D4",
+      3: "#DCDCDC",
+      4: "#E4E4E4",
+      5: "#EBEBEB",
     },
   },
   neutral: {
-    white: "#181917",
+    white: "#131313",
     light: {
-      1: "#282828",
-      2: "#323232",
+      1: "#1A1A1A",
+      2: "#242424",
     },
     medium: {
-      1: "#3A3A3A",
-      2: "#646464",
+      1: "#2E2E2E",
+      2: "#505050",
       3: "#787878",
       4: "#8A8A8A",
     },
@@ -112,15 +112,15 @@ export const darkColors = {
     },
   },
   text: {
-    primary: "#F5F8F7",
+    primary: "#FFFFFF",
     secondary: "#C6C6C6",
     muted: "#8A93A2",
   },
-  background: "#181917",
-  surface: "#181917",
+  background: "#000000",
+  surface: "#131313",
   danger: "#FF6B6B",
   warning: "#FBBF24",
-  contentOnPrimary: "#181917",
+  contentOnPrimary: "#000000",
 } as const;
 
 // ============================================
