@@ -21,7 +21,7 @@ import { invalidateActiveWorkoutCache } from "../lib/workouts";
 import { OnboardingData, User } from "@lib/types";
 import * as SecureStore from "expo-secure-store";
 import { logger } from "../lib/logger";
-import { setAuthFailureCallback } from "../lib/api";
+import { setAuthFailureCallback, getAuthToken } from "../lib/api";
 import { trackAppOpened, AnalyticsUtils } from "@/lib/analytics";
 import * as Application from "expo-application";
 import Purchases from "react-native-purchases";
@@ -139,6 +139,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }).catch(console.warn);
 
         if (storedUser) {
+          // If no access token AND no refresh token, the session is unrecoverable — clear it
+          // rather than letting every subsequent authenticated request fail with 401.
+          const [accessToken, refreshToken] = await Promise.all([
+            getAuthToken(),
+            SecureStore.getItemAsync("refreshToken"),
+          ]);
+
+          if (!accessToken && !refreshToken) {
+            logger.info("Stored user found but no tokens — clearing session", {
+              userId: storedUser.id,
+            });
+            await clearAllData();
+            return;
+          }
+
           setUser(storedUser);
           // User profile creation/identification now handled by backend
           logger.debug("User authenticated, profile handled by backend", {

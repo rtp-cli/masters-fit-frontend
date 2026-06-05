@@ -398,7 +398,7 @@ export async function apiRequest<T>(
 
       // Handle unauthorized (HTTP 401) - try refresh before logout
       // Skip auto-refresh for /auth/verify endpoint - 401 here means invalid auth code, not expired token
-      if (response.status === 401 && token && endpoint !== "/auth/verify") {
+      if (response.status === 401 && endpoint !== "/auth/verify") {
         console.log(
           `[API] 401 Unauthorized for ${endpoint}, attempting token refresh...`
         );
