@@ -491,14 +491,13 @@ function RootLayout() {
         let resolvedMode: ThemeMode = "auto";
         let resolvedColorTheme: ColorTheme = "original";
 
+        const validColorThemes = ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"];
+
         if (savedMode && ["light", "dark", "auto"].includes(savedMode)) {
           resolvedMode = savedMode as ThemeMode;
         }
 
-        if (
-          savedColorTheme &&
-          ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(savedColorTheme)
-        ) {
+        if (savedColorTheme && validColorThemes.includes(savedColorTheme)) {
           resolvedColorTheme = savedColorTheme as ColorTheme;
         }
 
@@ -510,7 +509,7 @@ function RootLayout() {
               resolvedMode = storedUser.themeMode as ThemeMode;
               AsyncStorage.setItem(THEME_KEY, resolvedMode).catch(() => {});
             }
-            if (!savedColorTheme && storedUser.colorTheme && ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(storedUser.colorTheme)) {
+            if (!savedColorTheme && storedUser.colorTheme && validColorThemes.includes(storedUser.colorTheme)) {
               resolvedColorTheme = storedUser.colorTheme as ColorTheme;
               AsyncStorage.setItem(COLOR_THEME_KEY, resolvedColorTheme).catch(() => {});
             }
