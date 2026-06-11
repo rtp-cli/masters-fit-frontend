@@ -204,11 +204,13 @@ export default function PaymentWallModal({
                 <Ionicons
                   name="alert-circle"
                   size={48}
-                  color={colors.brand.secondary}
+                  color={colors.danger}
                   style={{ marginBottom: 12 }}
                 />
                 <Text className="text-sm text-text-secondary text-center mb-4">
-                  {error}
+                  {__DEV__ && error
+                    ? error
+                    : "Unable to load subscription plans. Please try again."}
                 </Text>
                 <TouchableOpacity
                   onPress={() => refetch()}

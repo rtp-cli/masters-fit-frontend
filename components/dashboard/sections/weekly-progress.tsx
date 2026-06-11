@@ -65,8 +65,8 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
                   : day.status === "partial"
                     ? colors.brand.medium[2]
                     : day.status === "rest"
-                      ? colors.brand.secondary
-                      : colors.neutral.medium[3];
+                      ? colors.neutral.medium[1]
+                      : colors.neutral.medium[2];
               return (
                 <View key={index} className="items-center flex-1 mx-1">
                   <View className="flex-1 justify-end mb-2">

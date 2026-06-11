@@ -9,10 +9,10 @@ const getApiUrl = (): string => {
       return `http://192.168.1.170:5001/api`;
     } else if (Platform.OS === "ios") {
       // For iOS simulator, use localhost
-      return `http://localhost:5000/api`;
+      return `http://localhost:5001/api`;
     }
     // Default development API URL
-    return "http://localhost:5000/api";
+    return "http://localhost:5001/api";
   }
 
   // For production, use the production URL
@@ -22,4 +22,5 @@ const getApiUrl = (): string => {
 // Export the API URL
 export const API_URL = getApiUrl();
 
-// Add other configuration variables as needed
+// Set to true locally to silence RevenueCat console noise in the simulator
+export const SUPPRESS_REVENUECAT_LOGS = __DEV__;

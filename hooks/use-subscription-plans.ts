@@ -7,6 +7,11 @@ import Purchases, {
   type PurchasesPackage,
 } from "react-native-purchases";
 import { Sentry } from "@/lib/sentry";
+import { SUPPRESS_REVENUECAT_LOGS } from "@/config";
+
+const rcLog = (...args: unknown[]) => { if (!SUPPRESS_REVENUECAT_LOGS) console.log(...args); };
+const rcWarn = (...args: unknown[]) => { if (!SUPPRESS_REVENUECAT_LOGS) console.warn(...args); };
+const rcError = (...args: unknown[]) => { if (!SUPPRESS_REVENUECAT_LOGS) console.error(...args); };
 
 // Type for offering metadata with benefits
 export interface OfferingMetadata {
@@ -71,14 +76,8 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           (offerings.current.metadata as OfferingMetadata) || null;
         setMetadata(offeringMetadata);
 
-        console.log(
-          "[RevenueCat] Loaded offerings:",
-          offerings.current.identifier
-        );
-        console.log(
-          "[RevenueCat] Available packages:",
-          offerings.current.availablePackages.map((p) => p.identifier)
-        );
+        rcLog("[RevenueCat] Loaded offerings:", offerings.current.identifier);
+        rcLog("[RevenueCat] Available packages:", offerings.current.availablePackages.map((p) => p.identifier));
       } else {
         // This is the silent failure — capture it explicitly
         Sentry.captureMessage("RevenueCat: No current offering available", {
@@ -88,7 +87,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
             offeringsRaw: JSON.stringify(offerings),
           },
         });
-        console.warn("[RevenueCat] No current offering available");
+        rcWarn("[RevenueCat] No current offering available");
         setOffering(null);
         setPackages([]);
         setMetadata(null);
@@ -96,21 +95,18 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
 
       const info = await Purchases.getCustomerInfo();
       setCustomerInfo(info);
-      console.log(
-        "[RevenueCat] Customer entitlements:",
-        Object.keys(info.entitlements.active)
-      );
+      rcLog("[RevenueCat] Customer entitlements:", Object.keys(info.entitlements.active));
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
           : "Failed to fetch subscription plans";
-      console.error("[RevenueCat] Error fetching offerings:", err);
+      rcError("[RevenueCat] Error fetching offerings:", err);
 
       // If SDK isn't configured yet, retry up to 3 times with delay
       const isNotConfigured = errorMessage.includes("singleton") || errorMessage.includes("configure");
       if (isNotConfigured && retryCount < 3) {
-        console.warn(`[RevenueCat] SDK not ready, retrying in ${(retryCount + 1)}s... (attempt ${retryCount + 1}/3)`);
+        rcWarn(`[RevenueCat] SDK not ready, retrying in ${(retryCount + 1)}s... (attempt ${retryCount + 1}/3)`);
         await new Promise((resolve) => setTimeout(resolve, (retryCount + 1) * 1000));
         return fetchOfferings(retryCount + 1);
       }
@@ -133,7 +129,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       setError(null);
 
       try {
-        console.log("[RevenueCat] Starting purchase for:", pkg.identifier);
+        rcLog("[RevenueCat] Starting purchase for:", pkg.identifier);
 
         const { customerInfo: updatedInfo } =
           await Purchases.purchasePackage(pkg);
@@ -144,7 +140,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         const hasActiveEntitlement =
           Object.keys(updatedInfo.entitlements.active).length > 0;
 
-        console.log("[RevenueCat] Purchase completed:", {
+        rcLog("[RevenueCat] Purchase completed:", {
           hasActiveEntitlement,
           activeEntitlements: Object.keys(updatedInfo.entitlements.active),
         });
@@ -157,14 +153,14 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         if (
           purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
         ) {
-          console.log("[RevenueCat] Purchase cancelled by user");
+          rcLog("[RevenueCat] Purchase cancelled by user");
           return false;
         }
 
         // Handle other errors
         const errorMessage =
           purchaseError.message || "Failed to complete purchase";
-        console.error("[RevenueCat] Purchase error:", purchaseError);
+        rcError("[RevenueCat] Purchase error:", purchaseError);
         setError(errorMessage);
         return false;
       } finally {
@@ -179,7 +175,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
     setError(null);
 
     try {
-      console.log("[RevenueCat] Restoring purchases...");
+      rcLog("[RevenueCat] Restoring purchases...");
 
       const restoredInfo = await Purchases.restorePurchases();
       setCustomerInfo(restoredInfo);
@@ -187,7 +183,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       const hasActiveEntitlement =
         Object.keys(restoredInfo.entitlements.active).length > 0;
 
-      console.log("[RevenueCat] Restore completed:", {
+      rcLog("[RevenueCat] Restore completed:", {
         hasActiveEntitlement,
         activeEntitlements: Object.keys(restoredInfo.entitlements.active),
       });
@@ -200,7 +196,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to restore purchases";
-      console.error("[RevenueCat] Restore error:", err);
+      rcError("[RevenueCat] Restore error:", err);
       setError(errorMessage);
       return false;
     } finally {
@@ -215,7 +211,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
   // Listen for customer info updates
   useEffect(() => {
     const customerInfoListener = (info: CustomerInfo) => {
-      console.log("[RevenueCat] Customer info updated");
+      rcLog("[RevenueCat] Customer info updated");
       setCustomerInfo(info);
     };
 

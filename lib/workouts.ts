@@ -973,13 +973,10 @@ export async function regenerateWorkoutPlanAsync(
       throw new Error("Failed to start async workout regeneration");
     }
   } catch (error) {
-    // Don't log PaywallError as a regular error - the paywall modal will handle it
     if (error instanceof PaywallError) {
-      // Paywall callback has already been triggered, just return null
       return null;
     }
-    console.error("Error starting async workout regeneration:", error);
-    return null;
+    throw error;
   }
 }
 
@@ -1012,13 +1009,10 @@ export async function regenerateDailyWorkoutAsync(
       throw new Error("Failed to start async daily workout regeneration");
     }
   } catch (error) {
-    // Don't log PaywallError as a regular error - the paywall modal will handle it
     if (error instanceof PaywallError) {
-      // Paywall callback has already been triggered, just return null
       return null;
     }
-    console.error("Error starting async daily workout regeneration:", error);
-    return null;
+    throw error;
   }
 }
 
@@ -1032,12 +1026,6 @@ export async function generateRestDayWorkoutAsync(
     reason: string;
   }
 ): Promise<{ success: boolean; jobId: number; message: string } | null> {
-  console.log("Calling rest day workout API", {
-    userId,
-    params,
-    url: `/workouts/${userId}/rest-day-workout`,
-  });
-
   try {
     const response = await apiRequest<{
       success: boolean;
@@ -1048,8 +1036,6 @@ export async function generateRestDayWorkoutAsync(
       body: JSON.stringify(params),
     });
 
-    console.log("Rest day workout API response:", response);
-
     if (response?.success) {
       invalidateActiveWorkoutCache();
       return response;
@@ -1057,13 +1043,10 @@ export async function generateRestDayWorkoutAsync(
       throw new Error("Failed to start rest day workout generation");
     }
   } catch (error) {
-    // Don't log PaywallError as a regular error - the paywall modal will handle it
     if (error instanceof PaywallError) {
-      // Paywall callback has already been triggered, just return null
       return null;
     }
-    console.error("Error starting rest day workout generation:", error);
-    return null;
+    throw error;
   }
 }
 
