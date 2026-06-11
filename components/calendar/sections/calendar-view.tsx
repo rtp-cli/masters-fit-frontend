@@ -39,8 +39,12 @@ export default function CalendarViewSection({
           theme={{
             calendarBackground: colors.surface,
             textSectionTitleColor: colors.text.muted,
-            selectedDayBackgroundColor: colors.brand.secondary,
-            selectedDayTextColor: colors.neutral.white,
+            // brand.primary + contentOnPrimary guarantees a high-contrast
+            // selected circle in every theme (brand.secondary is white in
+            // the light monochrome theme — invisible on the surface).
+            selectedDayBackgroundColor: colors.brand.primary,
+            selectedDayTextColor: colors.contentOnPrimary,
+            selectedDotColor: colors.contentOnPrimary,
             todayTextColor: colors.brand.primary,
             dayTextColor: colors.text.primary,
             textDisabledColor: colors.neutral.medium[2],

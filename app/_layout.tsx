@@ -1,10 +1,15 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
+  LogBox,
   Platform,
   View,
   useColorScheme as useSystemColorScheme,
 } from "react-native";
+
+if (__DEV__) {
+  LogBox.ignoreLogs(["[RevenueCat]"]);
+}
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { initSentry, Sentry } from "@/lib/sentry";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
@@ -142,7 +147,7 @@ function AppContent() {
   // Initialize RevenueCat
   const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
   useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.SILENT : LOG_LEVEL.ERROR);
 
     const apiKey = Platform.OS === "ios"
       ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
@@ -157,7 +162,7 @@ function AppContent() {
           androidKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
         },
       });
-      console.error("[RevenueCat] API key is missing for platform:", Platform.OS);
+      if (!__DEV__) console.error("[RevenueCat] API key is missing for platform:", Platform.OS);
       return;
     }
 
@@ -491,14 +496,13 @@ function RootLayout() {
         let resolvedMode: ThemeMode = "auto";
         let resolvedColorTheme: ColorTheme = "original";
 
+        const validColorThemes = ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"];
+
         if (savedMode && ["light", "dark", "auto"].includes(savedMode)) {
           resolvedMode = savedMode as ThemeMode;
         }
 
-        if (
-          savedColorTheme &&
-          ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(savedColorTheme)
-        ) {
+        if (savedColorTheme && validColorThemes.includes(savedColorTheme)) {
           resolvedColorTheme = savedColorTheme as ColorTheme;
         }
 
@@ -510,7 +514,7 @@ function RootLayout() {
               resolvedMode = storedUser.themeMode as ThemeMode;
               AsyncStorage.setItem(THEME_KEY, resolvedMode).catch(() => {});
             }
-            if (!savedColorTheme && storedUser.colorTheme && ["original", "steel-blue", "dusty-denim", "dusty-sage", "carbon-violet"].includes(storedUser.colorTheme)) {
+            if (!savedColorTheme && storedUser.colorTheme && validColorThemes.includes(storedUser.colorTheme)) {
               resolvedColorTheme = storedUser.colorTheme as ColorTheme;
               AsyncStorage.setItem(COLOR_THEME_KEY, resolvedColorTheme).catch(() => {});
             }

@@ -3,10 +3,21 @@ import { io, Socket } from 'socket.io-client';
 import { getCurrentUser } from '@/lib/auth';
 import { API_BASE_URL } from "@/constants";
 
+export interface GenerationDayStatus {
+  dayNumber: number;
+  label: string;
+  status: "pending" | "generating" | "done" | "failed";
+}
+
+export type GenerationPhase = "planning" | "generating_days" | "saving";
+
 interface ProgressEvent {
   progress: number; // 0-100
   complete?: boolean;
   error?: string;
+  // Structured status from fan-out generation (optional on legacy events)
+  phase?: GenerationPhase;
+  days?: GenerationDayStatus[];
 }
 
 interface UseWorkoutProgressReturn {
@@ -14,6 +25,8 @@ interface UseWorkoutProgressReturn {
   isComplete: boolean;
   error: string | null;
   isConnected: boolean;
+  phase: GenerationPhase | null;
+  days: GenerationDayStatus[];
 }
 
 export function useWorkoutProgress(): UseWorkoutProgressReturn {
@@ -21,6 +34,8 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [phase, setPhase] = useState<GenerationPhase | null>(null);
+  const [days, setDays] = useState<GenerationDayStatus[]>([]);
   
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<number | null>(null);
@@ -68,11 +83,26 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
         // Listen for workout progress updates
         socket.on('workout-progress', (data: ProgressEvent) => {
           console.log('Workout progress update:', data);
-          
+
           if (mounted) {
             setProgress(data.progress);
             setIsComplete(data.complete || false);
             setError(data.error || null);
+            if (data.phase) {
+              setPhase(data.phase);
+            }
+            if (data.days) {
+              setDays(data.days);
+            }
+            // Reset structured state when a new generation starts, and clear
+            // it on completion so a stale week strip (e.g. after the backend
+            // fell back to legacy single-call generation) doesn't linger
+            if (data.phase === 'planning' || data.complete) {
+              setDays([]);
+            }
+            if (data.complete) {
+              setPhase(null);
+            }
           }
         });
 
@@ -86,12 +116,12 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
     // Cleanup
     return () => {
       mounted = false;
-      
+
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      
+
       setIsConnected(false);
     };
   }, []);
@@ -101,6 +131,8 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
     isComplete,
     error,
     isConnected,
+    phase,
+    days,
   };
 }
 
@@ -112,6 +144,8 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [phase, setPhase] = useState<GenerationPhase | null>(null);
+  const [days, setDays] = useState<GenerationDayStatus[]>([]);
   
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<number | null>(null);
@@ -122,6 +156,8 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
       setProgress(0);
       setIsComplete(false);
       setError(null);
+      setPhase(null);
+      setDays([]);
       return;
     }
 
@@ -167,11 +203,23 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
         // Listen for workout progress updates
         socket.on('workout-progress', (data: ProgressEvent) => {
           console.log('Job progress update:', data);
-          
+
           if (mounted) {
             setProgress(data.progress);
             setIsComplete(data.complete || false);
             setError(data.error || null);
+            if (data.phase) {
+              setPhase(data.phase);
+            }
+            if (data.days) {
+              setDays(data.days);
+            }
+            if (data.phase === 'planning' || data.complete) {
+              setDays([]);
+            }
+            if (data.complete) {
+              setPhase(null);
+            }
           }
         });
 
@@ -200,5 +248,7 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
     isComplete,
     error,
     isConnected,
+    phase,
+    days,
   };
 }

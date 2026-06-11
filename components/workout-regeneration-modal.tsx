@@ -429,13 +429,6 @@ export default function WorkoutRegenerationModal({
         if (user) {
           // Check if this is a rest day workout request
           if (isRestDay && selectedDate) {
-            console.log("Rest day workout generation started", {
-              userId: user.id,
-              date: selectedDate,
-              reason:
-                customFeedback.trim() || "User requested rest day workout",
-            });
-
             const result = await generateRestDayWorkoutAsync(user.id, {
               date: selectedDate,
               reason: formatOverridesIntoReason(
@@ -444,8 +437,6 @@ export default function WorkoutRegenerationModal({
                 currentProfile
               ),
             });
-
-            console.log("Rest day workout API response:", result);
 
             if (result?.success && result.jobId) {
               // Add job to background tracking
@@ -506,10 +497,13 @@ export default function WorkoutRegenerationModal({
       }
     } catch (error) {
       if (!(error instanceof PaywallError)) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "An error occurred while starting regeneration. Please try again.";
         setDialogConfig({
           title: "Regeneration Error",
-          description:
-            "An error occurred while starting regeneration. Please try again.",
+          description: message,
           primaryButton: {
             text: "OK",
             onPress: () => setDialogVisible(false),
@@ -1091,7 +1085,7 @@ export default function WorkoutRegenerationModal({
                             } workout plan, and what you would like to change:`}
                   </Text>
                   <TextInput
-                    className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-secondary px-4 py-6"
+                    className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-text-primary px-4 py-6"
                     style={{
                       minHeight: 120,
                       maxHeight: 200,

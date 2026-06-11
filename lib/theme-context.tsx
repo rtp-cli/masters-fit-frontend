@@ -29,7 +29,7 @@ export function useTheme() {
 
 // Theme metadata for UI display
 export const COLOR_THEMES: { id: ColorTheme; name: string; primaryColor: string }[] = [
-  { id: "original", name: "Original", primaryColor: "#9BB875" },
+  { id: "original", name: "Original", primaryColor: "#0A0A0A" },
   { id: "steel-blue", name: "Steel Blue", primaryColor: "#5A7A94" },
   { id: "dusty-denim", name: "Dusty Denim", primaryColor: "#5C6D7E" },
   { id: "dusty-sage", name: "Dusty Sage", primaryColor: "#6E806B" },
