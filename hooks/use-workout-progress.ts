@@ -94,9 +94,14 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
             if (data.days) {
               setDays(data.days);
             }
-            // Reset structured state when a new generation starts
-            if (data.phase === 'planning') {
+            // Reset structured state when a new generation starts, and clear
+            // it on completion so a stale week strip (e.g. after the backend
+            // fell back to legacy single-call generation) doesn't linger
+            if (data.phase === 'planning' || data.complete) {
               setDays([]);
+            }
+            if (data.complete) {
+              setPhase(null);
             }
           }
         });
@@ -209,8 +214,11 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
             if (data.days) {
               setDays(data.days);
             }
-            if (data.phase === 'planning') {
+            if (data.phase === 'planning' || data.complete) {
               setDays([]);
+            }
+            if (data.complete) {
+              setPhase(null);
             }
           }
         });
