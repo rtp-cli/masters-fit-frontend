@@ -379,15 +379,26 @@ export default function CalendarScreen() {
         if (hasBlocks) {
           const dots = [];
 
+          // selectedDotColor must be set per dot: in multi-dot mode the
+          // theme-level selectedDotColor is ignored, and the default dot
+          // color vanishes against the brand.primary selected circle
           if (planDay.isComplete) {
-            dots.push({ color: colors.brand.primary });
+            dots.push({
+              color: colors.brand.primary,
+              selectedDotColor: colors.contentOnPrimary,
+            });
           } else {
-            dots.push({ color: colors.brand.secondary });
+            // text.secondary, not brand.secondary — the latter is white in
+            // the light monochrome theme and the dot disappears
+            dots.push({
+              color: colors.text.secondary,
+              selectedDotColor: colors.contentOnPrimary,
+            });
           }
 
           markedDates[dateStr] = {
             dots,
-            selectedColor: colors.brand.secondary,
+            selectedColor: colors.brand.primary,
             selected: dateStr === selectedDate,
           };
         }
@@ -416,14 +427,20 @@ export default function CalendarScreen() {
               const dots = [];
 
               if (planDay.isComplete) {
-                dots.push({ color: colors.brand.primary });
+                dots.push({
+                  color: colors.brand.primary,
+                  selectedDotColor: colors.contentOnPrimary,
+                });
               } else {
-                dots.push({ color: colors.text.muted });
+                dots.push({
+                  color: colors.text.muted,
+                  selectedDotColor: colors.contentOnPrimary,
+                });
               }
 
               markedDates[dateStr] = {
                 dots,
-                selectedColor: colors.neutral.light[2],
+                selectedColor: colors.brand.primary,
                 selected: dateStr === selectedDate,
               };
             }
@@ -446,7 +463,7 @@ export default function CalendarScreen() {
     markedDates[selectedDate] = {
       ...markedDates[selectedDate],
       selected: true,
-      selectedColor: colors.brand.secondary,
+      selectedColor: colors.brand.primary,
     };
 
     return markedDates;
@@ -621,7 +638,7 @@ export default function CalendarScreen() {
       <WorkoutChoiceModal
         visible={showWorkoutChoice}
         onClose={() => setShowWorkoutChoice(false)}
-        onGenerateNew={() => setShowRegenerationModal(true)}
+        onGenerateNew={() => handleOpenRegeneration(currentSelectedPlanDay || undefined)}
         onRepeatPast={() => setShowRepeatPicker(true)}
       />
 
