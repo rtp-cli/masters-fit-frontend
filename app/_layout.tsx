@@ -49,6 +49,7 @@ import { colorThemes, themes, ThemeKey } from "@/lib/theme";
 import { ThemeContext, ThemeMode, ColorTheme, useTheme } from "@/lib/theme-context";
 
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
+import { SecretActivationProvider } from "@/contexts/secret-activation-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import * as TrackingTransparency from "expo-tracking-transparency";
@@ -430,9 +431,11 @@ const StableProviderTree = React.memo(function StableProviderTree() {
           <WorkoutProvider>
             <AppDataProvider>
               <BackgroundJobProvider>
-                <SystemUIWrapper>
-                  <AppContent />
-                </SystemUIWrapper>
+                <SecretActivationProvider>
+                  <SystemUIWrapper>
+                    <AppContent />
+                  </SystemUIWrapper>
+                </SecretActivationProvider>
               </BackgroundJobProvider>
             </AppDataProvider>
           </WorkoutProvider>

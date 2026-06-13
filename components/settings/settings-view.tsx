@@ -17,7 +17,7 @@ import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import ComingSoonModal from "../coming-soon-modal";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import SubscriptionDetailsModal from "@/components/subscription/subscription-details-modal";
-import { useSecretActivation } from "@/hooks/use-secret-activation";
+import { useSecretActivationContext } from "@/contexts/secret-activation-context";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import * as Haptics from "expo-haptics";
 import { CustomDialog, DialogButton } from "../ui";
@@ -77,7 +77,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     isDebugModeActivated,
     activateDebugMode,
     deactivateDebugMode,
-  } = useSecretActivation();
+  } = useSecretActivationContext();
 
   // Paywall test modal state
   const [showPaywallTest, setShowPaywallTest] = useState(false);
