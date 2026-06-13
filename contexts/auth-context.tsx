@@ -105,9 +105,10 @@ const logOutFromRevenueCat = async () => {
     logger.info("User logged out from RevenueCat");
     return customerInfo;
   } catch (error) {
-    logger.error("Failed to log out from RevenueCat", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const msg = error instanceof Error ? error.message : String(error);
+    if (!msg.includes("anonymous")) {
+      logger.error("Failed to log out from RevenueCat", { error: msg });
+    }
     return null;
   }
 };
@@ -292,13 +293,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       invalidateActiveWorkoutCache();
       await clearAllData();
-
-      // Log out from RevenueCat to clear subscription identity
-      await logOutFromRevenueCat();
-
-      // User data clearing now handled by backend on logout
-
       setUser(null);
+
+      // Log out from RevenueCat to clear subscription identity (best-effort)
+      await logOutFromRevenueCat();
     } catch (error) {
       logger.error("Logout failed", {
         error: error instanceof Error ? error.message : "Unknown error",

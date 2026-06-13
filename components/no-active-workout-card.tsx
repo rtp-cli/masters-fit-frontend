@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
-import WorkoutGenerationProgress from "@/components/workout-generation-progress";
 
 interface NoActiveWorkoutCardProps {
   isGenerating: boolean;
@@ -52,15 +51,6 @@ export default function NoActiveWorkoutCard({
   };
 
   const variantStyles = getVariantStyles();
-
-  // Live week-strip while the fan-out generation runs
-  if (isGenerating) {
-    return (
-      <View className="items-center py-6 px-4">
-        <WorkoutGenerationProgress />
-      </View>
-    );
-  }
 
   return (
     <View className="items-center py-6">

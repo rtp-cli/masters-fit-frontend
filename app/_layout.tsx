@@ -556,8 +556,10 @@ function RootLayout() {
         userThemeUpdate.setUserData(updatedUser);
       }
 
-      // Sync to backend
-      updateThemeAPI({ themeMode: newMode }).catch(console.error);
+      // Sync to backend only when a user is authenticated
+      if (userThemeUpdaterRef.current?.user) {
+        updateThemeAPI({ themeMode: newMode }).catch(console.error);
+      }
     },
     [setColorScheme, mode]
   );
@@ -575,8 +577,10 @@ function RootLayout() {
       userThemeUpdate.setUserData(updatedUser);
     }
 
-    // Sync to backend
-    updateThemeAPI({ colorTheme: newColorTheme }).catch(console.error);
+    // Sync to backend only when a user is authenticated
+    if (userThemeUpdaterRef.current?.user) {
+      updateThemeAPI({ colorTheme: newColorTheme }).catch(console.error);
+    }
   }, [colorTheme]);
 
   // Callback to set the user theme updater (called by AppContent)

@@ -36,12 +36,65 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [phase, setPhase] = useState<GenerationPhase | null>(null);
   const [days, setDays] = useState<GenerationDayStatus[]>([]);
-  
+
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<number | null>(null);
+  // Sequential completion display: generation is parallel on the backend, but
+  // we animate completions in day-number order so the UI reads as sequential.
+  const displayDaysRef = useRef<GenerationDayStatus[]>([]);
+  const pendingDoneRef = useRef<Set<number>>(new Set());
+  const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let mounted = true;
+
+    const resetDayState = () => {
+      if (releaseTimerRef.current !== null) {
+        clearTimeout(releaseTimerRef.current);
+        releaseTimerRef.current = null;
+      }
+      pendingDoneRef.current.clear();
+      displayDaysRef.current = [];
+      setDays([]);
+    };
+
+    // Release the next pending completion in day-number order, then schedule
+    // itself again after a short interval if more are waiting.
+    const scheduleRelease = () => {
+      if (releaseTimerRef.current !== null) return; // already scheduled
+
+      const tryRelease = () => {
+        if (!mounted) return;
+        releaseTimerRef.current = null;
+        const current = displayDaysRef.current;
+        if (!current.length || !pendingDoneRef.current.size) return;
+
+        const sorted = [...current].sort((a, b) => a.dayNumber - b.dayNumber);
+        for (let i = 0; i < sorted.length; i++) {
+          const d = sorted[i];
+          if (!pendingDoneRef.current.has(d.dayNumber) || d.status === 'done') continue;
+          // Only release if the preceding day (by position) is already shown as done
+          const prevDone = i === 0 || sorted[i - 1].status === 'done';
+          if (!prevDone) continue;
+
+          pendingDoneRef.current.delete(d.dayNumber);
+          const updated = current.map(x =>
+            x.dayNumber === d.dayNumber ? { ...x, status: 'done' as const } : x
+          );
+          displayDaysRef.current = updated;
+          setDays(updated);
+
+          if (pendingDoneRef.current.size > 0) {
+            releaseTimerRef.current = setTimeout(tryRelease, 350);
+          }
+          return;
+        }
+        // A pending done exists but its predecessor isn't done yet; the next
+        // backend event will call scheduleRelease again when that changes.
+      };
+
+      releaseTimerRef.current = setTimeout(tryRelease, 350);
+    };
 
     const initializeSocket = async () => {
       try {
@@ -63,7 +116,7 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
         socket.on('connect', () => {
           console.log('WebSocket connected');
           setIsConnected(true);
-          
+
           // Join user-specific room
           if (userIdRef.current) {
             socket.emit('join-user-room', userIdRef.current);
@@ -83,27 +136,69 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
         // Listen for workout progress updates
         socket.on('workout-progress', (data: ProgressEvent) => {
           console.log('Workout progress update:', data);
+          if (!mounted) return;
 
-          if (mounted) {
-            setProgress(data.progress);
-            setIsComplete(data.complete || false);
-            setError(data.error || null);
-            if (data.phase) {
-              setPhase(data.phase);
-            }
-            if (data.days) {
-              setDays(data.days);
-            }
-            // Reset structured state when a new generation starts, and clear
-            // it on completion so a stale week strip (e.g. after the backend
-            // fell back to legacy single-call generation) doesn't linger
-            if (data.phase === 'planning' || data.complete) {
-              setDays([]);
-            }
-            if (data.complete) {
-              setPhase(null);
+          setProgress(data.progress);
+          setIsComplete(data.complete || false);
+          setError(data.error || null);
+          if (data.phase) setPhase(data.phase);
+          if (data.complete) setPhase(null);
+
+          // Reset day state only when a NEW generation starts (planning phase).
+          // On completion we keep days visible so the user sees the completed
+          // timeline before they dismiss the modal.
+          if (data.phase === 'planning') {
+            resetDayState();
+            return;
+          }
+
+          // completion event carries no days — nothing more to process
+          if (data.complete) return;
+
+          if (!data.days) return;
+
+          const sortedBackend = [...data.days].sort((a, b) => a.dayNumber - b.dayNumber);
+
+          // Collect newly done days from the backend into the pending queue
+          sortedBackend.forEach(d => {
+            if (d.status === 'done') pendingDoneRef.current.add(d.dayNumber);
+          });
+
+          if (displayDaysRef.current.length === 0) {
+            // First time seeing days — initialize with backend statuses,
+            // but hold any 'done' statuses for sequential release.
+            const initialized = sortedBackend.map(d => ({
+              ...d,
+              status: (d.status === 'done' ? 'generating' : d.status) as GenerationDayStatus['status'],
+            }));
+            displayDaysRef.current = initialized;
+            setDays(initialized);
+          } else {
+            // Propagate forward-only status changes from backend:
+            //   pending → generating  (day_started fired)
+            //   pending/generating → failed
+            // Never revert a displayed 'done' or 'failed' state.
+            let changed = false;
+            const updated = displayDaysRef.current.map(existing => {
+              const backend = sortedBackend.find(b => b.dayNumber === existing.dayNumber);
+              if (!backend || existing.status === 'done' || existing.status === 'failed') return existing;
+              if (backend.status === 'generating' && existing.status === 'pending') {
+                changed = true;
+                return { ...existing, status: 'generating' as const };
+              }
+              if (backend.status === 'failed') {
+                changed = true;
+                return { ...existing, status: 'failed' as const };
+              }
+              return existing;
+            });
+            if (changed) {
+              displayDaysRef.current = updated;
+              setDays(updated);
             }
           }
+
+          scheduleRelease();
         });
 
       } catch (err) {
@@ -116,12 +211,14 @@ export function useWorkoutProgress(): UseWorkoutProgressReturn {
     // Cleanup
     return () => {
       mounted = false;
-
+      if (releaseTimerRef.current !== null) {
+        clearTimeout(releaseTimerRef.current);
+        releaseTimerRef.current = null;
+      }
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-
       setIsConnected(false);
     };
   }, []);
@@ -146,22 +243,69 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [phase, setPhase] = useState<GenerationPhase | null>(null);
   const [days, setDays] = useState<GenerationDayStatus[]>([]);
-  
+
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<number | null>(null);
+  const displayDaysRef = useRef<GenerationDayStatus[]>([]);
+  const pendingDoneRef = useRef<Set<number>>(new Set());
+  const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!jobId) {
-      // Reset state when no job ID
       setProgress(0);
       setIsComplete(false);
       setError(null);
       setPhase(null);
       setDays([]);
+      displayDaysRef.current = [];
+      pendingDoneRef.current.clear();
       return;
     }
 
     let mounted = true;
+
+    const resetDayState = () => {
+      if (releaseTimerRef.current !== null) {
+        clearTimeout(releaseTimerRef.current);
+        releaseTimerRef.current = null;
+      }
+      pendingDoneRef.current.clear();
+      displayDaysRef.current = [];
+      setDays([]);
+    };
+
+    const scheduleRelease = () => {
+      if (releaseTimerRef.current !== null) return;
+
+      const tryRelease = () => {
+        if (!mounted) return;
+        releaseTimerRef.current = null;
+        const current = displayDaysRef.current;
+        if (!current.length || !pendingDoneRef.current.size) return;
+
+        const sorted = [...current].sort((a, b) => a.dayNumber - b.dayNumber);
+        for (let i = 0; i < sorted.length; i++) {
+          const d = sorted[i];
+          if (!pendingDoneRef.current.has(d.dayNumber) || d.status === 'done') continue;
+          const prevDone = i === 0 || sorted[i - 1].status === 'done';
+          if (!prevDone) continue;
+
+          pendingDoneRef.current.delete(d.dayNumber);
+          const updated = current.map(x =>
+            x.dayNumber === d.dayNumber ? { ...x, status: 'done' as const } : x
+          );
+          displayDaysRef.current = updated;
+          setDays(updated);
+
+          if (pendingDoneRef.current.size > 0) {
+            releaseTimerRef.current = setTimeout(tryRelease, 350);
+          }
+          return;
+        }
+      };
+
+      releaseTimerRef.current = setTimeout(tryRelease, 350);
+    };
 
     const initializeSocket = async () => {
       try {
@@ -183,7 +327,7 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
         socket.on('connect', () => {
           console.log('WebSocket connected for job:', jobId);
           setIsConnected(true);
-          
+
           // Join user-specific room
           if (userIdRef.current) {
             socket.emit('join-user-room', userIdRef.current);
@@ -203,24 +347,58 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
         // Listen for workout progress updates
         socket.on('workout-progress', (data: ProgressEvent) => {
           console.log('Job progress update:', data);
+          if (!mounted) return;
 
-          if (mounted) {
-            setProgress(data.progress);
-            setIsComplete(data.complete || false);
-            setError(data.error || null);
-            if (data.phase) {
-              setPhase(data.phase);
-            }
-            if (data.days) {
-              setDays(data.days);
-            }
-            if (data.phase === 'planning' || data.complete) {
-              setDays([]);
-            }
-            if (data.complete) {
-              setPhase(null);
+          setProgress(data.progress);
+          setIsComplete(data.complete || false);
+          setError(data.error || null);
+          if (data.phase) setPhase(data.phase);
+          if (data.complete) setPhase(null);
+
+          if (data.phase === 'planning') {
+            resetDayState();
+            return;
+          }
+
+          if (data.complete) return;
+
+          if (!data.days) return;
+
+          const sortedBackend = [...data.days].sort((a, b) => a.dayNumber - b.dayNumber);
+
+          sortedBackend.forEach(d => {
+            if (d.status === 'done') pendingDoneRef.current.add(d.dayNumber);
+          });
+
+          if (displayDaysRef.current.length === 0) {
+            const initialized = sortedBackend.map(d => ({
+              ...d,
+              status: (d.status === 'done' ? 'generating' : d.status) as GenerationDayStatus['status'],
+            }));
+            displayDaysRef.current = initialized;
+            setDays(initialized);
+          } else {
+            let changed = false;
+            const updated = displayDaysRef.current.map(existing => {
+              const backend = sortedBackend.find(b => b.dayNumber === existing.dayNumber);
+              if (!backend || existing.status === 'done' || existing.status === 'failed') return existing;
+              if (backend.status === 'generating' && existing.status === 'pending') {
+                changed = true;
+                return { ...existing, status: 'generating' as const };
+              }
+              if (backend.status === 'failed') {
+                changed = true;
+                return { ...existing, status: 'failed' as const };
+              }
+              return existing;
+            });
+            if (changed) {
+              displayDaysRef.current = updated;
+              setDays(updated);
             }
           }
+
+          scheduleRelease();
         });
 
       } catch (err) {
@@ -233,12 +411,14 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
     // Cleanup
     return () => {
       mounted = false;
-      
+      if (releaseTimerRef.current !== null) {
+        clearTimeout(releaseTimerRef.current);
+        releaseTimerRef.current = null;
+      }
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      
       setIsConnected(false);
     };
   }, [jobId]);
