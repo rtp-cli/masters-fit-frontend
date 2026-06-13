@@ -289,6 +289,13 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     }
   };
 
+  // Force-clear all auth data (bypasses confirmation dialog — for stuck sessions)
+  const handleForceLogout = async () => {
+    await logout();
+    onClose?.();
+    router.replace("/");
+  };
+
   // Handle logout
   const handleLogout = async () => {
     setDialogConfig({
@@ -493,6 +500,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           isSecretActivated={isSecretActivated}
           onDeactivateDebugMode={handleDeactivateDebugMode}
           onShowPaywallTest={() => setShowPaywallTest(true)}
+          onForceLogout={handleForceLogout}
           onClose={onClose}
         />
 

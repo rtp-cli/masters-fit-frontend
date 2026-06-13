@@ -8,6 +8,7 @@ interface DeveloperToolsSectionProps {
   isSecretActivated: boolean;
   onDeactivateDebugMode: () => void;
   onShowPaywallTest?: () => void;
+  onForceLogout?: () => void;
   onClose?: () => void;
 }
 
@@ -16,6 +17,7 @@ export default function DeveloperToolsSection({
   isSecretActivated,
   onDeactivateDebugMode,
   onShowPaywallTest,
+  onForceLogout,
   onClose,
 }: DeveloperToolsSectionProps) {
   const router = useRouter();
@@ -125,6 +127,21 @@ export default function DeveloperToolsSection({
           <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
         </TouchableOpacity>
       )}
+
+      {/* Force Clear Auth Data */}
+      <TouchableOpacity
+        className="flex-row items-center justify-between px-4 py-3 border-t"
+        style={{ borderColor: colors.brand.primary }}
+        onPress={onForceLogout}
+      >
+        <View className="flex-row items-center flex-1">
+          <Ionicons name="key-outline" size={20} color={colors.brand.primary} />
+          <Text className="text-sm ml-3" style={{ color: colors.brand.primary }}>
+            Force Clear Auth Data
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
+      </TouchableOpacity>
 
       {/* Deactivate Debug Mode (only in production) */}
       {!__DEV__ && isDebugModeActivated && (
