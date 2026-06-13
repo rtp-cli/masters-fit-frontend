@@ -5,3 +5,5 @@ node_modules
 /ios/
 .claude/settings.local.json
 docs/superpowers/*
+design_handoff_workout_generation/
+.DS_Store

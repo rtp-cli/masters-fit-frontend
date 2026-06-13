@@ -1,13 +1,12 @@
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef } from "react";
 import { View, TouchableOpacity, GestureResponderEvent } from "react-native";
-import { NavigationContainerRefContext } from "@react-navigation/native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import FloatingActionButton from "@/components/floating-action-button";
+import WorkoutGenerationModal from "@/components/workout-generation-modal";
 import { useThemeColors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";
 import { tabEvents } from "@/lib/tab-events";
@@ -43,22 +42,18 @@ function DisabledTabButton({
   routeName: string;
 }) {
   const { abandonWorkout, endWorkoutEarly } = useWorkout();
-  // Use NavigationContainerRefContext directly - it never throws, just returns undefined
-  // when navigation context isn't available (e.g., during dark mode initialization)
-  const navigationRef = useContext(NavigationContainerRefContext);
-  const currentRoute = navigationRef?.current?.getCurrentRoute()?.name;
+  const pathname = usePathname();
   const [dialogVisible, setDialogVisible] = useState(false);
   const pendingEventRef = useRef<GestureResponderEvent | null>(null);
 
   const handlePress = (e: GestureResponderEvent) => {
+    const isActive = pathname === `/${routeName}`;
     if (disabled) {
       pendingEventRef.current = e;
       setDialogVisible(true);
-    } else if (currentRoute === routeName) {
-      // Already on this tab - emit scroll-to-top event
+    } else if (isActive) {
       tabEvents.emit(`scrollToTop:${routeName}`);
     } else {
-      // Navigate to the tab normally
       onPress?.(e);
     }
   };
@@ -156,6 +151,7 @@ export default function TabLayout() {
                 <DisabledTabButton
                   onPress={props.onPress}
                   disabled={isWorkoutInProgress}
+
                   routeName="dashboard"
                 >
                   {props.children}
@@ -177,6 +173,7 @@ export default function TabLayout() {
                 <DisabledTabButton
                   onPress={props.onPress}
                   disabled={false} // Workout tab is always accessible
+
                   routeName="workout"
                 >
                   {props.children}
@@ -198,6 +195,7 @@ export default function TabLayout() {
                 <DisabledTabButton
                   onPress={props.onPress}
                   disabled={isWorkoutInProgress}
+
                   routeName="calendar"
                 >
                   {props.children}
@@ -207,8 +205,8 @@ export default function TabLayout() {
           />
         </Tabs>
 
-        {/* Floating Action Button for background jobs */}
-        <FloatingActionButton />
+        {/* Workout generation progress modal */}
+        <WorkoutGenerationModal />
       </View>
     </SafeAreaView>
   );
