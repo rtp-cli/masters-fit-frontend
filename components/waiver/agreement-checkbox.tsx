@@ -30,8 +30,7 @@ export default function AgreementCheckbox({
           {isAgreed && <Ionicons name="checkmark" size={16} color={colors.neutral.white} />}
         </View>
         <Text className="flex-1 text-base text-text-primary">
-          I have read and accept all legal agreements (v{CURRENT_WAIVER_VERSION}
-          )
+          I agree to the Terms & Conditions, Privacy Policy, and Waiver of Liability (v{CURRENT_WAIVER_VERSION})
         </Text>
       </TouchableOpacity>
     </View>

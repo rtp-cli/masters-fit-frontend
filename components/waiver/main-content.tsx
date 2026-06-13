@@ -15,7 +15,7 @@ export default function MainContent({ isUpdate }: MainContentProps) {
   return (
     <>
       {/* Logo and Title */}
-      <View className="px-6 items-center mb-8 mt-4">
+      <View className="px-6 items-center mb-4 mt-4">
         <View className="w-24 h-24 mb-6 rounded-2xl bg-primary items-center justify-center">
           <Image
             source={isDark ? images.logoDark : images.logo}
@@ -23,47 +23,45 @@ export default function MainContent({ isUpdate }: MainContentProps) {
             resizeMode="contain"
           />
         </View>
-        <Text className="text-3xl font-bold text-text-primary text-center mb-2">
-          {isUpdate ? "Updated Legal Agreement" : "Before You Begin"}
-        </Text>
+        <View className="flex-row items-center mb-2">
+          <Ionicons
+            name="shield-checkmark"
+            size={28}
+            color={colors.brand.secondary}
+          />
+          <Text className="text-3xl font-bold text-text-primary text-center ml-2">
+            {isUpdate ? "Updated Legal Agreement" : "Before You Begin"}
+          </Text>
+        </View>
         <Text className="text-base text-text-muted text-center">
           {isUpdate
             ? "Our terms have been updated. Please review and accept the new version"
-            : "Please review and accept our legal agreements"}
+            : "Please review and accept to continue"}
         </Text>
       </View>
 
       {/* Main Content */}
       <View className="px-6 mb-2">
         <View className="bg-surface rounded-xl p-5">
-          <View className="flex-col items-start mb-4">
-            <View className="flex items-center justify-center flex-row mb-4">
-              <Ionicons
-                name="warning"
-                size={24}
-                color={colors.brand.secondary}
-              />
-              <Text className="text-lg font-semibold text-text-primary ml-3">
-                Waiver of Liability & Assumption of Risk
-              </Text>
-            </View>
+          <View className="flex-col items-start mb-1">
             <View className="flex-1">
               <Text className="text-base text-text-secondary leading-6 mb-3">
-                MastersFit provides fitness guidance only and is not medical
-                advice. Always check with your doctor before starting new
-                workouts.
+                MastersFit offers AI-powered fitness guidance, not medical
+                advice. If you have any health concerns, check with your doctor
+                before starting.
               </Text>
               <Text className="text-base text-text-secondary leading-6 mb-3">
                 Our workouts are AI-powered, but AI isn't perfect — listen to
                 your body and use your judgment.
               </Text>
               <Text className="text-base text-text-secondary leading-6 mb-3">
-                By using this app, you agree to do so at your own risk and
-                release MastersFit LLC from any liability for injuries, health
-                issues, or damages.
+                By using MastersFit, you agree to exercise at your own risk.
+                MastersFit LLC isn't liable for injuries or health issues that
+                may occur.
               </Text>
-              <Text className="text-base font-medium text-text-primary">
-                Results are not guaranteed.
+              <Text className="text-base text-text-primary" style={{ fontFamily: "Inter_400Regular_Italic" }}>
+                Individual results will vary — consistency and listening to your
+                body matter most.
               </Text>
             </View>
           </View>
