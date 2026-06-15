@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { usePathname } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useThemeColors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
@@ -21,12 +21,34 @@ export default function Header({
   onSettingsPress,
 }: HeaderProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const colors = useThemeColors();
 
   // Modal state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+  // True between a logout request and the sheet finishing its dismiss animation.
+  const [logoutPending, setLogoutPending] = useState(false);
+
+  // Perform the actual logout: clear auth state, then navigate to the root.
+  // Only runs once the settings sheet has fully dismissed, so router.replace
+  // (which unmounts this Header) never tears down the sheet mid-animation.
+  const finishLogout = () => {
+    logout();
+    router.replace("/");
+  };
+
+  const handleRequestLogout = () => {
+    setLogoutPending(true);
+    setSettingsModalVisible(false);
+    // iOS waits for the pageSheet dismiss animation via Modal.onDismiss.
+    // Android has no onDismiss and no orphaned-sheet issue, so act now.
+    if (Platform.OS !== "ios") {
+      setLogoutPending(false);
+      finishLogout();
+    }
+  };
 
   // Determine which header to show based on current route
   const isDashboard = pathname === "/" || pathname.includes("dashboard");
@@ -108,6 +130,13 @@ export default function Header({
       <SettingsModal
         visible={settingsModalVisible}
         onClose={() => setSettingsModalVisible(false)}
+        onRequestLogout={handleRequestLogout}
+        onDismiss={() => {
+          if (logoutPending) {
+            setLogoutPending(false);
+            finishLogout();
+          }
+        }}
       />
     </View>
   );

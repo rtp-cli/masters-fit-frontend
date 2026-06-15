@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,9 +37,15 @@ import AppVersionSection from "./sections/app-version-section";
 
 interface SettingsViewProps {
   onClose?: () => void;
+  // Requests logout from the modal owner, which performs it after the sheet
+  // has fully dismissed (see header.tsx). Avoids unmounting the sheet mid-animation.
+  onRequestLogout?: () => void;
 }
 
-export default function SettingsView({ onClose }: SettingsViewProps) {
+export default function SettingsView({
+  onClose,
+  onRequestLogout,
+}: SettingsViewProps) {
   const colors = useThemeColors();
   const { mode: themeMode, setThemeMode, colorTheme, setColorTheme } = useTheme();
   const { user, logout, deleteAccount } = useAuth();
@@ -90,6 +97,9 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
+  // True while waiting for the confirm dialog to finish dismissing before we
+  // request the sheet-close + logout (iOS: avoids dismissing two modals at once).
+  const [pendingSheetLogout, setPendingSheetLogout] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
     description: string;
@@ -309,9 +319,16 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         text: "Logout",
         onPress: () => {
           setDialogVisible(false);
-          onClose?.();
-          logout();
-          router.replace("/");
+          // Sequence the modal transitions: close THIS confirm dialog first,
+          // then request the sheet-close + logout from the dialog's onDismiss
+          // once it has fully gone. Dismissing both modals in the same tick
+          // orphans the iOS pageSheet (it stays stuck on screen). Android has
+          // no such issue and no onDismiss, so act immediately there.
+          if (Platform.OS === "ios") {
+            setPendingSheetLogout(true);
+          } else {
+            onRequestLogout?.();
+          }
         },
       },
       icon: "log-out-outline",
@@ -591,6 +608,14 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           secondaryButton={dialogConfig.secondaryButton}
           icon={dialogConfig.icon}
           iconColor={dialogConfig.iconColor}
+          onDismiss={() => {
+            // The confirm dialog has fully dismissed — now it's safe to close
+            // the settings sheet and log out (one modal transition at a time).
+            if (pendingSheetLogout) {
+              setPendingSheetLogout(false);
+              onRequestLogout?.();
+            }
+          }}
         />
       )}
     </View>

@@ -27,6 +27,10 @@ export interface CustomDialogProps {
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
   dismissOnBackdropPress?: boolean;
+  // Fires after the dialog's dismiss animation completes (iOS). Lets callers
+  // sequence a follow-up modal transition instead of triggering it in the same
+  // tick, which iOS would drop (orphaned/stuck modal).
+  onDismiss?: () => void;
 }
 
 export default function CustomDialog({
@@ -40,6 +44,7 @@ export default function CustomDialog({
   icon,
   iconColor,
   dismissOnBackdropPress = true,
+  onDismiss,
 }: CustomDialogProps) {
   const colors = useThemeColors();
   const handleBackdropPress = () => {
@@ -52,7 +57,7 @@ export default function CustomDialog({
   const hasSecondaryButton = !!secondaryButton;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onDismiss={onDismiss}>
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <TouchableWithoutFeedback>

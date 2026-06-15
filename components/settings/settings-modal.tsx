@@ -8,11 +8,18 @@ import { useTheme } from "@/lib/theme-context";
 interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
+  // Triggered by the in-sheet logout button. The owner closes the sheet and
+  // runs the actual logout in onDismiss, once the sheet is fully gone.
+  onRequestLogout?: () => void;
+  // Fires after the sheet's dismiss animation completes (iOS).
+  onDismiss?: () => void;
 }
 
 export default function SettingsModal({
   visible,
   onClose,
+  onRequestLogout,
+  onDismiss,
 }: SettingsModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -22,7 +29,13 @@ export default function SettingsModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" statusBarTranslucent>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      statusBarTranslucent
+      onDismiss={onDismiss}
+    >
       <SafeAreaView edges={["top"]} className={`flex-1 bg-background ${isDark ? "dark" : ""}`}>
         <View className="flex-row items-center justify-between p-4 border-b border-neutral-light-2">
           <View className="w-6" />
@@ -35,7 +48,7 @@ export default function SettingsModal({
           </TouchableOpacity>
         </View>
 
-        <SettingsView onClose={onClose} />
+        <SettingsView onClose={onClose} onRequestLogout={onRequestLogout} />
       </SafeAreaView>
     </Modal>
   );
