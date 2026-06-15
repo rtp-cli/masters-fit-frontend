@@ -1,3 +1,4 @@
+import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -33,6 +34,7 @@ import {
 } from "@expo-google-fonts/manrope";
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
+import AnimatedSplashScreen from "@/components/ui/splash-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import { setPaywallCallback, updateThemeAPI } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
@@ -53,6 +55,9 @@ import { SecretActivationProvider } from "@/contexts/secret-activation-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import * as TrackingTransparency from "expo-tracking-transparency";
+
+// Keep native splash pinned until JS splash takes over
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Initialize Sentry as early as possible
 initSentry();
@@ -93,11 +98,14 @@ function SystemUIWrapper({ children }: { children: React.ReactNode }) {
 
 // Inner component that can access auth context
 function AppContent() {
+  const [splashDismissed, setSplashDismissed] = useState(false);
+
   const {
     needsFullAppRefresh,
     setNeedsFullAppRefresh,
     isPreloadingData,
     setIsPreloadingData,
+    isLoading,
     user,
     setUserData,
   } = useAuth();
@@ -156,7 +164,7 @@ function AppContent() {
   // Initialize RevenueCat
   const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
   useEffect(() => {
-    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.SILENT : LOG_LEVEL.ERROR);
+    Purchases.setLogLevel(LOG_LEVEL.ERROR);
 
     const apiKey = Platform.OS === "ios"
       ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
@@ -379,54 +387,60 @@ function AppContent() {
     return (
       <WarmingUpScreen
         onComplete={() => {
-          // This should never be called since we're waiting for loading to finish
-          // But just in case, don't do anything
           console.log(
             "[WarmingUp] WarmingUpScreen onComplete called (unexpected)"
           );
         }}
-        duration={5000} // Fallback duration, but we rely on loading states
+        duration={5000}
       />
     );
   }
 
   return (
-    <View className="flex-1 bg-background">
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="network-logger"
-          options={{
-            presentation: "modal",
+    <>
+      <View className="flex-1 bg-background">
+        <Stack
+          screenOptions={{
+            headerShown: false,
           }}
-        />
-      </Stack>
-      <FloatingNetworkLoggerButton />
-      {isRevenueCatReady && <PaymentWallModal
-        visible={showPaymentWall}
-        onClose={() => {
-          setShowPaymentWall(false);
-          setPaywallData(null);
-        }}
-        paywallData={
-          paywallData || {
-            type: "subscription_required",
-            message: "A subscription is required to access this feature.",
-            limits: {},
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="network-logger"
+            options={{
+              presentation: "modal",
+            }}
+          />
+        </Stack>
+        <FloatingNetworkLoggerButton />
+        {isRevenueCatReady && <PaymentWallModal
+          visible={showPaymentWall}
+          onClose={() => {
+            setShowPaymentWall(false);
+            setPaywallData(null);
+          }}
+          paywallData={
+            paywallData || {
+              type: "subscription_required",
+              message: "A subscription is required to access this feature.",
+              limits: {},
+            }
           }
-        }
-        onPurchaseSuccess={() => {
-          setShowPaymentWall(false);
-          setPaywallData(null);
-        }}
-      />}
-    </View>
+          onPurchaseSuccess={() => {
+            setShowPaymentWall(false);
+            setPaywallData(null);
+          }}
+        />}
+      </View>
+      {!splashDismissed && (
+        <AnimatedSplashScreen
+          isAppReady={!isLoading}
+          onDismissed={() => setSplashDismissed(true)}
+        />
+      )}
+    </>
   );
 }
 

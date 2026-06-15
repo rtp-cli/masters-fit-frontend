@@ -133,14 +133,6 @@ export default function GetStarted() {
     router.push("/(auth)/login");
   };
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-base text-neutral-medium-4">Loading...</Text>
-      </View>
-    );
-  }
-
   // Show warming up screen when preloading data
   if (isPreloadingData) {
     return <WarmingUpScreen />;
