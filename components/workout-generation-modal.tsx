@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkoutProgress } from "@/hooks/use-workout-progress";
 import { useThemeColors } from "@/lib/theme";
-import { useTheme } from "@/lib/theme-context";
 import { images } from "@/assets";
 
 function getErrorMessage(error?: string, status?: string): string {
@@ -24,19 +23,33 @@ function getErrorMessage(error?: string, status?: string): string {
   }
   if (!error) return "Something went wrong. Please try again.";
   const e = error.toLowerCase();
-  if (e.includes("429") || e.includes("rate limit") || e.includes("quota") || e.includes("resource exhausted")) {
+  if (
+    e.includes("429") ||
+    e.includes("rate limit") ||
+    e.includes("quota") ||
+    e.includes("resource exhausted")
+  ) {
     return "Too many requests. Please wait a moment and try again.";
   }
-  if (e.includes("401") || e.includes("403") || e.includes("unauthorized") || e.includes("forbidden")) {
+  if (
+    e.includes("401") ||
+    e.includes("403") ||
+    e.includes("unauthorized") ||
+    e.includes("forbidden")
+  ) {
     return "Authentication issue. Please contact support.";
   }
-  if (status === "timeout" || e.includes("timeout") || e.includes("timed out")) {
+  if (
+    status === "timeout" ||
+    e.includes("timeout") ||
+    e.includes("timed out")
+  ) {
     return "The generation took too long. Please try again.";
   }
   return "Something went wrong. Please try again.";
 }
 
-// Animated check mark that stamps in when a stage completes
+// Animated marker that spins while active and stamps a check when done
 function NodeMarker({
   status,
   primary,
@@ -50,7 +63,9 @@ function NodeMarker({
   checkColor: string;
   railColor: string;
 }) {
-  const stampAnim = useRef(new Animated.Value(status === "done" ? 1 : 0)).current;
+  const stampAnim = useRef(
+    new Animated.Value(status === "done" ? 1 : 0)
+  ).current;
   const prevStatus = useRef(status);
 
   useEffect(() => {
@@ -75,13 +90,13 @@ function NodeMarker({
       style={{
         width: 28,
         height: 28,
-        borderRadius: 999,
+        borderRadius: 9999,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: isDone ? primary : bg,
         borderWidth: isDone ? 0 : 2,
         borderColor: isGenerating ? primary : railColor,
-        // Glow ring for active node
+        // Glow ring (equivalent of box-shadow 0 0 0 5px primary@13%)
         shadowColor: primary,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: isGenerating ? 0.18 : 0,
@@ -95,7 +110,11 @@ function NodeMarker({
         </Animated.View>
       )}
       {isGenerating && (
-        <ActivityIndicator size="small" color={primary} style={{ transform: [{ scale: 0.6 }] }} />
+        <ActivityIndicator
+          size="small"
+          color={primary}
+          style={{ transform: [{ scale: 0.6 }] }}
+        />
       )}
       {isFailed && (
         <Ionicons name="alert" size={12} color={railColor} />
@@ -106,7 +125,6 @@ function NodeMarker({
 
 export default function WorkoutGenerationModal() {
   const colors = useThemeColors();
-  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { activeJobs, failedJobs, cancelJob, removeJob } = useBackgroundJobs();
   const { phase, days, isComplete } = useWorkoutProgress();
@@ -116,7 +134,7 @@ export default function WorkoutGenerationModal() {
   const autoShownRef = useRef(new Set<number>());
   const [timelineHeight, setTimelineHeight] = useState(0);
 
-  // Token map (prototype mf-theme.js → app useThemeColors())
+  // Token map → useThemeColors()
   const C = {
     bg: colors.background,
     surface: colors.surface,
@@ -125,12 +143,12 @@ export default function WorkoutGenerationModal() {
     textPrimary: colors.text.primary,
     textSecondary: colors.text.secondary,
     textMuted: colors.text.muted,
-    l2: colors.neutral.light[2],        // progress track
-    m1: colors.neutral.medium[1],       // base rail, pending border, chip border
-    m3: colors.neutral.medium[3],       // exercise dot (muted mid-tone)
+    border: colors.neutral.medium[1],   // --border / --n-medium-1 #E0E0E0
+    l2: colors.neutral.light[2],        // progress track #F4F4F4
+    m1: colors.neutral.medium[1],       // rail, pending border, chip border
+    m3: colors.neutral.medium[3],       // muted mid-tone
   };
 
-  // Derived state
   const activeBackgroundJobs = activeJobs.filter(
     (j) =>
       j.type === "generation" ||
@@ -186,17 +204,15 @@ export default function WorkoutGenerationModal() {
   const finishOpacity = useRef(new Animated.Value(0)).current;
   const finishTranslate = useRef(new Animated.Value(6)).current;
 
-  // Auto-show: trigger for any new job type, not just initial generation
+  // Auto-show on new job
   useEffect(() => {
     if (showModal) return;
-
     const newJobs = activeBackgroundJobs.filter(
       (j) => !autoShownRef.current.has(j.id)
     );
     const newFailed = failedBackgroundJobs.filter(
       (j) => j.status === "failed" && !autoShownRef.current.has(j.id)
     );
-
     if (newJobs.length > 0) {
       autoShownRef.current.add(newJobs[0].id);
       setTimeout(() => setShowModal(true), 500);
@@ -210,7 +226,7 @@ export default function WorkoutGenerationModal() {
     if (backgroundJobs.length === 0) autoShownRef.current.clear();
   }, [backgroundJobs.length]);
 
-  // Animate progress bar width
+  // Animate progress bar fill
   useEffect(() => {
     const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
     Animated.timing(progressAnim, {
@@ -221,7 +237,7 @@ export default function WorkoutGenerationModal() {
     }).start();
   }, [doneCount, totalCount]);
 
-  // Animate rail fill height
+  // Animate vertical rail fill
   useEffect(() => {
     if (timelineHeight === 0) return;
     const targetH = Math.max(0, (timelineHeight - 28) * fillFrac);
@@ -233,18 +249,20 @@ export default function WorkoutGenerationModal() {
     }).start();
   }, [fillFrac, timelineHeight]);
 
-  // Animate finish note in
+  // Animate finish note
   useEffect(() => {
     if (isFinished) {
       Animated.parallel([
         Animated.timing(finishOpacity, {
           toValue: 1,
           duration: 500,
+          easing: Easing.bezier(0.22, 1, 0.36, 1),
           useNativeDriver: true,
         }),
         Animated.timing(finishTranslate, {
           toValue: 0,
           duration: 500,
+          easing: Easing.bezier(0.22, 1, 0.36, 1),
           useNativeDriver: true,
         }),
       ]).start();
@@ -273,46 +291,113 @@ export default function WorkoutGenerationModal() {
 
   if (!showModal || !currentJob) return null;
 
+  // ── Shared header lockup ──────────────────────────────────────────────────
+  const brandLockup = (
+    <View
+      style={{
+        paddingTop: insets.top + 14,
+        paddingHorizontal: 20,
+        paddingBottom: 0,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Image
+          source={images.logoDark}
+          style={{ width: 24, height: 22 }}
+          resizeMode="contain"
+        />
+        <Text
+          style={{
+            fontSize: 17,
+            fontWeight: "600",
+            letterSpacing: -0.17,
+            color: C.textPrimary,
+          }}
+        >
+          MastersFit
+        </Text>
+      </View>
+    </View>
+  );
+
+  // ── Shared footer pill + cancel ───────────────────────────────────────────
+  const renderFooter = (
+    primaryLabel: string,
+    onPrimary: () => void,
+    secondaryLabel?: string,
+    onSecondary?: () => void,
+    primaryDanger?: boolean,
+  ) => (
+    <View
+      style={{
+        paddingTop: 12,
+        paddingHorizontal: 24,
+        paddingBottom: 20 + insets.bottom,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
+        gap: 2,
+      }}
+    >
+      <TouchableOpacity
+        onPress={onPrimary}
+        style={{
+          height: 56,
+          borderRadius: 9999,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: primaryDanger ? colors.danger : C.primary,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 17,
+            fontWeight: "600",
+            color: C.onPrimary,
+          }}
+        >
+          {primaryLabel}
+        </Text>
+      </TouchableOpacity>
+
+      {secondaryLabel && onSecondary && (
+        <TouchableOpacity
+          onPress={onSecondary}
+          style={{
+            height: 48,
+            borderRadius: 9999,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "600",
+              color: C.textMuted,
+            }}
+          >
+            {secondaryLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   return (
     <Modal visible animationType="slide" transparent={false}>
       <View style={{ flex: 1, backgroundColor: C.bg }}>
-        <ScrollView
-          contentContainerStyle={{
-            paddingTop: insets.top + 20,
-            paddingHorizontal: 22,
-            paddingBottom: insets.bottom + 36,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── Brand row ───────────────────────────────────────── */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: isJobTerminal ? 32 : 20,
-            }}
-          >
-            <Image
-              source={isDark ? images.logoDark : images.logo}
-              style={{ width: 20, height: 20 }}
-              resizeMode="contain"
-            />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "700",
-                letterSpacing: 2.16,
-                color: C.textMuted,
-              }}
-            >
-              MASTERSFIT
-            </Text>
-          </View>
 
-          {isJobTerminal ? (
-            /* ── Terminal state (failed / timeout / cancelled) ── */
-            <>
+        {/* ── Brand header ─────────────────────────────────────────────── */}
+        {brandLockup}
+
+        {isJobTerminal ? (
+          /* ── Terminal state (failed / timeout / cancelled) ──────────── */
+          <>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 24, paddingTop: 8 }}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={{ alignItems: "center", paddingVertical: 40 }}>
                 <Ionicons
                   name="alert-circle-outline"
@@ -322,11 +407,12 @@ export default function WorkoutGenerationModal() {
                 />
                 <Text
                   style={{
-                    fontSize: 20,
+                    fontSize: 28,
                     fontWeight: "700",
+                    letterSpacing: -0.56,
                     color: C.textPrimary,
                     textAlign: "center",
-                    marginBottom: 8,
+                    marginBottom: 7,
                   }}
                 >
                   {currentJob.status === "cancelled"
@@ -338,9 +424,9 @@ export default function WorkoutGenerationModal() {
                 <Text
                   style={{
                     fontSize: 15,
-                    color: C.textSecondary,
+                    color: C.textMuted,
                     textAlign: "center",
-                    lineHeight: 22,
+                    lineHeight: 22.5,
                   }}
                 >
                   {currentJob.status === "cancelled"
@@ -348,24 +434,17 @@ export default function WorkoutGenerationModal() {
                     : getErrorMessage(currentJob.error, currentJob.status)}
                 </Text>
               </View>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.danger,
-                  borderRadius: 12,
-                  paddingVertical: 14,
-                  alignItems: "center",
-                  marginTop: 8,
-                }}
-                onPress={handleDismiss}
-              >
-                <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>
-                  Dismiss
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : showCancelConfirm ? (
-            /* ── Cancel confirmation ────────────────────────────── */
-            <>
+            </ScrollView>
+            {renderFooter("Dismiss", handleDismiss)}
+          </>
+        ) : showCancelConfirm ? (
+          /* ── Cancel confirmation ─────────────────────────────────────── */
+          <>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 24, paddingTop: 8 }}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={{ alignItems: "center", paddingVertical: 40 }}>
                 <Ionicons
                   name="warning-outline"
@@ -375,11 +454,12 @@ export default function WorkoutGenerationModal() {
                 />
                 <Text
                   style={{
-                    fontSize: 20,
+                    fontSize: 28,
                     fontWeight: "700",
+                    letterSpacing: -0.56,
                     color: C.textPrimary,
                     textAlign: "center",
-                    marginBottom: 8,
+                    marginBottom: 7,
                   }}
                 >
                   Cancel Generation?
@@ -387,54 +467,43 @@ export default function WorkoutGenerationModal() {
                 <Text
                   style={{
                     fontSize: 15,
-                    color: C.textSecondary,
+                    color: C.textMuted,
                     textAlign: "center",
-                    lineHeight: 22,
+                    lineHeight: 22.5,
                   }}
                 >
                   This will stop the process and you'll need to start again.
                 </Text>
               </View>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: C.primary,
-                  borderRadius: 12,
-                  paddingVertical: 14,
-                  alignItems: "center",
-                  marginBottom: 10,
-                }}
-                onPress={() => setShowCancelConfirm(false)}
-              >
-                <Text style={{ color: C.onPrimary, fontWeight: "600", fontSize: 15 }}>
-                  Keep Generating
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.danger,
-                  borderRadius: 12,
-                  paddingVertical: 14,
-                  alignItems: "center",
-                }}
-                onPress={handleCancelConfirm}
-              >
-                <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>
-                  Cancel Generation
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            /* ── Main timeline view ─────────────────────────────── */
-            <>
+            </ScrollView>
+            {renderFooter(
+              "Keep Generating",
+              () => setShowCancelConfirm(false),
+              "Cancel Generation",
+              handleCancelConfirm,
+            )}
+          </>
+        ) : (
+          /* ── Main timeline view ──────────────────────────────────────── */
+          <>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                paddingTop: 8,
+                paddingHorizontal: 24,
+                paddingBottom: 10,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
               {/* Title */}
               <Text
                 style={{
-                  fontSize: 27,
+                  fontSize: 28,
                   fontWeight: "700",
-                  letterSpacing: -0.54,
-                  lineHeight: 31,
+                  letterSpacing: -0.56,
+                  lineHeight: 32.5,
                   color: C.textPrimary,
-                  marginBottom: 7,
+                  marginTop: 6,
                 }}
               >
                 {getTitle()}
@@ -444,29 +513,29 @@ export default function WorkoutGenerationModal() {
               <Text
                 style={{
                   fontSize: 15,
-                  lineHeight: 22,
-                  color: C.textSecondary,
-                  marginBottom: 20,
+                  lineHeight: 22.5,
+                  color: C.textMuted,
+                  marginTop: 7,
                 }}
               >
                 {getSub()}
               </Text>
 
-              {/* Progress bar */}
+              {/* Progress row */}
               {totalCount > 0 && (
                 <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 12,
-                    marginBottom: 26,
+                    marginTop: 30,
                   }}
                 >
                   <View
                     style={{
                       flex: 1,
                       height: 5,
-                      borderRadius: 999,
+                      borderRadius: 9999,
                       backgroundColor: C.l2,
                       overflow: "hidden",
                     }}
@@ -474,7 +543,7 @@ export default function WorkoutGenerationModal() {
                     <Animated.View
                       style={{
                         height: "100%",
-                        borderRadius: 999,
+                        borderRadius: 9999,
                         backgroundColor: C.primary,
                         width: progressAnim.interpolate({
                           inputRange: [0, 100],
@@ -488,7 +557,7 @@ export default function WorkoutGenerationModal() {
                       fontSize: 13,
                       fontWeight: "700",
                       color: C.textPrimary,
-                      minWidth: 58,
+                      minWidth: 54,
                       textAlign: "right",
                       fontVariant: ["tabular-nums"],
                     }}
@@ -500,17 +569,27 @@ export default function WorkoutGenerationModal() {
 
               {/* Timeline */}
               {days.length === 0 ? (
-                /* Planning phase — days not yet known */
-                <View style={{ alignItems: "center", paddingVertical: 32, gap: 12 }}>
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 32,
+                    gap: 12,
+                    marginTop: 28,
+                  }}
+                >
                   <ActivityIndicator color={C.primary} />
                   <Text style={{ fontSize: 13, color: C.textMuted }}>
-                    {phase === "planning" ? "Designing your week…" : "Preparing your plan…"}
+                    {phase === "planning"
+                      ? "Designing your week…"
+                      : "Preparing your plan…"}
                   </Text>
                 </View>
               ) : (
                 <View
-                  style={{ position: "relative" }}
-                  onLayout={(e) => setTimelineHeight(e.nativeEvent.layout.height)}
+                  style={{ position: "relative", marginTop: 28 }}
+                  onLayout={(e) =>
+                    setTimelineHeight(e.nativeEvent.layout.height)
+                  }
                 >
                   {/* Base rail */}
                   <View
@@ -539,7 +618,6 @@ export default function WorkoutGenerationModal() {
 
                   {days.map((day) => {
                     const isPending = day.status === "pending";
-
                     return (
                       <View
                         key={day.dayNumber}
@@ -552,7 +630,11 @@ export default function WorkoutGenerationModal() {
                       >
                         {/* Marker column — 30px wide to center the 28px circle */}
                         <View
-                          style={{ width: 30, alignItems: "center", paddingTop: 1 }}
+                          style={{
+                            width: 30,
+                            alignItems: "center",
+                            paddingTop: 1,
+                          }}
                         >
                           <NodeMarker
                             status={day.status}
@@ -574,11 +656,11 @@ export default function WorkoutGenerationModal() {
                           {/* Kicker: DAY N */}
                           <Text
                             style={{
-                              fontSize: 11.5,
+                              fontSize: 11,
                               fontWeight: "700",
-                              letterSpacing: 1.38,
+                              letterSpacing: 1.32,
                               color: isPending ? C.textMuted : C.primary,
-                              marginBottom: 2,
+                              marginBottom: 3,
                             }}
                           >
                             DAY {day.dayNumber}
@@ -587,10 +669,10 @@ export default function WorkoutGenerationModal() {
                           {/* Stage title */}
                           <Text
                             style={{
-                              fontSize: 16.5,
+                              fontSize: 17,
                               fontWeight: "600",
-                              lineHeight: 21,
-                              letterSpacing: -0.165,
+                              lineHeight: 21.25,
+                              letterSpacing: -0.17,
                               color: C.textPrimary,
                             }}
                           >
@@ -606,8 +688,7 @@ export default function WorkoutGenerationModal() {
               {/* Finish note */}
               <Animated.View
                 style={{
-                  marginTop: 22,
-                  alignItems: "center",
+                  marginTop: 24,
                   opacity: finishOpacity,
                   transform: [{ translateY: finishTranslate }],
                 }}
@@ -622,45 +703,17 @@ export default function WorkoutGenerationModal() {
                   {getFinishLabel()}
                 </Text>
               </Animated.View>
+            </ScrollView>
 
-              {/* Action buttons */}
-              <View style={{ marginTop: 36, gap: 4 }}>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: C.primary,
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    alignItems: "center",
-                  }}
-                  onPress={handleClose}
-                >
-                  <Text
-                    style={{ color: C.onPrimary, fontWeight: "600", fontSize: 15 }}
-                  >
-                    {isFinished ? "View Your Workout" : "Continue Using App"}
-                  </Text>
-                </TouchableOpacity>
-
-                {isJobActive && (
-                  <TouchableOpacity
-                    style={{ paddingVertical: 12, alignItems: "center" }}
-                    onPress={() => setShowCancelConfirm(true)}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        color: C.textMuted,
-                      }}
-                    >
-                      Cancel Generation
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-          )}
-        </ScrollView>
+            {/* ── Footer ──────────────────────────────────────────────── */}
+            {renderFooter(
+              isFinished ? "View Your Workout" : "Continue Using App",
+              handleClose,
+              isJobActive ? "Cancel Generation" : undefined,
+              isJobActive ? () => setShowCancelConfirm(true) : undefined,
+            )}
+          </>
+        )}
       </View>
     </Modal>
   );
