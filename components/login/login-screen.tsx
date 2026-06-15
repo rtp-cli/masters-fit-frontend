@@ -140,7 +140,7 @@ export const LoginScreen = () => {
         router.push(
           `/(auth)/verify?email=${encodeURIComponent(
             email.trim().toLowerCase()
-          )}`
+          )}&isNewUser=true`
         );
       } else {
         setDialogConfig({

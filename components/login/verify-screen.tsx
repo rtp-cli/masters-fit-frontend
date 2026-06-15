@@ -24,7 +24,7 @@ type VerifyStatus = "idle" | "verifying" | "success" | "error";
 export const VerifyScreen = () => {
   const colors = useThemeColors();
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, isNewUser } = useLocalSearchParams<{ email: string; isNewUser?: string }>();
 
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [resendCooldown, setResendCooldown] = useState(54);
@@ -401,7 +401,9 @@ export const VerifyScreen = () => {
             marginTop: 12,
           }}
         >
-          Enter the 4-digit code we sent to{"\n"}
+          {isNewUser === "true"
+            ? "We sent a confirmation code to verify your email"
+            : "Enter the 4-digit code we sent to"}{"\n"}
           <Text style={{ color: colors.text.primary, fontWeight: "600" }}>
             {email}
           </Text>

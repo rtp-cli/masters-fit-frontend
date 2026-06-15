@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import {
+  Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  TouchableOpacity,
+  View,
+  Text,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useThemeColors } from "@/lib/theme";
 import {
   FormData,
   OnboardingFormProps,
@@ -48,6 +54,7 @@ export default function OnboardingForm({
   submitButtonText = "Generate Weekly Plan",
   excludePersonalInfo = false,
 }: OnboardingFormProps) {
+  const colors = useThemeColors();
   const scrollRef = useRef<ScrollView | null>(null);
 
   // Create dynamic step flow based on excludePersonalInfo
@@ -235,6 +242,67 @@ export default function OnboardingForm({
       className="flex-1 bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* Header — back chevron (steps > 0) + centered brand lockup */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingTop: 14,
+          paddingHorizontal: 20,
+        }}
+      >
+        {currentStepIndex > 0 ? (
+          <TouchableOpacity
+            onPress={handlePrevious}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 9999,
+              alignItems: "center",
+              justifyContent: "center",
+              marginLeft: -8,
+            }}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.text.primary}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40, height: 40 }} />
+        )}
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 14,
+            alignItems: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Image
+              source={require("../assets/logo-dark.png")}
+              style={{ width: 24, height: 22 }}
+              resizeMode="contain"
+            />
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "600",
+                letterSpacing: -0.17,
+                color: colors.text.primary,
+              }}
+            >
+              MastersFit
+            </Text>
+          </View>
+        </View>
+        <View style={{ width: 40, marginLeft: "auto" }} />
+      </View>
+
       <ScrollView
         key={currentStep}
         ref={scrollRef}
@@ -242,7 +310,7 @@ export default function OnboardingForm({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header with step indicator */}
+        {/* Progress indicator + step title */}
         <OnboardingHeader
           currentStep={currentStep}
           totalSteps={availableSteps.length}
@@ -259,7 +327,6 @@ export default function OnboardingForm({
         isLoading={isLoading}
         submitButtonText={submitButtonText}
         onNext={handleNext}
-        onPrevious={handlePrevious}
         onSubmit={handleSubmit}
         currentStepIndex={currentStepIndex}
         totalSteps={availableSteps.length}

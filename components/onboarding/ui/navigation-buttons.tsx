@@ -7,7 +7,6 @@ interface NavigationButtonsProps {
   isLoading: boolean;
   submitButtonText?: string;
   onNext: () => void;
-  onPrevious: () => void;
   onSubmit: () => void;
   currentStepIndex?: number;
   totalSteps?: number;
@@ -18,52 +17,44 @@ export default function NavigationButtons({
   isLoading,
   submitButtonText = "Generate My Plan",
   onNext,
-  onPrevious,
   onSubmit,
   currentStepIndex,
   totalSteps,
 }: NavigationButtonsProps) {
   const colors = useThemeColors();
-  // Use index-based logic if provided, fallback to absolute step logic
   const isLastStep =
     totalSteps !== undefined && currentStepIndex !== undefined
       ? currentStepIndex === totalSteps - 1
       : currentStep === ONBOARDING_STEP.WORKOUT_STYLE;
 
-  const isFirstStep =
-    currentStepIndex !== undefined ? currentStepIndex === 0 : currentStep === 0;
-
   return (
-    <View className="px-6 pb-8 pt-4">
-      <View className="flex-row">
-        {!isFirstStep && (
-          <TouchableOpacity
-            className="flex-1 py-4 items-center justify-center bg-surface rounded-xl mr-3"
-            onPress={onPrevious}
-            disabled={isLoading}
+    <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 }}>
+      <TouchableOpacity
+        onPress={isLastStep ? onSubmit : onNext}
+        disabled={isLoading}
+        style={{
+          height: 56,
+          borderRadius: 9999,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.brand.primary,
+          opacity: isLoading ? 0.7 : 1,
+        }}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={colors.neutral.white} />
+        ) : (
+          <Text
+            style={{
+              fontSize: 17,
+              fontWeight: "600",
+              color: colors.neutral.white,
+            }}
           >
-            <Text className="text-text-primary font-semibold text-md">
-              Back
-            </Text>
-          </TouchableOpacity>
+            {isLastStep ? submitButtonText : "Continue"}
+          </Text>
         )}
-
-        <TouchableOpacity
-          className={`py-4 px-8 bg-primary rounded-xl items-center justify-center ${
-            currentStep === 0 ? "flex-1" : "flex-1 ml-3"
-          } ${isLoading ? "opacity-70" : ""}`}
-          onPress={isLastStep ? onSubmit : onNext}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={colors.neutral.white} />
-          ) : (
-            <Text className="text-neutral-white font-bold text-md">
-              {isLastStep ? submitButtonText : "Continue"}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }

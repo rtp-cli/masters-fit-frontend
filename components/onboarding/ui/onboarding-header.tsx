@@ -17,7 +17,7 @@ export default function OnboardingHeader({
   const stepConfig = getStepConfig(currentStep);
 
   return (
-    <View className="px-6 pt-12 pb-6">
+    <View className="px-6 pt-6 pb-4">
       {/* Progress Indicator */}
       <ProgressIndicator
         currentStep={
