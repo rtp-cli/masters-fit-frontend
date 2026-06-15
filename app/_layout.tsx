@@ -106,7 +106,11 @@ function AppContent() {
     loading,
   } = useAppDataContext();
   const { hasActiveJobs } = useBackgroundJobs();
-  const { setThemeMode: applyThemeMode, setColorTheme: applyColorTheme } = useTheme();
+  const {
+    setThemeMode: applyThemeMode,
+    setColorTheme: applyColorTheme,
+    _setUserThemeUpdater,
+  } = useTheme();
 
   // Sync theme when user changes (login/logout)
   const prevUserIdRef = useRef<number | null | undefined>(undefined);
@@ -123,7 +127,12 @@ function AppContent() {
     prevUserIdRef.current = currentUserId;
 
     if (!currentUserId) {
-      // Logged out — reset to defaults (AsyncStorage already cleared by logout())
+      // Logged out — reset to defaults (AsyncStorage already cleared by logout()).
+      // Clear the theme→user sync target FIRST: otherwise the applyThemeMode/
+      // applyColorTheme calls below run setUserData() with the just-logged-out
+      // user (still held in userThemeUpdaterRef), which re-identifies RevenueCat
+      // and resurrects the session.
+      _setUserThemeUpdater?.({ setUserData, user: null });
       applyThemeMode("auto");
       applyColorTheme("original");
     } else {
@@ -138,7 +147,6 @@ function AppContent() {
   }, [user?.id]);
 
   // Provide setUserData and user to RootLayout theme setters
-  const { _setUserThemeUpdater } = useTheme();
   useEffect(() => {
     if (_setUserThemeUpdater) {
       _setUserThemeUpdater({ setUserData, user });
