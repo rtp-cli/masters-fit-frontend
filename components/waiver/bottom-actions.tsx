@@ -1,4 +1,5 @@
-import { TouchableOpacity, View, Text } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { useThemeColors } from "@/lib/theme";
 
 interface BottomActionsProps {
   isAgreed: boolean;
@@ -7,24 +8,64 @@ interface BottomActionsProps {
   onContinue: () => void;
 }
 
-export default function BottomActions({ isAgreed, isLoading, onCancel, onContinue }: BottomActionsProps) {
-  return (
-    <View className="px-6 pb-6 pt-4 bg-surface border-t border-neutral-light-2">
-      <View className="flex-row gap-3">
-        <TouchableOpacity className="flex-1 py-3 px-6 rounded-xl bg-danger items-center justify-center" onPress={onCancel}>
-          <Text className="text-neutral-white font-semibold">Cancel</Text>
-        </TouchableOpacity>
+export default function BottomActions({
+  isAgreed,
+  isLoading,
+  onCancel,
+  onContinue,
+}: BottomActionsProps) {
+  const colors = useThemeColors();
+  const enabled = isAgreed && !isLoading;
 
-        <TouchableOpacity
-          className={`flex-1 py-4 px-6 rounded-xl items-center ${isAgreed && !isLoading ? "bg-brand-primary" : "bg-neutral-light-2"}`}
-          onPress={onContinue}
-          disabled={!isAgreed || isLoading}
-        >
-          <Text className={`text-base font-semibold ${isAgreed && !isLoading ? "text-neutral-white" : "text-neutral-medium-3"}`}>
-            {isLoading ? "Saving..." : "Continue"}
+  return (
+    <View style={{ gap: 2 }}>
+      {/* Continue — full-width black pill, disabled until agreed */}
+      <TouchableOpacity
+        onPress={onContinue}
+        disabled={!enabled}
+        style={{
+          height: 56,
+          borderRadius: 9999,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: enabled ? colors.brand.primary : "#ECECEE",
+        }}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={colors.neutral.white} />
+        ) : (
+          <Text
+            style={{
+              fontSize: 17,
+              fontWeight: "600",
+              color: enabled ? colors.neutral.white : "#B5B5BC",
+            }}
+          >
+            Continue
           </Text>
-        </TouchableOpacity>
-      </View>
+        )}
+      </TouchableOpacity>
+
+      {/* Cancel — quiet text button, no fill */}
+      <TouchableOpacity
+        onPress={onCancel}
+        style={{
+          height: 48,
+          borderRadius: 9999,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: "600",
+            color: colors.text.muted,
+          }}
+        >
+          Cancel
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }

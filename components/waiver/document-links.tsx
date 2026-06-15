@@ -8,27 +8,54 @@ interface DocumentLinksProps {
   onOpenWaiver: () => void;
 }
 
-export default function DocumentLinks({ onOpenTerms, onOpenPrivacy, onOpenWaiver }: DocumentLinksProps) {
+export default function DocumentLinks({
+  onOpenTerms,
+  onOpenPrivacy,
+  onOpenWaiver,
+}: DocumentLinksProps) {
   const colors = useThemeColors();
 
+  const linkStyle = {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: colors.text.secondary,
+    textDecorationLine: "underline" as const,
+    textDecorationStyle: "solid" as const,
+  };
+
   return (
-    <View className="px-6 mb-8">
-      <View className="flex-row justify-center items-center flex-wrap">
-        <TouchableOpacity onPress={onOpenTerms} className="flex-row items-center mx-2 mb-3">
-          <Ionicons name="newspaper-outline" size={16} color={colors.brand.primary} />
-          <Text className="text-sm text-brand-primary ml-1 underline">Terms & Conditions</Text>
-        </TouchableOpacity>
+    <View
+      style={{
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        rowGap: 10,
+        columnGap: 18,
+      }}
+    >
+      <TouchableOpacity
+        onPress={onOpenTerms}
+        style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+      >
+        <Ionicons name="document-outline" size={14} color={colors.text.secondary} />
+        <Text style={linkStyle}>Terms & Conditions</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity onPress={onOpenPrivacy} className="flex-row items-center mx-2 mb-3">
-          <Ionicons name="lock-closed-outline" size={16} color={colors.brand.primary} />
-          <Text className="text-sm text-brand-primary ml-1 underline">Privacy Policy</Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        onPress={onOpenPrivacy}
+        style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+      >
+        <Ionicons name="lock-closed-outline" size={14} color={colors.text.secondary} />
+        <Text style={linkStyle}>Privacy Policy</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity onPress={onOpenWaiver} className="flex-row items-center mx-2 mb-3">
-          <Ionicons name="shield-checkmark-outline" size={16} color={colors.brand.primary} />
-          <Text className="text-sm text-brand-primary ml-1 underline">Waiver of Liability</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={onOpenWaiver}
+        style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+      >
+        <Ionicons name="shield-checkmark-outline" size={14} color={colors.text.secondary} />
+        <Text style={linkStyle}>Waiver of Liability</Text>
+      </TouchableOpacity>
     </View>
   );
 }

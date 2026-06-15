@@ -15,24 +15,42 @@ export default function AgreementCheckbox({
   const colors = useThemeColors();
 
   return (
-    <View className="px-6 mb-6">
-      <TouchableOpacity
-        onPress={onToggle}
-        className="flex-row items-center bg-surface rounded-xl p-4"
+    <TouchableOpacity
+      onPress={onToggle}
+      style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
+    >
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 7,
+          borderWidth: 2,
+          borderColor: isAgreed ? colors.brand.primary : colors.neutral.medium[1],
+          backgroundColor: isAgreed ? colors.brand.primary : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
       >
-        <View
-          className={`w-6 h-6 rounded-md border-2 mr-3 items-center justify-center ${
-            isAgreed
-              ? "bg-brand-primary border-brand-primary"
-              : "bg-surface border-neutral-medium-2"
-          }`}
-        >
-          {isAgreed && <Ionicons name="checkmark" size={16} color={colors.neutral.white} />}
-        </View>
-        <Text className="flex-1 text-base text-text-primary">
-          I agree to the Terms & Conditions, Privacy Policy, and Waiver of Liability (v{CURRENT_WAIVER_VERSION})
+        {isAgreed && (
+          <Ionicons name="checkmark" size={15} color={colors.neutral.white} />
+        )}
+      </View>
+      <Text
+        style={{
+          flex: 1,
+          fontSize: 15,
+          lineHeight: 21,
+          fontWeight: "500",
+          color: colors.text.primary,
+        }}
+      >
+        I agree to the Terms & Conditions, Privacy Policy, and Waiver of
+        Liability{" "}
+        <Text style={{ color: colors.text.muted }}>
+          (v{CURRENT_WAIVER_VERSION})
         </Text>
-      </TouchableOpacity>
-    </View>
+      </Text>
+    </TouchableOpacity>
   );
 }
