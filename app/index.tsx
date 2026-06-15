@@ -147,41 +147,125 @@ export default function GetStarted() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style="dark" />
 
-      <View className="flex-1 px-6 justify-between pb-12">
-        {/* Hero Section with Home Image */}
-        <View className="flex-1 justify-center items-center">
-          <Image
-            key="home-hero-image"
-            source={images.home}
-            className="w-80 h-80 mb-10 rounded-lg"
-            resizeMode="contain"
-          />
-          <Text className="text-xl font-bold text-text-primary text-center mb-4">
-            Welcome to MastersFit!
-          </Text>
-          <Text className="text-base text-neutral-medium-4 text-center leading-6 px-5">
-            AI-personalized fitness plans designed specifically for adults 40+
-            to help you achieve your fitness goals safely and effectively.
-          </Text>
+      {/* Header — brand lockup centered, 40px spacers on both sides (no back button) */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingTop: 14,
+          paddingHorizontal: 20,
+        }}
+      >
+        <View style={{ width: 40, height: 40 }} />
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 14,
+            alignItems: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Image
+              source={require("../assets/logo-dark.png")}
+              style={{ width: 24, height: 22 }}
+              resizeMode="contain"
+            />
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "600",
+                letterSpacing: -0.17,
+                color: colors.text.primary,
+              }}
+            >
+              MastersFit
+            </Text>
+          </View>
         </View>
+      </View>
 
-        {/* Get Started Button */}
+      {/* Body — centered vertically and horizontally */}
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 24,
+        }}
+      >
+        <Image
+          source={images.home}
+          style={{
+            width: 240,
+            height: 240,
+            borderRadius: 9999,
+            marginBottom: 32,
+          }}
+          resizeMode="cover"
+        />
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: "700",
+            letterSpacing: -0.56,
+            lineHeight: 32.5,
+            color: colors.text.primary,
+            textAlign: "center",
+          }}
+        >
+          Welcome to MastersFit!
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            lineHeight: 24,
+            color: colors.text.muted,
+            textAlign: "center",
+            maxWidth: 300,
+            marginTop: 12,
+          }}
+        >
+          AI-personalized fitness plans designed specifically for adults 40+ to
+          help you achieve your fitness goals safely and effectively.
+        </Text>
+      </View>
+
+      {/* Footer */}
+      <View
+        style={{
+          paddingHorizontal: 24,
+          paddingBottom: 24,
+        }}
+      >
         <TouchableOpacity
-          className="bg-brand-primary py-4 px-6 rounded-md items-center flex-row justify-center"
+          style={{
+            width: "100%",
+            height: 56,
+            backgroundColor: colors.brand.primary,
+            borderRadius: 9999,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
           onPress={handleGetStarted}
         >
-          <Text className="text-content-on-primary text-base font-semibold mr-2">
+          <Text
+            style={{
+              color: colors.contentOnPrimary,
+              fontSize: 17,
+              fontWeight: "600",
+            }}
+          >
             Get Started
           </Text>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color={colors.contentOnPrimary}
-            className="ml-1"
-          />
+          <Ionicons name="arrow-forward" size={18} color={colors.contentOnPrimary} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
