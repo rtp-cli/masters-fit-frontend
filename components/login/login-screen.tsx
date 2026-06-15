@@ -5,7 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -25,6 +25,8 @@ export const LoginScreen = () => {
   const [showNameField, setShowNameField] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isNameFocused, setIsNameFocused] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -168,7 +170,6 @@ export const LoginScreen = () => {
     }
   };
 
-  // Handle back button press
   const handleGoBack = () => {
     if (showNameField) {
       setShowNameField(false);
@@ -179,76 +180,209 @@ export const LoginScreen = () => {
     }
   };
 
+  const emailFilled = email.length > 0;
+  const nameFilled = name.length > 0;
+
+  const getInputStyle = (filled: boolean, focused: boolean, hasError = false) => ({
+    height: 58,
+    paddingHorizontal: 18,
+    fontSize: 17,
+    fontWeight: "500" as const,
+    textAlign: "center" as const,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    borderColor: hasError
+      ? colors.danger
+      : filled || focused
+      ? colors.brand.primary
+      : colors.neutral.medium[1],
+    backgroundColor: filled ? colors.surface : colors.background,
+    color: colors.text.primary,
+    ...(focused && {
+      shadowColor: colors.brand.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+    }),
+  });
+
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style="dark" />
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Title and description */}
-        <View className="px-lg pt-2xl pb-lg">
-          <Text className="text-3xl font-bold text-text-primary mb-sm">
-            {showNameField ? "Create Account" : "Welcome Back"}
-          </Text>
-          <Text className="text-sm text-text-muted leading-5">
-            {showNameField
-              ? "Please enter your name to continue"
-              : "Enter your email to continue"}
-          </Text>
-        </View>
 
-        <View className="px-lg pt-lg">
-          <View className="mb-lg">
-            <Text className="text-base font-medium text-text-primary mb-sm">
-              Email
-            </Text>
-            <TextInput
-              className={`bg-background px-md py-md rounded-xl text-text-primary border ${
-                emailError ? "border-red-500" : "border-neutral-medium-1"
-              }`}
-              placeholder="Email address"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              editable={!showNameField && !isLoading}
-              placeholderTextColor={colors.text.muted}
-            />
-            {emailError ? (
-              <Text className="text-red-500 text-sm mt-sm">{emailError}</Text>
-            ) : null}
-          </View>
-
-          {/* Name input (conditional) */}
-          {showNameField && (
-            <View className="mb-lg">
-              <Text className="text-base font-medium text-text-primary mb-sm">
-                Full Name
-              </Text>
-              <TextInput
-                className="bg-background px-md py-md rounded-xl text-text-primary border border-neutral-medium-1"
-                placeholder="Enter your full name"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                editable={!isLoading}
-                placeholderTextColor={colors.text.muted}
-              />
-            </View>
-          )}
-        </View>
-      </ScrollView>
-      <View className="px-lg pb-2xl pt-md bg-background">
+      {/* Header — back chevron + centered brand lockup */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingTop: 14,
+          paddingHorizontal: 20,
+        }}
+      >
         <TouchableOpacity
-          className={`py-md px-2xl bg-brand-primary rounded-xl items-center justify-center ${
-            isLoading ? "opacity-70" : ""
-          }`}
+          onPress={handleGoBack}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 9999,
+            alignItems: "center",
+            justifyContent: "center",
+            marginLeft: -8,
+          }}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 14,
+            alignItems: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Image
+              source={require("../../assets/logo-dark.png")}
+              style={{ width: 24, height: 22 }}
+              resizeMode="contain"
+            />
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "600",
+                letterSpacing: -0.17,
+                color: colors.text.primary,
+              }}
+            >
+              MastersFit
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Body — centered vertically */}
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          paddingHorizontal: 24,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: "700",
+            letterSpacing: -0.56,
+            lineHeight: 32.5,
+            color: colors.text.primary,
+            textAlign: "center",
+          }}
+        >
+          {showNameField ? "Create Account" : "Welcome back"}
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            lineHeight: 24,
+            color: colors.text.muted,
+            textAlign: "center",
+            maxWidth: 280,
+            alignSelf: "center",
+            marginTop: 12,
+          }}
+        >
+          {showNameField
+            ? "Please enter your name to continue"
+            : "Enter your email and we'll send you a sign-in code"}
+        </Text>
+
+        {/* Email input */}
+        <TextInput
+          style={[{ marginTop: 30 }, getInputStyle(emailFilled, isEmailFocused, !!emailError)]}
+          placeholder="Email address"
+          value={email}
+          onChangeText={(t) => {
+            setEmail(t);
+            if (emailError) setEmailError("");
+          }}
+          onFocus={() => setIsEmailFocused(true)}
+          onBlur={() => setIsEmailFocused(false)}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          inputMode="email"
+          editable={!showNameField && !isLoading}
+          placeholderTextColor={colors.text.muted}
+          selectionColor={colors.brand.primary}
+          returnKeyType="done"
+          onSubmitEditing={handleContinue}
+        />
+
+        {/* Name input (signup flow) */}
+        {showNameField && (
+          <TextInput
+            style={[{ marginTop: 12 }, getInputStyle(nameFilled, isNameFocused)]}
+            placeholder="Full name"
+            value={name}
+            onChangeText={setName}
+            onFocus={() => setIsNameFocused(true)}
+            onBlur={() => setIsNameFocused(false)}
+            autoCapitalize="words"
+            editable={!isLoading}
+            placeholderTextColor={colors.text.muted}
+            selectionColor={colors.brand.primary}
+            returnKeyType="done"
+            onSubmitEditing={handleSignup}
+          />
+        )}
+      </View>
+
+      {/* Footer */}
+      <View
+        style={{
+          paddingHorizontal: 24,
+          paddingBottom: 24,
+          alignItems: "center",
+          gap: 16,
+        }}
+      >
+        {!showNameField && (
+          <Text
+            style={{
+              fontSize: 13,
+              color: colors.text.muted,
+              textAlign: "center",
+              maxWidth: 300,
+            }}
+          >
+            Passwordless sign-in — no password to remember.
+          </Text>
+        )}
+        <TouchableOpacity
+          style={{
+            width: "100%",
+            height: 56,
+            backgroundColor: colors.brand.primary,
+            borderRadius: 9999,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: isLoading ? 0.7 : 1,
+          }}
           onPress={showNameField ? handleSignup : handleContinue}
           disabled={isLoading}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.contentOnPrimary} />
           ) : (
-            <Text className="text-content-on-primary font-semibold text-base">
+            <Text
+              style={{
+                color: colors.contentOnPrimary,
+                fontSize: 17,
+                fontWeight: "600",
+              }}
+            >
               {showNameField ? "Sign Up" : "Continue"}
             </Text>
           )}

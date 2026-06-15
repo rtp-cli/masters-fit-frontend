@@ -27,16 +27,6 @@ export function useVerifyController() {
     try {
       const response = await generateAuthCode({ email });
       if (response.success) {
-        setDialogConfig({
-          title: "Success",
-          description: "A new verification code has been sent to your email.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "checkmark-circle",
-        });
-        setDialogVisible(true);
         return { success: true };
       } else {
         setDialogConfig({
@@ -157,30 +147,7 @@ export function useVerifyController() {
             return { success: false };
           }
         } else {
-          setDialogConfig({
-            title: "Invalid Code",
-            description:
-              "The code you entered is incorrect. Would you like to try again or request a new code?",
-            primaryButton: {
-              text: "New Code",
-              onPress: () => {
-                setDialogVisible(false);
-                // Small delay to ensure dialog closes before making API call
-                setTimeout(() => {
-                  requestNewCode(email);
-                }, 100);
-              },
-            },
-            secondaryButton: {
-              text: "Try Again",
-              onPress: () => {
-                setDialogVisible(false);
-              },
-            },
-            icon: "alert-circle",
-          });
-          setDialogVisible(true);
-          return { success: false };
+          return { success: false, invalidCode: true };
         }
       } catch (error) {
         console.error("Verification error:", error);
