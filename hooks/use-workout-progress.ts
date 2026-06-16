@@ -43,7 +43,8 @@ interface UseWorkoutProgressReturn {
  * still completes when it doesn't.
  */
 export function useWorkoutProgress(
-  polledEvent?: ProgressEvent | null
+  polledEvent?: ProgressEvent | null,
+  activeJobId?: number | null
 ): UseWorkoutProgressReturn {
   const [progress, setProgress] = useState<number>(0);
   const [isComplete, setIsComplete] = useState<boolean>(false);
@@ -237,6 +238,22 @@ export function useWorkoutProgress(
       setIsConnected(false);
     };
   }, [processProgressEvent]);
+
+  // Reset all progress state when the active job changes. A new generation —
+  // or switching from a weekly to a daily regen — must not inherit the
+  // previous job's timeline. Forward-only processing won't clear it on its own
+  // because a job that emits no `days` (e.g. daily regen) never overwrites the
+  // old ones. Declared before the polled effect so the reset runs first.
+  const activeJobIdRef = useRef<number | null | undefined>(activeJobId);
+  useEffect(() => {
+    if (activeJobIdRef.current === activeJobId) return;
+    activeJobIdRef.current = activeJobId;
+    resetDayState();
+    setProgress(0);
+    setIsComplete(false);
+    setError(null);
+    setPhase(null);
+  }, [activeJobId, resetDayState]);
 
   // Polled source — reliable fallback that drives the same pipeline. Runs
   // whenever a fresh polled snapshot arrives.

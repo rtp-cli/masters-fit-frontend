@@ -188,7 +188,10 @@ export default function WorkoutGenerationModal() {
     ]
   );
 
-  const { phase, days, isComplete } = useWorkoutProgress(polledEvent);
+  const { phase, days, isComplete } = useWorkoutProgress(
+    polledEvent,
+    currentJob?.id ?? null
+  );
 
   const doneCount = days.filter((d) => d.status === "done").length;
   const totalCount = days.length;

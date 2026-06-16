@@ -425,11 +425,13 @@ export function BackgroundJobProvider({
   const startPolling = useCallback(() => {
     if (pollIntervalRef.current) return; // Already polling
 
-    // Poll immediately, then every 5 seconds
+    // Poll immediately, then on a fast cadence so the progressive generation
+    // timeline tracks the backend closely on device (where the websocket is
+    // unreliable). Active jobs here are all short-lived generation work.
     pollJobStatus();
     pollIntervalRef.current = setInterval(
       pollJobStatus,
-      TIMEOUTS.POLL_INTERVAL
+      TIMEOUTS.GENERATION_POLL_INTERVAL
     );
   }, [pollJobStatus]);
 
