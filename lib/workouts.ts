@@ -839,6 +839,12 @@ export async function generateWorkoutPlanAsync(
 /**
  * Get job status by job ID
  */
+export interface JobGenerationDayStatus {
+  dayNumber: number;
+  label: string;
+  status: "pending" | "generating" | "done" | "failed";
+}
+
 export async function getJobStatus(jobId: number): Promise<{
   success: boolean;
   job: {
@@ -849,6 +855,10 @@ export async function getJobStatus(jobId: number): Promise<{
     workoutId?: number;
     createdAt: string;
     completedAt?: string;
+    // Structured per-day timeline recovered from the backend so the progressive
+    // UI can be driven by polling, not just the (unreliable on device) socket.
+    phase?: "planning" | "generating_days" | "saving";
+    days?: JobGenerationDayStatus[];
   };
 } | null> {
   try {
@@ -862,6 +872,8 @@ export async function getJobStatus(jobId: number): Promise<{
         workoutId?: number;
         createdAt: string;
         completedAt?: string;
+        phase?: "planning" | "generating_days" | "saving";
+        days?: JobGenerationDayStatus[];
       };
     }>(`/workouts/jobs/${jobId}/status`);
 

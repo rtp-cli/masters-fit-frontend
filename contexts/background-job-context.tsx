@@ -12,6 +12,12 @@ import { getJobStatus, invalidateActiveWorkoutCache } from "@lib/workouts";
 import { useAuth } from "@/contexts/auth-context";
 import { TIMEOUTS, LIMITS } from "@/constants";
 
+export interface JobDayStatus {
+  dayNumber: number;
+  label: string;
+  status: "pending" | "generating" | "done" | "failed";
+}
+
 export interface BackgroundJob {
   id: number;
   type: "generation" | "regeneration" | "daily-regeneration";
@@ -29,6 +35,10 @@ export interface BackgroundJob {
   workoutId?: number;
   estimatedTimeRemaining?: number;
   message?: string;
+  // Structured per-day generation timeline, recovered via polling so the
+  // progressive UI works even when the websocket never delivered the events.
+  phase?: "planning" | "generating_days" | "saving";
+  days?: JobDayStatus[];
 }
 
 interface BackgroundJobContextType {
@@ -387,6 +397,8 @@ export function BackgroundJobProvider({
             completedAt: jobStatus.completedAt,
             error: jobStatus.error,
             workoutId: jobStatus.workoutId,
+            phase: jobStatus.phase,
+            days: jobStatus.days,
             estimatedTimeRemaining: calculateRemainingTime(
               job.type,
               jobStatus.progress,

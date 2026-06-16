@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -127,7 +127,6 @@ export default function WorkoutGenerationModal() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { activeJobs, failedJobs, cancelJob, removeJob } = useBackgroundJobs();
-  const { phase, days, isComplete } = useWorkoutProgress();
 
   const [showModal, setShowModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -163,6 +162,33 @@ export default function WorkoutGenerationModal() {
   );
   const backgroundJobs = [...activeBackgroundJobs, ...failedBackgroundJobs];
   const currentJob = backgroundJobs[0] ?? null;
+
+  // Polled fallback for the progressive timeline. The websocket is the fast
+  // path, but on a physical device behind Render's proxy it can drop or never
+  // deliver; the polled per-day status (from the job-status endpoint) drives
+  // the same pipeline so the timeline still renders. Memoized on the meaningful
+  // fields so it only re-feeds the hook when a fresh poll actually changes them.
+  const polledEvent = useMemo(
+    () =>
+      currentJob
+        ? {
+            progress: currentJob.progress ?? 0,
+            complete: currentJob.status === "completed",
+            error: currentJob.error,
+            phase: currentJob.phase,
+            days: currentJob.days,
+          }
+        : null,
+    [
+      currentJob?.progress,
+      currentJob?.status,
+      currentJob?.error,
+      currentJob?.phase,
+      currentJob?.days,
+    ]
+  );
+
+  const { phase, days, isComplete } = useWorkoutProgress(polledEvent);
 
   const doneCount = days.filter((d) => d.status === "done").length;
   const totalCount = days.length;
