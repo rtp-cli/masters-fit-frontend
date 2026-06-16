@@ -287,7 +287,10 @@ export default function WorkoutRegenerationModal({
         try {
           const result = await regenerateWorkoutPlanAsync(freshUser.id, {
             customFeedback: customFeedback.trim() || undefined,
-            profileData: profileData,
+            profileData: {
+              ...profileData,
+              workoutStyles: profileData.preferredStyles as string[],
+            },
           });
 
           if (result?.success && result.jobId) {
