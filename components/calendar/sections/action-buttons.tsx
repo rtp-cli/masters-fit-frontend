@@ -23,7 +23,39 @@ export default function CalendarActionButtons({
 }: CalendarActionButtonsProps) {
   const colors = useThemeColors();
 
-  if (!workoutPlan || !currentSelectedPlanDay || isHistoricalWorkout || isPastDate || currentSelectedPlanDay.isComplete) {
+  // No actions on past dates, historical views, or when there's no plan at all.
+  if (!workoutPlan || isHistoricalWorkout || isPastDate) {
+    return null;
+  }
+
+  // Rest / no-workout day within an active plan (e.g. Tuesday on an MWF plan):
+  // offer week regeneration directly, so the user doesn't have to open a
+  // scheduled day first just to reach the regenerate flow.
+  if (!currentSelectedPlanDay) {
+    return (
+      <View className="px-lg my-lg">
+        <TouchableOpacity
+          className="bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
+          onPress={() => onShowWorkoutChoice()}
+        >
+          <Ionicons
+            name="refresh-outline"
+            size={16}
+            color={colors.contentOnPrimary}
+          />
+          <Text
+            className="text-content-on-primary font-semibold text-sm ml-2"
+            maxFontSizeMultiplier={1.3}
+          >
+            Regenerate Week
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Completed scheduled day: no actions (you already did it).
+  if (currentSelectedPlanDay.isComplete) {
     return null;
   }
 

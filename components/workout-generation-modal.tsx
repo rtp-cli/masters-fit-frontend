@@ -123,6 +123,17 @@ function NodeMarker({
   );
 }
 
+// Rotating process-narration captions shown while the week generates, so the
+// ~25-30s wait reads as active work rather than a static line.
+const GENERATION_CAPTIONS = [
+  "Selecting exercises for your goals…",
+  "Balancing muscle groups across the week…",
+  "Calibrating sets, reps, and intensity…",
+  "Matching movements to your equipment…",
+  "Sequencing warm-ups and finishers…",
+  "Fine-tuning the details…",
+];
+
 export default function WorkoutGenerationModal() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -132,6 +143,8 @@ export default function WorkoutGenerationModal() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const autoShownRef = useRef(new Set<number>());
   const [timelineHeight, setTimelineHeight] = useState(0);
+  const [captionIdx, setCaptionIdx] = useState(0);
+  const captionFade = useRef(new Animated.Value(1)).current;
 
   // Token map → useThemeColors()
   const C = {
@@ -213,6 +226,18 @@ export default function WorkoutGenerationModal() {
 
   const isFinished = isComplete && doneCount === totalCount && totalCount > 0;
 
+  // Rotate the process-narration caption while a weekly plan is actively
+  // generating and day cards are present. Daily regen, finished, and terminal
+  // states keep their static subtitle.
+  const showRotatingCaption =
+    !!currentJob &&
+    currentJob.type !== "daily-regeneration" &&
+    !isJobTerminal &&
+    !isFinished &&
+    totalCount > 0;
+  const rotatingCaption =
+    GENERATION_CAPTIONS[captionIdx % GENERATION_CAPTIONS.length];
+
   const getTitle = () => {
     if (currentJob?.type === "daily-regeneration") return "Building today's workout";
     return "Building your workouts";
@@ -250,6 +275,26 @@ export default function WorkoutGenerationModal() {
       setTimeout(() => setShowModal(true), 500);
     }
   }, [activeBackgroundJobs, failedBackgroundJobs, showModal]);
+
+  // Cycle the rotating caption every ~2.8s with a soft cross-fade.
+  useEffect(() => {
+    if (!showModal || !showRotatingCaption) return;
+    const id = setInterval(() => {
+      Animated.timing(captionFade, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => {
+        setCaptionIdx((i) => i + 1);
+        Animated.timing(captionFade, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 2800);
+    return () => clearInterval(id);
+  }, [showModal, showRotatingCaption, captionFade]);
 
   useEffect(() => {
     if (backgroundJobs.length === 0) autoShownRef.current.clear();
@@ -538,17 +583,31 @@ export default function WorkoutGenerationModal() {
                 {getTitle()}
               </Text>
 
-              {/* Subtitle */}
-              <Text
-                style={{
-                  fontSize: 15,
-                  lineHeight: 22.5,
-                  color: C.textMuted,
-                  marginTop: 7,
-                }}
-              >
-                {getSub()}
-              </Text>
+              {/* Subtitle — rotating process narration while generating */}
+              {showRotatingCaption ? (
+                <Animated.Text
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 22.5,
+                    color: C.textMuted,
+                    marginTop: 7,
+                    opacity: captionFade,
+                  }}
+                >
+                  {rotatingCaption}
+                </Animated.Text>
+              ) : (
+                <Text
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 22.5,
+                    color: C.textMuted,
+                    marginTop: 7,
+                  }}
+                >
+                  {getSub()}
+                </Text>
+              )}
 
               {/* Progress row */}
               {totalCount > 0 && (
