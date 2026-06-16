@@ -19,6 +19,7 @@ import {
   WorkoutsResponse,
   WorkoutWithDetails,
   ActiveWorkoutResponse,
+  PreviousWorkout,
 } from "@/types/api";
 
 // Simple cache for active workout
@@ -764,11 +765,12 @@ export async function fetchWorkoutHistory(
  */
 export async function fetchPreviousWorkouts(
   userId: number
-): Promise<WorkoutWithDetails[] | null> {
+): Promise<PreviousWorkout[] | null> {
   try {
-    const response = await apiRequest<WorkoutsResponse>(
-      `/workouts/${userId}/previous-workouts`
-    );
+    const response = await apiRequest<{
+      success: boolean;
+      workouts: PreviousWorkout[];
+    }>(`/workouts/${userId}/previous-workouts`);
 
     if (response?.success) {
       return response.workouts || [];
@@ -779,6 +781,20 @@ export async function fetchPreviousWorkouts(
     console.error("Error fetching previous workouts:", error);
     return [];
   }
+}
+
+/**
+ * A previous workout is only worth offering as a "repeat" if the user actually
+ * did some of it. Plans that were generated and then superseded by a
+ * regeneration (0% completion) should not count — otherwise the
+ * regenerate-choice dialog and the repeat picker fill up with stale plans the
+ * user never started.
+ */
+export function isRepeatablePreviousWorkout(workout: {
+  completionRate?: number;
+  completedWorkouts?: number;
+}): boolean {
+  return (workout.completionRate ?? 0) > 0 || (workout.completedWorkouts ?? 0) > 0;
 }
 
 /**

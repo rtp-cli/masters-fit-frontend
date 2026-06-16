@@ -1,8 +1,15 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Modal, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
+import {
+  fetchPastCompletedDays,
+  fetchPreviousWorkouts,
+  isRepeatablePreviousWorkout,
+} from "@/lib/workouts";
+import { getCurrentUser } from "@/lib/auth";
+import type { PreviousWorkout } from "@/types/api/workout.types";
 
 interface WorkoutChoiceModalProps {
   visible: boolean;
@@ -20,9 +27,61 @@ export default function WorkoutChoiceModal({
   const colors = useThemeColors();
   const { isDark } = useTheme();
 
+  // While we're checking whether any past workouts exist we don't render the
+  // dialog — that way, when there are none, we forward straight to "Generate
+  // New" without ever flashing the choice dialog.
+  const [checking, setChecking] = useState(false);
+  const [hasPastWorkouts, setHasPastWorkouts] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    let cancelled = false;
+    setChecking(true);
+
+    (async () => {
+      try {
+        const user = await getCurrentUser();
+        const [pastDays, previousWorkouts] = await Promise.all([
+          fetchPastCompletedDays().catch(() => []),
+          user
+            ? fetchPreviousWorkouts(user.id).catch(() => [])
+            : Promise.resolve<PreviousWorkout[]>([]),
+        ]);
+
+        if (cancelled) return;
+
+        // A plan only counts as repeatable if the user actually did some of it.
+        const repeatableWeeks = (previousWorkouts ?? []).filter(
+          isRepeatablePreviousWorkout
+        );
+        const hasPast =
+          (pastDays?.length ?? 0) > 0 || repeatableWeeks.length > 0;
+
+        if (hasPast) {
+          setHasPastWorkouts(true);
+        } else {
+          // No previous workouts to repeat — skip the dialog entirely.
+          setHasPastWorkouts(false);
+          onClose();
+          onGenerateNew();
+        }
+      } catch {
+        // If the check fails, fall back to showing the dialog.
+        if (!cancelled) setHasPastWorkouts(true);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
+
   return (
     <Modal
-      visible={visible}
+      visible={visible && !checking && hasPastWorkouts}
       transparent
       animationType="fade"
       onRequestClose={onClose}

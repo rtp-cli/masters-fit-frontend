@@ -18,6 +18,7 @@ import {
   fetchPreviousWorkouts,
   repeatPreviousWeekWorkout,
   invalidateActiveWorkoutCache,
+  isRepeatablePreviousWorkout,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
 import { formatDateAsString } from "@/utils";
@@ -128,7 +129,9 @@ export default function WorkoutRepeatPicker({
       const user = await getCurrentUser();
       if (!user) return;
       const workouts = await fetchPreviousWorkouts(user.id);
-      setPreviousWorkouts(workouts || []);
+      // Only show plans the user actually did some of — hide stale,
+      // never-started plans left behind by regenerations.
+      setPreviousWorkouts((workouts || []).filter(isRepeatablePreviousWorkout));
     } catch (error) {
       console.error("Error loading previous workouts:", error);
     } finally {
