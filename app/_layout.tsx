@@ -381,8 +381,11 @@ function AppContent() {
     setIsPreloadingData,
   ]);
 
+  // Flip to true to pin the warming-up screen for visual inspection (dev only)
+  const DEBUG_WARMING_UP = __DEV__ && false;
+
   // Show warming up screen only during full app refresh after workout generation
-  if (isDoingFullAppRefresh) {
+  if (isDoingFullAppRefresh || DEBUG_WARMING_UP) {
     console.log("[WarmingUp] Showing warming up screen");
     return (
       <WarmingUpScreen

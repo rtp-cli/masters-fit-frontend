@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, Image, Animated, Easing } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useThemeColors } from "@lib/theme";
-import { useTheme } from "@/lib/theme-context";
-import { Image } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useThemeColors } from "@/lib/theme";
 import { images } from "@/assets";
 
 interface WarmingUpScreenProps {
@@ -11,63 +10,119 @@ interface WarmingUpScreenProps {
   duration?: number;
 }
 
-const messages = [
-  "Loading your personalized dashboard...",
-  "Fetching your workout history...",
-  "Preparing your fitness insights...",
-  "Almost ready to get started...",
-];
-
 export default function WarmingUpScreen({
   onComplete,
   duration = 8000,
 }: WarmingUpScreenProps) {
   const colors = useThemeColors();
-  const { isDark } = useTheme();
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const fillAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const messageInterval = setInterval(() => {
-      setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
-    }, duration / messages.length);
-
-    return () => {
-      clearInterval(messageInterval);
-    };
+    Animated.timing(fillAnim, {
+      toValue: 85,
+      duration,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: false,
+    }).start();
   }, [duration]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 justify-center items-center px-8">
-        {/* Main Content */}
-        <View className="items-center mb-12">
-          <View className="w-48 h-48 mb-8 rounded-3xl bg-primary items-center justify-center">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar style="dark" />
+
+      {/* Header — brand lockup, left-aligned */}
+      <View style={{ paddingTop: 14, paddingHorizontal: 20 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Image
+            source={images.logoDark}
+            style={{ width: 24, height: 22 }}
+            resizeMode="contain"
+          />
+          <Text
+            style={{
+              fontSize: 17,
+              fontWeight: "600",
+              letterSpacing: -0.17,
+              color: colors.text.primary,
+            }}
+          >
+            MastersFit
+          </Text>
+        </View>
+      </View>
+
+      {/* Body */}
+      <View
+        style={{
+          flex: 1,
+          paddingHorizontal: 24,
+          paddingTop: 8,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: "700",
+            letterSpacing: -0.56,
+            lineHeight: 32.5,
+            color: colors.text.primary,
+            marginTop: 6,
+          }}
+        >
+          Warming up
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            lineHeight: 22.5,
+            color: colors.text.muted,
+            marginTop: 7,
+          }}
+        >
+          Getting your dashboard ready...
+        </Text>
+
+        {/* Progress bar */}
+        <View
+          style={{
+            marginTop: 30,
+            height: 5,
+            borderRadius: 9999,
+            backgroundColor: colors.neutral.light[2],
+            overflow: "hidden",
+          }}
+        >
+          <Animated.View
+            style={{
+              height: "100%",
+              borderRadius: 9999,
+              backgroundColor: colors.brand.primary,
+              width: fillAnim.interpolate({
+                inputRange: [0, 100],
+                outputRange: ["0%", "100%"],
+              }),
+            }}
+          />
+        </View>
+
+        {/* Logo mark in black tile */}
+        <View style={{ marginTop: 75, alignItems: "center" }}>
+          <View
+            style={{
+              width: 125,
+              height: 125,
+              borderRadius: 20,
+              backgroundColor: colors.brand.primary,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Image
-              key="warming-up-logo"
-              source={isDark ? images.logoDark : images.logo}
-              className="w-32 h-32"
+              source={images.logo}
+              style={{ width: 80, height: 75 }}
               resizeMode="contain"
             />
           </View>
-          {/* Title */}
-          <Text className="text-2xl font-bold text-text-primary mb-4 text-center">
-            Warming Up MastersFit
-          </Text>
-          {/* Dynamic Message */}
-          <Text className="text-base text-text-muted text-center mb-8 leading-6">
-            {messages[currentMessageIndex]}
-          </Text>
-          {/* Animated Spinner */}
-          <View className="mb-8">
-            <ActivityIndicator size="large" color={colors.brand.primary} />
-          </View>
-        </View>
-
-        {/* Bottom Message */}
-        <View className="absolute bottom-8 left-8 right-8 mb-6">
-          <Text className="text-sm text-text-muted text-center leading-5">
-            Delivering personalized, AI-powered workouts built just for you.
-          </Text>
         </View>
       </View>
     </SafeAreaView>
