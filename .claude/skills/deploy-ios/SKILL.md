@@ -38,6 +38,20 @@ eas whoami                            # confirm you're logged in
 If `eas whoami` says you're not logged in, tell the user to run `eas login` themselves
 (it's interactive), then re-run this skill.
 
+## Clean the working tree first
+
+EAS only ships **committed** code, but a dirty tree makes `eas build` prompt ("you have
+uncommitted changes…"), which **hangs in a non-interactive / background shell**. If
+`git status --short` shows uncommitted work the user wants to keep (e.g. an unrelated
+in-progress file), stash just those files first and restore them after the project uploads:
+
+```bash
+git stash push -m "wip (deploy-ios)" -- <file>...   # only if there are changes to preserve
+```
+
+Pop the stash (`git stash pop`) once EAS prints "Uploaded to EAS" — the build has its
+snapshot by then, so restoring early is safe.
+
 ## Step 1 — Build
 
 ```bash
@@ -50,15 +64,22 @@ npm run build:ios:prod       # = eas build --platform ios --profile production
 EAS prints a **build URL** — report it so the user can watch progress. Builds usually take
 **15–25 minutes**. **Wait for the build to finish successfully before submitting.**
 
+**Capture the build ID** from the output (the UUID in the build URL,
+`…/builds/<BUILD_ID>`, also shown as "Build finished"). Step 2 needs it.
+
 ## Step 2 — Submit
 
-Once the build has completed, submit the latest production build to TestFlight:
+Once the build has completed, submit it to TestFlight. **Pin the exact build ID and pass
+`--non-interactive`** — the bare `npm run submit:ios:prod` prompts "What would you like to
+submit?" and **fails in a non-interactive / background shell** (`Input is required, but
+stdin is not readable`):
 
 ```bash
-npm run submit:ios:prod      # = eas submit --platform ios --profile production
+eas submit --platform ios --profile production --id <BUILD_ID> --non-interactive
 ```
 
-This sends the build you just made to App Store Connect (app ID `6752777203`).
+(`--latest` also works instead of `--id <BUILD_ID>`, but pinning the ID guarantees you ship
+the build you just made.) This sends it to App Store Connect (app ID `6752777203`).
 
 ## ✅ How to know it worked
 
