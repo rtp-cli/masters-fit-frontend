@@ -7,10 +7,20 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getJobStatus, invalidateActiveWorkoutCache } from "@lib/workouts";
 import { useAuth } from "@/contexts/auth-context";
+import { tabEvents } from "@/lib/tab-events";
 import { TIMEOUTS, LIMITS } from "@/constants";
+
+// Scope of a completed generation — drives post-generation landing (Task 1)
+// and the dock chip's ready copy (Task 2). "day" = single-day (daily-regen),
+// "week" = full-week (generation / regeneration).
+export type GenerationScope = "day" | "week";
+
+const scopeForJobType = (type: BackgroundJob["type"]): GenerationScope =>
+  type === "daily-regeneration" ? "day" : "week";
 
 export interface JobDayStatus {
   dayNumber: number;
@@ -61,6 +71,25 @@ interface BackgroundJobContextType {
   startPolling: () => void;
   stopPolling: () => void;
   isJobCompletionProcessed: (jobId: number) => boolean; // Check if job completion was already processed
+
+  // ── Generation modal coordination (lifted from WorkoutGenerationModal) ────
+  // Single source of truth for whether the full-screen timeline modal is open,
+  // so the dock chip and the modal's auto-show share one opener.
+  isGenerationModalOpen: boolean;
+  openGenerationModal: () => void;
+  closeGenerationModal: () => void;
+
+  // ── Post-generation landing + "Just generated" badge (Task 1) ─────────────
+  // Route to the right tab by scope and flag the landed surface as fresh.
+  landAfterGeneration: (scope: GenerationScope) => void;
+  justGenerated: GenerationScope | null;
+  clearJustGenerated: () => void;
+
+  // ── Dock chip "ready" latch (Task 2) ──────────────────────────────────────
+  // When generation completes in the background, the chip morphs to "ready"
+  // and must persist until tapped — even after the job itself is reaped.
+  readyChip: { id: number; scope: GenerationScope } | null;
+  dismissReadyChip: () => void;
 }
 
 const BackgroundJobContext = createContext<
@@ -114,6 +143,52 @@ export function BackgroundJobProvider({
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const processedCompletionsRef = useRef<Set<number>>(new Set()); // Track processed job completions
   const { user, triggerWorkoutReady } = useAuth();
+  const router = useRouter();
+  // Ref so landing callbacks always route via the live router without
+  // re-creating themselves on every render.
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
+  // ── Generation modal coordination + landing/chip state ────────────────────
+  const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
+  // Mirror in a ref so the completion handler (a stale-closure callback) can
+  // read the live open/closed state to decide foreground vs background landing.
+  const isModalOpenRef = useRef(false);
+  const [justGenerated, setJustGenerated] = useState<GenerationScope | null>(
+    null
+  );
+  const [readyChip, setReadyChip] = useState<{
+    id: number;
+    scope: GenerationScope;
+  } | null>(null);
+
+  const openGenerationModal = useCallback(() => {
+    isModalOpenRef.current = true;
+    setIsGenerationModalOpen(true);
+  }, []);
+  const closeGenerationModal = useCallback(() => {
+    isModalOpenRef.current = false;
+    setIsGenerationModalOpen(false);
+  }, []);
+  const clearJustGenerated = useCallback(() => setJustGenerated(null), []);
+  const dismissReadyChip = useCallback(() => setReadyChip(null), []);
+
+  // Route to the scope-appropriate tab and flag the landed surface. Used by
+  // the modal's "View Your Workout" button, the foreground completion beat,
+  // and the dock chip's "View" action.
+  const landAfterGeneration = useCallback((scope: GenerationScope) => {
+    isModalOpenRef.current = false;
+    setIsGenerationModalOpen(false);
+    setReadyChip(null);
+    setJustGenerated(scope);
+    if (scope === "day") {
+      routerRef.current.replace("/(tabs)/workout");
+    } else {
+      routerRef.current.replace("/(tabs)/calendar");
+      // Re-select today in the month grid on arrival.
+      tabEvents.emit("selectToday:calendar");
+    }
+  }, []);
 
   // Computed values
   const activeJobs = jobs.filter(
@@ -408,7 +483,7 @@ export function BackgroundJobProvider({
 
           // If job completed, handle completion
           if (jobStatus.status === "completed" && !job.completedAt) {
-            onJobCompleted(job.id, jobStatus.workoutId);
+            onJobCompleted(job.id, jobStatus.workoutId, job.type);
           }
         }
       }
@@ -460,7 +535,7 @@ export function BackgroundJobProvider({
   }, []);
 
   const onJobCompleted = useCallback(
-    (jobId: number, workoutId?: number) => {
+    (jobId: number, workoutId?: number, type?: BackgroundJob["type"]) => {
       // Check if we've already processed this completion to avoid double processing
       if (processedCompletionsRef.current.has(jobId)) {
         console.log(
@@ -478,14 +553,26 @@ export function BackgroundJobProvider({
       // Trigger the proper workout ready flow (shows warming up screen)
       triggerWorkoutReady();
 
-      // Remove the completed job after a short delay to show completion
+      // Post-generation landing (Task 1) / dock chip (Task 2). If the user was
+      // watching the timeline modal (foreground), auto-navigate after a brief
+      // "ready" beat. If they tapped "Continue Using App" (background), do NOT
+      // navigate — latch the ready chip so they return on their own terms.
+      const scope = scopeForJobType(type ?? "generation");
+      if (isModalOpenRef.current) {
+        setTimeout(() => landAfterGeneration(scope), 1500);
+      } else {
+        setReadyChip({ id: jobId, scope });
+      }
+
+      // Remove the completed job after a short delay to show completion. The
+      // ready chip is latched separately above, so it persists past this.
       setTimeout(() => {
         removeJob(jobId);
         // Clean up the processed completion tracking after removal
         processedCompletionsRef.current.delete(jobId);
       }, 2000);
     },
-    [triggerWorkoutReady, removeJob, addProcessedCompletion]
+    [triggerWorkoutReady, removeJob, addProcessedCompletion, landAfterGeneration]
   );
 
   // Function to check if job completion has been processed
@@ -555,6 +642,14 @@ export function BackgroundJobProvider({
     startPolling,
     stopPolling,
     isJobCompletionProcessed,
+    isGenerationModalOpen,
+    openGenerationModal,
+    closeGenerationModal,
+    landAfterGeneration,
+    justGenerated,
+    clearJustGenerated,
+    readyChip,
+    dismissReadyChip,
   };
 
   return (

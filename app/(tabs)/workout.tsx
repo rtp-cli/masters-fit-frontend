@@ -27,6 +27,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
+import JustGeneratedBadge from "@/components/just-generated-badge";
 import { ExerciseSet } from "@/components/set-tracker";
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
 import CircuitTracker from "@/components/circuit-tracker";
@@ -184,7 +185,8 @@ export default function WorkoutScreen() {
   const router = useRouter();
 
   // Background job tracking
-  const { isGenerating, addJob } = useBackgroundJobs();
+  const { isGenerating, addJob, justGenerated, clearJustGenerated } =
+    useBackgroundJobs();
 
   // Get data refresh functions
   const {
@@ -848,8 +850,10 @@ export default function WorkoutScreen() {
       return () => {
         // Reset so the next focus event scrolls to top
         hasLoadedOnce.current = false;
+        // Clear the "Just generated" badge once the user navigates away
+        clearJustGenerated();
       };
-    }, [isWorkoutCompleted]),
+    }, [isWorkoutCompleted, clearJustGenerated]),
   );
 
   // Listen for tab re-click events
@@ -1897,19 +1901,28 @@ export default function WorkoutScreen() {
         }
       >
         {/* Hero Exercise Media - Contextual based on workout type */}
-        {currentExercise && !isCurrentBlockCircuit ? (
-          <ExerciseLink
-            link={currentExercise.exercise.link}
-            exerciseName={currentExercise.exercise.name}
-            exerciseId={currentExercise.exercise.id}
-            variant="hero"
-          />
-        ) : isCurrentBlockCircuit && currentBlock ? (
-          <ExerciseVideoCarousel
-            exercises={currentBlock.exercises}
-            blockName=""
-          />
-        ) : null}
+        <View className="relative">
+          {currentExercise && !isCurrentBlockCircuit ? (
+            <ExerciseLink
+              link={currentExercise.exercise.link}
+              exerciseName={currentExercise.exercise.name}
+              exerciseId={currentExercise.exercise.id}
+              variant="hero"
+            />
+          ) : isCurrentBlockCircuit && currentBlock ? (
+            <ExerciseVideoCarousel
+              exercises={currentBlock.exercises}
+              blockName=""
+            />
+          ) : null}
+
+          {/* "Just generated" badge after a single-day generation */}
+          {justGenerated === "day" && (
+            <View style={{ position: "absolute", top: 16, left: 16 }}>
+              <JustGeneratedBadge />
+            </View>
+          )}
+        </View>
 
         <View className="px-6 pt-6">
           {/* Workout Header */}

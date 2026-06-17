@@ -6,6 +6,7 @@ import { ThemeMode, ColorTheme, COLOR_THEMES } from "../../../lib/theme-context"
 import ThemeDropdown from "../../ui/theme-dropdown";
 import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
+import { usePlayfulMessages } from "@/hooks/use-playful-messages";
 
 interface AppSettingsSectionProps {
   debugTapCount: number;
@@ -28,6 +29,7 @@ export default function AppSettingsSection({
 }: AppSettingsSectionProps) {
   const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
+  const { playfulEnabled, setPlayfulEnabled } = usePlayfulMessages();
 
   const isDarkMode = themeMode === "dark";
 
@@ -88,6 +90,35 @@ export default function AppSettingsSection({
             <Text className="text-sm text-text-primary ml-3">Color Theme</Text>
           </View>
           <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
+        </View>
+
+        <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+          <View className="flex-row items-center flex-1">
+            <Ionicons
+              name="happy-outline"
+              size={20}
+              color={colors.text.muted}
+            />
+            <Text className="text-sm text-text-primary ml-3">
+              Playful messages
+            </Text>
+          </View>
+          <Switch
+            value={playfulEnabled}
+            onValueChange={setPlayfulEnabled}
+            trackColor={{
+              false: colors.neutral.medium[1],
+              true: colors.brand.primary,
+            }}
+            thumbColor={
+              Platform.OS === "android"
+                ? colors.text.primary
+                : playfulEnabled
+                  ? colors.neutral.white
+                  : colors.neutral.light[1]
+            }
+            ios_backgroundColor={colors.neutral.medium[1]}
+          />
         </View>
 
         <LegalSection

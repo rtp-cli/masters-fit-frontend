@@ -9,11 +9,14 @@ import {
   Animated,
   Easing,
   ActivityIndicator,
+  AccessibilityInfo,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkoutProgress } from "@/hooks/use-workout-progress";
+import { usePlayfulMessages } from "@/hooks/use-playful-messages";
+import { buildStream, COMPLETION_LINE } from "@/lib/generation-stream";
 import { useThemeColors } from "@/lib/theme";
 import { images } from "@/assets";
 
@@ -123,28 +126,45 @@ function NodeMarker({
   );
 }
 
-// Rotating process-narration captions shown while the week generates, so the
-// ~25-30s wait reads as active work rather than a static line.
-const GENERATION_CAPTIONS = [
-  "Selecting exercises for your goals…",
-  "Balancing muscle groups across the week…",
-  "Calibrating sets, reps, and intensity…",
-  "Matching movements to your equipment…",
-  "Sequencing warm-ups and finishers…",
-  "Fine-tuning the details…",
-];
-
 export default function WorkoutGenerationModal() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const { activeJobs, failedJobs, cancelJob, removeJob } = useBackgroundJobs();
+  const {
+    activeJobs,
+    failedJobs,
+    cancelJob,
+    removeJob,
+    isGenerationModalOpen: showModal,
+    openGenerationModal,
+    closeGenerationModal,
+    landAfterGeneration,
+  } = useBackgroundJobs();
+  const { playfulEnabled } = usePlayfulMessages();
 
-  const [showModal, setShowModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const autoShownRef = useRef(new Set<number>());
-  const [timelineHeight, setTimelineHeight] = useState(0);
+  // Vertical offset (within the timeline) of the LAST day marker's center.
+  // The rail spans from the first marker's center to here — never past it.
+  const [lastMarkerCenterY, setLastMarkerCenterY] = useState(0);
   const [captionIdx, setCaptionIdx] = useState(0);
   const captionFade = useRef(new Animated.Value(1)).current;
+
+  // Respect prefers-reduced-motion: don't cycle the stream — show one steady
+  // credible line — and skip the entrance/stamp animations elsewhere.
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then(setReduceMotion)
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion
+    );
+    return () => sub?.remove();
+  }, []);
+
+  // The woven status stream (credible backbone + optional playful lines).
+  const stream = useMemo(() => buildStream(playfulEnabled), [playfulEnabled]);
 
   // Token map → useThemeColors()
   const C = {
@@ -252,8 +272,9 @@ export default function WorkoutGenerationModal() {
     !isJobTerminal &&
     !isFinished &&
     totalCount > 0;
-  const rotatingCaption =
-    GENERATION_CAPTIONS[captionIdx % GENERATION_CAPTIONS.length];
+  const rotatingCaption = reduceMotion
+    ? stream[0]
+    : stream[Math.min(captionIdx, stream.length - 1)];
 
   const getTitle = () => {
     if (currentJob?.type === "daily-regeneration") return "Building today's workout";
@@ -264,16 +285,16 @@ export default function WorkoutGenerationModal() {
     if (totalCount > 0) return `Tailoring your ${totalCount}-day week.`;
     return "Preparing your workout plan…";
   };
-  const getFinishLabel = () => {
-    if (currentJob?.type === "daily-regeneration") return "Today's workout is ready";
-    return "Your week is ready";
-  };
-
   // Animated values
-  const progressAnim = useRef(new Animated.Value(0)).current;
   const railFillAnim = useRef(new Animated.Value(0)).current;
   const finishOpacity = useRef(new Animated.Value(0)).current;
   const finishTranslate = useRef(new Animated.Value(6)).current;
+
+  // The day rail spans from the first marker's center to the last marker's
+  // center — never below the final node. The first marker center sits a fixed
+  // distance below the timeline's top edge (row paddingTop 9 + marker column
+  // paddingTop 1 + half the 28px marker = 24); the last is measured.
+  const RAIL_TOP_INSET = 24;
 
   // Auto-show on new job
   useEffect(() => {
@@ -286,23 +307,36 @@ export default function WorkoutGenerationModal() {
     );
     if (newJobs.length > 0) {
       autoShownRef.current.add(newJobs[0].id);
-      setTimeout(() => setShowModal(true), 500);
+      setTimeout(() => openGenerationModal(), 500);
     } else if (newFailed.length > 0) {
       autoShownRef.current.add(newFailed[0].id);
-      setTimeout(() => setShowModal(true), 500);
+      setTimeout(() => openGenerationModal(), 500);
     }
-  }, [activeBackgroundJobs, failedBackgroundJobs, showModal]);
+  }, [activeBackgroundJobs, failedBackgroundJobs, showModal, openGenerationModal]);
 
-  // Cycle the rotating caption every ~2.8s with a soft cross-fade.
+  // Restart the stream from the top when the active job changes.
+  const captionIdxRef = useRef(0);
   useEffect(() => {
-    if (!showModal || !showRotatingCaption) return;
+    captionIdxRef.current = 0;
+    setCaptionIdx(0);
+  }, [currentJob?.id]);
+
+  // Cycle the status stream every ~2.8s with a soft cross-fade, advancing until
+  // the last line (no looping). Disabled under reduced motion (steady line).
+  useEffect(() => {
+    if (!showModal || !showRotatingCaption || reduceMotion) return;
     const id = setInterval(() => {
+      if (captionIdxRef.current >= stream.length - 1) return; // hold on final line
       Animated.timing(captionFade, {
         toValue: 0,
         duration: 250,
         useNativeDriver: true,
       }).start(() => {
-        setCaptionIdx((i) => i + 1);
+        captionIdxRef.current = Math.min(
+          captionIdxRef.current + 1,
+          stream.length - 1
+        );
+        setCaptionIdx(captionIdxRef.current);
         Animated.timing(captionFade, {
           toValue: 1,
           duration: 250,
@@ -311,7 +345,7 @@ export default function WorkoutGenerationModal() {
       });
     }, 2800);
     return () => clearInterval(id);
-  }, [showModal, showRotatingCaption, captionFade]);
+  }, [showModal, showRotatingCaption, reduceMotion, stream.length, captionFade]);
 
   const backgroundJobCount =
     activeBackgroundJobs.length + failedBackgroundJobs.length;
@@ -319,28 +353,19 @@ export default function WorkoutGenerationModal() {
     if (backgroundJobCount === 0) autoShownRef.current.clear();
   }, [backgroundJobCount]);
 
-  // Animate progress bar fill
+  // Animate vertical rail fill — between marker centers only, never past the
+  // last node.
   useEffect(() => {
-    const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
-    Animated.timing(progressAnim, {
-      toValue: pct,
-      duration: 500,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-      useNativeDriver: false,
-    }).start();
-  }, [doneCount, totalCount]);
-
-  // Animate vertical rail fill
-  useEffect(() => {
-    if (timelineHeight === 0) return;
-    const targetH = Math.max(0, (timelineHeight - 28) * fillFrac);
+    if (lastMarkerCenterY === 0) return;
+    const railSpan = Math.max(0, lastMarkerCenterY - RAIL_TOP_INSET);
+    const targetH = railSpan * fillFrac;
     Animated.timing(railFillAnim, {
       toValue: targetH,
       duration: 600,
       easing: Easing.bezier(0.22, 1, 0.36, 1),
       useNativeDriver: false,
     }).start();
-  }, [fillFrac, timelineHeight]);
+  }, [fillFrac, lastMarkerCenterY]);
 
   // Animate finish note
   useEffect(() => {
@@ -365,12 +390,20 @@ export default function WorkoutGenerationModal() {
     }
   }, [isFinished]);
 
-  const handleClose = () => {
-    setShowModal(false);
+  // "Continue Using App" — minimize to the dock chip; generation keeps running.
+  const handleContinueInBackground = () => {
+    closeGenerationModal();
     setShowCancelConfirm(false);
   };
+  // "View Your Workout" — land on the scope-appropriate tab immediately.
+  const handleViewWorkout = () => {
+    setShowCancelConfirm(false);
+    landAfterGeneration(
+      currentJob?.type === "daily-regeneration" ? "day" : "week"
+    );
+  };
   const handleDismiss = () => {
-    setShowModal(false);
+    closeGenerationModal();
     setShowCancelConfirm(false);
     if (currentJob) {
       setTimeout(() => removeJob(currentJob.id), 500);
@@ -379,7 +412,7 @@ export default function WorkoutGenerationModal() {
   const handleCancelConfirm = async () => {
     if (currentJob) await cancelJob(currentJob.id);
     setShowCancelConfirm(false);
-    setShowModal(false);
+    closeGenerationModal();
   };
 
   if (!showModal || !currentJob) return null;
@@ -602,12 +635,15 @@ export default function WorkoutGenerationModal() {
                 {getTitle()}
               </Text>
 
-              {/* Subtitle — rotating process narration while generating */}
+              {/* Subtitle — rotating process narration while generating.
+                  Reserve two lines so the layout below never bounces on wrap. */}
               {showRotatingCaption ? (
                 <Animated.Text
+                  accessibilityLiveRegion="polite"
                   style={{
                     fontSize: 15,
                     lineHeight: 22.5,
+                    minHeight: 45,
                     color: C.textMuted,
                     marginTop: 7,
                     opacity: captionFade,
@@ -628,50 +664,20 @@ export default function WorkoutGenerationModal() {
                 </Text>
               )}
 
-              {/* Progress row */}
+              {/* Count — node circles + rail fill carry progress, so no linear
+                  bar; just a small running count (week only). */}
               {totalCount > 0 && (
-                <View
+                <Text
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
+                    fontSize: 13,
+                    fontWeight: "700",
+                    color: C.textPrimary,
                     marginTop: 30,
+                    fontVariant: ["tabular-nums"],
                   }}
                 >
-                  <View
-                    style={{
-                      flex: 1,
-                      height: 5,
-                      borderRadius: 9999,
-                      backgroundColor: C.l2,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Animated.View
-                      style={{
-                        height: "100%",
-                        borderRadius: 9999,
-                        backgroundColor: C.primary,
-                        width: progressAnim.interpolate({
-                          inputRange: [0, 100],
-                          outputRange: ["0%", "100%"],
-                        }),
-                      }}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color: C.textPrimary,
-                      minWidth: 54,
-                      textAlign: "right",
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {doneCount} of {totalCount}
-                  </Text>
-                </View>
+                  {doneCount} of {totalCount} ready
+                </Text>
               )}
 
               {/* Timeline */}
@@ -692,30 +698,27 @@ export default function WorkoutGenerationModal() {
                   </Text>
                 </View>
               ) : (
-                <View
-                  style={{ position: "relative", marginTop: 28 }}
-                  onLayout={(e) =>
-                    setTimelineHeight(e.nativeEvent.layout.height)
-                  }
-                >
-                  {/* Base rail */}
-                  <View
-                    style={{
-                      position: "absolute",
-                      left: 14,
-                      top: 14,
-                      bottom: 14,
-                      width: 2,
-                      borderRadius: 2,
-                      backgroundColor: C.m1,
-                    }}
-                  />
+                <View style={{ position: "relative", marginTop: 28 }}>
+                  {/* Base rail — only between the first and last marker centers */}
+                  {lastMarkerCenterY > 0 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 14,
+                        top: RAIL_TOP_INSET,
+                        height: Math.max(0, lastMarkerCenterY - RAIL_TOP_INSET),
+                        width: 2,
+                        borderRadius: 2,
+                        backgroundColor: C.m1,
+                      }}
+                    />
+                  )}
                   {/* Animated fill rail */}
                   <Animated.View
                     style={{
                       position: "absolute",
                       left: 14,
-                      top: 14,
+                      top: RAIL_TOP_INSET,
                       width: 2,
                       borderRadius: 2,
                       backgroundColor: C.primary,
@@ -723,11 +726,20 @@ export default function WorkoutGenerationModal() {
                     }}
                   />
 
-                  {days.map((day) => {
+                  {days.map((day, idx) => {
                     const isPending = day.status === "pending";
+                    const isLast = idx === days.length - 1;
                     return (
                       <View
                         key={day.dayNumber}
+                        onLayout={
+                          isLast
+                            ? (e) =>
+                                setLastMarkerCenterY(
+                                  e.nativeEvent.layout.y + RAIL_TOP_INSET
+                                )
+                            : undefined
+                        }
                         style={{
                           flexDirection: "row",
                           gap: 16,
@@ -807,7 +819,7 @@ export default function WorkoutGenerationModal() {
                     color: C.textSecondary,
                   }}
                 >
-                  {getFinishLabel()}
+                  {COMPLETION_LINE}
                 </Text>
               </Animated.View>
             </ScrollView>
@@ -815,7 +827,7 @@ export default function WorkoutGenerationModal() {
             {/* ── Footer ──────────────────────────────────────────────── */}
             {renderFooter(
               isFinished ? "View Your Workout" : "Continue Using App",
-              handleClose,
+              isFinished ? handleViewWorkout : handleContinueInBackground,
               isJobActive ? "Cancel Generation" : undefined,
               isJobActive ? () => setShowCancelConfirm(true) : undefined,
             )}

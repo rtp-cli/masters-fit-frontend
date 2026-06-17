@@ -43,6 +43,7 @@ import CalendarViewSection from "./sections/calendar-view";
 import CalendarActionButtons from "./sections/action-buttons";
 import WorkoutDaySection from "./sections/workout-day";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
+import JustGeneratedBadge from "@/components/just-generated-badge";
 
 export default function CalendarScreen() {
   const colors = useThemeColors();
@@ -54,7 +55,8 @@ export default function CalendarScreen() {
     user,
     isLoading: authLoading,
   } = useAuth();
-  const { addJob, isGenerating } = useBackgroundJobs();
+  const { addJob, isGenerating, justGenerated, clearJustGenerated } =
+    useBackgroundJobs();
   const scrollViewRef = useRef<ScrollView>(null);
   const {
     data: { workoutData, historyData },
@@ -136,7 +138,9 @@ export default function CalendarScreen() {
   useFocusEffect(
     useCallback(() => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+      // Clear the "Just generated" badge once the user navigates away.
+      return () => clearJustGenerated();
+    }, [clearJustGenerated])
   );
 
   useEffect(() => {
@@ -144,11 +148,21 @@ export default function CalendarScreen() {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
+    // Re-select today in the month grid when a full-week generation lands here.
+    const handleSelectToday = () => {
+      const today = formatDateAsString(new Date());
+      setSelectedDate(today);
+      setCurrentMonth(today);
+      setCalendarKey((prev) => prev + 1);
+    };
+
     const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:calendar", handleScrollToTop);
+    tabEvents.on("selectToday:calendar", handleSelectToday);
 
     return () => {
       tabEvents.off("scrollToTop:calendar", handleScrollToTop);
+      tabEvents.off("selectToday:calendar", handleSelectToday);
     };
   }, []);
 
@@ -590,6 +604,13 @@ export default function CalendarScreen() {
             setShowEditModal(true);
           }}
         />
+
+        {/* "Just generated" badge after a full-week generation */}
+        {justGenerated === "week" && currentSelectedPlanDay && (
+          <View className="px-lg mb-2">
+            <JustGeneratedBadge />
+          </View>
+        )}
 
         <WorkoutDaySection
           selectedDate={selectedDate}

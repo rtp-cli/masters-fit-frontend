@@ -7,6 +7,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import WorkoutGenerationModal from "@/components/workout-generation-modal";
+import GenerationDockChip from "@/components/generation-dock-chip";
 import { useThemeColors } from "@/lib/theme";
 import { useWorkout } from "@/contexts/workout-context";
 import { tabEvents } from "@/lib/tab-events";
@@ -204,6 +205,9 @@ export default function TabLayout() {
             }}
           />
         </Tabs>
+
+        {/* In-progress generation dock chip — docked above the tab bar */}
+        <GenerationDockChip />
 
         {/* Workout generation progress modal */}
         <WorkoutGenerationModal />

@@ -42,6 +42,10 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   const [showVideo, setShowVideo] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
+  // The video exists in our data but YouTube reports it as unavailable
+  // (removed / private / region-blocked / embedding disabled). When set, we
+  // render the gym-image placeholder instead of YouTube's "not available" UI.
+  const [videoUnavailable, setVideoUnavailable] = useState(false);
   const { user } = useAuth();
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
@@ -56,6 +60,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     setImageError(false);
     setUseFallback(false);
     setShowVideo(false);
+    setVideoUnavailable(false);
   }, [exerciseName]);
 
   const getPlaceholderImage = () => images.gymGeneric;
@@ -133,12 +138,26 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     setShowVideo(true);
   };
 
-  const onPlayerError = useCallback(() => {
-    // If the in-app player fails, open externally as fallback
-    if (link) {
-      Linking.openURL(link).catch(() => {});
-    }
-  }, [link]);
+  const onPlayerError = useCallback(
+    (error: string) => {
+      // YouTube unavailability errors (codes 100 / 101 / 150 → these strings):
+      // video removed/private/region-blocked or embedding disabled. Swap to the
+      // static gym image rather than showing YouTube's "not available" screen.
+      if (
+        error === "video_not_found" ||
+        error === "embed_not_allowed" ||
+        error === "invalid_parameter"
+      ) {
+        setVideoUnavailable(true);
+        return;
+      }
+      // Other transient errors (e.g. HTML5_error): open externally as fallback.
+      if (link) {
+        Linking.openURL(link).catch(() => {});
+      }
+    },
+    [link]
+  );
 
   const renderDialog = () => {
     if (!dialogConfig) return null;
@@ -216,6 +235,30 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
 
   // Non-YouTube or invalid link -- show placeholder
   if (!linkInfo.isValid || linkInfo.type !== "youtube" || !linkInfo.videoId) {
+    if (variant === "hero") {
+      return (
+        <>
+          {renderPlaceholder("h-80", 48)}
+          {renderDialog()}
+        </>
+      );
+    }
+    return (
+      <>
+        <View className={`my-2 ${style ? "" : ""}`}>
+          <View className="relative rounded-lg overflow-hidden">
+            {renderPlaceholder("h-48", 32)}
+          </View>
+        </View>
+        {renderDialog()}
+      </>
+    );
+  }
+
+  // Video exists in our data but YouTube reports it unavailable -- render the
+  // gym-image placeholder as a plain hero/thumbnail (no play button). Never
+  // leave YouTube's "not available" screen visible.
+  if (videoUnavailable) {
     if (variant === "hero") {
       return (
         <>
