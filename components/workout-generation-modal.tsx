@@ -173,8 +173,25 @@ export default function WorkoutGenerationModal() {
       j.type === "regeneration" ||
       j.type === "daily-regeneration"
   );
-  const backgroundJobs = [...activeBackgroundJobs, ...failedBackgroundJobs];
-  const currentJob = backgroundJobs[0] ?? null;
+  // Track the MOST RECENTLY started job, not the oldest. When a generation
+  // finishes, the websocket flips the UI to "complete" but our local job stays
+  // "processing" until the next poll (~1.5s) reaps it. If the user regenerates
+  // inside that window, the new job is appended *behind* the still-active old
+  // one — selecting the oldest would keep the panel pinned to the previous
+  // generation's timeline until the poll catches up (the stale-view bug), and
+  // the job-change reset in useWorkoutProgress would never fire. Picking the
+  // newest hands the panel to the new job immediately so the reset runs at once.
+  const pickNewest = (list: typeof activeBackgroundJobs) =>
+    list.reduce<(typeof list)[number] | null>(
+      (newest, j) =>
+        !newest ||
+        new Date(j.createdAt).getTime() >= new Date(newest.createdAt).getTime()
+          ? j
+          : newest,
+      null
+    );
+  const currentJob =
+    pickNewest(activeBackgroundJobs) ?? pickNewest(failedBackgroundJobs) ?? null;
 
   // Polled fallback for the progressive timeline. The websocket is the fast
   // path, but on a physical device behind Render's proxy it can drop or never
@@ -296,9 +313,11 @@ export default function WorkoutGenerationModal() {
     return () => clearInterval(id);
   }, [showModal, showRotatingCaption, captionFade]);
 
+  const backgroundJobCount =
+    activeBackgroundJobs.length + failedBackgroundJobs.length;
   useEffect(() => {
-    if (backgroundJobs.length === 0) autoShownRef.current.clear();
-  }, [backgroundJobs.length]);
+    if (backgroundJobCount === 0) autoShownRef.current.clear();
+  }, [backgroundJobCount]);
 
   // Animate progress bar fill
   useEffect(() => {
