@@ -568,7 +568,12 @@ export async function refreshTokenAPI(params: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify(params),
+      // Opportunistically refresh the user's persisted timezone on every token
+      // refresh (i.e. when the app comes back). Backend stores it best-effort.
+      body: JSON.stringify({
+        ...params,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
     });
 
     if (!response.ok) {
@@ -660,7 +665,12 @@ export async function completeOnboardingAPI(
       endpoint,
       {
         method: "PUT",
-        body: JSON.stringify(userData),
+        // Capture the user's timezone at onboarding so off-request work has it
+        // before the first token refresh.
+        body: JSON.stringify({
+          ...userData,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       }
     );
     console.log(
