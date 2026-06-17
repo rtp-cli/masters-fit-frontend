@@ -1,6 +1,17 @@
 const path = require('path');
 
 module.exports = {
+  root: true,
+  // Generated / native / build output — not linted.
+  ignorePatterns: [
+    'node_modules/',
+    'android/',
+    'ios/',
+    '.expo/',
+    'dist/',
+    // Design-handoff prototype (HTML/JSX references, not app source).
+    'design_handoff_workout_generation/',
+  ],
   extends: ['expo', 'plugin:tailwindcss/recommended', 'prettier'],
   plugins: [
     'prettier',
@@ -71,6 +82,16 @@ module.exports = {
       // Configuration for testing files
       files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
       extends: ['plugin:testing-library/react'],
+    },
+    {
+      // Plain JS files (config files, app entry) aren't part of tsconfig, so
+      // type-aware rules have no parserServices for them. Disable the
+      // type-info parse + the type-aware rule here so `eslint .` doesn't crash.
+      files: ['*.js', '*.cjs'],
+      parserOptions: { project: null },
+      rules: {
+        '@typescript-eslint/consistent-type-imports': 'off',
+      },
     },
   ],
 };
