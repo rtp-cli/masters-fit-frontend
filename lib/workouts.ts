@@ -991,7 +991,10 @@ export async function regenerateWorkoutPlanAsync(
       message: string;
     }>(`/workouts/${userId}/regenerate-async`, {
       method: "POST",
-      body: JSON.stringify(params || {}),
+      body: JSON.stringify({
+        ...(params || {}),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
     });
 
     if (response?.success) {
