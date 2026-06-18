@@ -71,6 +71,9 @@ interface BackgroundJobContextType {
   startPolling: () => void;
   stopPolling: () => void;
   isJobCompletionProcessed: (jobId: number) => boolean; // Check if job completion was already processed
+  // Reap a job from the websocket "complete" signal (the poll is the slow
+  // path; the backend status can lag). Deduped with the poll-driven path.
+  notifyJobComplete: (jobId: number, type: BackgroundJob["type"]) => void;
 
   // ── Generation modal coordination (lifted from WorkoutGenerationModal) ────
   // Single source of truth for whether the full-screen timeline modal is open,
@@ -293,11 +296,25 @@ export function BackgroundJobProvider({
         estimatedTimeRemaining: getEstimatedTime(type),
       };
 
+      // A new generation supersedes any prior one. Concurrent generations are
+      // disallowed, so drop lingering generation jobs (e.g. a previous run the
+      // poll never reaped because the backend status lagged) rather than let
+      // the new run inherit its stale completed timeline / chip count. Also
+      // clear any latched "ready" chip from the previous generation.
+      const GEN_TYPES: BackgroundJob["type"][] = [
+        "generation",
+        "regeneration",
+        "daily-regeneration",
+      ];
       setJobs((prevJobs) => {
-        const updatedJobs = [...prevJobs, newJob];
+        const updatedJobs = [
+          ...prevJobs.filter((j) => !GEN_TYPES.includes(j.type)),
+          newJob,
+        ];
         saveJobsToStorage(updatedJobs);
         return updatedJobs;
       });
+      setReadyChip(null);
 
       // Set up automatic timeout for the job
       const timeoutDuration = getTimeoutForJobType(type);
@@ -580,6 +597,17 @@ export function BackgroundJobProvider({
     return processedCompletionsRef.current.has(jobId);
   }, []);
 
+  // Websocket-driven completion. The live socket reports "complete" before (or
+  // instead of) the poll catching the backend status, so reap here too. Shares
+  // onJobCompleted's processed-completions dedup, so it runs exactly once
+  // whichever source fires first.
+  const notifyJobComplete = useCallback(
+    (jobId: number, type: BackgroundJob["type"]) => {
+      onJobCompleted(jobId, undefined, type);
+    },
+    [onJobCompleted]
+  );
+
   // Helper functions
   const getEstimatedTime = (type: BackgroundJob["type"]): number => {
     switch (type) {
@@ -642,6 +670,7 @@ export function BackgroundJobProvider({
     startPolling,
     stopPolling,
     isJobCompletionProcessed,
+    notifyJobComplete,
     isGenerationModalOpen,
     openGenerationModal,
     closeGenerationModal,

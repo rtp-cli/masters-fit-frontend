@@ -138,6 +138,7 @@ export default function WorkoutGenerationModal() {
     openGenerationModal,
     closeGenerationModal,
     landAfterGeneration,
+    notifyJobComplete,
   } = useBackgroundJobs();
   const { playfulEnabled } = usePlayfulMessages();
 
@@ -266,12 +267,13 @@ export default function WorkoutGenerationModal() {
   // Rotate the process-narration caption while a weekly plan is actively
   // generating and day cards are present. Daily regen, finished, and terminal
   // states keep their static subtitle.
+  // Rotate the status stream for BOTH weekly and daily generation (for daily it
+  // streams even before a day timeline arrives, since there's only one day).
   const showRotatingCaption =
     !!currentJob &&
-    currentJob.type !== "daily-regeneration" &&
     !isJobTerminal &&
     !isFinished &&
-    totalCount > 0;
+    (totalCount > 0 || currentJob.type === "daily-regeneration");
   const rotatingCaption = reduceMotion
     ? stream[0]
     : stream[Math.min(captionIdx, stream.length - 1)];
@@ -352,6 +354,20 @@ export default function WorkoutGenerationModal() {
   useEffect(() => {
     if (backgroundJobCount === 0) autoShownRef.current.clear();
   }, [backgroundJobCount]);
+
+  // Reap the job as soon as the timeline reports complete (websocket), instead
+  // of waiting only on the poll — otherwise a finished job whose backend status
+  // lags lingers as an "in progress" dock chip. Deduped in context; fired once
+  // per job. Runs whether or not the modal is visible (hooks run regardless).
+  const completeNotifiedRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (isComplete && currentJob && completeNotifiedRef.current !== currentJob.id) {
+      completeNotifiedRef.current = currentJob.id;
+      notifyJobComplete(currentJob.id, currentJob.type);
+    }
+    // currentJob is intentionally read via id; full object changes each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isComplete, currentJob?.id, notifyJobComplete]);
 
   // Animate vertical rail fill — between marker centers only, never past the
   // last node.
@@ -693,7 +709,9 @@ export default function WorkoutGenerationModal() {
                   <ActivityIndicator color={C.primary} />
                   <Text style={{ fontSize: 13, color: C.textMuted }}>
                     {phase === "planning"
-                      ? "Designing your week…"
+                      ? currentJob.type === "daily-regeneration"
+                        ? "Designing your workout…"
+                        : "Designing your week…"
                       : "Preparing your plan…"}
                   </Text>
                 </View>
