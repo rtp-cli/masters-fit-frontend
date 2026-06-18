@@ -46,6 +46,9 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   // (removed / private / region-blocked / embedding disabled). When set, we
   // render the gym-image placeholder instead of YouTube's "not available" UI.
   const [videoUnavailable, setVideoUnavailable] = useState(false);
+  // The hero thumbnail tries maxresdefault first; many valid videos lack it,
+  // so we fall back to hqdefault (almost always present) before giving up.
+  const [thumbFailed, setThumbFailed] = useState(false);
   const { user } = useAuth();
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
@@ -61,6 +64,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     setUseFallback(false);
     setShowVideo(false);
     setVideoUnavailable(false);
+    setThumbFailed(false);
   }, [exerciseName]);
 
   const getPlaceholderImage = () => images.gymGeneric;
@@ -127,6 +131,43 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
     return null;
   };
 
+  // Swap to the gym-image placeholder, resetting the shared image-error flags
+  // first — a dead video's maxres thumbnail 404 may have set imageError, which
+  // would otherwise make renderPlaceholder fall through to the text-only state.
+  const markVideoUnavailable = useCallback(() => {
+    setImageError(false);
+    setUseFallback(false);
+    setVideoUnavailable(true);
+  }, []);
+
+  // Pre-validate the hero's YouTube link via oEmbed so a dead video shows the
+  // gym image immediately — before the user taps — instead of mounting a dead
+  // embed. A removed/private/region-blocked or non-embeddable video returns a
+  // client error (400 bad/nonexistent id, 401 embedding disabled, 403
+  // forbidden, 404 not found); 429/5xx and network errors are treated as
+  // transient and ignored — the player onError swap remains the safety net.
+  useEffect(() => {
+    if (variant !== "hero" || !link) return;
+    const info = processExerciseLink(link);
+    if (!(info.isValid && info.type === "youtube" && info.videoId)) return;
+    let cancelled = false;
+    const watchUrl = `https://www.youtube.com/watch?v=${info.videoId}`;
+    fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`
+    )
+      .then((res) => {
+        if (!cancelled && [400, 401, 403, 404].includes(res.status)) {
+          markVideoUnavailable();
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // processExerciseLink is pure over `link`; intentionally not a dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [link, variant, markVideoUnavailable]);
+
   const handlePlayPress = () => {
     if (exerciseId && exerciseName && link) {
       trackVideoEngagement({
@@ -148,7 +189,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         error === "embed_not_allowed" ||
         error === "invalid_parameter"
       ) {
-        setVideoUnavailable(true);
+        markVideoUnavailable();
         return;
       }
       // Other transient errors (e.g. HTML5_error): open externally as fallback.
@@ -156,7 +197,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         Linking.openURL(link).catch(() => {});
       }
     },
-    [link]
+    [link, markVideoUnavailable]
   );
 
   const renderDialog = () => {
@@ -204,7 +245,23 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             </Text>
           </View>
         )}
-        <View className="absolute inset-0 bg-black/20" />
+        {/* Readable "no video" label over the gym image so it reads as an
+            intentional placeholder, not a broken/empty hero. Skipped when the
+            gym image itself failed (the branch above already shows the label). */}
+        {!imageError ? (
+          <View className="absolute inset-0 bg-black/40 items-center justify-center px-4">
+            <Ionicons name="videocam-outline" size={size} color="#FFFFFF" />
+            <Text
+              variant={size > 32 ? "body" : "bodySmall"}
+              color="#FFFFFF"
+              className="mt-2 text-center"
+            >
+              No video demonstration available
+            </Text>
+          </View>
+        ) : (
+          <View className="absolute inset-0 bg-black/20" />
+        )}
       </View>
     );
   };
@@ -281,6 +338,17 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
 
   // YouTube video -- show in-app player or thumbnail
   const videoHeight = variant === "hero" ? 320 : 200;
+  // maxresdefault is highest quality but absent for many valid videos; fall
+  // back to hqdefault (almost always present) before the gym-image placeholder.
+  const thumbUri = linkInfo.videoId
+    ? `https://img.youtube.com/vi/${linkInfo.videoId}/${
+        thumbFailed ? "hqdefault" : "maxresdefault"
+      }.jpg`
+    : linkInfo.thumbnailUrl;
+  const onThumbError = () => {
+    if (!thumbFailed) setThumbFailed(true);
+    else setImageError(true);
+  };
 
   if (showVideo) {
     // In-app YouTube player
@@ -357,10 +425,10 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         >
           {!imageError ? (
             <Image
-              source={{ uri: linkInfo.thumbnailUrl }}
+              source={{ uri: thumbUri }}
               className="w-full h-full"
               resizeMode="cover"
-              onError={() => setImageError(true)}
+              onError={onThumbError}
             />
           ) : (
             <View className="bg-neutral-light-2 h-full items-center justify-center">
@@ -391,10 +459,10 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         >
           {!imageError ? (
             <Image
-              source={{ uri: linkInfo.thumbnailUrl }}
+              source={{ uri: thumbUri }}
               className="w-full h-48"
               resizeMode="cover"
-              onError={() => setImageError(true)}
+              onError={onThumbError}
             />
           ) : (
             <View className="bg-neutral-light-2 h-48 items-center justify-center">
