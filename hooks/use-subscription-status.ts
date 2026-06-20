@@ -6,9 +6,11 @@ import { useAuth } from "@/contexts/auth-context";
 // Extract EntitlementInfo type from CustomerInfo
 type EntitlementInfo = CustomerInfo["entitlements"]["active"][string];
 
-// Demo account that should read as Pro in development builds (e.g. for
-// marketing/demo screens) without a real RevenueCat entitlement. Guarded by
-// __DEV__ below so it can never grant Pro in a production build.
+// Single demo account that always reads as Pro (in any build) so demo/marketing
+// screens show the app in a Pro state without a real RevenueCat entitlement.
+// Deliberately scoped to this one company-owned account — every other user
+// stays purely RevenueCat-driven. Remove this account from RevenueCat's concern
+// entirely; it never goes through the store.
 const DEMO_PRO_EMAIL = "rtp+demo@mastersfit.ai";
 
 interface SubscriptionStatus {
@@ -40,11 +42,10 @@ export function useSubscriptionStatus() {
     try {
       setIsLoading(true);
 
-      // Demo/dev override: the demo account reads as Pro in development builds
-      // so demo/marketing screens don't show the upgrade banner. Guarded by
-      // __DEV__ so it can never grant Pro in production (which stays purely
-      // RevenueCat-driven).
-      if (__DEV__ && user?.email === DEMO_PRO_EMAIL) {
+      // Demo override: the demo account reads as Pro in every build (including
+      // release) so the upgrade banner never shows during demos. Scoped to the
+      // single demo account; all other users fall through to RevenueCat below.
+      if (user?.email === DEMO_PRO_EMAIL) {
         setSubscriptionStatus({
           isPro: true,
           isTrial: false,
