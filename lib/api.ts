@@ -242,15 +242,20 @@ export async function apiRequest<T>(
   const startTime = Date.now();
   const method = options.method || "GET";
 
-  try {
-    logger.apiRequest(endpoint, method);
+  // Endpoints that poll on an interval — skip per-request logging to avoid noise
+  const isNoisyEndpoint = endpoint.startsWith("/auth/waiver-status");
 
-    // Log auth token presence for debugging (don't log the actual token)
-    if (__DEV__) {
-      const authHeader = (headers as Record<string, string>).Authorization;
-      console.log(
-        `[API] ${method} ${endpoint} - Token present: ${!!token}, Has Auth header: ${!!authHeader}`
-      );
+  try {
+    if (!isNoisyEndpoint) {
+      logger.apiRequest(endpoint, method);
+
+      // Log auth token presence for debugging (don't log the actual token)
+      if (__DEV__) {
+        const authHeader = (headers as Record<string, string>).Authorization;
+        console.log(
+          `[API] ${method} ${endpoint} - Token present: ${!!token}, Has Auth header: ${!!authHeader}`
+        );
+      }
     }
 
     const response = await fetch(url, config);
@@ -476,7 +481,9 @@ export async function apiRequest<T>(
 
     // Parse JSON response
     const data: T = await response.json();
-    logger.apiRequest(endpoint, method, duration);
+    if (!isNoisyEndpoint) {
+      logger.apiRequest(endpoint, method, duration);
+    }
     return data;
   } catch (error) {
     // Don't log PaywallErrors - they're handled by the paywall modal

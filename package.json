@@ -14,10 +14,13 @@
     "cleanExpoCache": "rm -rf ~/.expo",
     "doctor": "npx expo-doctor@latest",
     "build:android:dev": "eas build --profile development --platform android",
+    "build:android:apk": "eas build --profile apk --platform android",
     "build:android:prod": "eas build --profile production --platform android",
     "build:ios:dev": "eas build --profile development --platform ios",
     "build:ios:prod": "eas build --profile production --platform ios",
-    "submit:ios:prod": "eas submit --platform ios --profile production"
+    "submit:ios:prod": "eas submit --platform ios --profile production",
+    "submit:android:prod": "eas submit --platform android --profile production --latest",
+    "deploy:android": "eas build --platform android --profile production --auto-submit"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",

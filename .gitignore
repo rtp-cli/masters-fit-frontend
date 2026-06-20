@@ -4,6 +4,7 @@ node_modules
 /android/
 /ios/
 .claude/settings.local.json
+google-play-service-account.json
 docs/superpowers/*
 design_handoff_workout_generation/
 .DS_Store

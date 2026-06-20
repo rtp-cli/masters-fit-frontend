@@ -15,6 +15,9 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": "assembleRelease"
+      },
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
@@ -28,6 +31,10 @@
     "production": {
       "ios": {
         "ascAppId": "6752777203"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
       }
     }
   }
