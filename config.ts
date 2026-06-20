@@ -6,7 +6,7 @@ const getApiUrl = (): string => {
   if (__DEV__) {
     if (Platform.OS === "android") {
       // For Android, we need to use the special IP address
-      return `http://192.168.1.118:5001/api`;
+      return `http://192.168.1.145:5001/api`;
     } else if (Platform.OS === "ios") {
       // For iOS simulator, use localhost
       return `http://localhost:5001/api`;
