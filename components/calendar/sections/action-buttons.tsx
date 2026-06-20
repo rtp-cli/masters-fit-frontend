@@ -45,6 +45,9 @@ export default function CalendarActionButtons({
           />
           <Text
             className="text-content-on-primary font-semibold text-sm ml-2"
+            style={{ flexShrink: 1 }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
             maxFontSizeMultiplier={1.3}
           >
             Regenerate Week
@@ -73,6 +76,9 @@ export default function CalendarActionButtons({
           />
           <Text
             className="text-content-on-primary font-semibold text-sm ml-2"
+            style={{ flexShrink: 1 }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
             maxFontSizeMultiplier={1.3}
           >
             Regenerate Workout
@@ -91,6 +97,9 @@ export default function CalendarActionButtons({
             />
             <Text
               className="text-primary font-semibold text-sm ml-2"
+              style={{ flexShrink: 1 }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
               maxFontSizeMultiplier={1.3}
             >
               Edit Workout
