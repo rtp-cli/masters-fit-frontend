@@ -112,7 +112,7 @@ export default function Header({
         {/* Right side - Icons */}
         <View className="flex-row items-center space-x-4">
           {isDashboard && typeof streak === "number" && streak >= 1 && (
-            <View className="mr-3">
+            <View className="mr-1">
               <StreakChip
                 count={streak}
                 onPress={() => setStreakPopoverVisible(true)}
@@ -122,7 +122,7 @@ export default function Header({
 
           <TouchableOpacity
             onPress={handleSearchPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-3"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-1"
           >
             <Ionicons name="search" size={20} color={colors.text.primary} />
           </TouchableOpacity>
