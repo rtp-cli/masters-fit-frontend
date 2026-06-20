@@ -128,10 +128,10 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
               </View>
             ) : (
               <TouchableOpacity
-                className="bg-secondary rounded-xl p-4 items-center"
+                className="bg-primary rounded-xl p-4 items-center"
                 onPress={onViewWorkout}
               >
-                <Text className="text-neutral-white font-semibold text-sm">
+                <Text className="text-content-on-primary font-semibold text-sm">
                   View Workout
                 </Text>
               </TouchableOpacity>
