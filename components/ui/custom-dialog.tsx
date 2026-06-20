@@ -26,6 +26,8 @@ export interface CustomDialogProps {
   tertiaryButton?: DialogButton;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
+  /** Optional element rendered between the description and the buttons. */
+  accessory?: React.ReactNode;
   dismissOnBackdropPress?: boolean;
   // Fires after the dialog's dismiss animation completes (iOS). Lets callers
   // sequence a follow-up modal transition instead of triggering it in the same
@@ -43,6 +45,7 @@ export default function CustomDialog({
   tertiaryButton,
   icon,
   iconColor,
+  accessory,
   dismissOnBackdropPress = true,
   onDismiss,
 }: CustomDialogProps) {
@@ -82,6 +85,9 @@ export default function CustomDialog({
               <Text className="text-base text-text-secondary text-center mb-6 leading-6">
                 {description}
               </Text>
+
+              {/* Optional accessory (e.g. streak badge) */}
+              {accessory}
 
               {/* Buttons */}
               {hasThreeButtons ? (

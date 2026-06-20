@@ -917,6 +917,7 @@ export default function DashboardScreen() {
             day: "numeric",
             year: "numeric",
           })}
+          streak={weeklySummary?.streak}
         />
 
         {/* Premium Upgrade Banner - Show for non-pro users */}
@@ -943,10 +944,7 @@ export default function DashboardScreen() {
         />
 
         {weeklySummary && (
-          <WeeklyProgressSection
-            weeklyProgressData={weeklyProgressData as any}
-            streak={weeklySummary?.streak || 0}
-          />
+          <WeeklyProgressSection weeklyProgressData={weeklyProgressData as any} />
         )}
 
         {healthReady && (

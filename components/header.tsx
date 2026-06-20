@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
+import { StreakChip, StreakPopover } from "@/components/streak";
 import { useAuth } from "@/contexts/auth-context";
 import { useThemeColors } from "@/lib/theme";
 import SearchModal from "./search/search-modal";
@@ -10,6 +11,8 @@ import SettingsModal from "./settings/settings-modal";
 interface HeaderProps {
   workoutTitle?: string;
   currentDate?: string;
+  /** Current workout streak; the chip is shown on the dashboard when >= 1. */
+  streak?: number;
   onSearchPress?: () => void;
   onSettingsPress?: () => void;
 }
@@ -17,6 +20,7 @@ interface HeaderProps {
 export default function Header({
   workoutTitle,
   currentDate,
+  streak,
   onSearchPress,
   onSettingsPress,
 }: HeaderProps) {
@@ -28,6 +32,7 @@ export default function Header({
   // Modal state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+  const [streakPopoverVisible, setStreakPopoverVisible] = useState(false);
   // True between a logout request and the sheet finishing its dismiss animation.
   const [logoutPending, setLogoutPending] = useState(false);
 
@@ -106,6 +111,15 @@ export default function Header({
 
         {/* Right side - Icons */}
         <View className="flex-row items-center space-x-4">
+          {isDashboard && typeof streak === "number" && streak >= 1 && (
+            <View className="mr-1">
+              <StreakChip
+                count={streak}
+                onPress={() => setStreakPopoverVisible(true)}
+              />
+            </View>
+          )}
+
           <TouchableOpacity
             onPress={handleSearchPress}
             className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-1"
@@ -123,6 +137,11 @@ export default function Header({
       </View>
 
       {/* Modals */}
+      <StreakPopover
+        visible={streakPopoverVisible}
+        count={streak ?? 0}
+        onClose={() => setStreakPopoverVisible(false)}
+      />
       <SearchModal
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
