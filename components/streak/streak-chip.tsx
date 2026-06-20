@@ -53,7 +53,7 @@ export function StreakBadge() {
     >
       <Text className="text-sm">🔥</Text>
       <Text className="text-sm font-bold text-text-primary ml-1.5">
-        {streak} in a row
+        {streak} workouts in a row
       </Text>
     </View>
   );

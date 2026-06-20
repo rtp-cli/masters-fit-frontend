@@ -39,7 +39,7 @@ export function StreakPopover({ visible, count, onClose }: StreakPopoverProps) {
               {count}
             </Text>
             <Text className="text-sm font-semibold text-text-muted ml-1.5">
-              in a row
+              workouts in a row
             </Text>
           </View>
           <Text className="text-xs text-text-secondary leading-5 mt-3 pt-3 border-t border-neutral-light-2">

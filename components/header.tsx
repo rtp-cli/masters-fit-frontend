@@ -112,10 +112,12 @@ export default function Header({
         {/* Right side - Icons */}
         <View className="flex-row items-center space-x-4">
           {isDashboard && typeof streak === "number" && streak >= 1 && (
-            <StreakChip
-              count={streak}
-              onPress={() => setStreakPopoverVisible(true)}
-            />
+            <View className="mr-3">
+              <StreakChip
+                count={streak}
+                onPress={() => setStreakPopoverVisible(true)}
+              />
+            </View>
           )}
 
           <TouchableOpacity
