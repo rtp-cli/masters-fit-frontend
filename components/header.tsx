@@ -122,7 +122,7 @@ export default function Header({
 
           <TouchableOpacity
             onPress={handleSearchPress}
-            className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-1"
+            className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-3"
           >
             <Ionicons name="search" size={20} color={colors.text.primary} />
           </TouchableOpacity>
