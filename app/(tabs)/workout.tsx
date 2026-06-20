@@ -31,6 +31,7 @@ import JustGeneratedBadge from "@/components/just-generated-badge";
 import { ExerciseSet } from "@/components/set-tracker";
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
 import CircuitTracker from "@/components/circuit-tracker";
+import { StreakBadge } from "@/components/streak";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import {
@@ -250,6 +251,7 @@ export default function WorkoutScreen() {
     primaryButton: DialogButton;
     secondaryButton?: DialogButton;
     icon?: keyof typeof Ionicons.glyphMap;
+    accessory?: React.ReactNode;
   } | null>(null);
 
   // Helper function to show error dialog
@@ -1303,6 +1305,7 @@ export default function WorkoutScreen() {
             onPress: () => setDialogVisible(false),
           },
           icon: "checkmark-circle",
+          accessory: <StreakBadge />,
         });
         setDialogVisible(true);
       }
@@ -1387,12 +1390,14 @@ export default function WorkoutScreen() {
             blocksCompleted: completedBlockCount,
           });
 
-          // Mark plan day as complete with detailed timing in seconds
+          // Mark plan day as complete with detailed timing in seconds, then
+          // refresh the dashboard so the streak badge reflects this completion.
           await markPlanDayAsComplete(workout.id, {
             totalTimeSeconds: finalDuration,
             exercisesCompleted: completedExerciseCount,
             blocksCompleted: completedBlockCount,
           });
+          await refreshDashboard();
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
           setDialogConfig({
@@ -1403,6 +1408,7 @@ export default function WorkoutScreen() {
               onPress: () => setDialogVisible(false),
             },
             icon: "checkmark-circle",
+            accessory: <StreakBadge />,
           });
           setDialogVisible(true);
         }
@@ -2693,6 +2699,7 @@ export default function WorkoutScreen() {
           primaryButton={dialogConfig.primaryButton}
           secondaryButton={dialogConfig.secondaryButton}
           icon={dialogConfig.icon}
+          accessory={dialogConfig.accessory}
         />
       )}
     </View>
