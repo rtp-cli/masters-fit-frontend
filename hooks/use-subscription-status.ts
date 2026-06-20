@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import Purchases, { type CustomerInfo } from "react-native-purchases";
 
+import { useAuth } from "@/contexts/auth-context";
+
 // Extract EntitlementInfo type from CustomerInfo
 type EntitlementInfo = CustomerInfo["entitlements"]["active"][string];
+
+// Demo account that should read as Pro in development builds (e.g. for
+// marketing/demo screens) without a real RevenueCat entitlement. Guarded by
+// __DEV__ below so it can never grant Pro in a production build.
+const DEMO_PRO_EMAIL = "rtp+demo@mastersfit.ai";
 
 interface SubscriptionStatus {
   isPro: boolean;
@@ -27,10 +34,30 @@ export function useSubscriptionStatus() {
     });
   const [isLoading, setIsLoading] = useState(true);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+  const { user } = useAuth();
 
   const fetchSubscriptionStatus = useCallback(async () => {
     try {
       setIsLoading(true);
+
+      // Demo/dev override: the demo account reads as Pro in development builds
+      // so demo/marketing screens don't show the upgrade banner. Guarded by
+      // __DEV__ so it can never grant Pro in production (which stays purely
+      // RevenueCat-driven).
+      if (__DEV__ && user?.email === DEMO_PRO_EMAIL) {
+        setSubscriptionStatus({
+          isPro: true,
+          isTrial: false,
+          isBlocked: false,
+          activeEntitlement: null,
+          productIdentifier: null,
+          expirationDate: null,
+          willRenew: false,
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const info = await Purchases.getCustomerInfo();
 
       setCustomerInfo(info);
@@ -120,7 +147,7 @@ export function useSubscriptionStatus() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.email]);
 
   useEffect(() => {
     fetchSubscriptionStatus();
