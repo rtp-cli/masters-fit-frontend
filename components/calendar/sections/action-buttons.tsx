@@ -37,6 +37,8 @@ export default function CalendarActionButtons({
         <TouchableOpacity
           className="bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
           onPress={() => onShowWorkoutChoice()}
+          accessibilityRole="button"
+          accessibilityLabel="Regenerate week"
         >
           <Ionicons
             name="refresh-outline"
@@ -68,6 +70,8 @@ export default function CalendarActionButtons({
         <TouchableOpacity
           className="flex-1 bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
           onPress={() => onShowWorkoutChoice()}
+          accessibilityRole="button"
+          accessibilityLabel="Regenerate workout"
         >
           <Ionicons
             name="settings-outline"
@@ -89,6 +93,8 @@ export default function CalendarActionButtons({
           <TouchableOpacity
             className="flex-1 bg-card border border-neutral-light-2 py-3 px-3 rounded-xl items-center flex-row justify-center"
             onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
+            accessibilityRole="button"
+            accessibilityLabel="Edit workout"
           >
             <Ionicons
               name="create-outline"

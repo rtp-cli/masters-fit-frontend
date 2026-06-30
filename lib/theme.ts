@@ -114,7 +114,8 @@ export const darkColors = {
   text: {
     primary: "#FFFFFF",
     secondary: "#C0C0C0",
-    muted: "#686868",
+    // Raised from #686868 (~3.7:1, FAIL) to ~5.0:1 on #0A0A0A — meets WCAG AA (MF-007).
+    muted: "#8C8C8C",
   },
   background: "#0A0A0A",
   surface: "#0A0A0A",
@@ -564,6 +565,9 @@ type ThemeColorPalette = {
   text: { primary: string; secondary: string; muted: string };
   background: string;
   surface: string;
+  /** Elevated card surface. Defaults to `surface` per theme; give it its own value
+   *  to widen the card-vs-page tonal step (see backlog MF-010). */
+  card?: string;
   danger: string;
   warning: string;
   contentOnPrimary: string;
@@ -597,6 +601,7 @@ const createThemeVars = (themeColors: ThemeColorPalette) =>
     "--color-text-muted": hexToRgb(themeColors.text.muted),
     "--color-background": hexToRgb(themeColors.background),
     "--color-surface": hexToRgb(themeColors.surface),
+    "--color-card": hexToRgb(themeColors.card ?? themeColors.surface),
     "--color-danger": hexToRgb(themeColors.danger),
     "--color-warning": hexToRgb(themeColors.warning),
     "--color-success": hexToRgb(themeColors.brand.primary),
@@ -645,9 +650,10 @@ export const spacing = {
 // Typography system
 export const typography = {
   fontSize: {
-    xs: 11,
-    sm: 13,
-    base: 15,
+    // Floor raised for the masters-age audience (MF-008): xs 11→13, sm 13→14, base 15→16.
+    xs: 13,
+    sm: 14,
+    base: 16,
     lg: 17,
     xl: 20,
     "2xl": 24,

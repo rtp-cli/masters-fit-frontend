@@ -1,4 +1,5 @@
 // Central export for all constants
+export * from "./accessibility";
 export * from "./api";
 export * from "./colors";
 export * from "./timeouts";

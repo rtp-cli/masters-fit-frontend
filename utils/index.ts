@@ -1,5 +1,29 @@
 // Utility functions for the Masters Fit mobile app
 
+import { TIME_RANGE_FILTER } from "@/constants/global.enum";
+
+/**
+ * Human-readable label for an analytics time-range filter.
+ * Single source of truth for dashboard card subtitles — replaces the per-card
+ * ternaries that silently mislabeled 6M/1Y as "Last 1 week" (backlog MF-002).
+ */
+export function formatTimeRangeLabel(filter: TIME_RANGE_FILTER): string {
+  switch (filter) {
+    case TIME_RANGE_FILTER.ONE_WEEK:
+      return "Last 1 week";
+    case TIME_RANGE_FILTER.ONE_MONTH:
+      return "Last 1 month";
+    case TIME_RANGE_FILTER.THREE_MONTHS:
+      return "Last 3 months";
+    case TIME_RANGE_FILTER.SIX_MONTHS:
+      return "Last 6 months";
+    case TIME_RANGE_FILTER.ONE_YEAR:
+      return "Last 1 year";
+    default:
+      return "Last 1 month";
+  }
+}
+
 /**
  * Robust date parsing function that handles various input formats
  * Prioritizes timezone-independent parsing for workout dates (YYYY-MM-DD)

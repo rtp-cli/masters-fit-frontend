@@ -45,8 +45,9 @@ const Button: React.FC<ButtonProps> = ({
   ...rest
 }) => {
   const colors = useThemeColors();
-  // Base classes
-  const baseClasses = "flex-row items-center justify-center rounded-sm";
+  // Base classes — min-h-[44px] guarantees the Apple/Material 44px touch target (MF-009).
+  const baseClasses =
+    "flex-row items-center justify-center rounded-sm min-h-[44px]";
 
   // Variant classes
   const variantClasses = {
@@ -54,7 +55,9 @@ const Button: React.FC<ButtonProps> = ({
     secondary: "bg-neutral-light-2",
     outline: "bg-transparent border border-primary",
     ghost: "bg-transparent",
-    destructive: "bg-secondary",
+    // Destructive uses the semantic `danger` token (was incorrectly `bg-secondary`,
+    // which is the inverted brand color, not a warning color) — see MF-013/MF-015.
+    destructive: "bg-danger",
   };
 
   // Size classes
@@ -104,6 +107,8 @@ const Button: React.FC<ButtonProps> = ({
       className={buttonClassName}
       style={style}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!(disabled || loading), busy: loading }}
       {...rest}
     >
       {loading ? (

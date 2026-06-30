@@ -24,6 +24,7 @@ import {
   fetchExerciseLogsForPlanDay,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
+import { HIT_SLOP_6 } from "@/constants";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
@@ -1696,7 +1697,7 @@ export default function WorkoutScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#fff"
+              tintColor={colors.text.primary}
             />
           }
           contentContainerStyle={{
@@ -1902,7 +1903,7 @@ export default function WorkoutScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#fff"
+            tintColor={colors.text.primary}
           />
         }
       >
@@ -2144,6 +2145,10 @@ export default function WorkoutScreen() {
                                         ? "border-primary bg-primary"
                                         : "border-neutral-medium-1 bg-background"
                                     }`}
+                                    hitSlop={HIT_SLOP_6}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Round ${i + 1}`}
+                                    accessibilityState={{ selected: isCompleted }}
                                     onPress={() => {
                                       Haptics.impactAsync(
                                         Haptics.ImpactFeedbackStyle.Light,
@@ -2409,6 +2414,8 @@ export default function WorkoutScreen() {
           <TouchableOpacity
             className="bg-primary rounded-2xl py-4 flex-row items-center justify-center"
             onPress={startWorkout}
+            accessibilityRole="button"
+            accessibilityLabel="Start Workout"
           >
             <Ionicons name="play" size={20} color={colors.contentOnPrimary} />
             <Text className="text-content-on-primary font-bold text-lg ml-2">
@@ -2422,6 +2429,8 @@ export default function WorkoutScreen() {
               <TouchableOpacity
                 className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
                 onPress={() => setShowSkipModal(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Skip"
               >
                 <Ionicons
                   name="play-skip-forward-outline"
@@ -2437,6 +2446,8 @@ export default function WorkoutScreen() {
             <TouchableOpacity
               className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
               onPress={togglePause}
+              accessibilityRole="button"
+              accessibilityLabel={isPaused ? "Resume" : "Pause"}
             >
               <Ionicons
                 name={isPaused ? "play-outline" : "pause-outline"}
@@ -2451,6 +2462,8 @@ export default function WorkoutScreen() {
             <TouchableOpacity
               className="bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1"
               onPress={() => setShowCompleteModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Complete"
             >
               <Ionicons
                 name="checkmark"
@@ -2474,6 +2487,9 @@ export default function WorkoutScreen() {
             onPress={showEndEarlyDialog}
             className="items-center mt-4 pb-1"
             disabled={isEndingEarly}
+            accessibilityRole="button"
+            accessibilityLabel="End Workout"
+            accessibilityState={{ disabled: isEndingEarly }}
           >
             {isEndingEarly ? (
               <View className="flex-row items-center">
