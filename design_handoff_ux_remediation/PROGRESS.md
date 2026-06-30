@@ -72,7 +72,9 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
 - [ ] **MF-005 · P0** — Remove color-only status everywhere; calendar legend; grayscale-verify each pair.
 - [ ] **MF-006 · P1** — Reserve solid ink for the single primary action per screen; document the rule.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
-- [ ] **MF-011 · P1** — Label the 3 bottom tabs (`tabBarShowLabel: false` today); non-color selected state.
+- [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/
+      "Calendar", height bumped to fit). Non-color selected cue: active tab uses the **solid** icon,
+      inactive uses **outline** (not just tint). *(Verify labels render under the custom tabBarButton.)*
 - [ ] **MF-012 · P1** — Reduce in-session density; collapse overview after start; compact progress rail.
 - [ ] **MF-013 · P1** — "Finish Early" (save partial) vs "Discard Workout" (danger + confirm).
 - [ ] **MF-019 · P2** — Search initial state + date-search discoverability.
