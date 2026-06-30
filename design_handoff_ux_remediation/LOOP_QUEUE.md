@@ -51,7 +51,7 @@
   `components/adaptive-set-tracker.tsx`. Do NOT touch the commented-out timer code (that's MF-003,
   a deferred product decision). Additive a11y only.
 
-- [ ] **L5 · MF-009 — calendar actions a11y.** In `components/calendar/sections/action-buttons.tsx`
+- [x] **L5 · MF-009 — calendar actions a11y.** In `components/calendar/sections/action-buttons.tsx`
   (and any icon-only controls in `components/calendar/sections/calendar-view.tsx`), add
   role/label/hitSlop to interactive controls. Additive only.
 
@@ -67,3 +67,4 @@
 - L2 — DONE — type floor xs/sm/base 11/13/15→13/14/16 (tailwind+theme); tsc 35. ⚠ VISUAL REVIEW
 - L3 — DONE — set-tracker.tsx 9/9 touchables labeled + hitSlop on small ones; tsc 35, lint 0
 - L4 — DONE — adaptive-set-tracker.tsx 11/11 labeled + hitSlop; tsc 35, lint unchanged (13, pre-existing timer code). Did NOT touch commented MF-003 timer.
+- L5 — DONE — calendar action-buttons 3/3 + calendar-view "Today" 1/1 labeled (+hitSlop on Today); tsc 35, lint 0

@@ -82,6 +82,9 @@ export default function CalendarViewSection({
             <TouchableOpacity
               className="px-4 py-2 rounded-lg bg-surface border border-neutral-medium-1"
               onPress={onPressToday}
+              accessibilityRole="button"
+              accessibilityLabel="Go to today"
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
               <Text className="text-brand-primary text-md font-semibold">
                 Today
