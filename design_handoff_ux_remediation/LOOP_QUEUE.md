@@ -41,7 +41,7 @@
   **Flag in commit body:** VISUAL REVIEW REQUIRED — larger base text may reflow/clip some
   fixed-height rows; not sim-verifiable here.
 
-- [ ] **L3 · MF-009 — set-tracker a11y.** In `components/set-tracker.tsx`, add
+- [x] **L3 · MF-009 — set-tracker a11y.** In `components/set-tracker.tsx`, add
   `accessibilityRole="button"` + a meaningful `accessibilityLabel` (and `hitSlop` if the visual
   target is <44px) to every interactive `TouchableOpacity` (increment/decrement, complete, etc.).
   Additive only. **Assert:** every `<TouchableOpacity` in the file has an `accessibilityLabel`
@@ -65,3 +65,4 @@
 ## Loop log (the loop appends one line per task: ID — DONE/BLOCKED — commit sha — note)
 - L1 — DONE — dark text.muted #686868→#8C8C8C; tsc 35, lib/theme.ts lint unchanged (2)
 - L2 — DONE — type floor xs/sm/base 11/13/15→13/14/16 (tailwind+theme); tsc 35. ⚠ VISUAL REVIEW
+- L3 — DONE — set-tracker.tsx 9/9 touchables labeled + hitSlop on small ones; tsc 35, lint 0
