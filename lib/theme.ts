@@ -650,9 +650,10 @@ export const spacing = {
 // Typography system
 export const typography = {
   fontSize: {
-    xs: 11,
-    sm: 13,
-    base: 15,
+    // Floor raised for the masters-age audience (MF-008): xs 11→13, sm 13→14, base 15→16.
+    xs: 13,
+    sm: 14,
+    base: 16,
     lg: 17,
     xl: 20,
     "2xl": 24,

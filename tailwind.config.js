@@ -65,9 +65,10 @@ module.exports = {
         bold: ["Manrope_700Bold"],
       },
       fontSize: {
-        xs: "11px",
-        sm: "13px",
-        base: "15px",
+        // Floor raised for the masters-age audience (MF-008): xs 11→13, sm 13→14, base 15→16.
+        xs: "13px",
+        sm: "14px",
+        base: "16px",
         lg: "17px",
         xl: "20px",
         "2xl": "24px",

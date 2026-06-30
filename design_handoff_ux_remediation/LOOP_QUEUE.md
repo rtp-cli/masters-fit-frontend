@@ -34,7 +34,7 @@
   **Assert:** `grep -n '#8C8C8C' lib/theme.ts` matches the darkColors muted line; `#686868`
   no longer present as a text.muted value.
 
-- [ ] **L2 · MF-008 — type-scale floor.** Raise the floor in BOTH `tailwind.config.js`
+- [x] **L2 · MF-008 — type-scale floor.** Raise the floor in BOTH `tailwind.config.js`
   (`fontSize`) and `lib/theme.ts` (`typography.fontSize`): `xs` 11→13, `sm` 13→14, `base` 15→16.
   Leave lg/xl/2xl/3xl/4xl unchanged. Token only — do NOT touch any component.
   **Assert:** both files show `xs:"13px"`/`xs:13`, `sm:"14px"`/`sm:14`, `base:"16px"`/`base:16`.
@@ -64,3 +64,4 @@
 
 ## Loop log (the loop appends one line per task: ID — DONE/BLOCKED — commit sha — note)
 - L1 — DONE — dark text.muted #686868→#8C8C8C; tsc 35, lib/theme.ts lint unchanged (2)
+- L2 — DONE — type floor xs/sm/base 11/13/15→13/14/16 (tailwind+theme); tsc 35. ⚠ VISUAL REVIEW
