@@ -40,6 +40,7 @@ export function IconButton({
   color,
   disabled,
   style,
+  className: classNameProp,
   ...rest
 }: IconButtonProps) {
   const colors = useThemeColors();
@@ -54,10 +55,13 @@ export function IconButton({
     color ??
     (variant === "primary" ? colors.contentOnPrimary : colors.text.primary);
 
+  // Caller className is appended (not overridden) so layout tweaks like "mr-1"
+  // compose with the fixed 44×44 target instead of wiping it.
   const className = [
     "w-[44px] h-[44px] rounded-full items-center justify-center",
     variantClasses[variant],
     disabled && "opacity-40",
+    classNameProp,
   ]
     .filter(Boolean)
     .join(" ");

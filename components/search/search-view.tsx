@@ -604,6 +604,9 @@ export default function SearchView() {
                   <TouchableOpacity
                     onPress={() => setExerciseQuery("")}
                     className="p-1"
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <Ionicons
                       name="close-circle"
@@ -619,6 +622,9 @@ export default function SearchView() {
             <TouchableOpacity
               className="bg-surface rounded-xl shadow-rn-sm border border-neutral-medium-1 h-12 w-12 items-center justify-center"
               onPress={() => setShowDatePicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Search by date"
+              accessibilityState={{ selected: !!selectedDate }}
             >
               <Ionicons
                 name="calendar"

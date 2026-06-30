@@ -55,8 +55,13 @@ Safe to grind autonomously once G0 is green and primitives exist.
 - [ ] **MF-007 · P1** — Dark `text.muted` `#686868 → #8C8C8C`; theme-drive StatusBar style + logo asset.
 - [ ] **MF-008 · P1** — Type floor: `xs` 11→13, `sm` 13→14, `base` 15→16; honor Dynamic Type;
       never combine smallest size with muted color.
-- [ ] **MF-009 · P0** — A11y retrofit via primitives: roles/labels/hitSlop, 44×44 min,
-      `accessibilityState`, error `role="alert"` + focus-to-first-invalid.
+- [~] **MF-009 · P0** — A11y retrofit, IN PROGRESS. **Done:** header (2 icon buttons → `IconButton`),
+      search clear + date controls (role/label/hitSlop/selected-state in place), workout round-chips
+      (role/label/selected + hitSlop) and bottom action bar (roles + End-Workout disabled state).
+      **Insight:** most icon controls are bespoke (inline/bordered/number-or-check), so `IconButton`
+      only fit the header cleanly; the rest got a11y props in place. **Remaining (long tail, good
+      /loop candidate):** set-tracker +/- buttons, calendar actions, settings/subscription rows, and
+      the onboarding/login error `role="alert"` + focus-to-first-invalid-field.
 - [ ] **MF-018 · P2** — Kill styling drift (hardcoded reds, `text-white`, `tintColor="#fff"`, inline shadows).
 - [ ] **MF-024 · P2** — Strength-progress chart: relabel raw stats or compute from smoothed series.
 
