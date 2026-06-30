@@ -47,7 +47,7 @@
   Additive only. **Assert:** every `<TouchableOpacity` in the file has an `accessibilityLabel`
   (`grep -c "<TouchableOpacity"` == `grep -c "accessibilityLabel"` is a reasonable proxy; verify by eye in the diff).
 
-- [ ] **L4 · MF-009 — adaptive-set-tracker a11y.** Same as L3 for
+- [x] **L4 · MF-009 — adaptive-set-tracker a11y.** Same as L3 for
   `components/adaptive-set-tracker.tsx`. Do NOT touch the commented-out timer code (that's MF-003,
   a deferred product decision). Additive a11y only.
 
@@ -66,3 +66,4 @@
 - L1 — DONE — dark text.muted #686868→#8C8C8C; tsc 35, lib/theme.ts lint unchanged (2)
 - L2 — DONE — type floor xs/sm/base 11/13/15→13/14/16 (tailwind+theme); tsc 35. ⚠ VISUAL REVIEW
 - L3 — DONE — set-tracker.tsx 9/9 touchables labeled + hitSlop on small ones; tsc 35, lint 0
+- L4 — DONE — adaptive-set-tracker.tsx 11/11 labeled + hitSlop; tsc 35, lint unchanged (13, pre-existing timer code). Did NOT touch commented MF-003 timer.
