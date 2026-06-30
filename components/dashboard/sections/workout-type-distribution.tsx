@@ -1,9 +1,11 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { PieChart } from "@/components/charts/pie-chart";
 import { getThemedDonutColors, TIME_RANGE_FILTER } from "@/constants";
-import { WorkoutTypeMetrics } from "@/types/api";
 import { useTheme } from "@/lib/theme-context";
+import { WorkoutTypeMetrics } from "@/types/api";
+import { formatTimeRangeLabel } from "@/utils";
 
 type WorkoutTypeDistributionSectionProps = {
   metrics: WorkoutTypeMetrics | null;
@@ -93,12 +95,7 @@ const WorkoutTypeDistributionSection: React.FC<
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           Types of exercises you've been completing (
-          {filter === TIME_RANGE_FILTER.THREE_MONTHS
-            ? "Last 3 months"
-            : filter === TIME_RANGE_FILTER.ONE_MONTH
-              ? "Last 1 month"
-              : "Last 1 week"}
-          )
+          {formatTimeRangeLabel(filter)})
         </Text>
       </View>
 

@@ -1,10 +1,13 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { PieChart } from "@/components/charts/pie-chart";
-import { useTheme } from "../../../lib/theme-context";
 import { getThemedPieChartColors } from "@/constants/colors";
-import { WeightAccuracyMetrics } from "@/types/api";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
+import { WeightAccuracyMetrics } from "@/types/api";
+import { formatTimeRangeLabel } from "@/utils";
+
+import { useTheme } from "../../../lib/theme-context";
 
 type WeightPerformanceSectionProps = {
   filteredWeightAccuracy: WeightAccuracyMetrics | null;
@@ -33,12 +36,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           How you're progressing with your planned weights (
-          {weightPerformanceFilter === TIME_RANGE_FILTER.THREE_MONTHS
-            ? "Last 3 months"
-            : weightPerformanceFilter === TIME_RANGE_FILTER.ONE_MONTH
-              ? "Last 1 month"
-              : "Last 1 week"}
-          )
+          {formatTimeRangeLabel(weightPerformanceFilter)})
         </Text>
       </View>
 

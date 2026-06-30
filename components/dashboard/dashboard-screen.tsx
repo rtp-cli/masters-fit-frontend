@@ -326,6 +326,12 @@ export default function DashboardScreen() {
       case TIME_RANGE_FILTER.THREE_MONTHS:
         cutoffDate.setDate(today.getDate() - 90);
         break;
+      case TIME_RANGE_FILTER.SIX_MONTHS:
+        cutoffDate.setMonth(today.getMonth() - 6);
+        break;
+      case TIME_RANGE_FILTER.ONE_YEAR:
+        cutoffDate.setFullYear(today.getFullYear() - 1);
+        break;
       default:
         cutoffDate.setDate(today.getDate() - 30);
     }

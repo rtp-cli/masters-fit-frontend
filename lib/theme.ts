@@ -564,6 +564,9 @@ type ThemeColorPalette = {
   text: { primary: string; secondary: string; muted: string };
   background: string;
   surface: string;
+  /** Elevated card surface. Defaults to `surface` per theme; give it its own value
+   *  to widen the card-vs-page tonal step (see backlog MF-010). */
+  card?: string;
   danger: string;
   warning: string;
   contentOnPrimary: string;
@@ -597,6 +600,7 @@ const createThemeVars = (themeColors: ThemeColorPalette) =>
     "--color-text-muted": hexToRgb(themeColors.text.muted),
     "--color-background": hexToRgb(themeColors.background),
     "--color-surface": hexToRgb(themeColors.surface),
+    "--color-card": hexToRgb(themeColors.card ?? themeColors.surface),
     "--color-danger": hexToRgb(themeColors.danger),
     "--color-warning": hexToRgb(themeColors.warning),
     "--color-success": hexToRgb(themeColors.brand.primary),
