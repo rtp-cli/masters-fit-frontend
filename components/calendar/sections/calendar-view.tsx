@@ -1,6 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Calendar as RNCalendar, DateData } from "react-native-calendars";
+import { HIT_SLOP_6 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
 
 type CalendarViewSectionProps = {
@@ -84,7 +85,7 @@ export default function CalendarViewSection({
               onPress={onPressToday}
               accessibilityRole="button"
               accessibilityLabel="Go to today"
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              hitSlop={HIT_SLOP_6}
             >
               <Text className="text-brand-primary text-md font-semibold">
                 Today

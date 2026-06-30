@@ -41,7 +41,7 @@ const MONTHS = [
 // are too wide and collide when several are shown across the chart width.
 const shortLabel = (dateStr: string, fallback: string): string => {
   const [, m, d] = (dateStr || "").split("-").map(Number);
-  if (!m || !d) return fallback;
+  if (!m || m > 12 || !d) return fallback;
   return `${MONTHS[m - 1]} ${d}`;
 };
 

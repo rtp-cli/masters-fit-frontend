@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
+import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { ExerciseSet } from "./set-tracker";
@@ -348,7 +349,7 @@ export default function AdaptiveSetTracker({
                 onPress={() => resetSetToTarget(index)}
                 accessibilityRole="button"
                 accessibilityLabel="Reset set to target"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                hitSlop={HIT_SLOP_10}
               >
                 <Ionicons
                   name="refresh-outline"
@@ -360,7 +361,7 @@ export default function AdaptiveSetTracker({
                 onPress={() => removeSet(index)}
                 accessibilityRole="button"
                 accessibilityLabel="Remove set"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                hitSlop={HIT_SLOP_10}
               >
                 <Ionicons
                   name="trash-outline"
@@ -380,7 +381,7 @@ export default function AdaptiveSetTracker({
                   className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Decrease weight 5 pounds"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  hitSlop={HIT_SLOP_6}
                   onPress={() =>
                     updateSet(index, "weight", Math.max(0, set.weight - 5))
                   }
@@ -408,7 +409,7 @@ export default function AdaptiveSetTracker({
                   style={{ backgroundColor: colors.brand.primary }}
                   accessibilityRole="button"
                   accessibilityLabel="Increase weight 5 pounds"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  hitSlop={HIT_SLOP_6}
                   onPress={() => updateSet(index, "weight", set.weight + 5)}
                 >
                   <Text
@@ -430,7 +431,7 @@ export default function AdaptiveSetTracker({
                 className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
                 accessibilityRole="button"
                 accessibilityLabel="Decrease reps"
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                hitSlop={HIT_SLOP_6}
                 onPress={() =>
                   updateSet(index, "reps", Math.max(0, set.reps - 1))
                 }
@@ -456,7 +457,7 @@ export default function AdaptiveSetTracker({
                 style={{ backgroundColor: colors.brand.primary }}
                 accessibilityRole="button"
                 accessibilityLabel="Increase reps"
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                hitSlop={HIT_SLOP_6}
                 onPress={() => updateSet(index, "reps", set.reps + 1)}
               >
                 <Ionicons name="add" size={18} color={colors.brand.secondary} />
@@ -532,7 +533,7 @@ export default function AdaptiveSetTracker({
                 onPress={() => removeDurationSet(index)}
                 accessibilityRole="button"
                 accessibilityLabel="Remove set"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                hitSlop={HIT_SLOP_10}
               >
                 <Ionicons
                   name="trash-outline"
@@ -550,7 +551,7 @@ export default function AdaptiveSetTracker({
                   className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Decrease weight 5 pounds"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  hitSlop={HIT_SLOP_6}
                   onPress={() =>
                     updateDurationSet(
                       index,
@@ -582,7 +583,7 @@ export default function AdaptiveSetTracker({
                   style={{ backgroundColor: colors.brand.primary }}
                   accessibilityRole="button"
                   accessibilityLabel="Increase weight 5 pounds"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  hitSlop={HIT_SLOP_6}
                   onPress={() =>
                     updateDurationSet(index, "weight", set.weight + 5)
                   }

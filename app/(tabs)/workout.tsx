@@ -24,6 +24,7 @@ import {
   fetchExerciseLogsForPlanDay,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
+import { HIT_SLOP_6 } from "@/constants";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
@@ -2144,12 +2145,7 @@ export default function WorkoutScreen() {
                                         ? "border-primary bg-primary"
                                         : "border-neutral-medium-1 bg-background"
                                     }`}
-                                    hitSlop={{
-                                      top: 6,
-                                      bottom: 6,
-                                      left: 6,
-                                      right: 6,
-                                    }}
+                                    hitSlop={HIT_SLOP_6}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Round ${i + 1}`}
                                     accessibilityState={{ selected: isCompleted }}

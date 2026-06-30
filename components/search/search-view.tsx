@@ -14,6 +14,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useAuth } from "@/contexts/auth-context";
+import { HIT_SLOP_10 } from "@/constants";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseLinkModal from "@/components/exercise-link-modal";
 import {
@@ -606,7 +607,7 @@ export default function SearchView() {
                     className="p-1"
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    hitSlop={HIT_SLOP_10}
                   >
                     <Ionicons
                       name="close-circle"
