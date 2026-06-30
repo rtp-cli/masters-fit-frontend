@@ -1696,7 +1696,7 @@ export default function WorkoutScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#fff"
+              tintColor={colors.text.primary}
             />
           }
           contentContainerStyle={{
@@ -1902,7 +1902,7 @@ export default function WorkoutScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#fff"
+            tintColor={colors.text.primary}
           />
         }
       >

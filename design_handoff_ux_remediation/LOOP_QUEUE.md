@@ -55,7 +55,7 @@
   (and any icon-only controls in `components/calendar/sections/calendar-view.tsx`), add
   role/label/hitSlop to interactive controls. Additive only.
 
-- [ ] **L6 · MF-018 — pull-to-refresh tint drift.** Replace hardcoded `tintColor="#fff"` /
+- [x] **L6 · MF-018 — pull-to-refresh tint drift.** Replace hardcoded `tintColor="#fff"` /
   `tintColor="#ffffff"` on RefreshControl with a theme color via `useThemeColors()`
   (e.g. `colors.text.primary` or `colors.brand.primary` per context). Repo-wide.
   **Assert:** `grep -rn 'tintColor="#fff"' app components` returns nothing.
@@ -68,3 +68,6 @@
 - L3 — DONE — set-tracker.tsx 9/9 touchables labeled + hitSlop on small ones; tsc 35, lint 0
 - L4 — DONE — adaptive-set-tracker.tsx 11/11 labeled + hitSlop; tsc 35, lint unchanged (13, pre-existing timer code). Did NOT touch commented MF-003 timer.
 - L5 — DONE — calendar action-buttons 3/3 + calendar-view "Today" 1/1 labeled (+hitSlop on Today); tsc 35, lint 0
+- L6 — DONE — workout.tsx RefreshControl tintColor "#fff"→colors.text.primary (x2); tsc 35, workout lint unchanged (31). No tintColor=#fff remains.
+
+## ALL TASKS DONE — loop complete.
