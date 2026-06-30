@@ -1,0 +1,216 @@
+<!-- @dsCard group="Proposals" viewport="980x1400" name="Token-layer fix proposals" subtitle="Visual target for backlog MF-004 / 005 / 007 / 008" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MastersFit — Token Fix Proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<style>
+  /* Inlined design-system tokens so this reference page is self-contained. */
+  @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+  :root {
+    --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    --color-text-primary: #0A0A0A; --color-text-secondary: #3C3C3C; --color-text-muted: #757575;
+    --color-background: #FFFFFF; --color-surface: #F9F9F9;
+    --color-neutral-medium-1: #E0E0E0; --color-danger: #DC2626;
+  }
+</style>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font-sans); background: #ECECEE; color: var(--color-text-primary); padding: 32px; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  .doc-head { margin-bottom: 28px; }
+  .doc-head h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+  .doc-head p { font-size: 15px; color: var(--color-text-muted); margin: 8px 0 0; max-width: 640px; line-height: 1.5; }
+
+  .ticket { background: #fff; border-radius: 20px; padding: 26px; margin-bottom: 22px; }
+  .ticket > h2 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); margin: 0 0 4px; font-weight: 700; }
+  .ticket > h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 18px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #0A0A0A; color: #fff; margin-left: 8px; vertical-align: middle; letter-spacing: 0.02em; }
+
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pane { border-radius: 14px; padding: 20px; border: 1px solid var(--color-neutral-medium-1); }
+  .pane.before { background: var(--color-surface); }
+  .pane.after { background: #fff; border-color: #0A0A0A; }
+  .pane .lbl { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; margin-bottom: 16px; }
+  .pane.before .lbl { color: var(--color-danger); }
+  .pane.after .lbl { color: var(--color-text-primary); }
+  .pane.before .lbl::before { content: "✕  "; }
+  .pane.after .lbl::before { content: "✓  "; }
+  .note { font-size: 12px; color: var(--color-text-muted); margin-top: 14px; line-height: 1.5; }
+
+  /* weekly bars */
+  .bars { display: flex; gap: 8px; align-items: flex-end; height: 120px; }
+  .bcol { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .btrack { flex: 1; display: flex; align-items: flex-end; width: 100%; justify-content: center; position: relative; }
+  .bar { width: 26px; border-radius: 6px; position: relative; }
+  .bday { font-size: 11px; margin-top: 6px; color: var(--color-text-secondary); }
+  .bcheck { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 12px; }
+  .hatch { background-image: repeating-linear-gradient(45deg, #6B6B6B 0 3px, #cfcfcf 3px 6px); }
+
+  /* calendar dots */
+  .dots { display: flex; gap: 18px; flex-wrap: wrap; }
+  .dotitem { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; color: var(--color-text-secondary); }
+  .daycell { width: 40px; height: 40px; border-radius: 10px; background: var(--color-surface); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; position: relative; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; position: absolute; bottom: 5px; }
+
+  /* success chips */
+  .chiprow { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .pill-primary { background: #0A0A0A; color: #fff; }
+  .pill-success-after { background: #fff; color: #0A0A0A; border: 2px solid #0A0A0A; }
+
+  /* type */
+  .typerow { display: flex; flex-direction: column; gap: 6px; }
+  .meta-before { font-size: 11px; color: #757575; }
+  .meta-after { font-size: 13px; color: var(--color-text-secondary); }
+
+  /* dark mode contrast */
+  .darkbox { background: #0A0A0A; border-radius: 12px; padding: 18px; }
+  .darkbox .t { font-size: 14px; font-weight: 600; color: #fff; }
+  .ratio { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; margin-top: 10px; }
+  .ratio.fail { background: rgba(220,38,38,0.15); color: #FF6B6B; }
+  .ratio.pass { background: rgba(255,255,255,0.14); color: #fff; }
+  .swatch-line { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .swatch-line .sw { width: 16px; height: 16px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="doc-head">
+    <h1>Token-layer fix proposals</h1>
+    <p>Visual target for the four token-level backlog tickets. These keep the monochrome "Original" character while restoring status communication and meeting WCAG AA. Proposed values live in <strong>proposals/colors.proposed.css</strong> and <strong>proposals/typography.proposed.css</strong>; port to <strong>lib/theme.ts</strong> after sign-off.</p>
+  </div>
+
+  <!-- MF-004 -->
+  <div class="ticket">
+    <h2>MF-004 <span class="tag">P0 · color semantics</span></h2>
+    <h3>Completion gets its own signature</h3>
+    <div class="ba">
+      <div class="pane before">
+        <div class="lbl">Before</div>
+        <div class="chiprow">
+          <span class="pill pill-primary">Start workout</span>
+          <span class="pill pill-primary">✓ Completed</span>
+        </div>
+        <div class="note">success === brand.primary === #0A0A0A. "Completed" is pixel-identical to a primary CTA — the most rewarding moment has no distinct signal.</div>
+      </div>
+      <div class="pane after">
+        <div class="lbl">After</div>
+        <div class="chiprow">
+          <span class="pill pill-primary">Start workout</span>
+          <span class="pill pill-success-after"><span style="font-size:15px">✓</span> Completed</span>
+        </div>
+        <div class="note">Success keeps ink (monochrome holds) but takes a reserved FORM — outlined ink + check + ring — so completed never reads as a default action. Decoupled into its own <code>--color-success</code> token.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MF-005 -->
+  <div class="ticket">
+    <h2>MF-005 <span class="tag">P0 · color-only status</span></h2>
+    <h3>Status carries a non-color cue — weekly progress</h3>
+    <div class="ba">
+      <div class="pane before">
+        <div class="lbl">Before — shade only</div>
+        <div class="bars">
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:100px;background:#0A0A0A"></div></div><div class="bday">Mon</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:78px;background:#9E9E9E"></div></div><div class="bday">Tue</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:18px;background:#0A0A0A"></div></div><div class="bday">Wed</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:18px;background:#A0A0A0"></div></div><div class="bday">Thu</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:100px;background:#E0E0E0"></div></div><div class="bday">Sat</div></div>
+        </div>
+        <div class="note">Complete / partial / today / upcoming / rest differ only by grey value. Hard to parse, fails WCAG 1.4.1 — worst for the masters audience.</div>
+      </div>
+      <div class="pane after">
+        <div class="lbl">After — shape + label + fill</div>
+        <div class="bars">
+          <div class="bcol"><div class="btrack"><span class="bcheck">✓</span><div class="bar" style="height:100px;background:#0A0A0A"></div></div><div class="bday">Mon</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar hatch" style="height:78px"></div></div><div class="bday">Tue</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:100px;background:transparent;border:2px solid #0A0A0A"></div></div><div class="bday" style="font-weight:700;color:#0A0A0A">Wed</div></div>
+          <div class="bcol"><div class="btrack"><div class="bar" style="height:100px;background:transparent;border:1.5px dashed #C8C8C8"></div></div><div class="bday">Thu</div></div>
+          <div class="bcol"><div class="btrack" style="align-items:center"><div class="bar" style="height:4px;background:#E0E0E0"></div></div><div class="bday">Rest</div></div>
+        </div>
+        <div class="note">Complete = solid + ✓ · partial = hatch fill · today = ink outline ring · upcoming = dashed outline · rest = flat line + "Rest" label. Readable in pure grayscale.</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:24px">Status carries a non-color cue — calendar dots + legend</h3>
+    <div class="ba">
+      <div class="pane before">
+        <div class="lbl">Before — one dot color</div>
+        <div class="dots">
+          <div class="dotitem"><div class="daycell">5<span class="dot" style="background:#0A0A0A"></span></div>completed</div>
+          <div class="dotitem"><div class="daycell">12<span class="dot" style="background:#0A0A0A"></span></div>planned</div>
+          <div class="dotitem"><div class="daycell">14<span class="dot" style="background:#0A0A0A"></span></div>missed</div>
+        </div>
+        <div class="note">Completed, planned, and missed days are indistinguishable — same dot, no legend.</div>
+      </div>
+      <div class="pane after">
+        <div class="lbl">After — glyph per state + legend</div>
+        <div class="dots">
+          <div class="dotitem"><div class="daycell">5<span class="dot" style="background:#0A0A0A"></span></div>completed ●</div>
+          <div class="dotitem"><div class="daycell">12<span class="dot" style="background:transparent;border:1.5px solid #0A0A0A"></span></div>planned ◦</div>
+          <div class="dotitem"><div class="daycell" style="color:var(--color-danger)">14<span style="position:absolute;bottom:3px;font-size:11px;color:var(--color-danger)">×</span></div>missed ×</div>
+        </div>
+        <div class="note">Filled = completed · outline = planned · × = missed. A persistent legend ships on the calendar screen (MF-022).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MF-007 -->
+  <div class="ticket">
+    <h2>MF-007 <span class="tag">P1 · dark mode AA</span></h2>
+    <h3>Muted text meets contrast in dark mode</h3>
+    <div class="ba">
+      <div class="pane before">
+        <div class="lbl">Before</div>
+        <div class="darkbox">
+          <div class="t">Lower body recovery</div>
+          <div style="font-size:13px;color:#686868;margin-top:4px">3 exercises · 25 min</div>
+          <div class="ratio fail">#686868 · ~3.7:1 · FAIL AA</div>
+        </div>
+        <div class="note">Dates and metadata use <code>text.muted #686868</code> on #0A0A0A — below the 4.5:1 body-text threshold.</div>
+      </div>
+      <div class="pane after">
+        <div class="lbl">After</div>
+        <div class="darkbox">
+          <div class="t">Lower body recovery</div>
+          <div style="font-size:13px;color:#8C8C8C;margin-top:4px">3 exercises · 25 min</div>
+          <div class="ratio pass">#8C8C8C · ~5.0:1 · PASS AA</div>
+        </div>
+        <div class="note">Muted lightened to <code>#8C8C8C</code>. Also: status bar style + logo asset driven by theme mode (not hardcoded <code>logo-dark.png</code>).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MF-008 -->
+  <div class="ticket">
+    <h2>MF-008 <span class="tag">P1 · legibility</span></h2>
+    <h3>Type-scale floor raised for the masters audience</h3>
+    <div class="ba">
+      <div class="pane before">
+        <div class="lbl">Before</div>
+        <div class="typerow">
+          <span style="font-size:15px;font-weight:600">Hey Michael</span>
+          <span class="meta-before">May 21, 2025 · Wednesday</span>
+          <span class="meta-before">Your workout completion for this week</span>
+        </div>
+        <div class="note">xs = 11px, frequently in muted grey, for dates / bar labels / metadata. A strain for users 40–60+.</div>
+      </div>
+      <div class="pane after">
+        <div class="lbl">After</div>
+        <div class="typerow">
+          <span style="font-size:16px;font-weight:600">Hey Michael</span>
+          <span class="meta-after">May 21, 2025 · Wednesday</span>
+          <span class="meta-after">Your workout completion for this week</span>
+        </div>
+        <div class="note">xs floor → 13px, base → 16px, and the smallest size is never combined with muted color (use secondary at sm). Honors OS Dynamic Type.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
