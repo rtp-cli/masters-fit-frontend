@@ -114,7 +114,8 @@ export const darkColors = {
   text: {
     primary: "#FFFFFF",
     secondary: "#C0C0C0",
-    muted: "#686868",
+    // Raised from #686868 (~3.7:1, FAIL) to ~5.0:1 on #0A0A0A — meets WCAG AA (MF-007).
+    muted: "#8C8C8C",
   },
   background: "#0A0A0A",
   surface: "#0A0A0A",

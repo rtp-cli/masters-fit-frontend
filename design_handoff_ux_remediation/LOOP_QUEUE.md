@@ -29,7 +29,7 @@
 
 ## Tasks
 
-- [ ] **L1 · MF-007a — dark muted token.** In `lib/theme.ts`, change `darkColors.text.muted`
+- [x] **L1 · MF-007a — dark muted token.** In `lib/theme.ts`, change `darkColors.text.muted`
   from `#686868` to `#8C8C8C` (raises dark-mode muted text to ≥4.5:1 AA). Token only.
   **Assert:** `grep -n '#8C8C8C' lib/theme.ts` matches the darkColors muted line; `#686868`
   no longer present as a text.muted value.
@@ -63,3 +63,4 @@
 ---
 
 ## Loop log (the loop appends one line per task: ID — DONE/BLOCKED — commit sha — note)
+- L1 — DONE — dark text.muted #686868→#8C8C8C; tsc 35, lib/theme.ts lint unchanged (2)
