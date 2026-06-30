@@ -37,11 +37,18 @@ Real bugs, low-risk, no design debate. Build momentum + confidence.
 ## Track 2 — Primitives (high leverage — build before the a11y retrofit)
 Pulled forward from the backlog's Sprint 3. These are the *delivery mechanism* for MF-009,
 MF-002 dedup, and MF-022 — fix once in a primitive, not at hundreds of call sites.
-- [ ] **MF-014 · P1** — `IconButton` (44×44, role, required label, hitSlop, disabled).
-- [ ] **MF-015 · P1** — `ActionButton` (primary/secondary/destructive, loading, icon-left).
-- [ ] **MF-016 · P1** — `SegmentedControl` w/ supported-options prop → extract
-      `TimeRangeSegmentedControl` (retires MF-002 duplication across all analytics cards).
-- [ ] **MF-017 · P2** — `AppCard`, `SectionHeader`, `EmptyState`, `MetricTile`, `ModalDialog`.
+- [x] **MF-014 · P1** — New `components/icon-button.tsx`: fixed 44×44 target, `accessibilityRole`,
+      required `accessibilityLabel`, hitSlop, disabled state, surface/ghost/primary variants.
+      *(Retrofit of header/search/workout/calendar call sites happens in MF-009.)*
+- [x] **MF-015 · P1** — Extended existing `components/button.tsx` (was 0 usages, per its own TODO)
+      instead of a new `ActionButton`: added `accessibilityRole`/`accessibilityState`, a 44px
+      `min-h` floor, and fixed `destructive` to use the `danger` token (was wrongly `bg-secondary`
+      — also advances MF-013). API unchanged, so it's drop-in for the retrofit.
+- [x] **MF-016 · P1** — New `components/segmented-control.tsx`: generic `SegmentedControl` (accessible,
+      `selected` state) + `TimeRangeSegmentedControl` with a `supportedRanges` prop. **Retrofitted all
+      3 analytics cards** to it — retires the duplicated segmented rows that let MF-002 slip in.
+- [ ] **MF-017 · P2** — `AppCard` (extend existing `card.tsx`), `SectionHeader`, `EmptyState`
+      (a `dashboard-empty-state.tsx` already exists to generalize), `MetricTile`, `ModalDialog`.
 
 ## Track 3 — Loop-safe (mechanical, verifiable by lint/tsc/grep + grayscale screenshot)
 Safe to grind autonomously once G0 is green and primitives exist.

@@ -1,7 +1,8 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { LineChart } from "@/components/charts/line-chart";
+import { TimeRangeSegmentedControl } from "@/components/segmented-control";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 import { formatTimeRangeLabel } from "@/utils";
 
@@ -102,21 +103,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
       </View>
 
       <View className="items-center mb-4">
-        <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-          {Object.values(TIME_RANGE_FILTER).map((f) => (
-            <TouchableOpacity
-              key={f}
-              className={`px-3 py-1 rounded-md ${filter === f ? "bg-primary" : "bg-transparent"}`}
-              onPress={() => onChangeFilter(f as any)}
-            >
-              <Text
-                className={`text-xs font-medium ${filter === f ? "text-content-on-primary" : "text-text-muted"}`}
-              >
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TimeRangeSegmentedControl value={filter} onChange={onChangeFilter} />
       </View>
 
       <View className="bg-surface rounded-2xl p-4">
