@@ -554,7 +554,7 @@ export const colorThemes = {
 // ============================================
 
 // Type for theme color palettes (generic to accept any theme)
-type ThemeColorPalette = {
+export type ThemeColorPalette = {
   brand: {
     primary: string;
     secondary: string;

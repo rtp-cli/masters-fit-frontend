@@ -74,7 +74,11 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
       Applied the filled-green + check treatment to workout **round chips** and the **exercise-overview
       completed badge** as the first proof. **Remaining:** roll the accent through the rest of the
       completion surfaces as part of MF-005 (weekly bars, calendar dots, selection). Hue pending sim sign-off.
-- [ ] **MF-005 · P0** — Remove color-only status everywhere; calendar legend; grayscale-verify each pair.
+- [~] **MF-005 · P0** — Color-only-status sweep, IN PROGRESS. **Done:** completion circles (MF-004);
+      weekly-progress bars (complete = green + "✓ %" label, all bars already carry Rest/-/%/0% labels);
+      calendar completed dots = green + a **legend** (Completed / Scheduled / Today). **Remaining:**
+      true shape/icon-per-dot needs a custom `dayComponent` (deferred — library limit); app-wide
+      selection-as-status audit. Grayscale-verify the done surfaces.
 - [ ] **MF-006 · P1** — Reserve solid ink for the single primary action per screen; document the rule.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
 - [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/
