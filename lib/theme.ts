@@ -72,6 +72,10 @@ export const colors = {
   danger: "#DC2626",
   warning: "#D97706",
   contentOnPrimary: "#FFFFFF",
+  // MF-004: success decoupled from brand.primary — one reserved green accent for
+  // completion, so a done item is distinguishable from ordinary ink without reading it.
+  // The check/text color on this fill is `contentOnPrimary` (same polarity).
+  success: "#1B7A4B",
 } as const;
 
 export const darkColors = {
@@ -122,6 +126,8 @@ export const darkColors = {
   danger: "#FF4444",
   warning: "#FBBF24",
   contentOnPrimary: "#0A0A0A",
+  // MF-004: lighter green for contrast on the near-black surface (check uses contentOnPrimary).
+  success: "#34C77B",
 } as const;
 
 // ============================================
@@ -571,6 +577,9 @@ type ThemeColorPalette = {
   danger: string;
   warning: string;
   contentOnPrimary: string;
+  /** Reserved completion accent, decoupled from brand.primary (MF-004). Defaults to
+   *  brand.primary for themes that don't define it; check/text on it uses contentOnPrimary. */
+  success?: string;
 };
 
 // Helper to generate vars object from a color palette
@@ -604,7 +613,7 @@ const createThemeVars = (themeColors: ThemeColorPalette) =>
     "--color-card": hexToRgb(themeColors.card ?? themeColors.surface),
     "--color-danger": hexToRgb(themeColors.danger),
     "--color-warning": hexToRgb(themeColors.warning),
-    "--color-success": hexToRgb(themeColors.brand.primary),
+    "--color-success": hexToRgb(themeColors.success ?? themeColors.brand.primary),
     "--color-primary": hexToRgb(themeColors.brand.primary),
     "--color-secondary": hexToRgb(themeColors.brand.secondary),
     "--color-content-on-primary": hexToRgb(themeColors.contentOnPrimary),

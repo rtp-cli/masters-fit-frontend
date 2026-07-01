@@ -68,7 +68,12 @@ Safe to grind autonomously once G0 is green and primitives exist.
 ## Track 4 — Human-in-loop (design fidelity / product decisions — pair on simulator)
 Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
 - [ ] **MF-003 · P0** — Timers: decide restore-vs-remove (deferred), then implement; no dead state left.
-- [ ] **MF-004 · P0** — Decouple `success`; apply the reserved success accent + filled-check form.
+- [~] **MF-004 · P0** — Decoupled `success` from `brand.primary` into its own palette token.
+      Reserved green: light `#1B7A4B` / dark `#34C77B` (Original theme; other themes fall back to
+      primary until reviewed). Check/text on the green uses `contentOnPrimary` (matching polarity).
+      Applied the filled-green + check treatment to workout **round chips** and the **exercise-overview
+      completed badge** as the first proof. **Remaining:** roll the accent through the rest of the
+      completion surfaces as part of MF-005 (weekly bars, calendar dots, selection). Hue pending sim sign-off.
 - [ ] **MF-005 · P0** — Remove color-only status everywhere; calendar legend; grayscale-verify each pair.
 - [ ] **MF-006 · P1** — Reserve solid ink for the single primary action per screen; document the rule.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.

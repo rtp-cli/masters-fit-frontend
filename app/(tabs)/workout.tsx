@@ -2157,7 +2157,7 @@ export default function WorkoutScreen() {
                                     key={i}
                                     className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
                                       isCompleted
-                                        ? "border-primary bg-primary"
+                                        ? "border-success bg-success"
                                         : "border-neutral-medium-1 bg-background"
                                     }`}
                                     hitSlop={HIT_SLOP_6}
@@ -2357,9 +2357,7 @@ export default function WorkoutScreen() {
                     >
                       <View
                         className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                          isCompleted
-                            ? "bg-neutral-dark-1"
-                            : "bg-brand-medium-2"
+                          isCompleted ? "bg-success" : "bg-brand-medium-2"
                         }`}
                       >
                         {isSkipped ? (
@@ -2372,7 +2370,7 @@ export default function WorkoutScreen() {
                           <Ionicons
                             name="checkmark"
                             size={16}
-                            color={colors.neutral.light[2]}
+                            color={colors.contentOnPrimary}
                           />
                         ) : isCurrent ? (
                           <Ionicons
