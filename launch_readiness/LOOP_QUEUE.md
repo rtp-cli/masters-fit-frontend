@@ -79,7 +79,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   the reason it got removed. **Assert:** unit test confirming a profile missing a required field
   throws/returns a specific error, not a silent fallback.
 
-- [ ] **L5 · LR-009** — Paywall hard-fail UI when `offerings.current` is null.
+- [x] **L5 · LR-009** — Paywall hard-fail UI when `offerings.current` is null.
   `frontend/hooks/use-subscription-plans.ts` (~lines 81-94): currently logs to Sentry but the UI
   renders empty / infinite loading. Add an explicit error state the paywall component can render
   (a real "couldn't load plans, try again" message + retry button), instead of a silent dead end.
@@ -118,7 +118,13 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   `BILLING_ISSUE`/`TRANSFER`/`TEST` event types, and `getSubscriptionStatus`'s two branches
   (has subscription / trial default). **Assert:** `npm run test` green with these covered.
 
-- [ ] **L11 · LR-045** — Frontend unit tests for highest-blast-radius code.
+- [ ] **L11 · LR-045** — ⚠️ **known blocker found during L5**: `renderHook` from
+  `@testing-library/react-native` fails with "not configured to support act()" /
+  `result.current` staying `undefined` under this project's React 19 setup — the standard
+  `IS_REACT_ACT_ENVIRONMENT = true` fix didn't resolve it. Try to actually fix this properly here
+  (check `@testing-library/react-native` version compatibility with React 19, jest-expo preset
+  config) rather than working around it per-test again — it'll block every hook test, not just
+  one. — Frontend unit tests for highest-blast-radius code.
   `lib/api.ts` (token refresh/retry logic — mock the underlying fetch), `hooks/use-subscription-status.ts`,
   `hooks/use-subscription-plans.ts` (mock the RevenueCat SDK). **Assert:** `npx jest` green with
   new passing tests for these three files.
@@ -238,3 +244,10 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   logged as **LR-053**: the serial fallback path (`generatePrompt`/`buildClaudePrompt`) still has
   the old guard AND has no fallback for `workoutDuration` in ~15 places — inconsistent with the
   fan-out path, but fixing it has real regression risk, didn't rush it tonight.
+- L5 — DONE (fix, no automated test) — 1f7f7ad — `use-subscription-plans.ts` now calls
+  `setError()` when `offerings.current` is null; the paywall modal already had error+retry UI
+  wired up, just never received an error to show. **Hit a real test-infra blocker**: `renderHook`
+  fails under this project's React 19 + `@testing-library/react-native` setup (`result.current`
+  stays `undefined`, standard `IS_REACT_ACT_ENVIRONMENT` fix didn't help after two attempts).
+  Verified the fix by tracing the code instead. This WILL block L11 and L21 — flagged on both
+  above, worth a real fix attempt when reaching L11 rather than working around it again.
