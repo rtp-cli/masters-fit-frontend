@@ -94,7 +94,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   **Assert:** describe the fix in the commit body precisely enough to spot-check tomorrow; add a
   test if the gating logic is a pure function.
 
-- [ ] **L7 · LR-023** — Search pagination beyond the hardcoded 20-result cap.
+- [x] **L7 · LR-023** — Search pagination beyond the hardcoded 20-result cap.
   `backend/src/services/search.service.ts` (~lines 378, 420, 505) + `frontend/lib/search.ts` +
   `components/search/search-view.tsx`: add real pagination (offset/limit params, "load more" or
   infinite scroll) instead of a hard cap. **Assert:** backend test confirming a query with >20
@@ -263,3 +263,10 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   mock wired in at all (needed `moduleNameMapper`, not `setupFiles` — the mock file is a plain
   object export, not a `jest.mock()` call). Both now fixed in `package.json`'s jest config,
   should help L11/L21. 4 new passing tests.
+- L7 — DONE (backend only) — 1e6bce5 (backend) — Added `limit`/`offset` to both exercise-search
+  endpoints, over-fetch-by-one for `hasMore` (no separate COUNT query). 3 new tests against the
+  real local DB, all passing. **Frontend not wired** — `search-view.tsx`/`lib/search.ts` don't use
+  `hasMore` yet, so the UI still effectively shows only the first page; that's a fast follow, not
+  done here. Also: confirmed these DB-backed tests reliably take ~8s and Jest logs "did not exit
+  cleanly" (the known open-connection-pool issue from L1/L3) — genuinely not a hang, just don't
+  give up on it early like this session did once.
