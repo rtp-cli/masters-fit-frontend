@@ -95,6 +95,17 @@ before acting, files shift.
       `prompts.service.ts` (~line 210) in favor of downstream fallbacks. Decide if it should come
       back properly rather than relying on fallback defaults.
 
+- [ ] **LR-053 · P2** — Serial-fallback generation path has stricter, inconsistent validation.
+      Found 2026-07-08 while investigating LR-016: `generatePrompt` (the serial fallback used when
+      the fast fan-out path fails, `backend/src/services/prompts.service.ts` ~line 132) still
+      guards on `availableDays`/`workoutDuration`/`environment` being present and throws if not.
+      Unlike the fan-out path, `buildClaudePrompt` (`prompt-generator.ts` ~line 695) assigns
+      `const workoutDuration = profile.workoutDuration` with no fallback and uses it raw in ~15
+      places — so a profile with a missing field can succeed via fan-out but throw if it ever falls
+      back to serial generation. Fixing properly means adding the same kind of default
+      (`profile.workoutDuration || 30`) throughout `buildClaudePrompt` and removing its guard too —
+      not done here, real regression risk (undefined interpolated into prompts) if rushed.
+
 ## Epic 3 — Workout generation performance
 Distinct from Epic 2 (quality) — this is about latency/cost, not correctness. Prior work already
 closed the queue/lock-stall problem (see memory `project_workout_generation_queue`): Bull

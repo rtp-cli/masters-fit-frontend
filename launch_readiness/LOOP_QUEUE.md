@@ -72,7 +72,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   insert (reject/log and skip the exercise if not, don't crash the whole generation). **Assert:**
   unit test covering a valid exercise and one with an invalid equipment value.
 
-- [ ] **L4 · LR-016** — Restore profile-completeness guard properly.
+- [x] **L4 · LR-016** — Restore profile-completeness guard properly.
   `backend/src/services/prompts.service.ts` (~line 210, removed in commit `3229a60`): re-add a
   guard for required fields (`availableDays`, `workoutDuration`, `environment`) — but this time
   return a clear, catchable validation error instead of the downstream-fallback pattern that was
@@ -231,3 +231,10 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   `@/` imports. Backend tsc baseline 72→67. **Flagging for later, not fixed:** importing
   `database.ts` opens a real DB connection pool as a load-time side effect — works locally, not
   real test isolation. Relevant to L47's tooling decision.
+- L4 — DONE — 77ede63 — Investigated whether the guard removed in commit `3229a60` should come
+  back "properly." Answer: no — verified every downstream usage already has a safe default, the
+  guard was genuinely wrong (blocked the fast fan-out path, caused the "stuck on spinner" bug).
+  Added a comment documenting this so it doesn't get re-added by accident later. New finding
+  logged as **LR-053**: the serial fallback path (`generatePrompt`/`buildClaudePrompt`) still has
+  the old guard AND has no fallback for `workoutDuration` in ~15 places — inconsistent with the
+  fan-out path, but fixing it has real regression risk, didn't rush it tonight.

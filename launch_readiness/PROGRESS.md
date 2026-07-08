@@ -86,7 +86,11 @@ Render/`backend/.env` (that's the key actually used, by the backend for LLM call
 manual action item, not tracked as an LR ticket.
 
 ## Epic 2 — Workout generation quality
-- [ ] LR-012 · LR-013 · LR-014 · LR-015 · LR-016 — not started.
+- [ ] LR-012 · LR-013 · LR-014 — not started.
+- [x] **LR-015** — done 2026-07-08 (see `launch_readiness/LOOP_QUEUE.md` L3).
+- [x] **LR-016** — done 2026-07-08 (see LOOP_QUEUE.md L4) — confirmed the guard should stay
+      removed, documented why, found and logged LR-053 (inconsistent fallback-path validation).
+- [ ] LR-053 — not started (new, found 2026-07-08 via LR-016).
 - [ ] LR-049 · LR-050 — not started (added 2026-07-07 from user's own testing: exercise
       repetition/muscle-group imbalance is P0, tag alongside LR-012/013; progress-monitoring
       needs scoping before it can be sized).
