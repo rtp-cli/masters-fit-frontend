@@ -128,6 +128,18 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
       "variations") directly shrinks this block for every generation, not just an edge case.
       Worth doing *before* LR-012 (equipment validation) — a curated canonical list makes that
       validation simpler too.
+- [x] **LR-058 · P0** — (new + closed, 2026-07-08, found while investigating a user-reported
+      search duplicate) 1,065 of 1,733 production exercises (61%) had `muscle_groups` stored as
+      one comma-joined array element instead of separate elements — `arrayOverlaps()`
+      (`getFilteredExercises` for generation, and search filtering) matches on array elements, so
+      these rows never matched any single-muscle-group filter. Effectively over half the catalog
+      was invisible to muscle-group-targeted generation/search. 18 of the 1,065 were worse: an
+      equipment token had leaked into the muscle_groups string with stray quotes during the
+      2025-07-08 bulk import, missing a field separator — fixing those also recovered a real
+      missing equipment value per row (hand-verified all 18, e.g. "Barbell Hip Thrust" was missing
+      `bench`). Fixed via `fix-muscle-groups.ts` — dry-run reviewed, applied to prod, 0 malformed
+      rows remain (verified independently via psql). This likely explains at least some of the
+      workout variety/quality complaints behind LR-012/013/049.
 - [ ] **LR-056 · P1** — (new, 2026-07-08) Harden `createExerciseIfNotExists` against the
       check-then-insert race that likely contributed to LR-035's duplication: `exercises.name` has
       only a plain index (`idx_exercises_name`), no unique constraint, so concurrent fan-out

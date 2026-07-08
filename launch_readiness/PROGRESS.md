@@ -115,6 +115,13 @@ manual action item, not tracked as an LR ticket.
       re-open it.
 - [ ] **LR-057** — (new 2026-07-08) `searchExercises` has no `ORDER BY` — results return in
       arbitrary DB order rather than by relevance. Found via user report + screenshot. Not started.
+- [x] **LR-058** — (new + closed same day) 61% of production exercises (1,065/1,733) had
+      `muscle_groups` stored as one comma-joined string instead of separate array elements,
+      breaking `arrayOverlaps()`-based filtering for those rows in both generation and search — a
+      much bigger deal than the search-ordering issue above. 18 of those also had a leaked
+      equipment token recovered as a real missing equipment value. Fixed and verified on
+      production via `fix-muscle-groups.ts`. Worth revisiting LR-012/013/049 with this in mind —
+      the effective generation catalog just got meaningfully bigger and more correct.
 
 ## Epic 4 — Test coverage foundation
 - [ ] LR-017 · LR-018 · LR-019 · LR-020 · LR-021 — not started.
