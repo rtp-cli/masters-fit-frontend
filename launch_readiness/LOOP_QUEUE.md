@@ -164,7 +164,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   the local SDK state. **Assert:** test covering "backend says grace_period, local SDK still says
   active" resolving to the backend's view.
 
-- [ ] **L16 · LR-005** — Harden anonymous→identified purchase linking.
+- [x] **L16 · LR-005** — Harden anonymous→identified purchase linking.
   Code-only hardening (not a live device/App-Store test — that needs the user): review
   `backend/src/controllers/subscription.controller.ts` TRANSFER handling (~lines 823-868) and
   `frontend/contexts/auth-context.tsx`'s `Purchases.logIn()` call (~lines 83-99). Add defensive
@@ -343,3 +343,14 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   way: `isInGracePeriod` was computed locally but never even exposed on the returned object at all
   — silently dropped. Extracted as a standalone function specifically to sidestep the RNTL/act()
   blocker rather than fight it again. 5 tests, 15/15 full frontend suite passing.
+- L16 — DONE — 4c80317 (frontend) + b049c52 (backend) — Frontend: `identifyUserWithRevenueCat`'s
+  failure only reached console (`logger.error` never forwards to Sentry, confirmed) and both call
+  sites discard the return value — added `Sentry.captureException` so a failed identity link is
+  actually visible in monitoring, not silently invisible. Backend: 3 new TRANSFER tests for the
+  specific scenarios asked for (distinct from L1's plan-matching tests) — normal transfer
+  (old user revoked, new user activated), transfer to a user with no existing subscription,
+  transfer to a user who already has an active subscription (overwrites, doesn't skip). Hit a
+  near-miss: a `git stash`+eslint+`git stash pop` chain timed out mid-command, leaving my change
+  stashed and NOT in the working tree for a moment — caught it immediately via `git stash list`
+  and popped it back before it could be lost or committed-around. 15/15 frontend, 55/55 backend.
+- **Phase D complete** (L15, L16).
