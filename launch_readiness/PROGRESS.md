@@ -113,8 +113,11 @@ manual action item, not tracked as an LR ticket.
 - [ ] LR-036 · LR-037 · LR-038 — not started. Prior perf work (queue/lock stall fix, per-phase
       timing, faster polling) is DONE — see memory `project_workout_generation_queue`, don't
       re-open it.
-- [ ] **LR-057** — (new 2026-07-08) `searchExercises` has no `ORDER BY` — results return in
-      arbitrary DB order rather than by relevance. Found via user report + screenshot. Not started.
+- [x] **LR-057** — (new + closed same day) `searchExercises` had no `ORDER BY` — results returned
+      in arbitrary DB order rather than by relevance. Found via user report + screenshot. Fixed:
+      relevance rank (exact name > starts-with > contains > fuzzy-only), then similarity score,
+      then name as a stable tiebreak. Verified against the exact "pull-up" query from the report
+      directly on production data before writing tests. 2 new tests, full suite green (69/69).
 - [x] **LR-058** — (new + closed same day) 61% of production exercises (1,065/1,733) had
       `muscle_groups` stored as one comma-joined string instead of separate array elements,
       breaking `arrayOverlaps()`-based filtering for those rows in both generation and search — a

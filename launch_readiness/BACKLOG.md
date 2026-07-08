@@ -227,14 +227,17 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
 - [ ] **LR-024 · P2** — Workout date search only accepts exact `YYYY-MM-DD`, 1-year hard lookback
       (`search-view.tsx:706`) — no "today"/"last week"/range queries.
 - [ ] **LR-025 · P3** — No search telemetry/instrumentation — can't tell what users fail to find.
-- [ ] **LR-057 · P2** — (new, 2026-07-08, found via user report + screenshot while testing prod)
+- [x] **LR-057 · P2** — (new + closed same day, found via user report + screenshot while testing prod)
       `searchExercises` (`search.service.ts` ~line 411) has **no `ORDER BY`** — results return in
       whatever order Postgres's query plan picks, not by match quality. Confirmed: searching
       "pull-up" surfaces "Strict Pull-Up"/"Jumping Pull-Up"/assisted variants ahead of what a user
       would expect to see first. Needs a relevance ordering (exact name match, then
       starts-with, then contains, then `similarity()` score desc) rather than unordered. Also
       surfaced production's "Strict Pull-Up" vs. "Strict Pull-Ups" exact-duplicate pair — see
-      LR-035/`EXERCISE_CURATION_CANDIDATES_PROD.md`.
+      LR-035/`EXERCISE_CURATION_CANDIDATES_PROD.md` (resolved as LR-059).
+      **Closed 2026-07-08**: added the ranking exactly as scoped above, verified against the
+      "pull-up" query directly on production data before writing tests, 2 new tests added
+      (starts-with-ranks-above-contains-only, exact-match-ranks-first), full suite green (69/69).
 
 ## Epic 6 — UI/UX (tracked separately)
 Not duplicated here — see `../design_handoff_ux_remediation/PROGRESS.md` Track 4: MF-005 tail,
