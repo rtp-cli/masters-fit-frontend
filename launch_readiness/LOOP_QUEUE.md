@@ -100,7 +100,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   infinite scroll) instead of a hard cap. **Assert:** backend test confirming a query with >20
   matches returns page 2 correctly when requested.
 
-- [ ] **L8 · LR-025** — Search telemetry.
+- [x] **L8 · LR-025** — Search telemetry.
   Log each search query + result count (via existing `logger`/analytics patterns, whatever's
   already used elsewhere for this kind of event) so "dead searches" (queries returning 0 results)
   become visible later. No UI change. **Assert:** grep confirms the log call is in place; a manual
@@ -274,3 +274,8 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   (backend) — added `src/test/jest-setup-after-env.ts` (`setupFilesAfterEnv`, closes the pool in
   `afterAll`). Confirmed clean exit twice in a row, no more "did not exit cleanly" warning. Backend
   test runs should be fast and clean from here on — no more waiting out the delay.
+- L8 — DONE — fc4168b — Added `logSearchTelemetry()` to `SearchService`: `logger.info("Search
+  executed", ...)` normally, `logger.warn("Search returned zero results", ...)` for zero-result
+  queries specifically, so dead searches are findable in logs. Wired into both search methods.
+  2 new tests confirming the log-level switch. Confirmed via `time` that the full suite (19 tests
+  now) still exits clean in ~7.5s after the DB pool fix above — good sign that fix holds.
