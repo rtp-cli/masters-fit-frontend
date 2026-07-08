@@ -122,6 +122,12 @@ manual action item, not tracked as an LR ticket.
       equipment token recovered as a real missing equipment value. Fixed and verified on
       production via `fix-muscle-groups.ts`. Worth revisiting LR-012/013/049 with this in mind —
       the effective generation catalog just got meaningfully bigger and more correct.
+- [x] **LR-059** — (new + closed same day) The user's screenshot-reported "Strict Pull-Up" (id
+      615, 0.82 similarity — below the tiers LR-035's dedup covered) vs. "Strict Pull-Ups" (id
+      2070) turned out to have real content differences (difficulty `moderate` vs `high`) once
+      LR-058 fixed 615's malformed muscle_groups — not a pure formatting duplicate. User decided by
+      hand: keep 2070 (Lats/Back/Biceps, high), delete 615. 34 `plan_day_exercises` references
+      reassigned to 2070 first; verified 0 orphans after. Catalog now at 1,732 rows.
 
 ## Epic 4 — Test coverage foundation
 - [ ] LR-017 · LR-018 · LR-019 · LR-020 · LR-021 — not started.
