@@ -106,6 +106,12 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         setOffering(null);
         setPackages([]);
         setMetadata(null);
+        // Was previously silent past this point — the paywall modal already
+        // has error+retry UI wired to this hook's `error` field, it just
+        // never got set for this specific failure mode. [LR-009]
+        setError(
+          "We couldn't load subscription plans right now. Please try again."
+        );
       }
 
       const info = await Purchases.getCustomerInfo();
