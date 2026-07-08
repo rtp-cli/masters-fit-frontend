@@ -30,8 +30,10 @@
 - `npx jest` — all tests pass, including any new ones the task added.
 
 **Backend** (`/Users/richpusateri/Projects/MastersFit/backend`):
-- `npm run tsc 2>&1 | grep -c "error TS"` **must equal 73** (frozen baseline, confirmed via
-  stash-diff 2026-07-07).
+- `npm run tsc 2>&1 | grep -c "error TS"` **must equal 72** (updated 2026-07-08 during L1 — was 73,
+  dropped by 1 from a genuine pre-existing bug fix, not a regression; see loop log). Gate intent is
+  "no new errors," not literal equality — if a future task fixes another pre-existing one, lower
+  this number again rather than treating the drop as a failure.
 - `npm run test` (jest+ts-jest, already configured) — all tests pass, including any new ones.
 - Regenerate the TSOA spec (`npm run tsoa`) if a controller/route changed.
 
@@ -50,7 +52,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
 ## Tasks
 
 ### Phase A — quick, contained fixes
-- [ ] **L1 · LR-006** — Fix hardcoded `"pro"` planId fallback.
+- [x] **L1 · LR-006** — Fix hardcoded `"pro"` planId fallback.
   `backend/src/controllers/subscription.controller.ts` (~line 851, verify current line):
   `planId: plan?.planId || productId || "pro"`. If `plan` lookup fails, this silently assigns an
   invalid planId. Fix: if no matching plan is found, log a warning with the unmatched `productId`
@@ -209,3 +211,9 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
 ---
 
 ## Loop log (appended by the loop: task id — DONE/BLOCKED/SKIPPED — commit sha — note)
+- L1 — DONE — 7506c13 — Fixed hardcoded `"pro"` planId fallback on TRANSFER, now matches the
+  `plan?.planId || productId || null` pattern already used elsewhere in the file. Also fixed a
+  pre-existing, unrelated `logger.error` call-signature bug that was blocking ts-jest from running
+  any test importing this controller — backend tsc baseline updated 73→72 (genuine fix, not a
+  regression). Added `subscription.controller.test.ts`, the first backend controller test in the
+  repo (2 passing cases: plan-not-found and plan-found on TRANSFER). L10 will extend this file.
