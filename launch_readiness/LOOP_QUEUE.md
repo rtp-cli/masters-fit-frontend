@@ -157,7 +157,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   a synthetic "fully completed last week" case produces an increased prescription.
 
 ### Phase D — payments hardening
-- [ ] **L15 · LR-008** — Grace period UI sync using the new status endpoint.
+- [x] **L15 · LR-008** — Grace period UI sync using the new status endpoint.
   `frontend/hooks/use-subscription-status.ts` currently derives grace period only from the local
   RevenueCat SDK entitlement. Wire it to also call `lib/subscriptions.ts`'s `getSubscriptionStatus()`
   (built today for LR-004) and prefer the backend's `accessLevel`/`status` when it disagrees with
@@ -337,3 +337,9 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   enough that mocking it reliably would cost more than it's worth tonight.
 - **Phase C complete** (L12, L13, L14) — all three quality tickets landed with real,
   well-documented judgment calls. 52/52 backend tests passing, tsc steady at 66.
+- L15 — DONE — 2d58d2d — Added `reconcileSubscriptionStatus()` (standalone pure function) — the
+  backend wins whenever it has a confident answer (source of truth for billing state), local
+  RevenueCat SDK is the fallback on fetch failure. Also fixed a real, separate bug found along the
+  way: `isInGracePeriod` was computed locally but never even exposed on the returned object at all
+  — silently dropped. Extracted as a standalone function specifically to sidestep the RNTL/act()
+  blocker rather than fight it again. 5 tests, 15/15 full frontend suite passing.
