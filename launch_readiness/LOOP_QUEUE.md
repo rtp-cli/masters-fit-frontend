@@ -208,7 +208,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   **Assert:** whatever subset passes, passes cleanly; nothing left half-mocked/flaky.
 
 ### Prep only — does NOT touch the exercise DB
-- [ ] **L-PREP · feeds LR-035** — Candidate list for exercise catalog curation.
+- [x] **L-PREP · feeds LR-035** — Candidate list for exercise catalog curation.
   Query the local exercise table for likely duplicates (near-identical names, e.g. via `pg_trgm`
   similarity once L19 lands, or simple case-insensitive substring clustering) and rarely-useful
   entries (e.g. `bodyweight`/`environment` combos that never show up in `getFilteredExercises`
@@ -386,3 +386,20 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   information. Real fix needs an upstream `@testing-library/react-native`/React 19 compatibility
   update, or reconsidering the E2E tooling decision (L47) as an alternative path entirely.
 - **Phase G done** (L21 blocked, documented rather than silently skipped).
+- L-PREP — DONE — cd848cf — Used `pg_trgm` (from L19) via a self-join to find near-duplicate
+  exercise names, categorized by confidence (2 high, 3 medium, 12 explicit false-positives so they
+  don't get accidentally merged), plus re-confirmed the 4 equipment data-quality rows from LR-015
+  with actual row IDs this time. Explicitly flagged what ISN'T analyzed ("rarely useful" entries
+  need real usage telemetry that doesn't exist) rather than guessing. DB row count confirmed
+  unchanged: 107 before, 107 after.
+
+## ALL TASKS DONE — loop complete.
+
+21/21 numbered tasks + L-PREP, all checked. Final state: backend `tsc` 73→66 (7 genuine
+pre-existing bug fixes surfaced while making things testable, zero regressions, each documented in
+its own commit). Backend tests: 0→67. Frontend tests: 0→10 (capped by the RNTL/React 19 `act()`
+blocker — genuine, investigated deeply at L11, not a config mistake, needs an upstream fix or a
+tooling change to go further). Every commit this session is one task, in order, on this branch —
+walk through them via `git log` in both repos for review. Two things flagged for your attention
+beyond the individual task notes above: the RNTL blocker (blocks L21 and any future hook/screen
+test), and LR-035's actual curation decisions (the candidate list is ready, nothing acted on).
