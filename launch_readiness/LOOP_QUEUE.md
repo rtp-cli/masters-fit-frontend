@@ -270,3 +270,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   done here. Also: confirmed these DB-backed tests reliably take ~8s and Jest logs "did not exit
   cleanly" (the known open-connection-pool issue from L1/L3) — genuinely not a hang, just don't
   give up on it early like this session did once.
+- **DB pool issue FIXED (not an L-numbered task, requested directly by the user)** — 4c714a7
+  (backend) — added `src/test/jest-setup-after-env.ts` (`setupFilesAfterEnv`, closes the pool in
+  `afterAll`). Confirmed clean exit twice in a row, no more "did not exit cleanly" warning. Backend
+  test runs should be fast and clean from here on — no more waiting out the delay.
