@@ -119,7 +119,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   `BILLING_ISSUE`/`TRANSFER`/`TEST` event types, and `getSubscriptionStatus`'s two branches
   (has subscription / trial default). **Assert:** `npm run test` green with these covered.
 
-- [ ] **L11 · LR-045** — ⚠️ **known blocker found during L5, partially narrowed during L6**:
+- [x] **L11 · LR-045 (partial — lib/api.ts done, the two hooks still blocked)** — ⚠️ **known blocker found during L5, partially narrowed during L6**:
   `renderHook` fails with "not configured to support act()" / `result.current` staying
   `undefined` under this project's React 19 setup — the standard `IS_REACT_ACT_ENVIRONMENT = true`
   fix didn't resolve it. **Separately**, L6 found and fixed two native-module mocking gaps
@@ -296,3 +296,18 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   with it unset. 9 new tests, all passing, 33/33 full suite. Not covered: RENEWAL,
   UNCANCELLATION, PRODUCT_CHANGE, BILLING_ISSUE, SUBSCRIPTION_PAUSED — same pattern as what's
   tested, diminishing returns to enumerate every event type tonight.
+- L11 — PARTIAL — 2c92f97 — `lib/api.ts` fully covered (3 tests: successful refresh-and-retry
+  with the new token actually verified on the retry call, refresh-endpoint failure, no-token 401
+  fails fast without attempting refresh) — this file needed no rendering, pure async function
+  testing, no blocker. **Made a real attempt at the RNTL/act() blocker this time** rather than
+  route around it: found and fixed a genuine version mismatch (`@testing-library/react-native`
+  depends on a new `test-renderer` package whose versions map to exact React minor lines —
+  1.0.x/19.0, 1.1.x/19.1, 1.2.x/19.2 — npm had resolved 1.2.0 but this project is on React 19.1.0;
+  pinned to 1.1.0 via `package.json` `overrides`). Confirmed via a diagnostic `console.log` inside
+  a failing effect that `IS_REACT_ACT_ENVIRONMENT` reads `false` at the moment of a state update,
+  despite both `react-native/jest/setup.js` and the test file itself setting it `true` — traced
+  into RNTL's `act.js` `withGlobalActEnvironment()`, which restores the flag to a "previous" value
+  that's somehow `false` by that point. This looks like a genuine unresolved bug in this exact
+  jest-expo + RN 0.81 + RNTL 14 + React 19.1 combination, not a config mistake. **use-subscription-
+  status.ts and use-subscription-plans.ts remain untested** — flagging for L21 and beyond: this
+  will block screen-level tests too until upstream fixes it or the app upgrades past React 19.1.
