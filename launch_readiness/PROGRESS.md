@@ -1,0 +1,133 @@
+# Launch Readiness — Progress
+
+> Source of truth for "what's actually done." BACKLOG.md is the ticket list and isn't updated
+> after the fact — check items off here.
+
+## Locked priority order (decided 2026-07-07)
+
+Rationale: fix live/cheap problems first regardless of epic, then make-or-break product quality,
+then differentiate/refine, then harden (payments polish + bulk test coverage), then ship. Tests
+are pulled forward as scaffolding (Phase 0) so Phases 1-2 can write tests as they build, not
+retrofit them in Phase 3.
+
+- [~] **Phase 0 — quick wins, do now, don't wait:** LR-002, LR-003, LR-004, LR-031, LR-044. **3 of
+      5 fully done and verified** (LR-003, LR-004, LR-044). **2 still open** (LR-002, LR-031) —
+      both need a real EAS production build to confirm the real keys/DSN land in the actual
+      binary; Test Store/Simulator testing doesn't exercise that build path.
+- [ ] **Phase 1 — make or break:** Epic 3 first (LR-035 catalog curation, then LR-036/037/038),
+      then Epic 2 (LR-012/013/049/014/015/016; LR-050 once scoped). Perf before quality because
+      LR-035's catalog curation directly feeds LR-012's equipment validation.
+- [ ] **Phase 2 — differentiate & refine:** Epic 10 (conversational mods) → Epic 5 (search) →
+      Epic 6 (UI/UX Track 4 tail + Track 5 scoping) → Epic 7 (platform parity).
+- [ ] **Phase 3 — harden:** Epic 1's remainder (LR-005/006/007/008/009/010/011) + Epic 4's bulk
+      (LR-017/018/019, LR-045/046/047/048).
+- [ ] **Phase 4 — ship:** Epic 9 (store submission).
+
+## Decisions still open (not blocking Phase 0/1 start)
+- [ ] **Android Health Connect write parity (LR-027)** — ship read-only for v1, or build write
+      parity now? Affects Epic 6/Phase 2 scope/sizing, not urgent yet.
+- [ ] **Limitation/injury enforcement approach (LR-013)** — rule-based contraindication list vs.
+      a second LLM validation pass vs. both. Needed before Phase 1's Epic 2 work starts.
+- [ ] **LR-050 scoping** — resolve the progress-monitoring ambiguity before Phase 1's Epic 2 work
+      reaches it.
+
+## Epic 0 — Security hotfix
+- [x] **LR-001** — SQL injection in search filters fixed 2026-07-06 (parameterized via
+      `sql.join`, same pattern as existing `IN` clauses in the file). Not yet deployed — pending
+      the deploy-backend flow.
+
+## Epic 1 — Payments correctness & testing
+- [~] **LR-002** — Confirmed 2026-07-07: real production RevenueCat keys already exist in EAS's
+      hosted "production" environment (not the sandbox ones in local `.env` — that's a different,
+      correctly-sandbox-scoped file for local/simulator dev). `eas.json` now explicitly binds
+      `production`/`apk` profiles to that environment. **Not fully closed** — needs a real EAS
+      build to confirm the keys actually land in the bundle.
+- [x] **LR-003** — Code-side enforcement already existed (`subscription.controller.ts`,
+      `handleRevenueCatWebhook`: `if (REVENUECAT_WEBHOOK_AUTH_HEADER) { ...check... }`) — the
+      earlier audit missed this. The real gap was that when the env var is unset, the endpoint
+      silently accepts everything and only logged that fact at `debug` level (invisible at normal
+      production log levels). Bumped to `logger.warn` 2026-07-07. User created the RevenueCat
+      webhook (pointing at `masters-fit-backend.onrender.com`) and set
+      `REVENUECAT_WEBHOOK_AUTH_HEADER` in Render. **Fully closed and verified 2026-07-07** — a real
+      Test Store purchase produced `"RevenueCat webhook processed successfully"` in Render logs
+      (not an auth error), confirming the secret matches on both ends.
+- [x] **LR-004** — `GET /subscriptions/status` added (`subscription.controller.ts` +
+      `subscription.routes.ts`, TSOA spec regenerated, reuses existing
+      `getUserSubscription`/`getEffectiveAccessLevel` service methods — also fixed a stale,
+      unused `SubscriptionResponse` type in `types/subscription/responses.ts` that was missing
+      `grace_period`/`paused` statuses). Frontend: `lib/subscriptions.ts` +
+      `hooks/use-subscription-plans.ts`'s `purchasePackage` now polls this (2 attempts, 1.5s
+      apart) after a local RevenueCat purchase success, and logs a Sentry warning if the backend
+      still hasn't synced — but still returns the purchase as successful either way, since
+      RevenueCat's local confirmation is authoritative for "did the purchase succeed," not our
+      backend's sync lag. Verified: backend 401s correctly with no/invalid token; frontend
+      `tsc`/`jest`/lint all clean at the existing baseline. Done 2026-07-07.
+- [ ] LR-005 · LR-006 · LR-007 · LR-008 · LR-009 · LR-010 · LR-011 · LR-052 — not started (Phase 3).
+      LR-052 added 2026-07-07: paywall bullet copy needs real content work (structural
+      monthly-vs-annual tiering bug already fixed same day).
+
+**Ad-hoc, resolved 2026-07-07: local/Test Store purchase testing now fully working end-to-end.**
+Not a pre-existing ticket — necessary groundwork to actually verify LR-003/LR-004 rather than just
+code review. RevenueCat Test Store products created (`masters_fit_monthly`, `masters_fit_annual`),
+entitlement `pro` created and attached to both, offering configured. Annual price corrected to
+$49.99 (was $79.99) in `seed-subscription-plans.ts` and the local DB. Fixed a real paywall bug
+along the way: monthly/annual showed different feature tiers (`subscription-plans-list.tsx`), now
+unified — see LR-052 for remaining copy work. Verified via Render logs: full purchase →
+`handleInitialPurchase` → webhook auth passed → status `active` → app UI reached Pro state.
+**Open decision:** production DB (Neon) may still have the old $79.99 if this seed script ran
+there — not touched, needs the user's explicit go-ahead before touching anything production.
+
+**Ad-hoc finding (not a pre-existing ticket), resolved 2026-07-07:** while checking the above, an
+`ANTHROPIC_API_KEY` was found stray in the frontend's EAS environment (development/preview/
+production) — unused by any frontend code, almost certainly copy-pasted in by mistake. Deleted
+from all three EAS environments. **The key itself was exposed in this session's chat transcript**
+(via an unredacted `eas env:list`) — user is rotating it via the Anthropic console + updating
+Render/`backend/.env` (that's the key actually used, by the backend for LLM calls) as a separate,
+manual action item, not tracked as an LR ticket.
+
+## Epic 2 — Workout generation quality
+- [ ] LR-012 · LR-013 · LR-014 · LR-015 · LR-016 — not started.
+- [ ] LR-049 · LR-050 — not started (added 2026-07-07 from user's own testing: exercise
+      repetition/muscle-group imbalance is P0, tag alongside LR-012/013; progress-monitoring
+      needs scoping before it can be sized).
+
+## Epic 3 — Workout generation performance
+- [ ] LR-035 · LR-036 · LR-037 · LR-038 — not started. Prior perf work (queue/lock stall fix,
+      per-phase timing, faster polling) is DONE — see memory `project_workout_generation_queue`,
+      don't re-open it. This epic is the *remaining* items: exercise-catalog curation
+      (LR-035, feeds LR-012 too), per-day LLM call floor, fan-out stagger, week-regen nav gap.
+
+## Epic 4 — Test coverage foundation
+- [ ] LR-017 · LR-018 · LR-019 · LR-020 · LR-021 — not started.
+- [x] **LR-044** — Jest (`jest-expo` preset) + React Native Testing Library installed, `npm test`
+      script added, config in `package.json`. Smoke test at
+      `utils/__tests__/is-valid-email.test.ts` (3 passing) confirms path-alias resolution
+      (`@/utils`) works through the harness. Done 2026-07-07.
+- [ ] LR-045 · LR-046 · LR-047 · LR-048 — not started.
+
+## Epic 5 — Search quality
+- [ ] LR-022 · LR-023 · LR-024 · LR-025 — not started.
+
+## Epic 6 — UI/UX
+Tracked in `../design_handoff_ux_remediation/PROGRESS.md` (Track 4 in flight). Track 5 (this
+folder's BACKLOG.md, LR-051) is new, unscoped, not started — workout logging/gesture-based entry.
+
+## Epic 7 — Platform parity
+- [ ] LR-026 · LR-027 · LR-028 · LR-029 · LR-030 — not started.
+
+## Epic 8 — Observability
+- [x] **LR-031** — Confirmed 2026-07-07: real production Sentry DSN already exists in EAS's
+      hosted "production" environment (separate system from `.env`/`eas.json`'s static `env`
+      field — the original audit only checked the latter, which is why it looked missing).
+      `eas.json`'s `production` and `apk` build profiles now explicitly bind
+      `"environment": "production"` so this is guaranteed to be pulled in, not just inferred.
+      **Not fully closed** — needs a real EAS build to confirm the DSN actually lands in the
+      bundle before this is 100% done; flagging rather than claiming full confidence.
+
+## Epic 9 — Store submission readiness
+- [ ] LR-032 · LR-033 · LR-034 — not started (gated on Epics 1 & 2 P0 items).
+
+## Epic 10 — Conversational workout modification
+- [ ] LR-039 · LR-040 · LR-041 · LR-042 · LR-043 — not started. New feature idea captured
+      2026-07-07, not yet scoped/designed (LR-039 is that design pass). Not a launch blocker —
+      prioritize relative to the rest once the user has fleshed it out further.
