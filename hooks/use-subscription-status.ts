@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import Purchases, { type CustomerInfo } from "react-native-purchases";
 
 import { useAuth } from "@/contexts/auth-context";
+import { getSubscriptionStatus } from "@/lib/subscriptions";
+import { reconcileSubscriptionStatus } from "@/utils/subscription-status-reconciliation";
 
 // Extract EntitlementInfo type from CustomerInfo
 type EntitlementInfo = CustomerInfo["entitlements"]["active"][string];
@@ -17,6 +19,7 @@ interface SubscriptionStatus {
   isPro: boolean;
   isTrial: boolean;
   isBlocked: boolean;
+  isInGracePeriod: boolean;
   activeEntitlement: EntitlementInfo | null;
   productIdentifier: string | null;
   expirationDate: Date | null;
@@ -29,6 +32,7 @@ export function useSubscriptionStatus() {
       isPro: false,
       isTrial: false,
       isBlocked: false,
+      isInGracePeriod: false,
       activeEntitlement: null,
       productIdentifier: null,
       expirationDate: null,
@@ -50,6 +54,7 @@ export function useSubscriptionStatus() {
           isPro: true,
           isTrial: false,
           isBlocked: false,
+          isInGracePeriod: false,
           activeEntitlement: null,
           productIdentifier: null,
           expirationDate: null,
@@ -71,6 +76,7 @@ export function useSubscriptionStatus() {
           isPro: false,
           isTrial: false,
           isBlocked: false,
+          isInGracePeriod: false,
           activeEntitlement: null,
           productIdentifier: null,
           expirationDate: null,
@@ -90,6 +96,7 @@ export function useSubscriptionStatus() {
           isPro: false,
           isTrial: false,
           isBlocked: false,
+          isInGracePeriod: false,
           activeEntitlement: null,
           productIdentifier: null,
           expirationDate: null,
@@ -122,10 +129,21 @@ export function useSubscriptionStatus() {
       // 3. Not blocked/expired
       const isPro = isActive && !isTrial && !isBlocked && !isInGracePeriod;
 
+      // [LR-008] The backend is the source of truth for billing state
+      // (webhooks land there, not on-device) — reconcile in case it
+      // disagrees with what the local RevenueCat SDK cache currently shows,
+      // e.g. a BILLING_ISSUE webhook already landed but the on-device SDK
+      // cache hasn't refreshed yet.
+      const backendStatus = await getSubscriptionStatus();
+      const reconciled = reconcileSubscriptionStatus(
+        { isPro, isTrial, isBlocked, isInGracePeriod },
+        backendStatus
+          ? { status: backendStatus.status, accessLevel: backendStatus.accessLevel }
+          : null
+      );
+
       setSubscriptionStatus({
-        isPro,
-        isTrial,
-        isBlocked,
+        ...reconciled,
         activeEntitlement: entitlement,
         productIdentifier: entitlement.productIdentifier || null,
         expirationDate,
@@ -140,6 +158,7 @@ export function useSubscriptionStatus() {
         isPro: false,
         isTrial: false,
         isBlocked: false,
+        isInGracePeriod: false,
         activeEntitlement: null,
         productIdentifier: null,
         expirationDate: null,
