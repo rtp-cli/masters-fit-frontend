@@ -48,3 +48,30 @@ export interface PaywallErrorResponse {
   error: string;
   paywall: PaywallInfo;
 }
+
+export type SubscriptionStatus =
+  | "trial"
+  | "active"
+  | "expired"
+  | "cancelled"
+  | "grace_period"
+  | "paused";
+
+export type AccessLevel = "unlimited" | "trial" | "blocked";
+
+export interface UserSubscriptionStatus {
+  id: number;
+  userId: number;
+  status: SubscriptionStatus;
+  planId: string | null;
+  subscriptionStartDate: string | null;
+  subscriptionEndDate: string | null;
+  // Computed entitlement (accounts for grace period) — gate access on this,
+  // not on raw `status`.
+  accessLevel: AccessLevel;
+}
+
+export interface SubscriptionStatusResponse {
+  success: boolean;
+  subscription: UserSubscriptionStatus;
+}

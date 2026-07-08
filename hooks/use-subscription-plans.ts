@@ -6,12 +6,20 @@ import Purchases, {
   type PurchasesOffering,
   type PurchasesPackage,
 } from "react-native-purchases";
-import { Sentry } from "@/lib/sentry";
-import { SUPPRESS_REVENUECAT_LOGS } from "@/config";
 
-const rcLog = (...args: unknown[]) => { if (!SUPPRESS_REVENUECAT_LOGS) console.log(...args); };
-const rcWarn = (...args: unknown[]) => { if (!SUPPRESS_REVENUECAT_LOGS) console.warn(...args); };
-const rcError = (...args: unknown[]) => { if (!SUPPRESS_REVENUECAT_LOGS) console.error(...args); };
+import { SUPPRESS_REVENUECAT_LOGS } from "@/config";
+import { Sentry } from "@/lib/sentry";
+import { getSubscriptionStatus } from "@/lib/subscriptions";
+
+const rcLog = (...args: unknown[]) => {
+  if (!SUPPRESS_REVENUECAT_LOGS) console.log(...args);
+};
+const rcWarn = (...args: unknown[]) => {
+  if (!SUPPRESS_REVENUECAT_LOGS) console.warn(...args);
+};
+const rcError = (...args: unknown[]) => {
+  if (!SUPPRESS_REVENUECAT_LOGS) console.error(...args);
+};
 
 // Type for offering metadata with benefits
 export interface OfferingMetadata {
@@ -54,7 +62,11 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       const offerings = await Promise.race([
         Purchases.getOfferings(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("RevenueCat getOfferings timed out after 10s")), 10000)
+          setTimeout(
+            () =>
+              reject(new Error("RevenueCat getOfferings timed out after 10s")),
+            10000,
+          ),
         ),
       ]);
 
@@ -77,7 +89,10 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         setMetadata(offeringMetadata);
 
         rcLog("[RevenueCat] Loaded offerings:", offerings.current.identifier);
-        rcLog("[RevenueCat] Available packages:", offerings.current.availablePackages.map((p) => p.identifier));
+        rcLog(
+          "[RevenueCat] Available packages:",
+          offerings.current.availablePackages.map((p) => p.identifier),
+        );
       } else {
         // This is the silent failure — capture it explicitly
         Sentry.captureMessage("RevenueCat: No current offering available", {
@@ -95,7 +110,10 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
 
       const info = await Purchases.getCustomerInfo();
       setCustomerInfo(info);
-      rcLog("[RevenueCat] Customer entitlements:", Object.keys(info.entitlements.active));
+      rcLog(
+        "[RevenueCat] Customer entitlements:",
+        Object.keys(info.entitlements.active),
+      );
     } catch (err) {
       const errorMessage =
         err instanceof Error
@@ -104,10 +122,16 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       rcError("[RevenueCat] Error fetching offerings:", err);
 
       // If SDK isn't configured yet, retry up to 3 times with delay
-      const isNotConfigured = errorMessage.includes("singleton") || errorMessage.includes("configure");
+      const isNotConfigured =
+        errorMessage.includes("singleton") ||
+        errorMessage.includes("configure");
       if (isNotConfigured && retryCount < 3) {
-        rcWarn(`[RevenueCat] SDK not ready, retrying in ${(retryCount + 1)}s... (attempt ${retryCount + 1}/3)`);
-        await new Promise((resolve) => setTimeout(resolve, (retryCount + 1) * 1000));
+        rcWarn(
+          `[RevenueCat] SDK not ready, retrying in ${retryCount + 1}s... (attempt ${retryCount + 1}/3)`,
+        );
+        await new Promise((resolve) =>
+          setTimeout(resolve, (retryCount + 1) * 1000),
+        );
         return fetchOfferings(retryCount + 1);
       }
 
@@ -145,6 +169,34 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           activeEntitlements: Object.keys(updatedInfo.entitlements.active),
         });
 
+        // RevenueCat confirms the purchase locally, but our backend only
+        // updates once its webhook has landed — which can lag behind this
+        // response. Give it a couple of short checks so a caller that
+        // immediately hits a backend-gated feature doesn't get bounced by a
+        // paywall right after a successful purchase. RevenueCat's local
+        // confirmation is still authoritative either way: we don't fail the
+        // purchase just because our own backend hasn't caught up yet.
+        if (hasActiveEntitlement) {
+          let backendSynced = false;
+          for (let attempt = 0; attempt < 2 && !backendSynced; attempt++) {
+            if (attempt > 0) {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+            const status = await getSubscriptionStatus();
+            backendSynced = status?.accessLevel === "unlimited";
+          }
+
+          if (!backendSynced) {
+            rcWarn(
+              "[RevenueCat] Purchase confirmed locally but backend hasn't synced yet",
+            );
+            Sentry.captureMessage(
+              "Backend subscription status not synced after purchase",
+              { level: "warning", tags: { component: "revenuecat" } },
+            );
+          }
+        }
+
         return hasActiveEntitlement;
       } catch (err) {
         const purchaseError = err as PurchasesError;
@@ -167,7 +219,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         setIsPurchasing(false);
       }
     },
-    []
+    [],
   );
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
