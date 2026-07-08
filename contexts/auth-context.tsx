@@ -1,32 +1,34 @@
+import { type OnboardingData, type User } from "@lib/types";
+import * as Application from "expo-application";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, {
   createContext,
-  useState,
-  ReactNode,
+  type ReactNode,
   useContext,
   useEffect,
+  useState,
 } from "react";
-import { useRouter } from "expo-router";
-import {
-  checkEmailExists,
-  completeOnboarding as apiCompleteOnboarding,
-  getPendingUserId,
-  signup as apiSignup,
-  login as apiLogin,
-  clearAllData,
-  getCurrentUser,
-  saveUserToSecureStorage,
-  deleteAccount as apiDeleteAccount,
-} from "../lib/auth";
-import { invalidateActiveWorkoutCache } from "../lib/workouts";
-import { OnboardingData, User } from "@lib/types";
-import * as SecureStore from "expo-secure-store";
-import { logger } from "../lib/logger";
-import { setAuthFailureCallback } from "../lib/api";
-import { trackAppOpened, AnalyticsUtils } from "@/lib/analytics";
-import * as Application from "expo-application";
 import Purchases from "react-native-purchases";
 
+import { AnalyticsUtils, trackAppOpened } from "@/lib/analytics";
+import { Sentry } from "@/lib/sentry";
+
 import { RegenerationType } from "../constants";
+import { setAuthFailureCallback } from "../lib/api";
+import {
+  checkEmailExists,
+  clearAllData,
+  completeOnboarding as apiCompleteOnboarding,
+  deleteAccount as apiDeleteAccount,
+  getCurrentUser,
+  getPendingUserId,
+  login as apiLogin,
+  saveUserToSecureStorage,
+  signup as apiSignup,
+} from "../lib/auth";
+import { logger } from "../lib/logger";
+import { invalidateActiveWorkoutCache } from "../lib/workouts";
 
 // Define the shape of our context
 interface AuthContextType {
@@ -42,13 +44,13 @@ interface AuthContextType {
   setUserData: (user: User | null) => void;
   setIsGeneratingWorkout: (
     value: boolean,
-    regenerationType?: RegenerationType
+    regenerationType?: RegenerationType,
   ) => void;
   setIsPreloadingData: (value: boolean) => void;
   setNeedsFullAppRefresh: (value: boolean) => void;
   triggerWorkoutReady: () => void;
   checkEmail: (
-    email: string
+    email: string,
   ) => Promise<{ success: boolean; user?: User; needsOnboarding?: boolean }>;
   signup: (params: {
     email: string;
@@ -90,9 +92,22 @@ const identifyUserWithRevenueCat = async (userId: number | string) => {
     });
     return customerInfo;
   } catch (error) {
+    // [LR-005] Previously only logged to console — invisible in production
+    // unless someone happened to be tailing logs at that exact moment. Both
+    // call sites await this and discard the return value, so a null return
+    // (failure) was otherwise completely silent: the user proceeds with an
+    // anonymous RevenueCat identity, relying entirely on a later TRANSFER
+    // webhook to link any purchase back to their account.
     logger.error("Failed to identify user with RevenueCat", {
       error: error instanceof Error ? error.message : String(error),
       userId: userId.toString(),
+    });
+    Sentry.captureException(error, {
+      tags: {
+        component: "revenuecat",
+        operation: "identifyUserWithRevenueCat",
+      },
+      extra: { userId: userId.toString() },
     });
     return null;
   }
@@ -173,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await SecureStore.setItemAsync("refreshToken", result.refreshToken);
         } else {
           console.warn(
-            "[AuthContext] NO REFRESH TOKEN in checkEmail response!"
+            "[AuthContext] NO REFRESH TOKEN in checkEmail response!",
           );
         }
 
@@ -232,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Complete the onboarding process
   const completeOnboarding = async (
-    userData: OnboardingData
+    userData: OnboardingData,
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -261,7 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // User profile tracking now handled by backend in completeOnboarding API
           logger.debug(
-            "Onboarding completed, profile tracking handled by backend"
+            "Onboarding completed, profile tracking handled by backend",
           );
 
           logger.businessEvent("Onboarding completed", {
@@ -362,7 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (redirectError) {
           console.error(
             "[AuthContext] Fallback redirect also failed:",
-            redirectError
+            redirectError,
           );
         }
       }
@@ -392,7 +407,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update generating workout state with regeneration type
   const handleSetIsGeneratingWorkout = (
     value: boolean,
-    regenerationType: RegenerationType = RegenerationType.Initial
+    regenerationType: RegenerationType = RegenerationType.Initial,
   ) => {
     setIsGeneratingWorkout(value);
     if (value) {
