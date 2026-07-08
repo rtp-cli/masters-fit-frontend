@@ -86,7 +86,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   **Assert:** the hook exposes a distinguishable error state for this specific case; add/update a
   test.
 
-- [ ] **L6 · LR-038** — Week-regen navigation gap.
+- [x] **L6 · LR-038** — Week-regen navigation gap.
   Find where the daily-vs-weekly regeneration choice is gated in the frontend (search
   `workout-regeneration-modal.tsx` / calendar screen for how `selectedType` "week" vs "day" is
   reached) — user can't reach the weekly-regenerate UI without first triggering a daily regen when
@@ -118,13 +118,15 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   `BILLING_ISSUE`/`TRANSFER`/`TEST` event types, and `getSubscriptionStatus`'s two branches
   (has subscription / trial default). **Assert:** `npm run test` green with these covered.
 
-- [ ] **L11 · LR-045** — ⚠️ **known blocker found during L5**: `renderHook` from
-  `@testing-library/react-native` fails with "not configured to support act()" /
-  `result.current` staying `undefined` under this project's React 19 setup — the standard
-  `IS_REACT_ACT_ENVIRONMENT = true` fix didn't resolve it. Try to actually fix this properly here
-  (check `@testing-library/react-native` version compatibility with React 19, jest-expo preset
-  config) rather than working around it per-test again — it'll block every hook test, not just
-  one. — Frontend unit tests for highest-blast-radius code.
+- [ ] **L11 · LR-045** — ⚠️ **known blocker found during L5, partially narrowed during L6**:
+  `renderHook` fails with "not configured to support act()" / `result.current` staying
+  `undefined` under this project's React 19 setup — the standard `IS_REACT_ACT_ENVIRONMENT = true`
+  fix didn't resolve it. **Separately**, L6 found and fixed two native-module mocking gaps
+  (`@miblanchard/react-native-slider` missing from `transformIgnorePatterns`, `AsyncStorage`
+  missing a `moduleNameMapper` entry — both now in `package.json`'s jest config) that were
+  blocking a DIFFERENT thing (importing a file that transitively pulls in RN native modules) —
+  those are fixed now and should help here too, but the core React-19/act() issue is still
+  unresolved. Try it properly here rather than working around it again. — Frontend unit tests for highest-blast-radius code.
   `lib/api.ts` (token refresh/retry logic — mock the underlying fetch), `hooks/use-subscription-status.ts`,
   `hooks/use-subscription-plans.ts` (mock the RevenueCat SDK). **Assert:** `npx jest` green with
   new passing tests for these three files.
@@ -251,3 +253,13 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   stays `undefined`, standard `IS_REACT_ACT_ENVIRONMENT` fix didn't help after two attempts).
   Verified the fix by tracing the code instead. This WILL block L11 and L21 — flagged on both
   above, worth a real fix attempt when reaching L11 rather than working around it again.
+- L6 — DONE — 627efc1 — Fixed a real comment/code mismatch: the default-tab logic said
+  "for rest days... default to week tab" in its own comment but did `isRestDay ? "day" : ...`.
+  Fixed to match the stated intent. Extracted the fix into a standalone
+  `utils/regeneration-tab.ts` (not inline in the component) specifically so it's testable —
+  importing the component file cascades through several RN native modules and crashes in Jest.
+  Along the way fixed two genuine, reusable test-infra gaps: `transformIgnorePatterns` didn't
+  cover `@miblanchard/react-native-slider` (ESM-only package), and `AsyncStorage` had no jest
+  mock wired in at all (needed `moduleNameMapper`, not `setupFiles` — the mock file is a plain
+  object export, not a `jest.mock()` call). Both now fixed in `package.json`'s jest config,
+  should help L11/L21. 4 new passing tests.
