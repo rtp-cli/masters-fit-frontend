@@ -149,7 +149,15 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
       `bench`). Fixed via `fix-muscle-groups.ts` — dry-run reviewed, applied to prod, 0 malformed
       rows remain (verified independently via psql). This likely explains at least some of the
       workout variety/quality complaints behind LR-012/013/049.
-- [ ] **LR-056 · P1** — (new, 2026-07-08) Harden `createExerciseIfNotExists` against the
+- [x] **LR-060 · P2** — (new + closed same day, found via user report + screenshot) "AbMat
+      Sit-Up" (id 2000) vs. "AbMat Sit-Ups" (id 2041) — 0.80 similarity, in the medium-confidence
+      tier LR-035's dedup explicitly didn't hand-review. Genuine duplicate on inspection (same
+      equipment/difficulty, near-identical description). Merged into 2041 (more references,
+      richer muscle_groups tagging); 22 refs reassigned, 0 orphans after.
+- [x] **LR-061 · P2** — (new + closed same day, same user report) No plain bodyweight "Sit-Up"
+      existed in the catalog — only compound variants (AbMat, stability ball, weighted). Added one
+      with a real sourced demo link, matching the catalog's 100%-populated `link` convention.
+- [x] **LR-056 · P1** — (new, 2026-07-08) Harden `createExerciseIfNotExists` against the
       check-then-insert race that likely contributed to LR-035's duplication: `exercises.name` has
       only a plain index (`idx_exercises_name`), no unique constraint, so concurrent fan-out
       day-generation calls introducing the same new exercise name for the first time can both pass

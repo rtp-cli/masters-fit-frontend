@@ -127,9 +127,10 @@ manual action item, not tracked as an LR ticket.
       closes the TOCTOU gap that likely contributed to LR-035's duplication. Verified locally with
       a direct concurrent-insert test (two inserts of the same name: first creates, second returns
       undefined via conflict, fallback lookup returns the winner) before deploying.
-- [ ] LR-036 · LR-037 · LR-038 — not started. Prior perf work (queue/lock stall fix, per-phase
-      timing, faster polling) is DONE — see memory `project_workout_generation_queue`, don't
-      re-open it.
+- [x] **LR-036 · LR-037 · LR-038** — done (see `LOOP_QUEUE.md` L17/L18/L6). **Correction
+      2026-07-09**: this line previously said "not started" — stale, missed in the same pass that
+      fixed the rest of this section. Prior perf work (queue/lock stall fix, per-phase timing,
+      faster polling) is DONE — see memory `project_workout_generation_queue`, don't re-open it.
 - [x] **LR-057** — (new + closed same day) `searchExercises` had no `ORDER BY` — results returned
       in arbitrary DB order rather than by relevance. Found via user report + screenshot. Fixed:
       relevance rank (exact name > starts-with > contains > fuzzy-only), then similarity score,
@@ -147,7 +148,17 @@ manual action item, not tracked as an LR ticket.
       2070) turned out to have real content differences (difficulty `moderate` vs `high`) once
       LR-058 fixed 615's malformed muscle_groups — not a pure formatting duplicate. User decided by
       hand: keep 2070 (Lats/Back/Biceps, high), delete 615. 34 `plan_day_exercises` references
-      reassigned to 2070 first; verified 0 orphans after. Catalog now at 1,732 rows.
+      reassigned to 2070 first; verified 0 orphans after.
+- [x] **LR-060** — (new + closed same day, found via user report + screenshot) "AbMat Sit-Up" (id
+      2000, 22 refs) vs. "AbMat Sit-Ups" (id 2041, 79 refs) — 0.80 similarity, in the medium tier
+      LR-035's dedup explicitly didn't review. Genuine duplicate on inspection. User decided: keep
+      2041 (more refs, richer muscle_groups). 22 refs reassigned, 2000 deleted, 0 orphans after.
+- [x] **LR-061** — (new + closed same day, found via the same user report) No plain bodyweight
+      "Sit-Up" existed in the catalog at all — only variants (AbMat, stability ball, weighted
+      combos). Added one (id 2123, core/abdominals, bodyweight, moderate), sourced a real demo
+      video via web search (PT-demonstrated form) rather than leaving `link` null — every other row
+      in the catalog has one, would have broken that convention. Catalog now at 1,732 rows (net
+      zero: -1 AbMat merge, +1 new Sit-Up).
 
 ## Epic 4 — Test coverage foundation
 - [ ] LR-017 · LR-018 · LR-019 · LR-020 · LR-021 — not started.
