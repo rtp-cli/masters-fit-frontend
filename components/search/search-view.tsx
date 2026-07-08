@@ -49,6 +49,7 @@ export default function SearchView() {
 
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
+  const exerciseInputRef = useRef<TextInput>(null);
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [dateQuery, setDateQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -587,6 +588,7 @@ export default function SearchView() {
                   className="mr-3"
                 />
                 <TextInput
+                  ref={exerciseInputRef}
                   className="flex-1 text-text-primary text-sm min-w-0"
                   placeholder="Search exercises"
                   value={exerciseQuery}
@@ -603,7 +605,10 @@ export default function SearchView() {
                 />
                 {exerciseQuery.length > 0 ? (
                   <TouchableOpacity
-                    onPress={() => setExerciseQuery("")}
+                    onPress={() => {
+                      setExerciseQuery("");
+                      exerciseInputRef.current?.focus();
+                    }}
                     className="p-1"
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
