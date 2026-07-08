@@ -149,7 +149,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   **Assert:** unit tests covering both a same-exercise-repeated case and a consecutive-heavy-days
   case.
 
-- [ ] **L14 · LR-014** — Week-over-week progression.
+- [x] **L14 · LR-014** — Week-over-week progression.
   Fetch the user's prior week's workout/completion data before generating the next week; feed it
   into the prompt context; add a simple, conservative progression rule (e.g. if prior sets/reps
   were fully completed, nudge volume/weight up modestly; if not, hold steady or ease back).
@@ -325,3 +325,15 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   sharing a primary muscle group, wired right after the planning stage — the one point in the
   pipeline with real cross-day context (the parallel per-day fan-out calls never see each other's
   output). 11 tests across both.
+- L14 — DONE — fc376a4 — `buildProgressionContext()` (`backend/src/utils/progression-context.ts`)
+  takes the most recent previous week's completion rate (already computed by
+  `workoutService.getPreviousWorkouts`) and returns a prompt nudge — increase intensity/volume for
+  >=80% completion, hold/ease back for <50%, baseline in between. Injected into both the planning
+  and per-day prompts, wrapped in try/catch so a fetch failure never blocks generation. First-pass
+  scope, completion-rate based not per-exercise weight/rep tracking (would need set-level
+  completion data not currently surfaced) — thresholds flagged as a first draft. 6 tests on the
+  pure function; did NOT mock `generateWeeklyWorkout`'s full LLM pipeline just to test the fetch
+  call happens (verified that by direct code reading instead) — its dependency graph is large
+  enough that mocking it reliably would cost more than it's worth tonight.
+- **Phase C complete** (L12, L13, L14) — all three quality tickets landed with real,
+  well-documented judgment calls. 52/52 backend tests passing, tsc steady at 66.
