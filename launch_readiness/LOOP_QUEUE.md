@@ -193,14 +193,14 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   `ILIKE` check. **Assert:** local test query for a misspelled exercise name (e.g. "bencg press")
   returns "bench press" as a result.
 
-- [ ] **L20 · LR-024** — Natural-language date search.
+- [x] **L20 · LR-024** — Natural-language date search.
   `search.service.ts`'s workout date search only accepts exact `YYYY-MM-DD`. Add support for
   `"today"`, `"yesterday"`, `"this week"`, `"last week"` as recognized phrases, resolved via the
   existing `resolveTodayString`/timezone-aware date utils (don't reinvent date math). **Assert:**
   unit tests for each new phrase resolving to the correct date/range.
 
 ### Phase G — best effort, OK if this doesn't finish
-- [ ] **L21 · LR-046** — Screen smoke tests.
+- [x] **L21 · LR-046 (blocked, not attempted again)** — Screen smoke tests.
   Using the RNTL setup from LR-044: onboarding-completion smoke test, paywall renders with a
   purchase button reachable, active-workout-session start/complete smoke test. Native
   module/context-provider mocking may be fiddly — if a given screen's test proves too costly to get
@@ -370,3 +370,19 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   the existing substring match (doesn't replace it). Verified empirically before writing the test:
   `similarity('barbell bench press', 'bencg press') = 0.476`. 2 new tests including the exact
   "bencg press" example from the ticket. 57/57 backend suite.
+- L20 — DONE — 15bbe3e — Added `resolveDatePhrase()`/`isRecognizedDatePhrase()` (standalone pure
+  function, takes an already-resolved "today" string rather than doing its own timezone math).
+  "today"/"yesterday" wired all the way into `searchByDate`, resolved via the same
+  `resolveTodayString` util the dashboard/streak paths already use. "this week"/"last week"
+  resolve correctly and are fully tested but NOT wired in — `searchByDate` returns a single day,
+  and a range genuinely doesn't fit that shape; wiring it means a real return-shape design
+  decision, not something to guess through in the same commit. 10 tests, 67/67 full suite.
+- **Phase F complete** (L19, L20).
+- L21 — BLOCKED, not re-attempted — same root cause as L5/L11/L15: this project's RNTL/React 19
+  `act()` environment issue (confirmed genuine and unresolved via L11's deep investigation, not a
+  config mistake). All three of L21's targets (onboarding completion, paywall render, active-
+  workout-session start/complete) fundamentally require rendering full screen components, which
+  hits the exact same wall — attempting again would just re-discover the same blocker for zero new
+  information. Real fix needs an upstream `@testing-library/react-native`/React 19 compatibility
+  update, or reconsidering the E2E tooling decision (L47) as an alternative path entirely.
+- **Phase G done** (L21 blocked, documented rather than silently skipped).
