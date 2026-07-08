@@ -30,8 +30,9 @@
 - `npx jest` — all tests pass, including any new ones the task added.
 
 **Backend** (`/Users/richpusateri/Projects/MastersFit/backend`):
-- `npm run tsc 2>&1 | grep -c "error TS"` **must equal 67** (updated 2026-07-08: 73→72 during L1,
-  72→67 during L3, all genuine pre-existing bug fixes, not regressions; see loop log). Gate intent
+- `npm run tsc 2>&1 | grep -c "error TS"` **must equal 66** (updated 2026-07-08: 73→72 during L1,
+  72→67 during L3, 67→66 during L9, all genuine pre-existing bug fixes, not regressions; see loop
+  log). Gate intent
   is "no new errors," not literal equality — if a future task fixes another pre-existing one,
   lower this number again rather than treating the drop as a failure.
 - `npm run test` (jest+ts-jest, already configured) — all tests pass, including any new ones.
@@ -107,7 +108,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   test query with 0 results produces the expected log line.
 
 ### Phase B — test coverage foundation (do before Phase C, so Phase C isn't unprotected)
-- [ ] **L9 · LR-017** — Backend auth controller tests.
+- [x] **L9 · LR-017** — Backend auth controller tests.
   `backend/src/controllers/auth.controller.ts` has zero tests. Cover: token refresh (valid,
   expired, malformed), the waiver-status endpoint, password reset happy path + invalid-token path.
   **Assert:** `npm run test` shows new passing tests for these paths.
@@ -279,3 +280,11 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   queries specifically, so dead searches are findable in logs. Wired into both search methods.
   2 new tests confirming the log-level switch. Confirmed via `time` that the full suite (19 tests
   now) still exits clean in ~7.5s after the DB pool fix above — good sign that fix holds.
+- L9 — DONE — 382b867 — Ticket assumed a password-reset endpoint exists in `auth.controller.ts`;
+  it doesn't (auth here is email+code based). Scoped to what's actually there: 5 tests covering
+  `refreshToken`'s full branch set (missing token, invalid/expired, deleted user, success +
+  rotation, rotation failure). Fixed another pre-existing bug blocking the test from running:
+  `system-config.schema.ts`'s `value` jsonb column had no `.$type<>()`, so drizzle inferred
+  `unknown` against the hand-written `SystemConfig.value: Record<string, any>` interface — fixed
+  at the schema level (same pattern already used for the `key` column), not a one-off cast.
+  tsc baseline 67→66.
