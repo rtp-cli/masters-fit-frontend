@@ -96,10 +96,25 @@ manual action item, not tracked as an LR ticket.
       needs scoping before it can be sized).
 
 ## Epic 3 — Workout generation performance
-- [ ] LR-035 · LR-036 · LR-037 · LR-038 — not started. Prior perf work (queue/lock stall fix,
-      per-phase timing, faster polling) is DONE — see memory `project_workout_generation_queue`,
-      don't re-open it. This epic is the *remaining* items: exercise-catalog curation
-      (LR-035, feeds LR-012 too), per-day LLM call floor, fan-out stagger, week-regen nav gap.
+- [~] **LR-035** — Production catalog dedup done 2026-07-08: 348 redundant rows removed (266
+      exact-name groups + 44 vetted near-duplicates), 1,232 `plan_day_exercises` references
+      reassigned to canonical ids, 0 orphans after. Verified via `dedupe-exercises.ts` dry-run
+      review before applying, then independent `psql` re-verification (row counts, zero remaining
+      dup groups, spot-checked specific ids). **Not fully closed** — the Tier 3 (0.85-0.95
+      confidence, ~43 pairs) and lower tiers from `EXERCISE_CURATION_CANDIDATES_PROD.md` still need
+      hand review (some are false positives, e.g. "Warm-up Set 1/2/3" labels); the `getFilteredExercises`
+      catalog-size-in-prompt work this ticket was originally scoped around is also still open.
+- [x] **LR-056** — (new 2026-07-08, closed same day) Added a unique index on `lower(name)`
+      (`idx_exercises_name_unique`, local + prod) and hardened `createExerciseIfNotExists` with a
+      conflict-safe insert (bare `.onConflictDoNothing()` + fallback lookup for the race loser) —
+      closes the TOCTOU gap that likely contributed to LR-035's duplication. Verified locally with
+      a direct concurrent-insert test (two inserts of the same name: first creates, second returns
+      undefined via conflict, fallback lookup returns the winner) before deploying.
+- [ ] LR-036 · LR-037 · LR-038 — not started. Prior perf work (queue/lock stall fix, per-phase
+      timing, faster polling) is DONE — see memory `project_workout_generation_queue`, don't
+      re-open it.
+- [ ] **LR-057** — (new 2026-07-08) `searchExercises` has no `ORDER BY` — results return in
+      arbitrary DB order rather than by relevance. Found via user report + screenshot. Not started.
 
 ## Epic 4 — Test coverage foundation
 - [ ] LR-017 · LR-018 · LR-019 · LR-020 · LR-021 — not started.

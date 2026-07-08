@@ -111,8 +111,16 @@ Distinct from Epic 2 (quality) — this is about latency/cost, not correctness. 
 closed the queue/lock-stall problem (see memory `project_workout_generation_queue`): Bull
 `lockDuration` tuned to 2 min, per-phase timing added, queue wait fixed (135s → ~1-25s on a
 settled instance). **Don't re-litigate that — it's done.** What's still open:
-- [ ] **LR-035 · P1** — Curate/dedupe the exercise catalog. DB has **107 total exercise rows**
-      (confirmed via direct query, 2026-07-06); `getFilteredExercises`
+- [ ] **LR-035 · P1** — Curate/dedupe the exercise catalog. **Correction 2026-07-08**: the
+      "107 total exercise rows" figure below was **local only** — production (Neon) actually has
+      **2,081 rows**, grown independently (265 from the original 2025-06-03 seed, 1,535 from a
+      single-day bulk import on 2025-07-08 that didn't dedupe against the existing catalog, ~270
+      trickled in gradually since via real generation traffic). Production has **266 exact-name
+      duplicate groups (316 redundant rows)** plus ~2,700 near-duplicate pairs at various
+      confidence tiers — see `EXERCISE_CURATION_CANDIDATES_PROD.md` (new, generated directly
+      against Neon) for the full breakdown and a recommended dedup approach; the original
+      `EXERCISE_CURATION_CANDIDATES.md` only ever covered local's small catalog and understates
+      the real scope of this ticket substantially. `getFilteredExercises`
       (`workout-agent.service.ts:104-140`) filters by equipment/environment but caps at
       `limit: 200` — i.e. for most users, the *entire* filtered catalog gets embedded verbatim as
       exercise context (`formatExerciseContext`, ~4 000 tokens per the existing comment at
@@ -120,6 +128,14 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
       "variations") directly shrinks this block for every generation, not just an edge case.
       Worth doing *before* LR-012 (equipment validation) — a curated canonical list makes that
       validation simpler too.
+- [ ] **LR-056 · P1** — (new, 2026-07-08) Harden `createExerciseIfNotExists` against the
+      check-then-insert race that likely contributed to LR-035's duplication: `exercises.name` has
+      only a plain index (`idx_exercises_name`), no unique constraint, so concurrent fan-out
+      day-generation calls introducing the same new exercise name for the first time can both pass
+      the "not found" check and both insert. Add a unique index on `lower(name)` (only possible
+      once LR-035's existing duplicates are cleaned up) and switch the insert to rely on it (e.g.
+      `ON CONFLICT DO NOTHING`) instead of trusting the check alone. Low volume today (~270 rows
+      added over the last year via this path) but unbounded without a DB-level guard.
 - [ ] **LR-036 · P2** — Per-day LLM call floor. Confirmed 12-20s per day call, and the slowest
       day gates the whole parallel fan-out phase (`project_workout_generation_queue` memory,
       steady-state ~27-40s total). Investigate whether a smaller per-day output schema or a
@@ -199,6 +215,14 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
 - [ ] **LR-024 · P2** — Workout date search only accepts exact `YYYY-MM-DD`, 1-year hard lookback
       (`search-view.tsx:706`) — no "today"/"last week"/range queries.
 - [ ] **LR-025 · P3** — No search telemetry/instrumentation — can't tell what users fail to find.
+- [ ] **LR-057 · P2** — (new, 2026-07-08, found via user report + screenshot while testing prod)
+      `searchExercises` (`search.service.ts` ~line 411) has **no `ORDER BY`** — results return in
+      whatever order Postgres's query plan picks, not by match quality. Confirmed: searching
+      "pull-up" surfaces "Strict Pull-Up"/"Jumping Pull-Up"/assisted variants ahead of what a user
+      would expect to see first. Needs a relevance ordering (exact name match, then
+      starts-with, then contains, then `similarity()` score desc) rather than unordered. Also
+      surfaced production's "Strict Pull-Up" vs. "Strict Pull-Ups" exact-duplicate pair — see
+      LR-035/`EXERCISE_CURATION_CANDIDATES_PROD.md`.
 
 ## Epic 6 — UI/UX (tracked separately)
 Not duplicated here — see `../design_handoff_ux_remediation/PROGRESS.md` Track 4: MF-005 tail,

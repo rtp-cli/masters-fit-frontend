@@ -1,4 +1,9 @@
-# Exercise Catalog Curation Candidates
+# Exercise Catalog Curation Candidates — LOCAL
+
+> **This file covers the LOCAL database only (107 rows).** Production (Neon) has 2,081 rows —
+> an independently-grown, much larger and messier catalog — see
+> `EXERCISE_CURATION_CANDIDATES_PROD.md` for that analysis. Discovered 2026-07-08 while fixing
+> the demo-reseed script; don't mistake this file's small scope for the whole picture.
 
 Prep for **LR-035** (exercise catalog curation/pruning) — candidates for your review, nothing
 deleted or modified. DB row count confirmed unchanged: **107 before, 107 after** this analysis.
