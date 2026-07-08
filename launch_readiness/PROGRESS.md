@@ -14,15 +14,13 @@ retrofit them in Phase 3.
       5 fully done and verified** (LR-003, LR-004, LR-044). **2 still open** (LR-002, LR-031) —
       both need a real EAS production build to confirm the real keys/DSN land in the actual
       binary; Test Store/Simulator testing doesn't exercise that build path.
-- [~] **Phase 1 — make or break:** **Correction 2026-07-09**: this line was stale — LR-036/037/038
-      (Epic 3) and LR-012/014/015/016/049 (Epic 2) were actually completed during the earlier
-      autonomous loop (see `LOOP_QUEUE.md` L3/L4/L12/L13/L14/L17/L18) but this file was never
-      updated to reflect it. LR-035 is ~90% done (Tier 1/2 dedup + the muscle_groups/dup-related
-      bugs it surfaced are closed; Tier 3+ hand-review and the original catalog-size-in-prompt
-      goal remain as an optional tail). **What's actually left in Phase 1**: LR-013 and LR-050,
-      both explicitly blocked on a design/scoping decision (see "Decisions still open" below —
-      Phase C of the loop correctly skipped these rather than guessing), plus LR-053 (small, no
-      decision needed, found via LR-016).
+- [~] **Phase 1 — make or break:** LR-036/037/038 (Epic 3) and LR-012/013/014/015/016/049 (Epic 2)
+      are all done (LR-013 closed 2026-07-09, once the user made the enforcement-approach call).
+      LR-035 is ~90% done (Tier 1/2 dedup + the muscle_groups/dup-related bugs it surfaced are
+      closed; Tier 3+ hand-review and the original catalog-size-in-prompt goal remain as an
+      optional tail). **What's actually left in Phase 1**: LR-050 (user chose to skip scoping for
+      now) and LR-053 (small, no decision needed, found via LR-016) — otherwise this phase is
+      effectively done.
 - [ ] **Phase 2 — differentiate & refine:** Epic 10 (conversational mods) → Epic 5 (search) →
       Epic 6 (UI/UX Track 4 tail + Track 5 scoping) → Epic 7 (platform parity).
 - [ ] **Phase 3 — harden:** Epic 1's remainder (LR-005/006/007/008/009/010/011) + Epic 4's bulk
@@ -32,10 +30,10 @@ retrofit them in Phase 3.
 ## Decisions still open (not blocking Phase 0/1 start)
 - [ ] **Android Health Connect write parity (LR-027)** — ship read-only for v1, or build write
       parity now? Affects Epic 6/Phase 2 scope/sizing, not urgent yet.
-- [ ] **Limitation/injury enforcement approach (LR-013)** — rule-based contraindication list vs.
-      a second LLM validation pass vs. both. Needed before Phase 1's Epic 2 work starts.
-- [ ] **LR-050 scoping** — resolve the progress-monitoring ambiguity before Phase 1's Epic 2 work
-      reaches it.
+- [x] **Limitation/injury enforcement approach (LR-013)** — decided 2026-07-09: rule-based
+      contraindication list + log-and-allow LLM self-report (both). Implemented and closed.
+- [ ] **LR-050 scoping** — user explicitly chose to skip scoping this for now (2026-07-09), not
+      urgent per its own P2 priority. Revisit later.
 
 ## Epic 0 — Security hotfix
 - [x] **LR-001** — SQL injection in search filters fixed 2026-07-06 (parameterized via
@@ -96,9 +94,11 @@ manual action item, not tracked as an LR ticket.
       `validateEquipmentAndFilter` (`utils/equipment-validation.ts`), wired into
       `workout-agent.service.ts`. **Correction 2026-07-09**: PROGRESS.md previously said this was
       "not started" — stale, never updated after the loop closed it.
-- [ ] **LR-013** — genuinely not started. Blocked on an open design decision (rule-based
-      contraindication list vs. a second LLM validation pass vs. both) — Phase C of the loop
-      correctly skipped it rather than guessing.
+- [x] **LR-013** — done 2026-07-09. User decided: both (rule-based filter + log-and-allow LLM
+      self-report). `utils/limitation-validation.ts`, enforced at the catalog pre-filter and
+      post-generation (mirrors LR-012). See BACKLOG.md for full detail, including the deliberate
+      scope limits (only limitations with clear contraindicated-movement consensus get a rule;
+      doesn't cover the serial fallback path — that's LR-053).
 - [x] **LR-014** — done (see LOOP_QUEUE.md L14) — week-over-week progression,
       `buildProgressionContext` (`utils/progression-context.ts`). Same stale-doc correction as
       LR-012.

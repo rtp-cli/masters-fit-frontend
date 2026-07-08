@@ -66,10 +66,19 @@ before acting, files shift.
       the *output* — `exercisesToAdd` can introduce exercises requiring equipment the user doesn't
       have, and it ships straight to the DB via `createExerciseIfNotExists()`
       (`exercise.service.ts:36-52`, name-uniqueness check only).
-- [ ] **LR-013 · P0** — No post-generation limitation/injury validation. `limitations` and
-      `medicalNotes` are passed into the prompt (`fanout-prompt-generator.ts:294-297,386`) as
-      instructions only — there's no downstream check that the LLM actually respected them. A
-      contraindicated exercise ships if the LLM ignores the instruction.
+- [x] **LR-013 · P0** — **Closed 2026-07-09.** Decision: rule-based filter (fast, deterministic)
+      + log-and-allow LLM self-report for borderline cases, mirroring LR-015's pattern.
+      `limitation-validation.ts` — name-keyword contraindication rules for limitations with a
+      clear, broadly-agreed movement-pattern risk (knee/shoulder/lower-back/neck/wrist/elbow pain,
+      osteoporosis, sciatica, ankle instability, balance issues); the vaguer ones (limited ROM,
+      post-surgery recovery, chronic fatigue, breathing issues) rely on the LLM self-report only —
+      too context-dependent to safely hard-filter by keyword, documented as a judgment call.
+      Enforced at both points: catalog pre-filter (`getFilteredExercises`, primary) and
+      post-generation on `exercisesToAdd` (mirrors LR-012 exactly). New `limitationConcerns` field
+      on `WORKOUT_DAY_SCHEMA` piggybacks the existing per-day call (no added cost) for the LLM
+      self-report half. Does NOT cover `prompts.service.ts`'s serial fallback path — compounds
+      LR-053's already-tracked fan-out/fallback validation-inconsistency gap rather than closing
+      it. 9 new tests, full suite green (78/78).
 - [ ] **LR-014 · P1** — No week-over-week progression. Generation has no call to fetch the prior
       week's workout/weights before building the prompt — every week is generated cold. No
       `getLastWorkoutWeek()`-style context exists anywhere in the flow.
