@@ -14,9 +14,15 @@ retrofit them in Phase 3.
       5 fully done and verified** (LR-003, LR-004, LR-044). **2 still open** (LR-002, LR-031) —
       both need a real EAS production build to confirm the real keys/DSN land in the actual
       binary; Test Store/Simulator testing doesn't exercise that build path.
-- [ ] **Phase 1 — make or break:** Epic 3 first (LR-035 catalog curation, then LR-036/037/038),
-      then Epic 2 (LR-012/013/049/014/015/016; LR-050 once scoped). Perf before quality because
-      LR-035's catalog curation directly feeds LR-012's equipment validation.
+- [~] **Phase 1 — make or break:** **Correction 2026-07-09**: this line was stale — LR-036/037/038
+      (Epic 3) and LR-012/014/015/016/049 (Epic 2) were actually completed during the earlier
+      autonomous loop (see `LOOP_QUEUE.md` L3/L4/L12/L13/L14/L17/L18) but this file was never
+      updated to reflect it. LR-035 is ~90% done (Tier 1/2 dedup + the muscle_groups/dup-related
+      bugs it surfaced are closed; Tier 3+ hand-review and the original catalog-size-in-prompt
+      goal remain as an optional tail). **What's actually left in Phase 1**: LR-013 and LR-050,
+      both explicitly blocked on a design/scoping decision (see "Decisions still open" below —
+      Phase C of the loop correctly skipped these rather than guessing), plus LR-053 (small, no
+      decision needed, found via LR-016).
 - [ ] **Phase 2 — differentiate & refine:** Epic 10 (conversational mods) → Epic 5 (search) →
       Epic 6 (UI/UX Track 4 tail + Track 5 scoping) → Epic 7 (platform parity).
 - [ ] **Phase 3 — harden:** Epic 1's remainder (LR-005/006/007/008/009/010/011) + Epic 4's bulk
@@ -86,14 +92,25 @@ Render/`backend/.env` (that's the key actually used, by the backend for LLM call
 manual action item, not tracked as an LR ticket.
 
 ## Epic 2 — Workout generation quality
-- [ ] LR-012 · LR-013 · LR-014 — not started.
+- [x] **LR-012** — done (see `LOOP_QUEUE.md` L12) — post-generation equipment validation,
+      `validateEquipmentAndFilter` (`utils/equipment-validation.ts`), wired into
+      `workout-agent.service.ts`. **Correction 2026-07-09**: PROGRESS.md previously said this was
+      "not started" — stale, never updated after the loop closed it.
+- [ ] **LR-013** — genuinely not started. Blocked on an open design decision (rule-based
+      contraindication list vs. a second LLM validation pass vs. both) — Phase C of the loop
+      correctly skipped it rather than guessing.
+- [x] **LR-014** — done (see LOOP_QUEUE.md L14) — week-over-week progression,
+      `buildProgressionContext` (`utils/progression-context.ts`). Same stale-doc correction as
+      LR-012.
 - [x] **LR-015** — done 2026-07-08 (see `launch_readiness/LOOP_QUEUE.md` L3).
 - [x] **LR-016** — done 2026-07-08 (see LOOP_QUEUE.md L4) — confirmed the guard should stay
       removed, documented why, found and logged LR-053 (inconsistent fallback-path validation).
-- [ ] LR-053 — not started (new, found 2026-07-08 via LR-016).
-- [ ] LR-049 · LR-050 — not started (added 2026-07-07 from user's own testing: exercise
-      repetition/muscle-group imbalance is P0, tag alongside LR-012/013; progress-monitoring
-      needs scoping before it can be sized).
+- [ ] LR-053 — not started (new, found 2026-07-08 via LR-016). No decision needed, just not done.
+- [x] **LR-049** — done (see LOOP_QUEUE.md L13) — `checkExerciseRepetition` +
+      `checkConsecutiveMuscleGroupOverload` (`utils/workout-balance-validation.ts`), detect-and-log.
+- [ ] **LR-050** — genuinely not started, needs scoping first (see BACKLOG.md — ambiguous between
+      generation-side, already covered by LR-014, vs. user-facing progress trends/PRs, which may
+      already exist in the dashboard).
 
 ## Epic 3 — Workout generation performance
 - [~] **LR-035** — Production catalog dedup done 2026-07-08: 348 redundant rows removed (266
