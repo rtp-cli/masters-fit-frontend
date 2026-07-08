@@ -133,7 +133,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   new passing tests for these three files.
 
 ### Phase C — workout generation quality (P0, no open design gate — equipment/repetition/progression are mechanical, not ambiguous like LR-013/LR-050)
-- [ ] **L12 · LR-012** — Post-generation equipment validation.
+- [x] **L12 · LR-012** — Post-generation equipment validation.
   After LLM generation (`backend/src/services/workout-agent.service.ts`), before persisting:
   cross-check every exercise (from `exercisesToAdd` and the selected-from-filtered-list ones)
   against the user's actual `profile.equipment`/`environment`. If a mismatch is found, log it and
@@ -311,3 +311,10 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   jest-expo + RN 0.81 + RNTL 14 + React 19.1 combination, not a config mistake. **use-subscription-
   status.ts and use-subscription-plans.ts remain untested** — flagging for L21 and beyond: this
   will block screen-level tests too until upstream fixes it or the app upgrades past React 19.1.
+- L12 — DONE — 566b25c — Added `validateEquipmentAndFilter()` (`backend/src/utils/
+  equipment-validation.ts`, standalone function, not a class method — it never touched `this`, so
+  extracting it made it directly unit-testable without constructing a full `WorkoutAgentService`,
+  which needs a live LLM provider). Reuses the existing equipment-resolution logic per environment
+  (commercial_gym/bodyweight_only/home_gym). Drops exercises the user can't perform from both
+  `exercisesToAdd` and any day-block referencing them, wired into `generateWeeklyWorkout` right
+  before the result returns. 6 tests covering all three environments + the block-removal case.
