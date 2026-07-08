@@ -30,10 +30,10 @@
 - `npx jest` — all tests pass, including any new ones the task added.
 
 **Backend** (`/Users/richpusateri/Projects/MastersFit/backend`):
-- `npm run tsc 2>&1 | grep -c "error TS"` **must equal 72** (updated 2026-07-08 during L1 — was 73,
-  dropped by 1 from a genuine pre-existing bug fix, not a regression; see loop log). Gate intent is
-  "no new errors," not literal equality — if a future task fixes another pre-existing one, lower
-  this number again rather than treating the drop as a failure.
+- `npm run tsc 2>&1 | grep -c "error TS"` **must equal 67** (updated 2026-07-08: 73→72 during L1,
+  72→67 during L3, all genuine pre-existing bug fixes, not regressions; see loop log). Gate intent
+  is "no new errors," not literal equality — if a future task fixes another pre-existing one,
+  lower this number again rather than treating the drop as a failure.
 - `npm run test` (jest+ts-jest, already configured) — all tests pass, including any new ones.
 - Regenerate the TSOA spec (`npm run tsoa`) if a controller/route changed.
 
@@ -60,13 +60,13 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   **Assert:** no bare `"pro"` string fallback remains in this file; add a unit test covering the
   "plan not found" branch.
 
-- [ ] **L2 · LR-011** — Audit demo-account Pro override stays scoped.
+- [x] **L2 · LR-011** — Audit demo-account Pro override stays scoped.
   `frontend/hooks/use-subscription-status.ts` (~lines 14, 48-60): confirm the hardcoded
   `rtp+demo@mastersfit.ai` check can't match any other email (e.g. no substring/prefix match, only
   exact equality). Fix if it's not already exact-match. **Assert:** grep the file, confirm it's a
   strict `===` comparison against the literal email.
 
-- [ ] **L3 · LR-015** — Exercise creation integrity validation.
+- [x] **L3 · LR-015** — Exercise creation integrity validation.
   `backend/src/services/exercise.service.ts` `createExerciseIfNotExists()` (~lines 36-52): add
   validation that `equipment`, `muscleGroups`, `difficulty` values match known enums before
   insert (reject/log and skip the exercise if not, don't crash the whole generation). **Assert:**
@@ -217,3 +217,17 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   any test importing this controller — backend tsc baseline updated 73→72 (genuine fix, not a
   regression). Added `subscription.controller.test.ts`, the first backend controller test in the
   repo (2 passing cases: plan-not-found and plan-found on TRANSFER). L10 will extend this file.
+- L2 — DONE (no code change needed) — audited `use-subscription-status.ts:14,48`: exact `===`
+  match against the literal `rtp+demo@mastersfit.ai` string, only one occurrence in the whole
+  codebase. Already correctly scoped, nothing to fix.
+- L3 — DONE — b23f549 — Added `ExerciseService.validateExerciseData()` using the REAL
+  `AvailableEquipment`/`IntensityLevels` enums (not invented), log-and-allow on failure. Real
+  finding: `"machines"`/`"yoga_mat"` in the DB aren't in the official equipment enum at all, and
+  `"medicine_ball"` (singular) is bad data vs. the official `"medicine_balls"` — feeds LR-035.
+  `muscle_groups` too inconsistent to enum-validate (structural check only). Along the way fixed 3
+  pre-existing bugs that were blocking any real-service (non-mocked) test from running at all:
+  untyped catch-block error access in `base.service.ts`, a non-narrowed env access + dead
+  `PoolConfig` property in `database.ts`, and jest's `moduleNameMapper` not handling `.js`-suffixed
+  `@/` imports. Backend tsc baseline 72→67. **Flagging for later, not fixed:** importing
+  `database.ts` opens a real DB connection pool as a load-time side effect — works locally, not
+  real test isolation. Relevant to L47's tooling decision.
