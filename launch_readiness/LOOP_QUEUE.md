@@ -173,14 +173,14 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   has an active subscription. **Assert:** new passing tests for these three cases.
 
 ### Phase E — generation performance
-- [ ] **L17 · LR-036** — Investigate the per-day LLM call floor.
+- [x] **L17 · LR-036 (investigated, no change made)** — Investigate the per-day LLM call floor.
   `backend/src/services/workout-agent.service.ts`: measure current per-day call latency (the
   per-phase timing logs already exist per `project_workout_generation_queue` memory), then try ONE
   concrete lever — either a smaller per-day output schema or a smaller embedded exercise slice per
   call (not the full filtered catalog) — and measure again. **Assert:** before/after timing numbers
   in the commit body; don't ship if it makes quality worse (check against L12/L13's validations).
 
-- [ ] **L18 · LR-037** — Revisit the fan-out stagger.
+- [x] **L18 · LR-037** — Revisit the fan-out stagger.
   Find the ~800ms stagger between parallel day calls in the fan-out generation code; try reducing
   or removing it and confirm it doesn't reintroduce the rate-limit/lock issues the stagger was
   presumably added to avoid (check git log/blame for why it was added before changing it).
@@ -354,3 +354,14 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   stashed and NOT in the working tree for a moment — caught it immediately via `git stash list`
   and popped it back before it could be lost or committed-around. 15/15 frontend, 55/55 backend.
 - **Phase D complete** (L15, L16).
+- L17 — INVESTIGATED, NO CHANGE — 09f2ba2 (commit body covers both L17+L18). Day-level output
+  schema is already lean, and the one candidate input-reduction lever (per-day exercise-context
+  filtering) would break the deliberate cache-sharing optimization across parallel day calls.
+  Documented as "investigated, no safe change identified" rather than forcing something without
+  live measurement or silently skipping it.
+- L18 — DONE — 09f2ba2 — Git archaeology (commit `e9f7d84`) confirmed the 800ms stagger was NEVER
+  about rate limits — purely UI pacing for the progress event, already documented as a known
+  trade-off in the code's own prior comment. Reduced to 300ms (still reads as "one at a time"),
+  cuts worst-case total-generation overhead for a 7-day week from 4.8s to 1.8s. Judgment call, not
+  verified on a live run — flagged for an on-device sanity check.
+- **Phase E complete** (L17, L18).
