@@ -101,6 +101,9 @@
     "typescript": "~5.9.2"
   },
   "private": true,
+  "overrides": {
+    "test-renderer": "1.1.0"
+  },
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
