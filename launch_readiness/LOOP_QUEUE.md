@@ -141,7 +141,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   disruptive to ship tonight and document the choice clearly. **Assert:** unit test with a
   synthetic LLM response containing an equipment-mismatched exercise, confirming it's caught.
 
-- [ ] **L13 · LR-049** — Exercise repetition & muscle-group balance.
+- [x] **L13 · LR-049** — Exercise repetition & muscle-group balance.
   Add a validation/re-balancing pass: (a) cap how many times the same named exercise appears in one
   workout, (b) flag/limit consecutive high-volume-for-the-same-muscle-group days (e.g. two heavy
   leg days back to back). Pick specific, reasonable numeric thresholds (document them clearly —
@@ -318,3 +318,10 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   (commercial_gym/bodyweight_only/home_gym). Drops exercises the user can't perform from both
   `exercisesToAdd` and any day-block referencing them, wired into `generateWeeklyWorkout` right
   before the result returns. 6 tests covering all three environments + the block-removal case.
+- L13 — DONE — 6c8d70a — Two detect-and-log checks (deliberately not auto-fix — rewriting a day's
+  exercises risks breaking a legitimate circuit/superset): `checkExerciseRepetition` flags an
+  exercise appearing >2x within one day (threshold is a first draft, flagged for review), wired
+  alongside LR-012's filter. `checkConsecutiveMuscleGroupOverload` flags adjacent scheduled days
+  sharing a primary muscle group, wired right after the planning stage — the one point in the
+  pipeline with real cross-day context (the parallel per-day fan-out calls never see each other's
+  output). 11 tests across both.
