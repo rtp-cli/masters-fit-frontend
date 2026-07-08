@@ -113,7 +113,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   expired, malformed), the waiver-status endpoint, password reset happy path + invalid-token path.
   **Assert:** `npm run test` shows new passing tests for these paths.
 
-- [ ] **L10 · LR-018 / LR-010** — Backend subscription controller/webhook tests (same underlying
+- [x] **L10 · LR-018 / LR-010** — Backend subscription controller/webhook tests (same underlying
   ticket, tracked under both IDs). Cover: `handleRevenueCatWebhook` with valid auth header, missing
   auth header (when configured), wrong auth header, `INITIAL_PURCHASE`/`RENEWAL`/`CANCELLATION`/
   `BILLING_ISSUE`/`TRANSFER`/`TEST` event types, and `getSubscriptionStatus`'s two branches
@@ -288,3 +288,11 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   `unknown` against the hand-written `SystemConfig.value: Record<string, any>` interface — fixed
   at the schema level (same pattern already used for the `key` column), not a one-off cast.
   tsc baseline 67→66.
+- L10 — DONE — 6f9f1e6 — Extended the L1 test file (was TRANSFER-only) with: TEST event
+  short-circuit, idempotency check, INITIAL_PURCHASE, CANCELLATION's two branches (refund vs.
+  regular), `getSubscriptionStatus`'s two branches, and webhook auth header enforcement (wrong vs.
+  correct header) — the auth tests needed `jest.resetModules()` + a dynamic re-import since
+  `REVENUECAT_WEBHOOK_AUTH_HEADER` is read once at module load time and the existing tests all run
+  with it unset. 9 new tests, all passing, 33/33 full suite. Not covered: RENEWAL,
+  UNCANCELLATION, PRODUCT_CHANGE, BILLING_ISSUE, SUBSCRIPTION_PAUSED — same pattern as what's
+  tested, diminishing returns to enumerate every event type tonight.
