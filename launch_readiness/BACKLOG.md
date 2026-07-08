@@ -160,6 +160,35 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
         run-before-each-release habit for the time being.
 - [ ] **LR-021 · P2** — At minimum, a scripted manual QA checklist for the purchase flow
       (sandbox buy → restore → cancel → grace period) if full automation is too costly pre-launch.
+- [ ] **LR-054 · P3** — Backend `tsc` backlog cleanup (deferred, same spirit as the frontend
+      lint-backlog plan — not urgent, tracked so it isn't forgotten). **66 pre-existing errors**
+      as of 2026-07-08 (`cd backend && npm run tsc`), none introduced by anything in this backlog —
+      confirmed via stash-diff at every step of the L1-L21 loop, none are new. Per-file breakdown
+      (top offenders): `logs.controller.ts` (8), `workout.service.ts` (7), `profile.routes.ts` (7),
+      `search.routes.ts` (5), `analytics.controller.ts` (5). **26 of the 66 (39%) share one root
+      cause**: `Request<...>` not narrowing to `AuthenticatedRequest` (`userId: number | undefined`
+      vs. required `number`) across nearly every `*.routes.ts` file — one shared-type fix would
+      likely clear most of these at once, the highest-leverage single fix in this backlog. Two
+      specific ones worth a closer look before just batch-fixing (flagged during triage, not
+      confirmed as real bugs): `logs.controller.ts`'s repeated `PlanDayLog.totalTimeMinutes missing`
+      (~7 occurrences — could mean real data is missing somewhere, not just a stale type) and
+      `notification.service.ts:21`'s `'substring' does not exist on type 'never'` (a "never" type
+      error can flag real dead code, or can hide an actual runtime possibility TS has been told to
+      ignore — worth confirming which before touching it).
+- [ ] **LR-055 · P3** — Frontend `tsc` backlog cleanup (same deferred spirit as LR-054). **35
+      pre-existing errors** as of 2026-07-08 (`npx tsc --noEmit`) — this is the same number that's
+      been frozen as the UX remediation loop's regression gate since 2026-07-01
+      (`design_handoff_ux_remediation/LOOP_QUEUE.md`); G0 clean-baseline was never done, per that
+      project's own memory. Per-file breakdown: `use-workout-session.ts` alone accounts for **15 of
+      35 (43%)** — by far the single highest-leverage file to look at first, mostly
+      `WorkoutBlockWithExercise`/`WorkoutBlockWithExercises` shape mismatches (`exercises` vs.
+      `exercise`, missing `isSkipped`) suggesting a drizzle relation/type drift similar in spirit to
+      LR-054's backend findings. Rest: `lib/analytics.ts` (6, `Error` not assignable to
+      `LogContext`), `health-metrics-carousel.tsx` (4), `lib/workouts.ts` (3,
+      `PlanDayWithBlocks`/`WorkoutWithDetails` mismatches), plus one each in
+      `types/calendar.types.ts` (`UserProfile` not exported from `./api`),
+      `types/api/logs.types.ts` (`ApiResponse` not found), `waiver-context.tsx`,
+      `background-job-context.tsx`, and two in `workout-repeat-picker.tsx`/`workout-repeat-modal.tsx`.
 
 ## Epic 5 — Search quality
 - [ ] **LR-022 · P1** — No fuzzy/typo-tolerant matching — `search.service.ts` uses `ILIKE`

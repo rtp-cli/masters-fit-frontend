@@ -108,6 +108,8 @@ manual action item, not tracked as an LR ticket.
       `utils/__tests__/is-valid-email.test.ts` (3 passing) confirms path-alias resolution
       (`@/utils`) works through the harness. Done 2026-07-07.
 - [ ] LR-045 · LR-046 · LR-047 · LR-048 — not started.
+- [ ] LR-054 · LR-055 — not started (added 2026-07-09: backend/frontend `tsc` backlog cleanup,
+      deferred same as the frontend lint-backlog plan — tracked so it isn't forgotten, not urgent).
 
 ## Epic 5 — Search quality
 - [ ] LR-022 · LR-023 · LR-024 · LR-025 — not started.
