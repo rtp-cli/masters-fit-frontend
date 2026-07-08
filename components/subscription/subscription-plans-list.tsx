@@ -89,19 +89,13 @@ export default function SubscriptionPlansList({
     return "";
   };
 
-  // Default benefits (fallback if metadata not configured in RevenueCat)
-  const defaultAnnualBenefits = [
-    "Unlimited workout regenerations",
-    "Priority AI processing",
-    "Advanced analytics & insights",
-    "Early access to new features",
-    "Priority customer support",
-  ];
-
-  const defaultMonthlyBenefits = [
+  // Default benefits (fallback if metadata not configured in RevenueCat).
+  // Same list for both billing periods on purpose — Pro unlocks the same
+  // features regardless of monthly vs. annual, only price/duration differ.
+  const defaultBenefits = [
     "Unlimited workout regenerations",
     "AI-powered workout plans",
-    "Basic analytics",
+    "Advanced analytics & insights",
   ];
 
   // Get benefits from metadata or use defaults
@@ -123,8 +117,8 @@ export default function SubscriptionPlansList({
         return metadata.benefits["monthly"];
       }
     }
-    // Fall back to defaults
-    return isAnnual ? defaultAnnualBenefits : defaultMonthlyBenefits;
+    // Fall back to the shared default
+    return defaultBenefits;
   };
 
   const renderPackage = (pkg: PurchasesPackage, isAnnual: boolean = false) => {
