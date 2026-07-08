@@ -187,7 +187,7 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   **Assert:** before/after timing; explain in commit body why the change is safe.
 
 ### Phase F — search quality
-- [ ] **L19 · LR-022** — Fuzzy/typo-tolerant search via `pg_trgm`.
+- [x] **L19 · LR-022** — Fuzzy/typo-tolerant search via `pg_trgm`.
   Enable the Postgres `pg_trgm` extension (local DB only — do NOT touch production/Neon), add a
   trigram similarity condition to `search.service.ts`'s exercise search alongside the existing
   `ILIKE` check. **Assert:** local test query for a misspelled exercise name (e.g. "bencg press")
@@ -365,3 +365,8 @@ waiting for input that isn't coming tonight. Flag it as a first draft, not a fin
   cuts worst-case total-generation overhead for a 7-day week from 4.8s to 1.8s. Judgment call, not
   verified on a live run — flagged for an on-device sanity check.
 - **Phase E complete** (L17, L18).
+- L19 — DONE — 1df5106 — Enabled `pg_trgm` on the local DB (not production/Neon, per the ticket's
+  explicit scope), added `similarity(name, query) > 0.3` as an additional OR condition alongside
+  the existing substring match (doesn't replace it). Verified empirically before writing the test:
+  `similarity('barbell bench press', 'bencg press') = 0.476`. 2 new tests including the exact
+  "bencg press" example from the ticket. 57/57 backend suite.
