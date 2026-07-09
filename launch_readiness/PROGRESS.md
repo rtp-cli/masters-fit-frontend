@@ -10,10 +10,11 @@ then differentiate/refine, then harden (payments polish + bulk test coverage), t
 are pulled forward as scaffolding (Phase 0) so Phases 1-2 can write tests as they build, not
 retrofit them in Phase 3.
 
-- [~] **Phase 0 — quick wins, do now, don't wait:** LR-002, LR-003, LR-004, LR-031, LR-044. **3 of
-      5 fully done and verified** (LR-003, LR-004, LR-044). **2 still open** (LR-002, LR-031) —
-      both need a real EAS production build to confirm the real keys/DSN land in the actual
-      binary; Test Store/Simulator testing doesn't exercise that build path.
+- [x] **Phase 0 — quick wins, do now, don't wait:** LR-002, LR-003, LR-004, LR-031, LR-044. **All
+      5 done.** LR-002/LR-031 closed 2026-07-09 — the real production build (build 72, submitted
+      to TestFlight) confirmed the EAS "production" environment correctly supplied
+      `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` and `EXPO_PUBLIC_SENTRY_DSN` (not sandbox values), which
+      is exactly what those two tickets were waiting on a real build to verify.
 - [~] **Phase 1 — make or break:** LR-036/037/038 (Epic 3) and LR-012/013/014/015/016/049 (Epic 2)
       are all done (LR-013 closed 2026-07-09, once the user made the enforcement-approach call).
       LR-035 is ~90% done (Tier 1/2 dedup + the muscle_groups/dup-related bugs it surfaced are
@@ -41,11 +42,12 @@ retrofit them in Phase 3.
       the deploy-backend flow.
 
 ## Epic 1 — Payments correctness & testing
-- [~] **LR-002** — Confirmed 2026-07-07: real production RevenueCat keys already exist in EAS's
+- [x] **LR-002** — Confirmed 2026-07-07: real production RevenueCat keys already exist in EAS's
       hosted "production" environment (not the sandbox ones in local `.env` — that's a different,
       correctly-sandbox-scoped file for local/simulator dev). `eas.json` now explicitly binds
-      `production`/`apk` profiles to that environment. **Not fully closed** — needs a real EAS
-      build to confirm the keys actually land in the bundle.
+      `production`/`apk` profiles to that environment. **Fully closed 2026-07-09** — build 72's
+      log confirmed `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` loaded from the production environment
+      during the actual EAS build.
 - [x] **LR-003** — Code-side enforcement already existed (`subscription.controller.ts`,
       `handleRevenueCatWebhook`: `if (REVENUECAT_WEBHOOK_AUTH_HEADER) { ...check... }`) — the
       earlier audit missed this. The real gap was that when the env var is unset, the endpoint
@@ -186,11 +188,17 @@ folder's BACKLOG.md, LR-051) is new, unscoped, not started — workout logging/g
       field — the original audit only checked the latter, which is why it looked missing).
       `eas.json`'s `production` and `apk` build profiles now explicitly bind
       `"environment": "production"` so this is guaranteed to be pulled in, not just inferred.
-      **Not fully closed** — needs a real EAS build to confirm the DSN actually lands in the
-      bundle before this is 100% done; flagging rather than claiming full confidence.
+      **Fully closed 2026-07-09** — build 72's log confirmed `EXPO_PUBLIC_SENTRY_DSN` loaded from
+      the production environment during the actual EAS build.
 
 ## Epic 9 — Store submission readiness
 - [ ] LR-032 · LR-033 · LR-034 — not started (gated on Epics 1 & 2 P0 items).
+- **Milestone, 2026-07-09**: shipped iOS build 72 (app version 1.0.2) to TestFlight — first real
+  production build of this launch-readiness effort. Merged PR #35 (`feat/ux-remediation`) and #36
+  (`feat/ux-track4`, 45 commits, everything from this session) into `main` first. Not itself an
+  LR-032/033/034 ticket, but the build that finally closed LR-002/LR-031. MF-004/MF-005's
+  colorblind-sim hue sign-off was still pending at ship time — shipped anyway per explicit user
+  choice, not forgotten. Android not yet re-built with this same code.
 
 ## Epic 10 — Conversational workout modification
 - [ ] LR-039 · LR-040 · LR-041 · LR-042 · LR-043 — not started. New feature idea captured
