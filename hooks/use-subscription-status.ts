@@ -4,16 +4,10 @@ import Purchases, { type CustomerInfo } from "react-native-purchases";
 import { useAuth } from "@/contexts/auth-context";
 import { getSubscriptionStatus } from "@/lib/subscriptions";
 import { reconcileSubscriptionStatus } from "@/utils/subscription-status-reconciliation";
+import { isDemoProAccount } from "@/utils/demo-account";
 
 // Extract EntitlementInfo type from CustomerInfo
 type EntitlementInfo = CustomerInfo["entitlements"]["active"][string];
-
-// Single demo account that always reads as Pro (in any build) so demo/marketing
-// screens show the app in a Pro state without a real RevenueCat entitlement.
-// Deliberately scoped to this one company-owned account — every other user
-// stays purely RevenueCat-driven. Remove this account from RevenueCat's concern
-// entirely; it never goes through the store.
-const DEMO_PRO_EMAIL = "rtp+demo@mastersfit.ai";
 
 interface SubscriptionStatus {
   isPro: boolean;
@@ -49,7 +43,7 @@ export function useSubscriptionStatus() {
       // Demo override: the demo account reads as Pro in every build (including
       // release) so the upgrade banner never shows during demos. Scoped to the
       // single demo account; all other users fall through to RevenueCat below.
-      if (user?.email === DEMO_PRO_EMAIL) {
+      if (isDemoProAccount(user?.email)) {
         setSubscriptionStatus({
           isPro: true,
           isTrial: false,
