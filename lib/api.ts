@@ -369,10 +369,15 @@ export async function apiRequest<T>(
         );
       }
 
-      // Enhanced waiver detection for other status codes and error messages
-      // Only check for waiver if it's not a paywall error
+      // Enhanced waiver detection for other status codes and error messages.
+      // Excludes paywall (handled above) AND 426 (handled above, its own
+      // dedicated branch) — [LR-045] found via testing: a 426 whose error
+      // message happens to mention "waiver" (a very likely message for that
+      // exact status) matched this OR-condition too, firing
+      // waiverRedirectCallback a second time for the same response.
       const isWaiverError =
         !isPaywallError &&
+        response.status !== 426 &&
         (response.status === 403 || // Forbidden - might be waiver-related
           response.status === 428 || // Precondition Required
           (errorData.message &&
