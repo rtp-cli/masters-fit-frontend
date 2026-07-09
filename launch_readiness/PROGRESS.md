@@ -178,8 +178,19 @@ manual action item, not tracked as an LR ticket.
       `utils/__tests__/is-valid-email.test.ts` (3 passing) confirms path-alias resolution
       (`@/utils`) works through the harness. Done 2026-07-07.
 - [ ] LR-045 · LR-046 · LR-047 · LR-048 — not started.
-- [ ] LR-054 · LR-055 — not started (added 2026-07-09: backend/frontend `tsc` backlog cleanup,
-      deferred same as the frontend lint-backlog plan — tracked so it isn't forgotten, not urgent).
+- [~] **LR-054** — backend baseline moved 66 → 61 as a side effect of LR-062 (see below), not a
+      deliberate cleanup pass — the remaining 61 are still deferred, same spirit as the frontend
+      lint-backlog plan. LR-055 (frontend, 35) untouched, still deferred.
+- [x] **LR-062** — done 2026-07-09. First route-level integration test in the backend (`supertest`,
+      real `searchRouter` mounted on a minimal harness app — not the real `@/app`, which uses
+      `import.meta` and can't compile under ts-jest's CommonJS transform, a documented constraint).
+      Mocks auth + the service layer, asserts on what the route actually forwarded — exactly what
+      LR-023's real bug got wrong. Verified the test has teeth by temporarily reintroducing the
+      exact original bug and confirming it fails, then restoring the fix. Blocked initially by 5
+      pre-existing tsc errors in `search.routes.ts` itself (`expressAuthentication` called with a
+      plain pre-auth `Request`, missing the `as AuthenticatedRequest` cast every other route file
+      already uses) — fixed those directly rather than working around them, dropping the backend
+      tsc baseline from 66 to 61.
 
 ## Epic 5 — Search quality
 - [x] **LR-022** — done. Typo-tolerant fuzzy matching via `pg_trgm` similarity, plus LR-057's

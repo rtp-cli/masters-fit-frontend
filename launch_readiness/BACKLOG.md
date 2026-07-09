@@ -177,7 +177,7 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
       Generation-flow-specific; UX fix, not a backend perf fix.
 
 ## Epic 4 — Test coverage foundation
-- [ ] **LR-062 · P1** — (new 2026-07-09) No route-level integration tests anywhere in the backend
+- [x] **LR-062 · P1** — (new 2026-07-09) No route-level integration tests anywhere in the backend
       — every existing test calls a service or controller method directly. This exact gap let a
       real bug ship and pass all tests: `search.routes.ts`'s hand-wired `/exercises` route called
       `controller.searchExercises(query)` with a single argument, silently dropping limit/offset
@@ -215,9 +215,11 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
 - [ ] **LR-021 · P2** — At minimum, a scripted manual QA checklist for the purchase flow
       (sandbox buy → restore → cancel → grace period) if full automation is too costly pre-launch.
 - [ ] **LR-054 · P3** — Backend `tsc` backlog cleanup (deferred, same spirit as the frontend
-      lint-backlog plan — not urgent, tracked so it isn't forgotten). **66 pre-existing errors**
-      as of 2026-07-08 (`cd backend && npm run tsc`), none introduced by anything in this backlog —
-      confirmed via stash-diff at every step of the L1-L21 loop, none are new. Per-file breakdown
+      lint-backlog plan — not urgent, tracked so it isn't forgotten). **Updated 2026-07-09: 61
+      pre-existing errors** (was 66 as of 2026-07-08) — 5 fixed as a side effect of LR-062, not a
+      deliberate pass on this ticket; the remaining 61 are still deferred. None introduced by
+      anything in this backlog — confirmed via stash-diff at every step of the L1-L21 loop, none
+      are new. Per-file breakdown (as of the original 66-error count, not yet re-audited)
       (top offenders): `logs.controller.ts` (8), `workout.service.ts` (7), `profile.routes.ts` (7),
       `search.routes.ts` (5), `analytics.controller.ts` (5). **26 of the 66 (39%) share one root
       cause**: `Request<...>` not narrowing to `AuthenticatedRequest` (`userId: number | undefined`
