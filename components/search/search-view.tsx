@@ -93,6 +93,11 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   // committed yet on the second call if it lands before the first re-render.
   const isLoadingMoreExercisesRef = useRef(false);
   const EXERCISE_SEARCH_PAGE_SIZE = 20;
+  // Scroll to the first newly-loaded item after "Load More" resolves,
+  // instead of leaving the scroll position to whatever the ScrollView
+  // decides on its own when its content height changes.
+  const exerciseItemRefs = useRef<Map<number, View>>(new Map());
+  const pendingScrollToIndexRef = useRef<number | null>(null);
 
   // UI state
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
@@ -267,6 +272,9 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     if (isLoadingMoreExercisesRef.current || !hasMoreExercises) return;
     isLoadingMoreExercisesRef.current = true;
     setIsLoadingMoreExercises(true);
+    // Index of the first item that's about to be new — picked up by the
+    // effect below once these items have actually rendered.
+    pendingScrollToIndexRef.current = generalResults.length;
     try {
       const result = await searchExercises(exerciseQuery, {
         limit: EXERCISE_SEARCH_PAGE_SIZE,
@@ -299,12 +307,54 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     await performExerciseSearchInternal(exerciseQuery);
   };
 
-  // Auto-search when query changes
+  // Auto-search when query changes. Guarded against re-firing for a query
+  // it already searched: this effect's dep array includes `debouncedSearch`,
+  // which is only referentially stable across renders if `user` (from
+  // useAuth()) is too — if anything ever makes `user` a new object identity
+  // without an actual identity change (e.g. a background refresh), this
+  // effect would silently re-run and reset an in-progress "Load More"
+  // sequence back to a fresh page 1. This guard makes that a no-op instead
+  // of a silent reset regardless of why the effect re-ran.
+  const lastAutoSearchedQueryRef = useRef<string | null>(null);
   useEffect(() => {
-    if (exerciseQuery.trim().length > 2) {
+    if (
+      exerciseQuery.trim().length > 2 &&
+      exerciseQuery !== lastAutoSearchedQueryRef.current
+    ) {
+      lastAutoSearchedQueryRef.current = exerciseQuery;
       debouncedSearch(exerciseQuery);
     }
   }, [exerciseQuery, debouncedSearch]);
+
+  // After "Load More" appends new rows, scroll to the first one — the
+  // ScrollView has no built-in equivalent of FlatList's maintainVisibleContentPosition,
+  // so without this it was left wherever the content-size change happened to
+  // leave it (reported as "jumps back to the top").
+  useEffect(() => {
+    if (pendingScrollToIndexRef.current === null) return;
+    const targetIndex = pendingScrollToIndexRef.current;
+    pendingScrollToIndexRef.current = null;
+    const targetItem = exerciseItemRefs.current.get(targetIndex);
+    if (!targetItem || !scrollViewRef.current) return;
+    // Wait a frame so the newly-appended rows have actually laid out before
+    // measuring — measureLayout on a just-rendered node can return a stale
+    // (pre-layout) position otherwise.
+    requestAnimationFrame(() => {
+      targetItem.measureLayout(
+        scrollViewRef.current as any,
+        (_x: number, y: number) => {
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(y - 16, 0),
+            animated: true,
+          });
+        },
+        () => {
+          // Measurement failed (e.g. node already unmounted) — leave scroll
+          // position alone rather than guessing.
+        }
+      );
+    });
+  }, [generalResults]);
 
   // Handle exercise selection for detailed view
   const handleExerciseSelect = async (exercise: Exercise) => {
@@ -1525,6 +1575,10 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
             {generalResults.map((exercise: Exercise, index: number) => (
               <TouchableOpacity
                 key={`general-exercise-${exercise?.id || index}`}
+                ref={(el) => {
+                  if (el) exerciseItemRefs.current.set(index, el as any);
+                  else exerciseItemRefs.current.delete(index);
+                }}
                 className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center"
                 onPress={() => {
                   try {
