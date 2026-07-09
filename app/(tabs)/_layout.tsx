@@ -17,15 +17,23 @@ import { CustomDialog } from "@/components/ui";
 function TabBarIcon({
   name,
   color,
+  focused = false,
   disabled = false,
 }: {
+  /** Filled glyph base, e.g. "stats-chart"; the "-outline" variant is used when inactive. */
   name: keyof typeof Ionicons.glyphMap;
   color: string;
+  focused?: boolean;
   disabled?: boolean;
 }) {
+  // Solid icon when active, outline when inactive — a non-color selected cue (MF-005/MF-011)
+  // so the active tab reads even where the tint step is hard to discriminate.
+  const iconName = (
+    focused ? name : `${name}-outline`
+  ) as keyof typeof Ionicons.glyphMap;
   return (
     <View style={{ opacity: disabled ? 0.4 : 1 }}>
-      <Ionicons size={28} name={name} color={color} />
+      <Ionicons size={26} name={iconName} color={color} />
     </View>
   );
 }
@@ -127,13 +135,18 @@ export default function TabLayout() {
             headerShown: false,
             tabBarActiveTintColor: colors.brand.primary,
             tabBarInactiveTintColor: colors.neutral.medium[3],
-            tabBarShowLabel: false,
+            tabBarShowLabel: true,
+            tabBarLabelStyle: {
+              fontSize: 11,
+              fontWeight: "600",
+              marginTop: 2,
+            },
             tabBarStyle: {
               backgroundColor: colors.background,
               borderTopWidth: 1,
               borderTopColor: colors.neutral.medium[1],
-              height: 60,
-              paddingTop: 8,
+              height: 68,
+              paddingTop: 6,
               paddingBottom: 8,
             },
           }}
@@ -141,10 +154,18 @@ export default function TabLayout() {
           <Tabs.Screen
             name="dashboard"
             options={{
-              tabBarIcon: ({ color }: { color: string }) => (
+              tabBarLabel: "Dashboard",
+              tabBarIcon: ({
+                color,
+                focused,
+              }: {
+                color: string;
+                focused: boolean;
+              }) => (
                 <TabBarIcon
-                  name="stats-chart-outline"
+                  name="stats-chart"
                   color={color}
+                  focused={focused}
                   disabled={isWorkoutInProgress}
                 />
               ),
@@ -163,10 +184,18 @@ export default function TabLayout() {
           <Tabs.Screen
             name="workout"
             options={{
-              tabBarIcon: ({ color }: { color: string }) => (
+              tabBarLabel: "Workout",
+              tabBarIcon: ({
+                color,
+                focused,
+              }: {
+                color: string;
+                focused: boolean;
+              }) => (
                 <TabBarIcon
-                  name="barbell-outline"
+                  name="barbell"
                   color={color}
+                  focused={focused}
                   disabled={isWorkoutInProgress}
                 />
               ),
@@ -185,10 +214,18 @@ export default function TabLayout() {
           <Tabs.Screen
             name="calendar"
             options={{
-              tabBarIcon: ({ color }: { color: string }) => (
+              tabBarLabel: "Calendar",
+              tabBarIcon: ({
+                color,
+                focused,
+              }: {
+                color: string;
+                focused: boolean;
+              }) => (
                 <TabBarIcon
-                  name="calendar-outline"
+                  name="calendar"
                   color={color}
+                  focused={focused}
                   disabled={isWorkoutInProgress}
                 />
               ),

@@ -30,7 +30,7 @@ import WorkoutEditModal from "@/components/workout-edit-modal";
 import { CustomDialog, DialogButton } from "../ui";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
-import { useThemeColors } from "../../lib/theme";
+import { useThemeColors, type ThemeColorPalette } from "../../lib/theme";
 import { useTheme } from "../../lib/theme-context";
 import { formatDateAsString } from "../../utils";
 import {
@@ -47,6 +47,9 @@ import JustGeneratedBadge from "@/components/just-generated-badge";
 
 export default function CalendarScreen() {
   const colors = useThemeColors();
+  // Reserved completion accent (MF-004/005); falls back to ink for themes without it.
+  const successColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
   const { isDark } = useTheme();
   const router = useRouter();
   const {
@@ -397,8 +400,10 @@ export default function CalendarScreen() {
           // theme-level selectedDotColor is ignored, and the default dot
           // color vanishes against the brand.primary selected circle
           if (planDay.isComplete) {
+            // Completed days use the reserved success green (MF-005), distinct
+            // from scheduled (ink) — see the legend below the calendar.
             dots.push({
-              color: colors.brand.primary,
+              color: successColor,
               selectedDotColor: colors.contentOnPrimary,
             });
           } else {
@@ -442,7 +447,7 @@ export default function CalendarScreen() {
 
               if (planDay.isComplete) {
                 dots.push({
-                  color: colors.brand.primary,
+                  color: successColor,
                   selectedDotColor: colors.contentOnPrimary,
                 });
               } else {
@@ -591,6 +596,22 @@ export default function CalendarScreen() {
           }}
           showTodayButton={showTodayButton}
         />
+
+        {/* Dot legend — so calendar status isn't conveyed by color alone (MF-005). */}
+        <View className="flex-row flex-wrap justify-center gap-4 px-lg mb-3">
+          <View className="flex-row items-center">
+            <View className="w-2 h-2 rounded-full bg-success mr-1.5" />
+            <Text className="text-xs text-text-muted">Completed</Text>
+          </View>
+          <View className="flex-row items-center">
+            <View className="w-2 h-2 rounded-full bg-text-secondary mr-1.5" />
+            <Text className="text-xs text-text-muted">Scheduled</Text>
+          </View>
+          <View className="flex-row items-center">
+            <View className="w-3 h-3 rounded-full border border-primary mr-1.5" />
+            <Text className="text-xs text-text-muted">Today</Text>
+          </View>
+        </View>
 
         <CalendarActionButtons
           workoutPlan={workoutPlan}

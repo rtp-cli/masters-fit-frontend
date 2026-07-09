@@ -1,8 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
 
-import { useThemeColors } from "../../../lib/theme";
-
 type WeeklyProgressItem = {
   dayName: string;
   dateStr: string;
@@ -19,7 +17,6 @@ type WeeklyProgressSectionProps = {
 const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
   weeklyProgressData,
 }) => {
-  const colors = useThemeColors();
   return (
     <View className="px-4 mb-6">
       <View className="px-4 mb-4">
@@ -45,20 +42,23 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
                         (day.completionRate / 100) * FULL_HEIGHT,
                         BASE_HEIGHT
                       );
-              const backgroundColor =
+              // Non-color cue lives in the label below (Rest / - / ✓% / % / 0%);
+              // complete uses the reserved success green (MF-004/005). Classes, not
+              // inline colors, so `bg-success` resolves through the theme var.
+              const barColorClass =
                 day.status === "complete"
-                  ? colors.brand.primary
+                  ? "bg-success"
                   : day.status === "partial"
-                    ? colors.brand.medium[2]
+                    ? "bg-brand-medium-2"
                     : day.status === "rest"
-                      ? colors.neutral.medium[1]
-                      : colors.neutral.medium[2];
+                      ? "bg-neutral-medium-1"
+                      : "bg-neutral-medium-2";
               return (
                 <View key={index} className="items-center flex-1 mx-1">
                   <View className="flex-1 justify-end mb-2">
                     <View
-                      className="w-8 rounded-lg"
-                      style={{ height, backgroundColor }}
+                      className={`w-8 rounded-lg ${barColorClass}`}
+                      style={{ height }}
                     />
                   </View>
                   <Text
@@ -72,8 +72,12 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
                     </Text>
                   ) : day.status === "upcoming" ? (
                     <Text className="text-xs text-text-muted">-</Text>
+                  ) : day.status === "complete" ? (
+                    <Text className="text-xs text-success font-semibold">
+                      ✓ {Math.round(day.completionRate)}%
+                    </Text>
                   ) : day.completionRate > 0 ? (
-                    <Text className="text-xs text-brand-primary font-medium">
+                    <Text className="text-xs text-text-primary font-medium">
                       {Math.round(day.completionRate)}%
                     </Text>
                   ) : (

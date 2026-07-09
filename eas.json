@@ -13,6 +13,7 @@
     },
     "apk": {
       "distribution": "internal",
+      "environment": "production",
       "android": {
         "gradleCommand": "assembleRelease"
       },
@@ -22,6 +23,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "environment": "production",
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }

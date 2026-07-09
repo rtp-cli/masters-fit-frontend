@@ -48,6 +48,7 @@ import {
   INTENSITY_LEVELS,
 } from "@/types/enums";
 import { RegenerationType } from "@/constants/global.enum";
+import { resolveDefaultRegenerationTab } from "@/utils/regeneration-tab";
 
 interface WorkoutRegenerationModalProps {
   visible: boolean;
@@ -154,15 +155,13 @@ export default function WorkoutRegenerationModal({
       setShowOnboardingForm(false);
       setShowDailyOverrideForm(false);
       setTempOverridesBackup(null);
-      // For rest days and no active workout days, always default to "week" tab
       setSelectedType(
-        singleTabOnly
-          ? "day"
-          : isRestDay
-            ? "day"
-            : noActiveWorkoutDay
-              ? "week"
-              : regenerationType
+        resolveDefaultRegenerationTab({
+          singleTabOnly,
+          isRestDay,
+          noActiveWorkoutDay,
+          regenerationType,
+        })
       );
     }
   }, [visible, regenerationType, isRestDay, noActiveWorkoutDay, singleTabOnly]);

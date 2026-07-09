@@ -180,6 +180,7 @@ export default function WorkoutScreen() {
     isWorkoutInProgress,
     setCurrentWorkoutData,
     setEndWorkoutEarlyHandler,
+    abandonWorkout,
   } = useWorkout();
 
   // Get user from auth context
@@ -251,6 +252,7 @@ export default function WorkoutScreen() {
     description: string;
     primaryButton: DialogButton;
     secondaryButton?: DialogButton;
+    tertiaryButton?: DialogButton;
     icon?: keyof typeof Ionicons.glyphMap;
     accessory?: React.ReactNode;
   } | null>(null);
@@ -1595,17 +1597,30 @@ export default function WorkoutScreen() {
     setDialogConfig({
       title: "End Workout?",
       description:
-        "Your progress so far will be saved. Exercises not yet completed will be marked as not attempted.",
+        "Finish & save to log your progress so far and mark today's workout done. Abandon to stop without saving — today stays available to pick up later.",
+      // Safe default: back out and keep going.
       primaryButton: {
-        text: "End Workout",
+        text: "Continue Workout",
+        onPress: () => setDialogVisible(false),
+      },
+      // Save partial progress and complete the day.
+      tertiaryButton: {
+        text: "Finish & Save Progress",
         onPress: () => {
           setDialogVisible(false);
           endWorkoutEarly();
         },
       },
+      // Destructive: stop without saving today as done. Mirrors the tab-away
+      // "Abandon Workout" flow (MF-013) — track it, clear in-progress state, leave.
       secondaryButton: {
-        text: "Cancel",
-        onPress: () => setDialogVisible(false),
+        text: "Abandon Workout",
+        destructive: true,
+        onPress: () => {
+          setDialogVisible(false);
+          abandonWorkout("manual_exit");
+          router.replace("/dashboard");
+        },
       },
       icon: "flag-outline",
     });
@@ -2142,7 +2157,7 @@ export default function WorkoutScreen() {
                                     key={i}
                                     className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
                                       isCompleted
-                                        ? "border-primary bg-primary"
+                                        ? "border-success bg-success"
                                         : "border-neutral-medium-1 bg-background"
                                     }`}
                                     hitSlop={HIT_SLOP_6}
@@ -2342,9 +2357,7 @@ export default function WorkoutScreen() {
                     >
                       <View
                         className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                          isCompleted
-                            ? "bg-neutral-dark-1"
-                            : "bg-brand-medium-2"
+                          isCompleted ? "bg-success" : "bg-brand-medium-2"
                         }`}
                       >
                         {isSkipped ? (
@@ -2357,7 +2370,7 @@ export default function WorkoutScreen() {
                           <Ionicons
                             name="checkmark"
                             size={16}
-                            color={colors.neutral.light[2]}
+                            color={colors.contentOnPrimary}
                           />
                         ) : isCurrent ? (
                           <Ionicons
@@ -2714,6 +2727,7 @@ export default function WorkoutScreen() {
           description={dialogConfig.description}
           primaryButton={dialogConfig.primaryButton}
           secondaryButton={dialogConfig.secondaryButton}
+          tertiaryButton={dialogConfig.tertiaryButton}
           icon={dialogConfig.icon}
           accessory={dialogConfig.accessory}
         />
