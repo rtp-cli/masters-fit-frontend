@@ -114,6 +114,18 @@ retrofit them in Phase 3.
       (anonymous→identified linking) the user should be present for, not autonomous. LR-007 is a
       notification feature with product/copy decisions. LR-052 needs real paywall copy, not
       something to author unilaterally. All three explicitly out of scope for this autonomous pass.
+- [~] **LR-005 update 2026-07-09**: the sandbox-test portion above still needs the user present and
+      remains open, but there was a genuinely autonomous slice of this ticket after all — a
+      client-side guard that re-runs `Purchases.logIn()` right before a purchase fires if the SDK
+      is still anonymous, closing the race where the auth-time `logIn()` call failed or hadn't
+      resolved yet. Extracted to `lib/revenuecat-identity.ts`'s `ensureIdentifiedBeforePurchase`
+      specifically so it's unit-testable without RNTL (3 tests, `lib/__tests__/revenuecat-identity.test.ts`),
+      called from `use-subscription-plans.ts`'s `purchasePackage`. Narrows, doesn't close, the gap:
+      a purchase made while never having authenticated at all is still unguarded, and this doesn't
+      replace the backend TRANSFER-event recovery path. Also added
+      `launch_readiness/REGRESSION_CHECKLIST.md` covering LR-021/033/034 so the real sandbox test
+      (and the broader TestFlight/Play regression passes) are scripted and ready whenever the user
+      is at a device.
 
 **Ad-hoc, resolved 2026-07-07: local/Test Store purchase testing now fully working end-to-end.**
 Not a pre-existing ticket — necessary groundwork to actually verify LR-003/LR-004 rather than just

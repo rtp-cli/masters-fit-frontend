@@ -8,6 +8,8 @@ import Purchases, {
 } from "react-native-purchases";
 
 import { SUPPRESS_REVENUECAT_LOGS } from "@/config";
+import { useAuth } from "@/contexts/auth-context";
+import { ensureIdentifiedBeforePurchase } from "@/lib/revenuecat-identity";
 import { Sentry } from "@/lib/sentry";
 import { getSubscriptionStatus } from "@/lib/subscriptions";
 
@@ -45,6 +47,7 @@ interface UseSubscriptionPlansReturn {
 }
 
 export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
+  const { user } = useAuth();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [metadata, setMetadata] = useState<OfferingMetadata | null>(null);
@@ -159,6 +162,14 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
       setError(null);
 
       try {
+        if (user) {
+          await ensureIdentifiedBeforePurchase(user.id, {
+            getAppUserID: () => Purchases.getAppUserID(),
+            logIn: (userId) => Purchases.logIn(userId),
+            captureException: Sentry.captureException,
+          });
+        }
+
         rcLog("[RevenueCat] Starting purchase for:", pkg.identifier);
 
         const { customerInfo: updatedInfo } =
@@ -225,7 +236,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         setIsPurchasing(false);
       }
     },
-    [],
+    [user],
   );
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {

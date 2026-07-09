@@ -29,8 +29,16 @@ before acting, files shift.
       user sees "Pro" locally but gets rejected by the API (looks like purchase failed).
 - [ ] **LR-005 · P1** — Harden anonymous→identified purchase linking. Purchasing before
       `Purchases.logIn(userId)` produces an `$RCAnonymousID:...` app_user_id; recovery depends on a
-      RevenueCat TRANSFER event (`subscription.controller.ts:823-868`, added in `ec3e463`). Needs
-      an explicit sandbox test of: buy while anonymous → log in → confirm entitlement transfers.
+      RevenueCat TRANSFER event (`subscription.controller.ts:823-868`, added in `ec3e463`). **Update
+      2026-07-09**: added a client-side guard (`lib/revenuecat-identity.ts`'s
+      `ensureIdentifiedBeforePurchase`, called from `use-subscription-plans.ts`'s `purchasePackage`)
+      that re-identifies with RevenueCat right before a purchase fires if the SDK is still
+      anonymous — closes the race where `logIn()` at auth time failed or hadn't resolved yet. This
+      is code-only hardening covered by unit tests (`lib/__tests__/revenuecat-identity.test.ts`);
+      it narrows but doesn't eliminate the gap (e.g. a purchase made while never having
+      authenticated at all is unaffected). Still needs an explicit real sandbox test of: buy while
+      anonymous → log in → confirm entitlement transfers — that part remains not-autonomous, see
+      `REGRESSION_CHECKLIST.md`.
 - [x] **LR-006 · P1** — Hardcoded `"pro"` planId fallback. `subscription.controller.ts:851`:
       `planId: plan?.planId || productId || "pro"`. If the product isn't found, access is granted
       against a planId that may not exist in the DB, breaking renewal lookups later.
