@@ -223,11 +223,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
 
   // Internal search function
   const performExerciseSearchInternal = async (query: string) => {
-    // TEMP DIAGNOSTIC (LR-023 load-more bug) — remove once root-caused.
-    console.log(
-      `[DIAG] performExerciseSearchInternal called, query="${query}", stack:`,
-      new Error().stack
-    );
     // Clear current data before loading
     setDateResult(null);
     setExerciseResult(null);
@@ -274,29 +269,17 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     // setIsLoadingMoreExercises(true), so both calls read the stale `false`
     // and both fetch the identical offset/page, appending it twice. The ref
     // is set synchronously, so the second call sees it immediately.
-    // TEMP DIAGNOSTIC (LR-023 load-more bug) — remove once root-caused.
-    console.log(
-      `[DIAG] loadMoreExercises called. guardRef=${isLoadingMoreExercisesRef.current} hasMoreExercises=${hasMoreExercises} generalResults.length=${generalResults.length} exerciseQuery="${exerciseQuery}"`
-    );
-    if (isLoadingMoreExercisesRef.current || !hasMoreExercises) {
-      console.log("[DIAG] loadMoreExercises bailed on guard check");
-      return;
-    }
+    if (isLoadingMoreExercisesRef.current || !hasMoreExercises) return;
     isLoadingMoreExercisesRef.current = true;
     setIsLoadingMoreExercises(true);
     // Index of the first item that's about to be new — picked up by the
     // effect below once these items have actually rendered.
     pendingScrollToIndexRef.current = generalResults.length;
     try {
-      const offsetUsed = generalResults.length;
-      console.log(`[DIAG] loadMoreExercises fetching offset=${offsetUsed}`);
       const result = await searchExercises(exerciseQuery, {
         limit: EXERCISE_SEARCH_PAGE_SIZE,
-        offset: offsetUsed,
+        offset: generalResults.length,
       });
-      console.log(
-        `[DIAG] loadMoreExercises result: success=${result?.success} count=${result?.exercises?.length} hasMore=${result?.hasMore} ids=${JSON.stringify(result?.exercises?.map((e: Exercise) => e.id))}`
-      );
       if (result.success) {
         // Defensive de-dup by id on top of the ref guard above — cheap
         // insurance against any other path that could re-request the same
@@ -305,9 +288,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
           const seenIds = new Set(prev.map((e) => e.id));
           const newUnique = result.exercises.filter(
             (e: Exercise) => !seenIds.has(e.id)
-          );
-          console.log(
-            `[DIAG] merge: prev.length=${prev.length} fetched=${result.exercises.length} newUnique=${newUnique.length} filteredAsDupe=${result.exercises.length - newUnique.length}`
           );
           return [...prev, ...newUnique];
         });
