@@ -111,6 +111,7 @@ export interface ExercisesSearchResponse {
   data: SearchExercise[];
   exercises: SearchExercise[];
   hasMore?: boolean;
+  total?: number;
 }
 
 export interface SearchExercise {

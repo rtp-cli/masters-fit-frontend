@@ -86,6 +86,9 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   // limit/offset/hasMore for a while, but nothing here ever used it, so
   // results were silently capped at the default page with no way to see more.
   const [hasMoreExercises, setHasMoreExercises] = useState(false);
+  const [totalExerciseMatches, setTotalExerciseMatches] = useState<
+    number | null
+  >(null);
   const [isLoadingMoreExercises, setIsLoadingMoreExercises] = useState(false);
   // Guards loadMoreExercises against a double-fire (fast double-tap, or a
   // touch event firing onPress twice) — a ref is checked/set synchronously,
@@ -228,6 +231,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     setExerciseResult(null);
     setGeneralResults([]);
     setHasMoreExercises(false);
+    setTotalExerciseMatches(null);
 
     // Loading state is handled by useAppData
     setDateQuery(""); // Clear date query
@@ -240,6 +244,9 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
       if (result.success) {
         setGeneralResults(result.exercises);
         setHasMoreExercises(!!result.hasMore);
+        setTotalExerciseMatches(
+          typeof result.total === "number" ? result.total : null
+        );
         setSearchType("general");
       }
     } catch (error) {
@@ -292,6 +299,9 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
           return [...prev, ...newUnique];
         });
         setHasMoreExercises(!!result.hasMore);
+        setTotalExerciseMatches(
+          typeof result.total === "number" ? result.total : null
+        );
       }
     } catch (error) {
       console.error("Load more exercises error:", error);
@@ -1570,7 +1580,11 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
         {!isLoading && generalResults.length > 0 ? (
           <View className="px-4">
             <Text className="text-lg font-semibold text-text-primary mb-4 p-4">
-              Exercise Results ({safeString(generalResults.length)})
+              Exercise Results ({safeString(generalResults.length)}
+              {typeof totalExerciseMatches === "number"
+                ? ` of ${safeString(totalExerciseMatches)}`
+                : ""}
+              )
             </Text>
             {generalResults.map((exercise: Exercise, index: number) => (
               <TouchableOpacity
