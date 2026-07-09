@@ -15,13 +15,12 @@ retrofit them in Phase 3.
       to TestFlight) confirmed the EAS "production" environment correctly supplied
       `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` and `EXPO_PUBLIC_SENTRY_DSN` (not sandbox values), which
       is exactly what those two tickets were waiting on a real build to verify.
-- [~] **Phase 1 — make or break:** LR-036/037/038 (Epic 3) and LR-012/013/014/015/016/049 (Epic 2)
-      are all done (LR-013 closed 2026-07-09, once the user made the enforcement-approach call).
-      LR-035 is ~90% done (Tier 1/2 dedup + the muscle_groups/dup-related bugs it surfaced are
-      closed; Tier 3+ hand-review and the original catalog-size-in-prompt goal remain as an
-      optional tail). **What's actually left in Phase 1**: LR-050 (user chose to skip scoping for
-      now) and LR-053 (small, no decision needed, found via LR-016) — otherwise this phase is
-      effectively done.
+- [~] **Phase 1 — make or break:** LR-036/037/038 (Epic 3), LR-012/013/014/015/016/049 (Epic 2),
+      and LR-053 are all done (LR-013 closed 2026-07-09 once the user made the enforcement-approach
+      call; LR-053 closed 2026-07-09 during overnight autonomous work). LR-035 is ~90% done (Tier
+      1/2 dedup + the muscle_groups/dup-related bugs it surfaced are closed; Tier 3+ hand-review
+      and the original catalog-size-in-prompt goal remain as an optional tail). **What's actually
+      left in Phase 1**: just LR-050 (user chose to skip scoping for now).
 - [ ] **Phase 2 — differentiate & refine:** Epic 10 (conversational mods) → Epic 5 (search) →
       Epic 6 (UI/UX Track 4 tail + Track 5 scoping) → Epic 7 (platform parity).
 - [ ] **Phase 3 — harden:** Epic 1's remainder (LR-005/006/007/008/009/010/011) + Epic 4's bulk
@@ -107,7 +106,14 @@ manual action item, not tracked as an LR ticket.
 - [x] **LR-015** — done 2026-07-08 (see `launch_readiness/LOOP_QUEUE.md` L3).
 - [x] **LR-016** — done 2026-07-08 (see LOOP_QUEUE.md L4) — confirmed the guard should stay
       removed, documented why, found and logged LR-053 (inconsistent fallback-path validation).
-- [ ] LR-053 — not started (new, found 2026-07-08 via LR-016). No decision needed, just not done.
+- [x] **LR-053** — done 2026-07-09 (overnight autonomous work). `buildClaudePrompt`
+      (`prompt-generator.ts`) threw if availableDays/workoutDuration/environment were missing;
+      the fan-out path tolerates the same gaps with defaults. Removed the throw, added matching
+      defaults (`workoutDuration || 30`, `environment || "not specified"`), removed the now-
+      redundant outer guard in `generatePrompt` (confirmed via grep it has exactly one caller —
+      the fan-out-failure fallback in `workout.service.ts`). Deliberately left `buildClaudeChunkedPrompt`
+      alone — confirmed dead code, zero callers. 5 new tests using a profile with every optional
+      field explicitly `null` (the real DB-row shape, not just an omitted TS property).
 - [x] **LR-049** — done (see LOOP_QUEUE.md L13) — `checkExerciseRepetition` +
       `checkConsecutiveMuscleGroupOverload` (`utils/workout-balance-validation.ts`), detect-and-log.
 - [ ] **LR-050** — genuinely not started, needs scoping first (see BACKLOG.md — ambiguous between
@@ -173,7 +179,20 @@ manual action item, not tracked as an LR ticket.
       deferred same as the frontend lint-backlog plan — tracked so it isn't forgotten, not urgent).
 
 ## Epic 5 — Search quality
-- [ ] LR-022 · LR-023 · LR-024 · LR-025 — not started.
+- [x] **LR-022** — done. Typo-tolerant fuzzy matching via `pg_trgm` similarity, plus LR-057's
+      relevance ordering on top. **Correction 2026-07-09**: this line previously said "not
+      started" — stale, same pattern as Epic 3's earlier correction. Was actually done via the
+      earlier autonomous loop (`LOOP_QUEUE.md` L7/L19).
+- [x] **LR-023** — Backend (`hasMore`/`limit`/`offset` on `GET /search/exercises`) was done via
+      the loop, but nothing on the frontend ever used it — `searchExercisesAPI` never passed the
+      params, and `search-view.tsx` just showed the default page with no way to see more. Closed
+      2026-07-09: wired up limit/offset pass-through and a "Load More" button in `search-view.tsx`.
+- [x] **LR-024** — done. Natural-language date phrases ("today"/"yesterday"/"this week"/"last
+      week") in `searchByDate`, via `date-phrase-resolver.ts` (`LOOP_QUEUE.md` L8).
+- [x] **LR-025** — done. Search telemetry (`logSearchTelemetry`) — zero-result queries logged at
+      warn, others at info (`LOOP_QUEUE.md` L7).
+- [x] **LR-057** — see Epic 3 above (tracked there since it was found via the exercise-catalog
+      investigation, but it's really an Epic 5 ticket).
 
 ## Epic 6 — UI/UX
 Tracked in `../design_handoff_ux_remediation/PROGRESS.md` (Track 4 in flight). Track 5 (this

@@ -104,7 +104,7 @@ before acting, files shift.
       `prompts.service.ts` (~line 210) in favor of downstream fallbacks. Decide if it should come
       back properly rather than relying on fallback defaults.
 
-- [ ] **LR-053 · P2** — Serial-fallback generation path has stricter, inconsistent validation.
+- [x] **LR-053 · P2** — Serial-fallback generation path has stricter, inconsistent validation.
       Found 2026-07-08 while investigating LR-016: `generatePrompt` (the serial fallback used when
       the fast fan-out path fails, `backend/src/services/prompts.service.ts` ~line 132) still
       guards on `availableDays`/`workoutDuration`/`environment` being present and throws if not.
@@ -239,7 +239,7 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
 - [ ] **LR-022 · P1** — No fuzzy/typo-tolerant matching — `search.service.ts` uses `ILIKE`
       substring matching only (e.g. "bencg press" won't find "bench press"). Consider Postgres
       `pg_trgm`.
-- [ ] **LR-023 · P2** — Hardcoded 20-result cap, no pagination (`search.service.ts` ~lines 378,
+- [x] **LR-023 · P2** — Hardcoded 20-result cap, no pagination (`search.service.ts` ~lines 378,
       420, 505; `search-view.tsx:190-221`).
 - [ ] **LR-024 · P2** — Workout date search only accepts exact `YYYY-MM-DD`, 1-year hard lookback
       (`search-view.tsx:706`) — no "today"/"last week"/range queries.
