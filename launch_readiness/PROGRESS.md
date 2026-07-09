@@ -21,8 +21,11 @@ retrofit them in Phase 3.
       1/2 dedup + the muscle_groups/dup-related bugs it surfaced are closed; Tier 3+ hand-review
       and the original catalog-size-in-prompt goal remain as an optional tail). **What's actually
       left in Phase 1**: just LR-050 (user chose to skip scoping for now).
-- [ ] **Phase 2 — differentiate & refine:** Epic 10 (conversational mods) → Epic 5 (search) →
-      Epic 6 (UI/UX Track 4 tail + Track 5 scoping) → Epic 7 (platform parity).
+- [~] **Phase 2 — differentiate & refine:** Epic 5 (search) is now fully done (LR-022/023/024/
+      025/057 all closed 2026-07-09). **What's left**: Epic 10 (conversational mods — needs LR-039
+      design/scoping first, not started), Epic 6 (UI/UX Track 4 tail + Track 5 scoping — tracked
+      separately in `design_handoff_ux_remediation/`), Epic 7 (platform parity, LR-026-030, not
+      started).
 - [ ] **Phase 3 — harden:** Epic 1's remainder (LR-005/006/007/008/009/010/011) + Epic 4's bulk
       (LR-017/018/019, LR-045/046/047/048).
 - [ ] **Phase 4 — ship:** Epic 9 (store submission).
