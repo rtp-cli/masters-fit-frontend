@@ -31,20 +31,20 @@ before acting, files shift.
       `Purchases.logIn(userId)` produces an `$RCAnonymousID:...` app_user_id; recovery depends on a
       RevenueCat TRANSFER event (`subscription.controller.ts:823-868`, added in `ec3e463`). Needs
       an explicit sandbox test of: buy while anonymous → log in → confirm entitlement transfers.
-- [ ] **LR-006 · P1** — Hardcoded `"pro"` planId fallback. `subscription.controller.ts:851`:
+- [x] **LR-006 · P1** — Hardcoded `"pro"` planId fallback. `subscription.controller.ts:851`:
       `planId: plan?.planId || productId || "pro"`. If the product isn't found, access is granted
       against a planId that may not exist in the DB, breaking renewal lookups later.
 - [ ] **LR-007 · P1** — Billing-issue notifications. Existing TODO,
       `subscription.controller.ts:750`: grace-period/billing-failure events don't notify the user.
       Silent churn risk.
-- [ ] **LR-008 · P1** — Grace-period UI sync. `use-subscription-status.ts:104-105` derives grace
+- [x] **LR-008 · P1** — Grace-period UI sync. `use-subscription-status.ts:104-105` derives grace
       period only from the local RevenueCat SDK entitlement; the backend's own
       `GRACE_PERIOD`/`BILLING_ISSUE` state (`subscription.service.ts:98-108`) isn't surfaced to the
       frontend, so the two can disagree.
-- [ ] **LR-009 · P2** — Paywall hard-fails when `offerings.current` is null.
+- [x] **LR-009 · P2** — Paywall hard-fails when `offerings.current` is null.
       `use-subscription-plans.ts:81-94` logs to Sentry but the UI just renders empty / infinite
       "Loading plans" — no retry or error state for the user.
-- [ ] **LR-010 · P1** — Subscription/webhook test suite. Zero tests today for
+- [x] **LR-010 · P1** — Subscription/webhook test suite. Zero tests today for
       `subscription.controller.ts` or `subscription.service.ts` (webhooks, TRANSFER, BILLING_ISSUE,
       grace period transitions).
 - [ ] **LR-052 · P3 (content, not code)** — Paywall benefit-bullet copy needs real work.
@@ -56,7 +56,7 @@ before acting, files shift.
       "Early access to new features" and "Priority customer support" — neither is a confirmed
       real capability; revisit if either becomes real and should be added back (as a shared
       benefit, not an annual-exclusive one).
-- [ ] **LR-011 · P2** — Confirm the demo-account hardcoded Pro override
+- [x] **LR-011 · P2** — Confirm the demo-account hardcoded Pro override
       (`use-subscription-status.ts:14,48-60`, `rtp+demo@mastersfit.ai`) can't mask a real webhook
       failure during QA — it's scoped to one email today, just needs a sanity check it stays that way.
 
@@ -186,11 +186,11 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
       need `supertest` or similar (not currently a dependency) to spin up the Express app and hit
       real routes. Start with routes that take query/body params beyond a single string, where a
       route/controller signature mismatch is easiest to introduce silently.
-- [ ] **LR-017 · P0** — Backend auth controller has zero tests (token refresh, password reset,
+- [x] **LR-017 · P0** — Backend auth controller has zero tests (token refresh, password reset,
       waiver logic) — `auth.controller.ts` (~20.5 KB, untested).
-- [ ] **LR-018 · P0** — Backend subscription controller/webhooks — ties to LR-010, tracked once
+- [x] **LR-018 · P0** — Backend subscription controller/webhooks — ties to LR-010, tracked once
       there for dedup.
-- [ ] **LR-019 · P1** — Tests for the post-generation validation layer once LR-012/LR-013 land —
+- [x] **LR-019 · P1** — Tests for the post-generation validation layer once LR-012/LR-013 land —
       build these together, not as an afterthought.
 - [ ] **LR-020 · P1** — Frontend has 0 test files, no Jest/Vitest config at all (re-confirmed
       2026-07-07). `package.json` already has `eslint-plugin-testing-library` as a dependency with
@@ -200,7 +200,7 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
   - [ ] **LR-044 · P1** — Stand up Jest + React Native Testing Library config. No tests required
         yet — just get `npm test` running green as the starting gate (mirrors the `tsc`/lint gates
         already used for the UX remediation effort).
-  - [ ] **LR-045 · P1** — Unit tests for the highest-blast-radius code first: `lib/api.ts`
+  - [x] **LR-045 · P1** — Unit tests for the highest-blast-radius code first: `lib/api.ts`
         token-refresh/retry logic, `use-subscription-status.ts`, `use-subscription-plans.ts` — ties
         directly to the payment test gaps in LR-010/LR-018, do these together.
   - [ ] **LR-046 · P2** — Component/screen smoke tests for critical flows: onboarding completion,

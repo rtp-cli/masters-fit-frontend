@@ -26,8 +26,12 @@ retrofit them in Phase 3.
       design/scoping first, not started), Epic 6 (UI/UX Track 4 tail + Track 5 scoping — tracked
       separately in `design_handoff_ux_remediation/`), Epic 7 (platform parity, LR-026-030, not
       started).
-- [ ] **Phase 3 — harden:** Epic 1's remainder (LR-005/006/007/008/009/010/011) + Epic 4's bulk
-      (LR-017/018/019, LR-045/046/047/048).
+- [~] **Phase 3 — harden:** Epic 1's remainder — LR-006/008/009/010/011/018 all done (some
+      already fixed earlier this session, undocumented until now; LR-006/008/009 needed only
+      verification, LR-010/011 needed real new work). LR-017/019/045 (Epic 4) also done. **What's
+      left**: LR-005 (needs a real sandbox purchase test, not autonomous), LR-007/LR-052
+      (product/copy decisions), LR-046/047/048 (component E2E tests / tooling choice / CI —
+      046 likely blocked by the known RNTL issue, 047/048 are open tooling/process decisions).
 - [ ] **Phase 4 — ship:** Epic 9 (store submission).
 
 ## Decisions still open (not blocking Phase 0/1 start)
@@ -70,9 +74,46 @@ retrofit them in Phase 3.
       RevenueCat's local confirmation is authoritative for "did the purchase succeed," not our
       backend's sync lag. Verified: backend 401s correctly with no/invalid token; frontend
       `tsc`/`jest`/lint all clean at the existing baseline. Done 2026-07-07.
-- [ ] LR-005 · LR-006 · LR-007 · LR-008 · LR-009 · LR-010 · LR-011 · LR-052 — not started (Phase 3).
-      LR-052 added 2026-07-07: paywall bullet copy needs real content work (structural
-      monthly-vs-annual tiering bug already fixed same day).
+- [x] **LR-006** — already fixed (from earlier this session, before a context compaction) —
+      confirmed 2026-07-09 via grep across the whole controller, no hardcoded `"pro"` fallback
+      remains anywhere.
+- [x] **LR-008** — already fixed (same earlier-session work) — confirmed 2026-07-09:
+      `reconcileSubscriptionStatus` correctly treats the backend as authoritative for grace period,
+      5 existing tests pass.
+- [x] **LR-009** — already fixed (same earlier-session work) — confirmed 2026-07-09: the paywall
+      modal has real error+retry UI wired to the hook's `error` field, which now gets set for the
+      null-offerings case.
+- [x] **LR-010 / LR-018** — closed 2026-07-09. Found the real remaining gap by checking actual
+      coverage rather than trusting the ticket text: `subscription.controller.test.ts` already had
+      14 tests (TRANSFER, INITIAL_PURCHASE, CANCELLATION, auth enforcement) from earlier work, but
+      BILLING_ISSUE, EXPIRATION's 5-way branching, and PRODUCT_CHANGE had zero coverage. 8 new
+      tests. Full suite: 24/24 in this file.
+- [x] **LR-011** — verified 2026-07-09: the demo-account override is correctly scoped (strict
+      equality, no substring/case-insensitive risk). Extracted into `isDemoProAccount()` so that
+      invariant has a test, not just a one-time manual check — 5 new tests including explicit
+      substring/case-sensitivity guards against exactly how this could regress into granting free
+      Pro access to a real user.
+- [x] **LR-017** — closed 2026-07-09 (partial, proportionate scope). Only `refreshToken` had
+      tests; added coverage for the other thing the ticket named concretely — waiver logic
+      (`getWaiverStatus`/`acceptWaiver`, 11 new tests). Login/signup/OTP verification are a
+      separate, larger surface not attempted here.
+- [x] **LR-019** — closed 2026-07-09. Equipment/limitation/repetition validators each already had
+      their own unit tests, but the WIRING between them inside `generateWeeklyWorkout` (order,
+      each stage's output feeding the next) had zero coverage. Extracted the pipeline into
+      `post-generation-validation.ts`, 4 new tests — verified they have teeth by temporarily
+      reordering the pipeline and confirming 2 of 4 failed, then restoring.
+- [x] **LR-045** — closed 2026-07-09. Added paywall/waiver classification tests to `lib/api.ts`
+      (high-blast-radius precedence logic: a paywall 403 must not also trigger a waiver redirect).
+      **Found a real bug while writing them**, not a hypothesis: a 426 whose error message
+      mentions "waiver" fired the waiver-redirect callback twice (the dedicated 426 handler and
+      the generic catch-all both matched). Fixed by excluding 426 from the catch-all, matching the
+      existing `!isPaywallError` exclusion right above it. `use-subscription-plans.ts` had no
+      obvious extractable pure-logic candidate (tightly coupled to the RevenueCat SDK, unlike
+      `use-subscription-status.ts`'s clean reconciliation concept) — not forced.
+- [ ] LR-005 · LR-007 · LR-052 — not started. LR-005 needs an explicit real sandbox purchase test
+      (anonymous→identified linking) the user should be present for, not autonomous. LR-007 is a
+      notification feature with product/copy decisions. LR-052 needs real paywall copy, not
+      something to author unilaterally. All three explicitly out of scope for this autonomous pass.
 
 **Ad-hoc, resolved 2026-07-07: local/Test Store purchase testing now fully working end-to-end.**
 Not a pre-existing ticket — necessary groundwork to actually verify LR-003/LR-004 rather than just
@@ -172,12 +213,17 @@ manual action item, not tracked as an LR ticket.
       zero: -1 AbMat merge, +1 new Sit-Up).
 
 ## Epic 4 — Test coverage foundation
-- [ ] LR-017 · LR-018 · LR-019 · LR-020 · LR-021 — not started.
+- [x] **LR-017 / LR-018 / LR-019 / LR-045** — all closed 2026-07-09, details under Epic 1 above
+      (that's where the earlier entries for these landed; cross-referencing rather than
+      duplicating).
+- [ ] LR-020 · LR-021 — not started.
 - [x] **LR-044** — Jest (`jest-expo` preset) + React Native Testing Library installed, `npm test`
       script added, config in `package.json`. Smoke test at
       `utils/__tests__/is-valid-email.test.ts` (3 passing) confirms path-alias resolution
       (`@/utils`) works through the harness. Done 2026-07-07.
-- [ ] LR-045 · LR-046 · LR-047 · LR-048 — not started.
+- [ ] LR-046 · LR-047 · LR-048 — not started. LR-046 (component smoke tests) likely blocked by the
+      known RNTL/React-19 `act()` issue; LR-047 (Maestro vs. Detox)/LR-048 (add CI or not) are open
+      tooling/process decisions, not attempted autonomously.
 - [~] **LR-054** — backend baseline moved 66 → 61 as a side effect of LR-062 (see below), not a
       deliberate cleanup pass — the remaining 61 are still deferred, same spirit as the frontend
       lint-backlog plan. LR-055 (frontend, 35) untouched, still deferred.
