@@ -183,10 +183,21 @@ manual action item, not tracked as an LR ticket.
       relevance ordering on top. **Correction 2026-07-09**: this line previously said "not
       started" — stale, same pattern as Epic 3's earlier correction. Was actually done via the
       earlier autonomous loop (`LOOP_QUEUE.md` L7/L19).
-- [x] **LR-023** — Backend (`hasMore`/`limit`/`offset` on `GET /search/exercises`) was done via
-      the loop, but nothing on the frontend ever used it — `searchExercisesAPI` never passed the
-      params, and `search-view.tsx` just showed the default page with no way to see more. Closed
-      2026-07-09: wired up limit/offset pass-through and a "Load More" button in `search-view.tsx`.
+- [x] **LR-023** — **Really closed 2026-07-09** (an earlier same-day pass claimed this done, but
+      that was premature — see below). Backend service/controller supported `hasMore`/`limit`/
+      `offset` via the loop, but nothing on the frontend used it — `searchExercisesAPI` never
+      passed the params, and `search-view.tsx` just showed the default page. Wired up limit/offset
+      pass-through and a "Load More" button. **Real bug found via live user testing**: after that
+      fix shipped, "Load More" still didn't work — count frozen, button never disappeared. Root
+      cause: the hand-wired Express route (`search.routes.ts`, the file that actually serves
+      traffic — TSOA's generated `routes.ts` never does) called
+      `controller.searchExercises(query)` with a single argument, silently dropping limit/offset
+      from every request regardless of what was sent. Every "Load More" tap was re-fetching page 1.
+      Confirmed via live diagnostic logging in the app (offset=20 returned the identical ids as
+      offset=0) rather than guessed — two prior fix attempts (an ORDER BY id tiebreak, an
+      auto-search-effect guard) were reasonable hypotheses but didn't address the real cause; kept
+      both anyway since they're harmless hardening. Also fixed while investigating: scroll position
+      after Load More (now scrolls to the first newly-loaded item instead of jumping to the top).
 - [x] **LR-024** — done. Natural-language date phrases ("today"/"yesterday"/"this week"/"last
       week") in `searchByDate`, via `date-phrase-resolver.ts` (`LOOP_QUEUE.md` L8).
 - [x] **LR-025** — done. Search telemetry (`logSearchTelemetry`) — zero-result queries logged at

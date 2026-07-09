@@ -177,6 +177,15 @@ settled instance). **Don't re-litigate that — it's done.** What's still open:
       Generation-flow-specific; UX fix, not a backend perf fix.
 
 ## Epic 4 — Test coverage foundation
+- [ ] **LR-062 · P1** — (new 2026-07-09) No route-level integration tests anywhere in the backend
+      — every existing test calls a service or controller method directly. This exact gap let a
+      real bug ship and pass all tests: `search.routes.ts`'s hand-wired `/exercises` route called
+      `controller.searchExercises(query)` with a single argument, silently dropping limit/offset
+      from every request — but every test (service-layer, controller-layer) called the
+      underlying methods directly, bypassing the broken route entirely, so nothing caught it. Would
+      need `supertest` or similar (not currently a dependency) to spin up the Express app and hit
+      real routes. Start with routes that take query/body params beyond a single string, where a
+      route/controller signature mismatch is easiest to introduce silently.
 - [ ] **LR-017 · P0** — Backend auth controller has zero tests (token refresh, password reset,
       waiver logic) — `auth.controller.ts` (~20.5 KB, untested).
 - [ ] **LR-018 · P0** — Backend subscription controller/webhooks — ties to LR-010, tracked once
