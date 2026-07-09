@@ -110,6 +110,7 @@ export interface ExercisesSearchResponse {
   success: boolean;
   data: SearchExercise[];
   exercises: SearchExercise[];
+  hasMore?: boolean;
 }
 
 export interface SearchExercise {

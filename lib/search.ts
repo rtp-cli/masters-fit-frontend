@@ -136,12 +136,16 @@ export async function searchExerciseAPI(
  * relevance to the original query.
  */
 export async function searchExercisesAPI(
-  query: string
+  query: string,
+  options: { limit?: number; offset?: number } = {}
 ): Promise<ExercisesSearchResponse> {
   try {
     const normalized = normalizeSearchQuery(query);
+    const params = new URLSearchParams({ query: normalized });
+    if (options.limit !== undefined) params.set("limit", String(options.limit));
+    if (options.offset !== undefined) params.set("offset", String(options.offset));
     const result = await apiRequest<ExercisesSearchResponse>(
-      `/search/exercises?query=${encodeURIComponent(normalized)}`
+      `/search/exercises?${params.toString()}`
     );
 
     if (result.success && result.exercises) {

@@ -76,7 +76,10 @@ interface RefreshFunctions {
   // Search functions
   searchByDate: (date: string) => Promise<any>;
   searchExercise: (exerciseId: number) => Promise<any>;
-  searchExercises: (query: string) => Promise<any>;
+  searchExercises: (
+    query: string,
+    options?: { limit?: number; offset?: number }
+  ) => Promise<any>;
 }
 
 export const useAppData = () => {
@@ -692,18 +695,21 @@ export const useAppData = () => {
     [userId]
   );
 
-  const searchExercises = useCallback(async (query: string) => {
-    setLoading((prev) => ({ ...prev, searchLoading: true }));
-    try {
-      const result = await searchExercisesAPI(query);
-      return result;
-    } catch (err) {
-      console.error("Error searching exercises:", err);
-      return null;
-    } finally {
-      setLoading((prev) => ({ ...prev, searchLoading: false }));
-    }
-  }, []);
+  const searchExercises = useCallback(
+    async (query: string, options?: { limit?: number; offset?: number }) => {
+      setLoading((prev) => ({ ...prev, searchLoading: true }));
+      try {
+        const result = await searchExercisesAPI(query, options);
+        return result;
+      } catch (err) {
+        console.error("Error searching exercises:", err);
+        return null;
+      } finally {
+        setLoading((prev) => ({ ...prev, searchLoading: false }));
+      }
+    },
+    []
+  );
 
   // Reset all data to initial state
   const reset = useCallback(() => {

@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -81,6 +82,12 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     userStats: ExerciseUserStats | null;
   } | null>(null);
   const [generalResults, setGeneralResults] = useState<Exercise[]>([]);
+  // [LR-023] Pagination for exercise search — the backend has supported
+  // limit/offset/hasMore for a while, but nothing here ever used it, so
+  // results were silently capped at the default page with no way to see more.
+  const [hasMoreExercises, setHasMoreExercises] = useState(false);
+  const [isLoadingMoreExercises, setIsLoadingMoreExercises] = useState(false);
+  const EXERCISE_SEARCH_PAGE_SIZE = 20;
 
   // UI state
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
@@ -210,14 +217,19 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     setDateResult(null);
     setExerciseResult(null);
     setGeneralResults([]);
+    setHasMoreExercises(false);
 
     // Loading state is handled by useAppData
     setDateQuery(""); // Clear date query
 
     try {
-      const result = await searchExercises(query);
+      const result = await searchExercises(query, {
+        limit: EXERCISE_SEARCH_PAGE_SIZE,
+        offset: 0,
+      });
       if (result.success) {
         setGeneralResults(result.exercises);
+        setHasMoreExercises(!!result.hasMore);
         setSearchType("general");
       }
     } catch (error) {
@@ -234,6 +246,27 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
       setDialogVisible(true);
     } finally {
       // Loading state is handled by useAppData
+    }
+  };
+
+  // [LR-023] Fetch the next page and append — the initial search always
+  // starts at offset 0, so the next offset is simply how many we already have.
+  const loadMoreExercises = async () => {
+    if (isLoadingMoreExercises || !hasMoreExercises) return;
+    setIsLoadingMoreExercises(true);
+    try {
+      const result = await searchExercises(exerciseQuery, {
+        limit: EXERCISE_SEARCH_PAGE_SIZE,
+        offset: generalResults.length,
+      });
+      if (result.success) {
+        setGeneralResults((prev) => [...prev, ...result.exercises]);
+        setHasMoreExercises(!!result.hasMore);
+      }
+    } catch (error) {
+      console.error("Load more exercises error:", error);
+    } finally {
+      setIsLoadingMoreExercises(false);
     }
   };
 
@@ -1563,6 +1596,23 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                 />
               </TouchableOpacity>
             ))}
+            {hasMoreExercises ? (
+              <TouchableOpacity
+                onPress={loadMoreExercises}
+                disabled={isLoadingMoreExercises}
+                className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm items-center"
+                accessibilityRole="button"
+                accessibilityLabel="Load more exercises"
+              >
+                {isLoadingMoreExercises ? (
+                  <ActivityIndicator color={colors.brand.primary} />
+                ) : (
+                  <Text className="text-sm font-semibold text-brand-primary">
+                    Load More
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ) : null}
           </View>
         ) : null}
 
