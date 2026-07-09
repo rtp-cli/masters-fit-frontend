@@ -1,9 +1,12 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { Text, View } from "react-native";
+
 import { PieChart } from "@/components/charts/pie-chart";
+import { TimeRangeSegmentedControl } from "@/components/segmented-control";
 import { getThemedDonutColors, TIME_RANGE_FILTER } from "@/constants";
-import { WorkoutTypeMetrics } from "@/types/api";
 import { useTheme } from "@/lib/theme-context";
+import { WorkoutTypeMetrics } from "@/types/api";
+import { formatTimeRangeLabel } from "@/utils";
 
 type WorkoutTypeDistributionSectionProps = {
   metrics: WorkoutTypeMetrics | null;
@@ -93,35 +96,12 @@ const WorkoutTypeDistributionSection: React.FC<
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           Types of exercises you've been completing (
-          {filter === TIME_RANGE_FILTER.THREE_MONTHS
-            ? "Last 3 months"
-            : filter === TIME_RANGE_FILTER.ONE_MONTH
-              ? "Last 1 month"
-              : "Last 1 week"}
-          )
+          {formatTimeRangeLabel(filter)})
         </Text>
       </View>
 
       <View className="items-center mb-4">
-        <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-          {Object.values(TIME_RANGE_FILTER).map((f) => (
-            <TouchableOpacity
-              key={f}
-              className={`px-3 py-1 rounded-md ${
-                filter === f ? "bg-primary" : "bg-transparent"
-              }`}
-              onPress={() => onChangeFilter(f as any)}
-            >
-              <Text
-                className={`text-xs font-medium ${
-                  filter === f ? "text-content-on-primary" : "text-text-muted"
-                }`}
-              >
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TimeRangeSegmentedControl value={filter} onChange={onChangeFilter} />
       </View>
 
       <View className="bg-surface rounded-2xl p-5">

@@ -1,0 +1,44 @@
+/* ============================================================
+   PROPOSED token patch — addresses backlog MF-004, MF-005, MF-007.
+   Apply on top of tokens/colors.css. Values chosen to keep the
+   monochrome "Original" character while restoring communication
+   and meeting WCAG AA. Port to lib/theme.ts after sign-off.
+   ============================================================ */
+
+:root {
+  /* ---- MF-004: success decoupled from brand.primary ----
+     Stays near-ink so the monochrome character holds, but is now
+     its OWN token so completion can carry a distinct treatment.
+     The required differentiation is FORM (filled check + ring),
+     not hue — see --color-success-ring. */
+  --color-success: #0A0A0A;              /* was: === brand.primary */
+  --color-success-ring: #0A0A0A;         /* ring/check stroke for completed state */
+  --color-on-success: #FFFFFF;
+
+  /* ---- MF-005: status palette with GUARANTEED perceptual steps ----
+     Each status must ALSO carry a non-color cue (icon / fill pattern /
+     outline). Colors below are a fallback layer, not the only signal. */
+  --color-status-complete: #0A0A0A;      /* + checkmark, solid fill   */
+  --color-status-partial:  #6B6B6B;      /* + diagonal hatch fill     */
+  --color-status-today:    #0A0A0A;      /* + accent ring, outline    */
+  --color-status-upcoming: #C8C8C8;      /* + outline only            */
+  --color-status-rest:     #E0E0E0;      /* + "Rest" label, flat line */
+  --color-status-missed:   #DC2626;      /* + × glyph (danger)        */
+}
+
+/* ---- MF-007: dark-mode muted text now meets AA (≥4.5:1 on #0A0A0A) ---- */
+:root.theme-dark,
+[data-theme="dark"] {
+  --color-text-muted: #8C8C8C;           /* was #686868 (~3.7:1, FAIL) → ~5.0:1 PASS */
+
+  --color-success: #FFFFFF;
+  --color-success-ring: #FFFFFF;
+  --color-on-success: #0A0A0A;
+
+  --color-status-complete: #FFFFFF;
+  --color-status-partial:  #9A9A9A;
+  --color-status-today:    #FFFFFF;
+  --color-status-upcoming: #3C3C3C;
+  --color-status-rest:     #282828;
+  --color-status-missed:   #FF4D4D;
+}

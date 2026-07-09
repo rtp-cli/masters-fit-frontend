@@ -1,0 +1,15 @@
+/* ============================================================
+   PROPOSED type patch — addresses backlog MF-008.
+   Raises the scale floor for the masters-age audience and keeps
+   the smallest size off muted color. Apply over tokens/typography.css.
+   ============================================================ */
+
+:root {
+  /* xs floor raised 11 → 13; sm becomes the true metadata minimum. */
+  --text-xs: 13px;   /* was 11px — never below this for user-facing copy */
+  --text-sm: 14px;   /* was 13px — secondary metadata minimum            */
+  --text-base: 16px; /* was 15px — body                                  */
+
+  /* Rule (enforce in review): the smallest size is never combined with
+     --color-text-muted. Use --color-text-secondary at --text-sm instead. */
+}

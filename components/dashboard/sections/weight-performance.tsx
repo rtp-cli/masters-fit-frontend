@@ -1,10 +1,14 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { PieChart } from "@/components/charts/pie-chart";
-import { useTheme } from "../../../lib/theme-context";
+import { TimeRangeSegmentedControl } from "@/components/segmented-control";
 import { getThemedPieChartColors } from "@/constants/colors";
-import { WeightAccuracyMetrics } from "@/types/api";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
+import { WeightAccuracyMetrics } from "@/types/api";
+import { formatTimeRangeLabel } from "@/utils";
+
+import { useTheme } from "../../../lib/theme-context";
 
 type WeightPerformanceSectionProps = {
   filteredWeightAccuracy: WeightAccuracyMetrics | null;
@@ -33,39 +37,15 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
         </Text>
         <Text className="text-xs text-text-muted mb-3">
           How you're progressing with your planned weights (
-          {weightPerformanceFilter === TIME_RANGE_FILTER.THREE_MONTHS
-            ? "Last 3 months"
-            : weightPerformanceFilter === TIME_RANGE_FILTER.ONE_MONTH
-              ? "Last 1 month"
-              : "Last 1 week"}
-          )
+          {formatTimeRangeLabel(weightPerformanceFilter)})
         </Text>
       </View>
 
       <View className="items-center mb-4">
-        <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-          {Object.values(TIME_RANGE_FILTER).map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              className={`px-3 py-1 rounded-md ${
-                weightPerformanceFilter === filter
-                  ? "bg-primary"
-                  : "bg-transparent"
-              }`}
-              onPress={() => onChangeFilter(filter as any)}
-            >
-              <Text
-                className={`text-xs font-medium ${
-                  weightPerformanceFilter === filter
-                    ? "text-content-on-primary"
-                    : "text-text-muted"
-                }`}
-              >
-                {filter}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TimeRangeSegmentedControl
+          value={weightPerformanceFilter}
+          onChange={onChangeFilter}
+        />
       </View>
 
       <View className="bg-surface rounded-2xl p-5">

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
+import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
 import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { ExerciseSet } from "./set-tracker";
@@ -346,6 +347,9 @@ export default function AdaptiveSetTracker({
               <TouchableOpacity
                 className="p-1 mr-1"
                 onPress={() => resetSetToTarget(index)}
+                accessibilityRole="button"
+                accessibilityLabel="Reset set to target"
+                hitSlop={HIT_SLOP_10}
               >
                 <Ionicons
                   name="refresh-outline"
@@ -353,7 +357,12 @@ export default function AdaptiveSetTracker({
                   color={colors.brand.primary}
                 />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => removeSet(index)}>
+              <TouchableOpacity
+                onPress={() => removeSet(index)}
+                accessibilityRole="button"
+                accessibilityLabel="Remove set"
+                hitSlop={HIT_SLOP_10}
+              >
                 <Ionicons
                   name="trash-outline"
                   size={16}
@@ -370,6 +379,9 @@ export default function AdaptiveSetTracker({
               <View className="flex-row items-center justify-center gap-2">
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease weight 5 pounds"
+                  hitSlop={HIT_SLOP_6}
                   onPress={() =>
                     updateSet(index, "weight", Math.max(0, set.weight - 5))
                   }
@@ -395,6 +407,9 @@ export default function AdaptiveSetTracker({
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full items-center justify-center"
                   style={{ backgroundColor: colors.brand.primary }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase weight 5 pounds"
+                  hitSlop={HIT_SLOP_6}
                   onPress={() => updateSet(index, "weight", set.weight + 5)}
                 >
                   <Text
@@ -414,6 +429,9 @@ export default function AdaptiveSetTracker({
             <View className="flex-row items-center justify-center gap-3">
               <TouchableOpacity
                 className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel="Decrease reps"
+                hitSlop={HIT_SLOP_6}
                 onPress={() =>
                   updateSet(index, "reps", Math.max(0, set.reps - 1))
                 }
@@ -437,6 +455,9 @@ export default function AdaptiveSetTracker({
               <TouchableOpacity
                 className="w-8 h-8 rounded-full items-center justify-center"
                 style={{ backgroundColor: colors.brand.primary }}
+                accessibilityRole="button"
+                accessibilityLabel="Increase reps"
+                hitSlop={HIT_SLOP_6}
                 onPress={() => updateSet(index, "reps", set.reps + 1)}
               >
                 <Ionicons name="add" size={18} color={colors.brand.secondary} />
@@ -454,6 +475,8 @@ export default function AdaptiveSetTracker({
           backgroundColor: colors.brand.primary,
         }}
         onPress={addSet}
+        accessibilityRole="button"
+        accessibilityLabel="Add set"
       >
         <Ionicons
           name="add-circle-outline"
@@ -506,7 +529,12 @@ export default function AdaptiveSetTracker({
                   {set.setNumber}
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => removeDurationSet(index)}>
+              <TouchableOpacity
+                onPress={() => removeDurationSet(index)}
+                accessibilityRole="button"
+                accessibilityLabel="Remove set"
+                hitSlop={HIT_SLOP_10}
+              >
                 <Ionicons
                   name="trash-outline"
                   size={16}
@@ -521,6 +549,9 @@ export default function AdaptiveSetTracker({
               <View className="flex-row items-center justify-center gap-2">
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease weight 5 pounds"
+                  hitSlop={HIT_SLOP_6}
                   onPress={() =>
                     updateDurationSet(
                       index,
@@ -550,6 +581,9 @@ export default function AdaptiveSetTracker({
                 <TouchableOpacity
                   className="w-8 h-8 rounded-full items-center justify-center"
                   style={{ backgroundColor: colors.brand.primary }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase weight 5 pounds"
+                  hitSlop={HIT_SLOP_6}
                   onPress={() =>
                     updateDurationSet(index, "weight", set.weight + 5)
                   }
@@ -604,6 +638,8 @@ export default function AdaptiveSetTracker({
             backgroundColor: colors.brand.primary,
           }}
           onPress={addDurationSet}
+          accessibilityRole="button"
+          accessibilityLabel="Add set"
         >
           <Ionicons
             name="add-circle-outline"

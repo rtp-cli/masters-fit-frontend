@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
 
 export interface ExerciseSet {
@@ -215,6 +216,9 @@ export default function SetTracker({
                     <TouchableOpacity
                       className="p-1 mr-1"
                       onPress={() => resetSetToTarget(globalIndex)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Reset set to target"
+                      hitSlop={HIT_SLOP_10}
                     >
                       <Ionicons
                         name="refresh-outline"
@@ -225,6 +229,9 @@ export default function SetTracker({
                     <TouchableOpacity
                       className="p-1"
                       onPress={() => removeSet(globalIndex)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove set"
+                      hitSlop={HIT_SLOP_10}
                     >
                       <Ionicons
                         name="trash-outline"
@@ -246,6 +253,9 @@ export default function SetTracker({
                   <View className="flex-row items-center justify-center gap-2">
                     <TouchableOpacity
                       className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                      accessibilityRole="button"
+                      accessibilityLabel="Decrease weight 10 pounds"
+                      hitSlop={HIT_SLOP_6}
                       onPress={() =>
                         updateSet(
                           globalIndex,
@@ -263,6 +273,9 @@ export default function SetTracker({
                     </TouchableOpacity>
                     <TouchableOpacity
                       className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                      accessibilityRole="button"
+                      accessibilityLabel="Decrease weight 5 pounds"
+                      hitSlop={HIT_SLOP_6}
                       onPress={() =>
                         updateSet(
                           globalIndex,
@@ -300,6 +313,9 @@ export default function SetTracker({
                     <TouchableOpacity
                       className="w-8 h-8 rounded-full items-center justify-center"
                       style={{ backgroundColor: colors.brand.primary }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Increase weight 5 pounds"
+                      hitSlop={HIT_SLOP_6}
                       onPress={() =>
                         updateSet(globalIndex, "weight", set.weight + 5)
                       }
@@ -314,6 +330,9 @@ export default function SetTracker({
                     <TouchableOpacity
                       className="w-8 h-8 rounded-full items-center justify-center"
                       style={{ backgroundColor: colors.brand.primary }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Increase weight 10 pounds"
+                      hitSlop={HIT_SLOP_6}
                       onPress={() =>
                         updateSet(globalIndex, "weight", set.weight + 10)
                       }
@@ -339,6 +358,9 @@ export default function SetTracker({
                   <View className="flex-row items-center justify-center gap-3">
                     <TouchableOpacity
                       className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                      accessibilityRole="button"
+                      accessibilityLabel="Decrease reps"
+                      hitSlop={HIT_SLOP_6}
                       onPress={() =>
                         updateSet(
                           globalIndex,
@@ -371,6 +393,9 @@ export default function SetTracker({
                     <TouchableOpacity
                       className="w-8 h-8 rounded-full items-center justify-center"
                       style={{ backgroundColor: colors.brand.primary }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Increase reps"
+                      hitSlop={HIT_SLOP_6}
                       onPress={() =>
                         updateSet(globalIndex, "reps", set.reps + 1)
                       }
@@ -397,6 +422,8 @@ export default function SetTracker({
             backgroundColor: colors.brand.primary,
           }}
           onPress={() => addSet()}
+          accessibilityRole="button"
+          accessibilityLabel="Add set"
         >
           <Ionicons
             name="add-circle-outline"
