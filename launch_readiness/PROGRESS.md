@@ -198,6 +198,10 @@ manual action item, not tracked as an LR ticket.
       auto-search-effect guard) were reasonable hypotheses but didn't address the real cause; kept
       both anyway since they're harmless hardening. Also fixed while investigating: scroll position
       after Load More (now scrolls to the first newly-loaded item instead of jumping to the top).
+      **UX follow-up, same day**: added a real total-match count (`search.service.ts`, a `COUNT(*)`
+      sharing the exact WHERE clause with the page query, run concurrently) so the header reads
+      "20 of 40" instead of a bare count that read as "only 20 total exist" until the Load More
+      button was noticed.
 - [x] **LR-024** — done. Natural-language date phrases ("today"/"yesterday"/"this week"/"last
       week") in `searchByDate`, via `date-phrase-resolver.ts` (`LOOP_QUEUE.md` L8).
 - [x] **LR-025** — done. Search telemetry (`logSearchTelemetry`) — zero-result queries logged at
