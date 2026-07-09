@@ -87,6 +87,11 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   // results were silently capped at the default page with no way to see more.
   const [hasMoreExercises, setHasMoreExercises] = useState(false);
   const [isLoadingMoreExercises, setIsLoadingMoreExercises] = useState(false);
+  // Guards loadMoreExercises against a double-fire (fast double-tap, or a
+  // touch event firing onPress twice) — a ref is checked/set synchronously,
+  // unlike isLoadingMoreExercises state, whose update is batched and hasn't
+  // committed yet on the second call if it lands before the first re-render.
+  const isLoadingMoreExercisesRef = useRef(false);
   const EXERCISE_SEARCH_PAGE_SIZE = 20;
 
   // UI state
@@ -252,7 +257,15 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   // [LR-023] Fetch the next page and append — the initial search always
   // starts at offset 0, so the next offset is simply how many we already have.
   const loadMoreExercises = async () => {
-    if (isLoadingMoreExercises || !hasMoreExercises) return;
+    // Root cause of a real "duplicate key" crash seen while testing: the
+    // isLoadingMoreExercises STATE check below isn't enough on its own — a
+    // fast double-tap (or a touch event firing onPress twice, which does
+    // happen on RN) can invoke this twice before React commits the first
+    // setIsLoadingMoreExercises(true), so both calls read the stale `false`
+    // and both fetch the identical offset/page, appending it twice. The ref
+    // is set synchronously, so the second call sees it immediately.
+    if (isLoadingMoreExercisesRef.current || !hasMoreExercises) return;
+    isLoadingMoreExercisesRef.current = true;
     setIsLoadingMoreExercises(true);
     try {
       const result = await searchExercises(exerciseQuery, {
@@ -260,12 +273,22 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
         offset: generalResults.length,
       });
       if (result.success) {
-        setGeneralResults((prev) => [...prev, ...result.exercises]);
+        // Defensive de-dup by id on top of the ref guard above — cheap
+        // insurance against any other path that could re-request the same
+        // page (e.g. a retry), not just the double-tap case.
+        setGeneralResults((prev) => {
+          const seenIds = new Set(prev.map((e) => e.id));
+          const newUnique = result.exercises.filter(
+            (e: Exercise) => !seenIds.has(e.id)
+          );
+          return [...prev, ...newUnique];
+        });
         setHasMoreExercises(!!result.hasMore);
       }
     } catch (error) {
       console.error("Load more exercises error:", error);
     } finally {
+      isLoadingMoreExercisesRef.current = false;
       setIsLoadingMoreExercises(false);
     }
   };
