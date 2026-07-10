@@ -456,41 +456,46 @@ export default function SettingsView({
           </View>
         </View>
 
-        {/* Personal Information */}
+        {/* [MF-020] Account */}
+        <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-2 pb-1">
+          Account
+        </Text>
         {profile && <PersonalInformationSection profile={profile} />}
+        <LogoutSection
+          onLogout={handleLogout}
+          onDeleteAccount={handleDeleteAccount}
+        />
 
-        {/* Fitness Goals */}
+        {/* [MF-020] Training Profile */}
+        <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
+          Training Profile
+        </Text>
         {profile?.goals && profile.goals.length > 0 && (
           <FitnessGoalsSection goals={profile.goals} />
         )}
-
-        {/* Preferred Workout Types */}
         {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
           <PreferredWorkoutTypesSection
             preferredStyles={profile.preferredStyles}
           />
         )}
-
-        {/* Equipment Available */}
         {profile?.equipment && profile.equipment.length > 0 && (
           <EquipmentSection
             equipment={profile.equipment}
             otherEquipment={profile.otherEquipment}
           />
         )}
-
-        {/* Weekly Schedule */}
         {profile?.availableDays && profile.availableDays.length > 0 && (
           <WeeklyScheduleSection availableDays={profile.availableDays} />
         )}
-
-        {/* Limitations & Medical Notes */}
         <HealthInformationSection
           limitations={profile?.limitations}
           medicalNotes={profile?.medicalNotes}
         />
 
-        {/* Subscription Section */}
+        {/* [MF-020] Subscription */}
+        <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
+          Subscription
+        </Text>
         <SubscriptionSection
           isPro={isPro}
           activeEntitlement={activeEntitlement}
@@ -500,7 +505,10 @@ export default function SettingsView({
           onUpgradePress={() => setShowUpgradeModal(true)}
         />
 
-        {/* App Settings */}
+        {/* [MF-020] App */}
+        <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
+          App
+        </Text>
         <AppSettingsSection
           debugTapCount={debugTapCount}
           onDebugTap={handleDebugTap}
@@ -510,8 +518,7 @@ export default function SettingsView({
           setColorTheme={setColorTheme}
           onClose={onClose}
         />
-
-        {/* Debug Mode Section - Only visible when debug mode is activated */}
+        {/* Developer Tools - only rendered once debug mode is activated */}
         <DeveloperToolsSection
           isDebugModeActivated={isDebugModeActivated}
           isSecretActivated={isSecretActivated}
@@ -520,14 +527,6 @@ export default function SettingsView({
           onForceLogout={handleForceLogout}
           onClose={onClose}
         />
-
-        {/* Logout Button */}
-        <LogoutSection
-          onLogout={handleLogout}
-          onDeleteAccount={handleDeleteAccount}
-        />
-
-        {/* Version Info */}
         <AppVersionSection tapCount={tapCount} onTap={handleVersionTap} />
       </ScrollView>
 

@@ -167,8 +167,34 @@ evaluates to `0`, and React Native tries to render that bare number as a text no
 a `<View>`. Wrapped all four sites in `Boolean(...)`. Committed and pushed (tsc still 35, lint has
 zero new errors, only pre-existing ones + a few prettier formatting warnings from the multi-line
 wraps).
-- [ ] **MF-019 · P2** — Search initial state + date-search discoverability.
-- [ ] **MF-020 · P2** — Settings hierarchy (Account / Training Profile / Subscription / App).
+- [x] **MF-019 · P2** — Search initial state + date-search discoverability. **Done 2026-07-10**
+      (`components/search/search-view.tsx`):
+      - The two "How to Search" rows are now real actions (tap date → opens picker, tap exercise →
+        focuses input), not just description text you had to independently act on.
+      - Calendar icon shows the actual selected date as text (e.g. "Jul 10"), not just a color
+        shift — and the accessibility label includes it too ("Search by date, Jul 10 selected").
+      - A small spinner shows next to the exercise input while a search is in flight, not just the
+        results-area skeleton further down.
+      - Recent Exercises / Recent Dates chips (last 5 each, persisted via AsyncStorage — new
+        `hooks/use-recent-searches.ts`, pure list-logic unit tested per the RNTL-hook-testing
+        limitation) appear on the initial screen once you've searched at least once; tapping one
+        re-runs that search immediately.
+      - **Real pre-existing bug found + fixed along the way**: the iOS date-picker's "Done" button
+        computed the search date locally but never called `setSelectedDate()` — so if you opened
+        the picker (already showing today's date) and tapped Done without scrolling the wheel, the
+        search ran correctly but `selectedDate` stayed null, silently breaking the new visible-date
+        feature. Android's equivalent path already did this correctly; iOS didn't.
+      Verified on-device: tappable rows, live spinner during search, both recent-chip types
+      persisting across a full app restart, the visible date badge/label, and the Done-button fix.
+- [x] **MF-020 · P2** — Settings hierarchy. **Done 2026-07-10** (`components/settings/settings-view.tsx`):
+      grouped the previously-flat 13-section list into ACCOUNT (Profile, Personal Information,
+      Log Out/Delete — moved up from the bottom) / TRAINING PROFILE (Fitness Goals, Preferred
+      Workout Types, Equipment, Weekly Schedule, Health Information) / SUBSCRIPTION / APP (App
+      Settings, Developer Tools, Version), with uppercase group-header labels. The
+      "developer/debug content hidden unless activated" half of this ticket turned out to already
+      be built (`developer-tools-section.tsx`'s `if (!isDebugModeActivated && !__DEV__) return
+      null` — it only looked always-visible tonight because we've been running a dev build).
+      Verified on-device: all four group headers render in order with the right sections under each.
 - [ ] **MF-021 · P2** — Subscription clarity (monthly-equiv, terms, tokenized colors, restore state).
 - [ ] **MF-022 · P2** — Calendar regen copy + dot legend (depends on MF-001/005/015).
 - [ ] **MF-023 · P2** — Rest-day / no-plan empty states (uses `EmptyState`).

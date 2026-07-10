@@ -36,6 +36,7 @@ import {
   DateSearchExercise,
 } from "@/types/api/search.types";
 import { useAppDataContext } from "@/contexts/app-data-context";
+import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { updateExerciseLink } from "@lib/exercises";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 
@@ -74,6 +75,14 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   const [searchType, setSearchType] = useState<SearchType>("general");
   // Use centralized loading state
   const isLoading = loading.searchLoading;
+
+  // [MF-019] Recent search history, shown as chips on the initial screen.
+  const {
+    recentExerciseQueries,
+    recentDates,
+    addRecentExerciseQuery,
+    addRecentDate,
+  } = useRecentSearches();
 
   // Search results
   const [dateResult, setDateResult] = useState<DateSearchWorkout | null>(null);
@@ -190,6 +199,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
       if (result.success) {
         setDateResult(result.workout);
         setSearchType("date");
+        addRecentDate(dateString);
       }
     } catch (error) {
       console.error("Date search error:", error);
@@ -248,6 +258,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
           typeof result.total === "number" ? result.total : null
         );
         setSearchType("general");
+        addRecentExerciseQuery(query);
       }
     } catch (error) {
       console.error("Exercise search error:", error);
@@ -735,7 +746,15 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                     includeFontPadding: false,
                   })}
                 />
-                {exerciseQuery.length > 0 ? (
+                {/* [MF-019] Immediate feedback while a search is in flight,
+                    right next to the input rather than only a results-area
+                    skeleton further down. */}
+                {isLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.neutral.medium[3]}
+                  />
+                ) : exerciseQuery.length > 0 ? (
                   <TouchableOpacity
                     onPress={() => {
                       setExerciseQuery("");
@@ -758,10 +777,16 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
 
             {/* Date Picker Icon */}
             <TouchableOpacity
-              className="bg-surface rounded-xl shadow-rn-sm border border-neutral-medium-1 h-12 w-12 items-center justify-center"
+              className={`bg-surface rounded-xl shadow-rn-sm border border-neutral-medium-1 h-12 items-center justify-center flex-row ${
+                selectedDate ? "px-3 gap-1.5" : "w-12"
+              }`}
               onPress={() => setShowDatePicker(true)}
               accessibilityRole="button"
-              accessibilityLabel="Search by date"
+              accessibilityLabel={
+                selectedDate
+                  ? `Search by date, ${selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} selected`
+                  : "Search by date"
+              }
               accessibilityState={{ selected: !!selectedDate }}
             >
               <Ionicons
@@ -771,6 +796,16 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                   selectedDate ? colors.brand.primary : colors.neutral.medium[3]
                 }
               />
+              {/* [MF-019] Visible date, not just a color-shifted icon --
+                  matches every other non-color-status decision this pass. */}
+              {selectedDate ? (
+                <Text className="text-sm font-semibold text-brand-primary">
+                  {selectedDate.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </Text>
+              ) : null}
             </TouchableOpacity>
           </View>
         </View>
@@ -803,6 +838,14 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                           setShowDatePicker(false);
                           // Use the currently selected date to perform search
                           const currentDate = selectedDate || new Date();
+                          // [MF-019 bug fix] This was never synced to state --
+                          // the picker's onChange only fires if the user
+                          // scrolls the wheel, so tapping Done on the
+                          // already-showing default date left selectedDate
+                          // null even though a search ran for it. That's what
+                          // the visible-date indicator on the calendar icon
+                          // reads, so it silently showed nothing.
+                          setSelectedDate(currentDate);
                           const year = currentDate.getFullYear();
                           const month = String(
                             currentDate.getMonth() + 1
@@ -1740,7 +1783,14 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
               How to Search
             </Text>
 
-            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center border border-neutral-medium-1">
+            {/* [MF-019] Both rows are now real actions, not just description
+                text you have to independently figure out where to act on. */}
+            <TouchableOpacity
+              className="bg-surface rounded-xl p-4 mb-3 flex-row items-center border border-neutral-medium-1"
+              onPress={() => setShowDatePicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Search by date"
+            >
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="calendar-outline"
@@ -1751,9 +1801,19 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
               <Text className="flex-1 text-sm text-text-muted">
                 Search by date to see the workout for that day
               </Text>
-            </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.neutral.medium[3]}
+              />
+            </TouchableOpacity>
 
-            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center border border-neutral-medium-1">
+            <TouchableOpacity
+              className="bg-surface rounded-xl p-4 mb-3 flex-row items-center border border-neutral-medium-1"
+              onPress={() => exerciseInputRef.current?.focus()}
+              accessibilityRole="button"
+              accessibilityLabel="Search by exercise name"
+            >
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="barbell-outline"
@@ -1764,7 +1824,79 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
               <Text className="flex-1 text-sm text-text-muted">
                 Search by exercise name to see exercises and performance stats
               </Text>
-            </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.neutral.medium[3]}
+              />
+            </TouchableOpacity>
+
+            {/* [MF-019] Recent searches, when we have any. */}
+            {recentExerciseQueries.length > 0 && (
+              <View className="mt-2 mb-3">
+                <Text className="text-sm font-semibold text-text-secondary mb-2">
+                  Recent Exercises
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {recentExerciseQueries.map((query) => (
+                    <TouchableOpacity
+                      key={query}
+                      className="bg-surface border border-neutral-medium-1 rounded-full px-3 py-1.5"
+                      onPress={() => {
+                        setExerciseQuery(query);
+                        performExerciseSearchInternal(query);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Search exercises for ${query}`}
+                    >
+                      <Text className="text-sm text-text-primary">
+                        {query}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {recentDates.length > 0 && (
+              <View className="mt-2 mb-3">
+                <Text className="text-sm font-semibold text-text-secondary mb-2">
+                  Recent Dates
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {recentDates.map((isoDate) => {
+                    // Parse as local, not UTC midnight -- avoids the
+                    // off-by-one-day issue plain `new Date(isoDate)` has.
+                    const [year, month, day] = isoDate.split("-").map(Number);
+                    const dateObj = new Date(year, month - 1, day);
+                    return (
+                      <TouchableOpacity
+                        key={isoDate}
+                        className="bg-surface border border-neutral-medium-1 rounded-full px-3 py-1.5"
+                        onPress={() => {
+                          setSelectedDate(dateObj);
+                          setDateQuery(isoDate);
+                          setExerciseQuery("");
+                          performDateSearchWithDate(isoDate);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Search workout for ${dateObj.toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric" }
+                        )}`}
+                      >
+                        <Text className="text-sm text-text-primary">
+                          {dateObj.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
           </View>
         ) : null}
       </ScrollView>
