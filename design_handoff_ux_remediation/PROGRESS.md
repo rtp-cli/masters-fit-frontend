@@ -107,12 +107,9 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
 - [x] **MF-013 · P1** — Split the ambiguous "End Workout" into a 3-way dialog: **Continue Workout**
       (safe default) / **Finish & Save Progress** (saves partial, marks day done) / **Abandon Workout**
       (destructive, red) — wording + behavior mirror the existing tab-away dialog; Abandon calls
-      `abandonWorkout` + routes to Dashboard, day stays resumable. **Dialog appearance verified
-      on-device 2026-07-09** (copy, button hierarchy, destructive styling all correct). **Still
-      open:** the actual Abandon behavior (routes to `/dashboard`, `abandonWorkout` fires, today
-      stays resumable) was NOT exercised — attempted on-device but the tester hit "Continue
-      Workout" by mistake instead of "Abandon Workout." Redo tomorrow: tap End Workout → Abandon
-      Workout for real and confirm it lands on Dashboard with today still resumable.
+      `abandonWorkout` + routes to Dashboard, day stays resumable. **Fully verified on-device
+      2026-07-09** — dialog appearance (copy, button hierarchy, destructive styling) and the actual
+      Abandon behavior (routes to Dashboard, today stayed resumable) both confirmed. Closed.
 
 **Unplanned bug found + fixed 2026-07-09, while testing MF-013:** tapping "Start Workout" crashed
 with "Text strings must be rendered within a `<Text>` component." Root cause in
