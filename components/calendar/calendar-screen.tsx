@@ -396,28 +396,21 @@ export default function CalendarScreen() {
         if (hasBlocks) {
           const dots = [];
 
-          // selectedDotColor must be set per dot: in multi-dot mode the
-          // theme-level selectedDotColor is ignored, and the default dot
-          // color vanishes against the brand.primary selected circle
+          // [MF-005] No selectedDotColor override — selection is now a ring
+          // (calendar-view.tsx), not a filled circle, so the dot keeps its
+          // real status color even on the selected day.
           if (planDay.isComplete) {
             // Completed days use the reserved success green (MF-005), distinct
             // from scheduled (ink) — see the legend below the calendar.
-            dots.push({
-              color: successColor,
-              selectedDotColor: colors.contentOnPrimary,
-            });
+            dots.push({ color: successColor });
           } else {
             // text.secondary, not brand.secondary — the latter is white in
             // the light monochrome theme and the dot disappears
-            dots.push({
-              color: colors.text.secondary,
-              selectedDotColor: colors.contentOnPrimary,
-            });
+            dots.push({ color: colors.text.secondary });
           }
 
           markedDates[dateStr] = {
             dots,
-            selectedColor: colors.brand.primary,
             selected: dateStr === selectedDate,
           };
         }
@@ -446,20 +439,13 @@ export default function CalendarScreen() {
               const dots = [];
 
               if (planDay.isComplete) {
-                dots.push({
-                  color: successColor,
-                  selectedDotColor: colors.contentOnPrimary,
-                });
+                dots.push({ color: successColor });
               } else {
-                dots.push({
-                  color: colors.text.muted,
-                  selectedDotColor: colors.contentOnPrimary,
-                });
+                dots.push({ color: colors.text.muted });
               }
 
               markedDates[dateStr] = {
                 dots,
-                selectedColor: colors.brand.primary,
                 selected: dateStr === selectedDate,
               };
             }
@@ -482,7 +468,6 @@ export default function CalendarScreen() {
     markedDates[selectedDate] = {
       ...markedDates[selectedDate],
       selected: true,
-      selectedColor: colors.brand.primary,
     };
 
     return markedDates;

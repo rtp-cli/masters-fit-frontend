@@ -12,7 +12,8 @@
   - dark  `--color-success: #34C77B` (lighter green for near-black surfaces)
   - All OTHER statuses keep the monochrome + non-color-cue scheme from `colors.proposed.css`.
 - **Timers (MF-003):** Undecided — deferred. Evaluate the half-state in the simulator, then
-  choose restore-vs-remove. Not on the loop track until decided.
+  choose restore-vs-remove. Not on the loop track until decided. **Re-confirmed deferred
+  2026-07-09** — reviewed and chose to keep deferring rather than an oversight.
 - **Delivery:** Loop commits to a **single batch feature branch**; reviewed as a batch (not PR-per-ticket).
 
 ## Hard precondition (gate — nothing loops until green)
@@ -68,17 +69,28 @@ Safe to grind autonomously once G0 is green and primitives exist.
 ## Track 4 — Human-in-loop (design fidelity / product decisions — pair on simulator)
 Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
 - [ ] **MF-003 · P0** — Timers: decide restore-vs-remove (deferred), then implement; no dead state left.
-- [~] **MF-004 · P0** — Decoupled `success` from `brand.primary` into its own palette token.
+- [x] **MF-004 · P0** — Decoupled `success` from `brand.primary` into its own palette token.
       Reserved green: light `#1B7A4B` / dark `#34C77B` (Original theme; other themes fall back to
       primary until reviewed). Check/text on the green uses `contentOnPrimary` (matching polarity).
-      Applied the filled-green + check treatment to workout **round chips** and the **exercise-overview
-      completed badge** as the first proof. **Remaining:** roll the accent through the rest of the
-      completion surfaces as part of MF-005 (weekly bars, calendar dots, selection). Hue pending sim sign-off.
-- [~] **MF-005 · P0** — Color-only-status sweep, IN PROGRESS. **Done:** completion circles (MF-004);
+      **Hue signed off on-device 2026-07-09** — round chips, exercise-overview completed badge,
+      weekly bars, calendar dots. Also caught and migrated `workout-summary.tsx`'s completion
+      checkmarks (icons + per-exercise badge), which were still hardcoded to `brand.primary` —
+      a surface MF-005's rollout hadn't reached yet.
+- [x] **MF-005 · P0** — Color-only-status sweep. **Done:** completion circles (MF-004);
       weekly-progress bars (complete = green + "✓ %" label, all bars already carry Rest/-/%/0% labels);
-      calendar completed dots = green + a **legend** (Completed / Scheduled / Today). **Remaining:**
-      true shape/icon-per-dot needs a custom `dayComponent` (deferred — library limit); app-wide
-      selection-as-status audit. Grayscale-verify the done surfaces.
+      calendar completed dots = green + a **legend** (Completed / Scheduled / Today); workout-summary
+      checkmarks (see MF-004 note). **Selection-as-status audit, resolved 2026-07-09**: the
+      selected/today day's dot was hardcoded to `selectedDotColor: contentOnPrimary`, so a
+      completed day's dot went white the moment it was selected — the solid `brand.primary`
+      selection fill needed guaranteed contrast, at the cost of erasing the status signal.
+      Changed the selected-day treatment from a filled circle to a **ring** (`calendar-view.tsx`'s
+      `stylesheet.day.basic.selected`: transparent background, 2px border, sized up to 36x36 so
+      the border doesn't crowd the inner dot) and dropped the `selectedColor`/`selectedDotColor`
+      overrides in `calendar-screen.tsx`'s `getMarkedDates` — the dot now keeps its real color
+      regardless of selection. Signed off on-device. **Still open, not part of this pass:** true
+      shape/icon-per-dot (needs a custom `dayComponent` — deferred, library limit); a broader
+      app-wide selection-as-status sweep beyond the calendar (this pass only covered the one
+      instance found).
 - [ ] **MF-006 · P1** — Reserve solid ink for the single primary action per screen; document the rule.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
 - [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/

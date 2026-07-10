@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "@/lib/theme";
+import { useThemeColors, type ThemeColorPalette } from "@/lib/theme";
 import {
   PlanDayWithBlocks,
   WorkoutBlockWithExercises,
@@ -113,6 +113,9 @@ export default function WorkoutSummary({
   isResuming = false,
 }: WorkoutSummaryProps) {
   const colors = useThemeColors();
+  // Reserved completion accent (MF-004/005); falls back to ink for themes without it.
+  const successColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
   const [planDayLog, setPlanDayLog] = useState<PlanDayLog | null>(null);
   const [exerciseLogs, setExerciseLogs] = useState<
     Record<number, ExerciseLog[]>
@@ -186,7 +189,7 @@ export default function WorkoutSummary({
             <Ionicons
               name="checkmark-circle"
               size={28}
-              color={colors.brand.primary}
+              color={successColor}
               style={{ marginTop: 2 }}
             />
             <View className="flex-1 ml-3">
@@ -223,7 +226,7 @@ export default function WorkoutSummary({
             <Ionicons
               name="checkmark-circle"
               size={48}
-              color={colors.brand.primary}
+              color={successColor}
             />
             <Text className="text-2xl font-bold text-text-primary text-center mt-4 mb-2">
               {wasEndedEarly ? "Workout Ended Early" : "Workout Complete!"}
@@ -352,7 +355,7 @@ export default function WorkoutSummary({
                             <View
                               className={`size-6 rounded-full items-center justify-center mr-2 ${
                                 status === "completed"
-                                  ? "bg-brand-primary"
+                                  ? "bg-success"
                                   : "bg-neutral-medium-1"
                               }`}
                             >

@@ -40,12 +40,13 @@ export default function CalendarViewSection({
           theme={{
             calendarBackground: colors.surface,
             textSectionTitleColor: colors.text.muted,
-            // brand.primary + contentOnPrimary guarantees a high-contrast
-            // selected circle in every theme (brand.secondary is white in
-            // the light monochrome theme — invisible on the surface).
-            selectedDayBackgroundColor: colors.brand.primary,
-            selectedDayTextColor: colors.contentOnPrimary,
-            selectedDotColor: colors.contentOnPrimary,
+            // [MF-005] Selection is a ring, not a filled circle — a solid
+            // fill forced every dot to a fixed contrast color regardless of
+            // completion status, hiding whether the selected day was
+            // actually completed. See the "selected" stylesheet override
+            // below and the dropped selectedDotColor/selectedColor overrides
+            // in calendar-screen.tsx's getMarkedDates.
+            selectedDayTextColor: colors.text.primary,
             todayTextColor: colors.brand.primary,
             dayTextColor: colors.text.primary,
             textDisabledColor: colors.neutral.medium[2],
@@ -62,6 +63,18 @@ export default function CalendarViewSection({
             textMonthFontSize: 16,
             textDayHeaderFontSize: 12,
             "stylesheet.day.basic": {
+              selected: {
+                // Grown from the base 32x32 by 2x the border width so the
+                // inner content area (number + dot) keeps the same room it
+                // has on unselected days — otherwise the border eats into
+                // the box and crowds the completion dot against its edge.
+                width: 36,
+                height: 36,
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                borderColor: colors.brand.primary,
+                borderRadius: 18,
+              },
               todayText: {
                 color: colors.brand.primary,
                 fontWeight: "bold",
