@@ -97,7 +97,24 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
       day circle) rather than as an adjacent badge, which is why only it was exposed. **Still
       open, deliberately not part of this pass:** true shape/icon-per-dot (needs a custom
       `dayComponent` — deferred, library limit; explicitly left for a future session).
-- [ ] **MF-006 · P1** — Reserve solid ink for the single primary action per screen; document the rule.
+- [x] **MF-006 · P1** — Reserve solid ink for the single primary action per screen. **Decided and
+      implemented 2026-07-10:**
+      1. Promotional/informational banners never get solid ink, only the actual primary CTA does
+         (exception: a full-screen banner whose entire purpose IS the screen, e.g. a paywall).
+      2. Selection/toggle states (tab-bar selection, selected day, active filter chip) are exempt
+         from the one-CTA rule — they answer "where am I / what's picked," not "what should I do,"
+         so they don't compete with the primary action. Unlimited selection ink, one action ink.
+      3. "Stepped down" default is the existing `bg-accent-subtle` / `border-accent-subtle` tint
+         (`global.css`, ~12% opacity of `brand.primary` via the theme CSS var) — not grey fill
+         (reads as disabled) and not bare colored text (no hit-target affordance, hurts MF-009).
+         For a genuinely tappable secondary button, `components/button.tsx`'s existing `outline`
+         variant (1px border, transparent fill) applies instead.
+      Applied to the two live violations found: the Dashboard "Get MastersFit Pro" banner
+      (`premium-upgrade-banner.tsx`, was solid `brand.primary`) and the exercise Equipment tag
+      (`app/(tabs)/workout.tsx`, was solid `bg-brand-primary`) — both now `bg-accent-subtle`.
+      Confirmed on-device: informational tags now read as visually quieter than the real action
+      buttons (Skip/Complete) on the same screen. A third candidate (a rest-timer toggle button)
+      was found already dead — commented out, not live — so left untouched.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
 - [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/
       "Calendar", height bumped to fit). Non-color selected cue: active tab uses the **solid** icon,

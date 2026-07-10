@@ -2056,9 +2056,11 @@ export default function WorkoutScreen() {
                         .map((equipment, index) => (
                           <View
                             key={index}
-                            className=" bg-brand-primary rounded-full px-3 py-1 mr-2"
+                            // [MF-006] Informational tag, not the screen's
+                            // primary action — steps down from solid ink.
+                            className="bg-accent-subtle border border-accent-subtle rounded-full px-3 py-1 mr-2"
                           >
-                            <Text className="text-xs text-content-on-primary font-semibold">
+                            <Text className="text-xs text-text-primary font-semibold">
                               {formatEquipment(equipment.trim())}
                             </Text>
                           </View>
