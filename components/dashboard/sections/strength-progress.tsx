@@ -106,7 +106,7 @@ const StrengthProgressSection: React.FC<StrengthProgressSectionProps> = ({
         <TimeRangeSegmentedControl value={filter} onChange={onChangeFilter} />
       </View>
 
-      <View className="bg-surface rounded-2xl p-4">
+      <View className="bg-surface rounded-2xl p-4 border border-neutral-medium-1">
         <View className="mb-4">
           <LineChart
             data={data.map((item, index) => {

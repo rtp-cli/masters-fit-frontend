@@ -478,7 +478,7 @@ export default function AIProviderSelectionPage() {
             className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
           >
             <TouchableWithoutFeedback>
-              <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
+              <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
                 {/* Icon */}
                 <View className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto bg-primary/10">
                   <Ionicons

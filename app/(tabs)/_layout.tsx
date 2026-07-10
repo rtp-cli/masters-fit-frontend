@@ -134,7 +134,11 @@ export default function TabLayout() {
           screenOptions={{
             headerShown: false,
             tabBarActiveTintColor: colors.brand.primary,
-            tabBarInactiveTintColor: colors.neutral.medium[3],
+            // [MF-010] neutral.medium[3] is the same value MF-007 already
+            // flagged as a WCAG contrast failure (~3.7:1 on dark
+            // backgrounds) and fixed for text.muted -- same fix applies
+            // here, since it was never carried over to the tab bar.
+            tabBarInactiveTintColor: colors.text.muted,
             tabBarShowLabel: true,
             tabBarLabelStyle: {
               fontSize: 11,

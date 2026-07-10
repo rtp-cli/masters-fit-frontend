@@ -680,7 +680,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
       {Array.from({ length: 5 }).map((_, index) => (
         <View
           key={index}
-          className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm"
+          className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm border border-neutral-medium-1"
         >
           <View className="flex-row items-center">
             <SkeletonLoader
@@ -786,7 +786,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                 onRequestClose={() => setShowDatePicker(false)}
               >
                 <View className="flex-1 justify-end bg-black/50">
-                  <View className="bg-surface rounded-t-xl p-5 min-h-80">
+                  <View className="bg-surface rounded-t-xl p-5 min-h-80 border border-neutral-medium-1">
                     <View className="flex-row justify-between items-center mb-5">
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(false)}
@@ -921,7 +921,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
         {/* Exercise Detail View */}
         {!isLoading && exerciseResult ? (
           <View className="px-4 pb-4">
-            <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
+            <View className="bg-surface rounded-2xl p-5 shadow-rn-sm border border-neutral-medium-1">
               {/* Exercise Link at the top inside card */}
               <View className="mb-4 -mx-5 -mt-5">
                 <ExerciseLink
@@ -1161,7 +1161,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
         {/* Date Search Results */}
         {!isLoading && dateResult ? (
           <View className="px-4">
-            <View className="bg-surface rounded-2xl p-5 shadow-rn-sm">
+            <View className="bg-surface rounded-2xl p-5 shadow-rn-sm border border-neutral-medium-1">
               <View className="flex-row justify-between items-center mb-3">
                 <Text className="text-lg font-bold text-text-primary flex-1">
                   {safeString(dateResult.name)}
@@ -1593,7 +1593,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                   if (el) exerciseItemRefs.current.set(index, el as any);
                   else exerciseItemRefs.current.delete(index);
                 }}
-                className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center"
+                className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm flex-row items-center border border-neutral-medium-1"
                 onPress={() => {
                   try {
                     handleExerciseSelect({
@@ -1691,7 +1691,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
               <TouchableOpacity
                 onPress={loadMoreExercises}
                 disabled={isLoadingMoreExercises}
-                className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm items-center"
+                className="bg-surface rounded-xl p-4 mb-3 shadow-rn-sm items-center border border-neutral-medium-1"
                 accessibilityRole="button"
                 accessibilityLabel="Load more exercises"
               >
@@ -1713,7 +1713,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
         !exerciseResult &&
         generalResults.length === 0 &&
         (exerciseQuery.trim() || dateQuery.trim()) ? (
-          <View className="items-center justify-center bg-surface p-10 m-4 rounded-2xl shadow-rn-sm">
+          <View className="items-center justify-center bg-surface p-10 m-4 rounded-2xl shadow-rn-sm border border-neutral-medium-1">
             <Ionicons
               name="search-outline"
               size={40}
@@ -1740,7 +1740,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
               How to Search
             </Text>
 
-            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center">
+            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center border border-neutral-medium-1">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="calendar-outline"
@@ -1753,7 +1753,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
               </Text>
             </View>
 
-            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center">
+            <View className="bg-surface rounded-xl p-4 mb-3 flex-row items-center border border-neutral-medium-1">
               <View className="bg-brand-primary p-2 rounded-lg mr-3">
                 <Ionicons
                   name="barbell-outline"

@@ -115,7 +115,22 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
       Confirmed on-device: informational tags now read as visually quieter than the real action
       buttons (Skip/Complete) on the same screen. A third candidate (a rest-timer toggle button)
       was found already dead — commented out, not live — so left untouched.
-- [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
+- [x] **MF-010 · P1** — Cards read as distinct. **Done 2026-07-10, both halves:**
+      1. **Default border** on every `bg-surface`/`bg-card` card-like element (46 locations across ~24
+         files) — `border border-neutral-medium-1`, matching the pre-existing calendar-view.tsx
+         precedent. `--color-card` token's fallback also changed from `surface` to `neutral.light[2]`
+         (was silently equal to `surface` for all 10 themes since no theme ever set it).
+      2. **Widened `surface` itself** in all 10 themes — found on-device in dark mode that a border
+         alone wasn't enough when the fill was still pitch-black (`surface` equalled `background`
+         exactly in 9/10 themes). Light themes now step toward grey (`neutral.light[2]`, except
+         Original which already had a usable `light[1]`); dark themes step lighter
+         (`neutral.light[1]`) since dark-mode elevation reads as *lighter*, not darker.
+      3. **Bonus, same session**: `tabBarInactiveTintColor` was using `neutral.medium[3]`
+         (`#686868` on dark) — the exact value MF-007 already identified as a WCAG failure
+         (~3.7:1) and fixed for `text.muted`, but that fix was never carried over to the tab bar.
+         Switched to `colors.text.muted`.
+      Signed off on-device (dark mode, where the problem was most visible). Bright-environment
+      check still not done — needs a real device outdoors.
 - [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/
       "Calendar", height bumped to fit). Non-color selected cue: active tab uses the **solid** icon,
       inactive uses **outline** (not just tint). **Verified on-device 2026-07-09** — labels render

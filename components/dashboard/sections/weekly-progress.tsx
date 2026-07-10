@@ -27,7 +27,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
           Your workout completion for this week
         </Text>
       </View>
-      <View className="bg-surface rounded-2xl px-4 pt-5">
+      <View className="bg-surface rounded-2xl px-4 pt-5 border border-neutral-medium-1">
         <View className="mb-4">
           <View className="flex-row justify-between items-end mb-4 h-30">
             {weeklyProgressData.map((day, index) => {

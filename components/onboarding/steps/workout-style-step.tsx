@@ -116,7 +116,7 @@ export default function WorkoutStyleStep({
         </Text>
 
         {/* Include Warmup Toggle */}
-        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl mb-3">
+        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl mb-3 border border-neutral-medium-1">
           <View className="flex-1">
             <Text className="font-medium text-sm text-neutral-dark-1">
               Include Warmup
@@ -134,7 +134,7 @@ export default function WorkoutStyleStep({
         </View>
 
         {/* Include Cooldown Toggle */}
-        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl">
+        <View className="flex-row items-center justify-between p-4 bg-surface rounded-xl border border-neutral-medium-1">
           <View className="flex-1">
             <Text className="font-medium text-sm text-neutral-dark-1">
               Include Cooldown

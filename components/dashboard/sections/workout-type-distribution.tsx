@@ -104,7 +104,7 @@ const WorkoutTypeDistributionSection: React.FC<
         <TimeRangeSegmentedControl value={filter} onChange={onChangeFilter} />
       </View>
 
-      <View className="bg-surface rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5 border border-neutral-medium-1">
         <View className="items-center mb-4">
           <PieChart
             data={chartData}

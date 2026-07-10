@@ -64,7 +64,7 @@ export default function CustomDialog({
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <TouchableWithoutFeedback>
-            <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl items-center">
+            <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl items-center border border-neutral-medium-1">
               {/* Icon */}
               {icon && (
                 <View className="size-16 rounded-full bg-primary/10 items-center justify-center mb-4">

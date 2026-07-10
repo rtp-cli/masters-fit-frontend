@@ -92,7 +92,7 @@ export default function WorkoutChoiceModal({
         onPress={onClose}
       >
         <Pressable
-          className="bg-surface rounded-2xl mx-6 w-[85%] overflow-hidden"
+          className="bg-surface rounded-2xl mx-6 w-[85%] overflow-hidden border border-neutral-medium-1"
           style={{
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },

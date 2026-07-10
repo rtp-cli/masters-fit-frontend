@@ -68,7 +68,9 @@ export const colors = {
     muted: "#757575",
   },
   background: "#FFFFFF",
-  surface: "#F9F9F9",
+  // [MF-010] Aligned to neutral.light[1] so surface is a real, named step
+  // rather than an ad-hoc value.
+  surface: "#FAFAFA",
   danger: "#DC2626",
   warning: "#D97706",
   contentOnPrimary: "#FFFFFF",
@@ -122,7 +124,10 @@ export const darkColors = {
     muted: "#8C8C8C",
   },
   background: "#0A0A0A",
-  surface: "#0A0A0A",
+  // [MF-010] Lifted to neutral.light[1] -- dark-mode surfaces read as
+  // "elevated" by going lighter, not darker; equalling background made
+  // every card black-on-black.
+  surface: "#141414",
   danger: "#FF4444",
   warning: "#FBBF24",
   contentOnPrimary: "#0A0A0A",
@@ -176,7 +181,10 @@ export const steelBlueColors = {
     muted: "#6E7887",
   },
   background: "#F2F4F7",
-  surface: "#F2F4F7",
+  // [MF-010] neutral.light[2] -- light[1] here is lighter than background
+  // (wrong direction for a tinted, non-white background); light[2] steps
+  // toward grey instead, matching the visible "elevated surface" look.
+  surface: "#EBEEF2",
   danger: "#DC5050",
   warning: "#D2A03C",
   contentOnPrimary: "#FFFFFF",
@@ -225,7 +233,8 @@ export const steelBlueDarkColors = {
     muted: "#737882",
   },
   background: "#171A1E",
-  surface: "#171A1E",
+  // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
+  surface: "#242527",
   danger: "#F06E6E",
   warning: "#F0BE50",
   contentOnPrimary: "#171A1E",
@@ -277,7 +286,8 @@ export const dustyDenimColors = {
     muted: "#707A88",
   },
   background: "#EFF1F5",
-  surface: "#EFF1F5",
+  // [MF-010] neutral.light[2] -- see Steel Blue's comment for why light[2].
+  surface: "#ECEEF2",
   danger: "#DA5252",
   warning: "#D09E3A",
   contentOnPrimary: "#FFFFFF",
@@ -326,7 +336,8 @@ export const dustyDenimDarkColors = {
     muted: "#707680",
   },
   background: "#16171A",
-  surface: "#16171A",
+  // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
+  surface: "#212123",
   danger: "#EE6C6C",
   warning: "#EEBC4E",
   contentOnPrimary: "#16171A",
@@ -378,7 +389,8 @@ export const dustySageColors = {
     muted: "#707C70",
   },
   background: "#F3F4F3",
-  surface: "#F3F4F3",
+  // [MF-010] neutral.light[2] -- see Steel Blue's comment for why light[2].
+  surface: "#ECF0EC",
   danger: "#D25555",
   warning: "#C89E3C",
   contentOnPrimary: "#FFFFFF",
@@ -427,7 +439,8 @@ export const dustySageDarkColors = {
     muted: "#707870",
   },
   background: "#181918",
-  surface: "#181918",
+  // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
+  surface: "#232423",
   danger: "#EB6E6E",
   warning: "#EBBC50",
   contentOnPrimary: "#181918",
@@ -479,7 +492,9 @@ export const carbonVioletColors = {
     muted: "#6B7280",
   },
   background: "#F5F5F5",
-  surface: "#F5F5F5",
+  // [MF-010] neutral.light[2] -- light[1] equals background exactly here,
+  // so it can't create separation; light[2] steps toward grey instead.
+  surface: "#ECECEC",
   danger: "#C8555F",
   warning: "#C8A04B",
   contentOnPrimary: "#FFFFFF",
@@ -528,7 +543,8 @@ export const carbonVioletDarkColors = {
     muted: "#6B6B6B",
   },
   background: "#121212",
-  surface: "#121212",
+  // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
+  surface: "#1A1A1A",
   danger: "#E1737D",
   warning: "#E1B95F",
   contentOnPrimary: "#121212",
@@ -610,7 +626,14 @@ const createThemeVars = (themeColors: ThemeColorPalette) =>
     "--color-text-muted": hexToRgb(themeColors.text.muted),
     "--color-background": hexToRgb(themeColors.background),
     "--color-surface": hexToRgb(themeColors.surface),
-    "--color-card": hexToRgb(themeColors.card ?? themeColors.surface),
+    // [MF-010] `surface` equals `background` in every theme (exactly, or
+    // near enough), so cards have always rendered identical to the page.
+    // Default to the achromatic "next tonal step" already used elsewhere
+    // for layering (neutral.light[2]) instead of surface, so a card reads
+    // as distinct without introducing a new hardcoded value per theme.
+    "--color-card": hexToRgb(
+      themeColors.card ?? themeColors.neutral.light[2]
+    ),
     "--color-danger": hexToRgb(themeColors.danger),
     "--color-warning": hexToRgb(themeColors.warning),
     "--color-success": hexToRgb(themeColors.success ?? themeColors.brand.primary),

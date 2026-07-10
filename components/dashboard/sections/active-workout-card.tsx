@@ -51,7 +51,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
 
   return (
     <View className="px-4 mb-6">
-      <View className="bg-surface rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5 border border-neutral-medium-1">
         <View className="flex-row items-center justify-between mb-6">
           <Text className="text-base font-semibold text-text-primary mb-1">
             Active Workout

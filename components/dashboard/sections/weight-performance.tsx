@@ -48,7 +48,7 @@ const WeightPerformanceSection: React.FC<WeightPerformanceSectionProps> = ({
         />
       </View>
 
-      <View className="bg-surface rounded-2xl p-5">
+      <View className="bg-surface rounded-2xl p-5 border border-neutral-medium-1">
         {hasData ? (
           <>
             <View key={`pie-${isDark ? "dark" : "light"}`} className="items-center mb-6">

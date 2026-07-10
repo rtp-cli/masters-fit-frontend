@@ -2530,7 +2530,7 @@ export default function WorkoutScreen() {
         <View
           className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
         >
-          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               {isCurrentBlockCircuit
                 ? "Complete Circuit"
@@ -2601,7 +2601,7 @@ export default function WorkoutScreen() {
         <View
           className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
         >
-          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
             <Text className="text-xl font-bold text-text-primary mb-4 text-center">
               Skip Exercise
             </Text>
@@ -2653,7 +2653,7 @@ export default function WorkoutScreen() {
         <View
           className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
         >
-          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
             {/* TIMER DISPLAY HIDDEN: Timer icon commented out */}
             {/* <View className="items-center mb-4">
               <Ionicons name="timer" size={48} color={colors.brand.primary} />

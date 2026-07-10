@@ -362,7 +362,7 @@ export default function LegalDocumentScreen() {
           )}
 
           {/* Document Sections */}
-          <View className="bg-surface rounded-xl px-6 py-6">
+          <View className="bg-surface rounded-xl px-6 py-6 border border-neutral-medium-1">
             {groupedSections.map((group, groupIndex) => (
               <View key={groupIndex} className={groupIndex > 0 ? "mt-8" : ""}>
                 {/* Section Header */}

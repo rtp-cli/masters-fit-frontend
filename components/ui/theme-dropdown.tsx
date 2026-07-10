@@ -60,7 +60,7 @@ export default function ThemeDropdown({ value, onChange }: ThemeDropdownProps) {
           onPress={() => setIsOpen(false)}
         >
           <View
-            className="bg-surface rounded-2xl mx-6 w-80 max-w-[90%]"
+            className="bg-surface rounded-2xl mx-6 w-80 max-w-[90%] border border-neutral-medium-1"
             onStartShouldSetResponder={() => true}
           >
             {/* Header */}
