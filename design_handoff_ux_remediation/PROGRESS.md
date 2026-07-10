@@ -101,12 +101,28 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
 - [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/
       "Calendar", height bumped to fit). Non-color selected cue: active tab uses the **solid** icon,
-      inactive uses **outline** (not just tint). *(Verify labels render under the custom tabBarButton.)*
+      inactive uses **outline** (not just tint). **Verified on-device 2026-07-09** — labels render
+      correctly under the custom `tabBarButton`, solid/outline cue confirmed.
 - [ ] **MF-012 · P1** — Reduce in-session density; collapse overview after start; compact progress rail.
 - [x] **MF-013 · P1** — Split the ambiguous "End Workout" into a 3-way dialog: **Continue Workout**
       (safe default) / **Finish & Save Progress** (saves partial, marks day done) / **Abandon Workout**
       (destructive, red) — wording + behavior mirror the existing tab-away dialog; Abandon calls
-      `abandonWorkout` + routes to Dashboard, day stays resumable. *(Verify the destructive path on sim.)*
+      `abandonWorkout` + routes to Dashboard, day stays resumable. **Dialog appearance verified
+      on-device 2026-07-09** (copy, button hierarchy, destructive styling all correct). **Still
+      open:** the actual Abandon behavior (routes to `/dashboard`, `abandonWorkout` fires, today
+      stays resumable) was NOT exercised — attempted on-device but the tester hit "Continue
+      Workout" by mistake instead of "Abandon Workout." Redo tomorrow: tap End Workout → Abandon
+      Workout for real and confirm it lands on Dashboard with today still resumable.
+
+**Unplanned bug found + fixed 2026-07-09, while testing MF-013:** tapping "Start Workout" crashed
+with "Text strings must be rendered within a `<Text>` component." Root cause in
+`app/(tabs)/workout.tsx`: `currentExercise.sets && (<JSX>)` (and the same pattern for `reps`,
+`duration`, and `currentBlock.rounds`) — when one of those numeric fields is legitimately `0`
+rather than `undefined` (e.g. a duration-only warmup exercise with no set count), `0 && (<JSX>)`
+evaluates to `0`, and React Native tries to render that bare number as a text node directly inside
+a `<View>`. Wrapped all four sites in `Boolean(...)`. Committed and pushed (tsc still 35, lint has
+zero new errors, only pre-existing ones + a few prettier formatting warnings from the multi-line
+wraps).
 - [ ] **MF-019 · P2** — Search initial state + date-search discoverability.
 - [ ] **MF-020 · P2** — Settings hierarchy (Account / Training Profile / Subscription / App).
 - [ ] **MF-021 · P2** — Subscription clarity (monthly-equiv, terms, tokenized colors, restore state).

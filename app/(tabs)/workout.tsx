@@ -1980,7 +1980,8 @@ export default function WorkoutScreen() {
                     </Text>
                     <View className="flex-row items-center gap-2">
                       <View className="items-end">
-                        {currentBlock.rounds && !isCurrentBlockCircuit && (
+                        {Boolean(currentBlock.rounds) &&
+                          !isCurrentBlockCircuit && (
                           <Text className="text-sm font-semibold text-text-primary">
                             {currentBlock.rounds === 1
                               ? "1 Round"
@@ -2073,12 +2074,14 @@ export default function WorkoutScreen() {
                   {isCurrentBlockWarmupCooldown ? (
                     <View>
                       {/* Show target parameters in a structured layout matching the main interface */}
-                      {(currentExercise.duration ||
-                        currentExercise.reps ||
-                        currentExercise.sets) && (
+                      {Boolean(
+                        currentExercise.duration ||
+                          currentExercise.reps ||
+                          currentExercise.sets
+                      ) && (
                         <View className="flex items-center bg-background rounded-xl pt-6">
                           <View className="flex-row flex-wrap gap-3">
-                            {currentExercise.sets && (
+                            {Boolean(currentExercise.sets) && (
                               <View className="flex-row items-center">
                                 <Text className="text-sm text-text-muted mr-1">
                                   Sets:
@@ -2088,7 +2091,7 @@ export default function WorkoutScreen() {
                                 </Text>
                               </View>
                             )}
-                            {currentExercise.reps && (
+                            {Boolean(currentExercise.reps) && (
                               <View className="flex-row items-center">
                                 <Text className="text-sm text-text-muted mr-1">
                                   Reps:
@@ -2098,7 +2101,7 @@ export default function WorkoutScreen() {
                                 </Text>
                               </View>
                             )}
-                            {currentExercise.duration && (
+                            {Boolean(currentExercise.duration) && (
                               <View className="flex-row items-center">
                                 <Text className="text-sm text-text-muted mr-1">
                                   Duration:
