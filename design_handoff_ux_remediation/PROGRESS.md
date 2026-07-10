@@ -135,7 +135,22 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
       "Calendar", height bumped to fit). Non-color selected cue: active tab uses the **solid** icon,
       inactive uses **outline** (not just tint). **Verified on-device 2026-07-09** — labels render
       correctly under the custom `tabBarButton`, solid/outline cue confirmed.
-- [ ] **MF-012 · P1** — Reduce in-session density; collapse overview after start; compact progress rail.
+- [x] **MF-012 · P1** — Reduce in-session density. **Done 2026-07-10** (`app/(tabs)/workout.tsx`):
+      - "Today's Workout Plan" now collapses to a compact progress rail once the workout starts
+        (`isOverviewExpanded`, default false) — a chevron toggle lets the user expand it back on
+        demand; before starting, it's always shown in full (nothing to collapse yet).
+      - Rail = "Exercise N of M" + a thin segmented bar (current = solid ink, completed/skipped =
+        success green, upcoming = `neutral-medium-2`). First pass used `neutral-light-2` for
+        upcoming segments and they were invisible against the card background in dark mode — same
+        family of bug as MF-010's surface/card collision; fixed by matching the Dashboard's
+        Weekly Progress bar's existing incomplete-state color instead of inventing a new one.
+      - Notes collapse behind an "Add a note" row (`isNotesExpanded`, resets per-exercise) unless
+        the exercise already has note content, in which case it stays open.
+      **Verified on-device**: collapse/expand toggle, and the rail updating live through a real
+      Skip action (segment went green, position text advanced, current segment moved) — all
+      confirmed working. **Not directly verified on-device**: the Notes collapse behavior (only
+      renders on non-warmup/cooldown exercises; didn't advance far enough into the session this
+      pass) — code-reviewed only, worth a quick on-device glance next time you're in a session.
 - [x] **MF-013 · P1** — Split the ambiguous "End Workout" into a 3-way dialog: **Continue Workout**
       (safe default) / **Finish & Save Progress** (saves partial, marks day done) / **Abandon Workout**
       (destructive, red) — wording + behavior mirror the existing tab-away dialog; Abandon calls

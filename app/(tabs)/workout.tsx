@@ -24,7 +24,7 @@ import {
   fetchExerciseLogsForPlanDay,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
-import { HIT_SLOP_6 } from "@/constants";
+import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
@@ -206,6 +206,14 @@ export default function WorkoutScreen() {
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // [MF-012] Full plan overview collapses to a compact progress rail once
+  // the workout starts, so the current exercise dominates. User can still
+  // expand it back on demand.
+  const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
+  // [MF-012] Notes stay collapsed behind a row unless the user already has
+  // a note for this exercise -- avoids an always-open text field competing
+  // with the logging UI for attention.
+  const [isNotesExpanded, setIsNotesExpanded] = useState(false);
 
   // Timer state
   const [workoutTimer, setWorkoutTimer] = useState(0);
@@ -630,6 +638,13 @@ export default function WorkoutScreen() {
       }
     }
   }, [currentExerciseIndex, isWorkoutStarted, isWorkoutCompleted]);
+
+  // [MF-012] Notes expansion is per-exercise -- collapse it again on
+  // navigating to a new exercise so a note left open on a prior exercise
+  // doesn't stay open here too.
+  useEffect(() => {
+    setIsNotesExpanded(false);
+  }, [currentExerciseIndex]);
 
   // Cleanup workout context on unmount
   useEffect(() => {
@@ -2258,20 +2273,42 @@ export default function WorkoutScreen() {
                         </View>
                       ) : null} */}
 
-                      {/* Notes - Compact with quick chips */}
+                      {/* Notes - collapsed behind a row unless already used (MF-012) */}
                       <View className="rounded-2xl p-4">
-                        <Text className="text-sm font-semibold text-text-primary mb-3">
-                          Notes
-                        </Text>
-                        <TextInput
-                          className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
-                          placeholder="Add a note... (Optional)"
-                          placeholderTextColor={colors.text.muted}
-                          value={currentProgress.notes}
-                          onChangeText={(text) => updateProgress("notes", text)}
-                          multiline
-                          numberOfLines={2}
-                        />
+                        {isNotesExpanded || currentProgress.notes ? (
+                          <>
+                            <Text className="text-sm font-semibold text-text-primary mb-3">
+                              Notes
+                            </Text>
+                            <TextInput
+                              className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
+                              placeholder="Add a note... (Optional)"
+                              placeholderTextColor={colors.text.muted}
+                              value={currentProgress.notes}
+                              onChangeText={(text) =>
+                                updateProgress("notes", text)
+                              }
+                              multiline
+                              numberOfLines={2}
+                            />
+                          </>
+                        ) : (
+                          <TouchableOpacity
+                            className="flex-row items-center justify-between"
+                            onPress={() => setIsNotesExpanded(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Add a note"
+                          >
+                            <Text className="text-sm font-semibold text-text-secondary">
+                              Add a note
+                            </Text>
+                            <Ionicons
+                              name="add-circle-outline"
+                              size={20}
+                              color={colors.text.muted}
+                            />
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </>
                   )}
@@ -2323,11 +2360,60 @@ export default function WorkoutScreen() {
 
           {/* Workout Overview */}
           <View className="bg-card rounded-2xl p-6 border border-neutral-light-2">
-            <Text className="text-lg font-bold text-text-primary mb-4">
-              Today's Workout Plan
-            </Text>
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-lg font-bold text-text-primary">
+                Today's Workout Plan
+              </Text>
+              {isWorkoutStarted && (
+                <TouchableOpacity
+                  onPress={() => setIsOverviewExpanded((prev) => !prev)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    isOverviewExpanded
+                      ? "Collapse full plan"
+                      : "Expand full plan"
+                  }
+                  hitSlop={HIT_SLOP_10}
+                >
+                  <Ionicons
+                    name={isOverviewExpanded ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={colors.text.muted}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
 
-            {workout.blocks.map((block, blockIndex) => (
+            {/* [MF-012] Compact progress rail replaces the full plan once
+                started, so the current exercise stays dominant. */}
+            {isWorkoutStarted && !isOverviewExpanded ? (
+              <View>
+                <Text className="text-sm text-text-secondary mb-2">
+                  Exercise {currentExerciseIndex + 1} of {exercises.length}
+                </Text>
+                <View className="flex-row gap-1">
+                  {exercises.map((exercise, index) => {
+                    const isCompleted = index < currentExerciseIndex;
+                    const isCurrent = index === currentExerciseIndex;
+                    const isSkipped = skippedExercises.includes(exercise.id);
+                    return (
+                      <View
+                        key={exercise.id}
+                        className={`flex-1 h-2 rounded-full ${
+                          isCurrent
+                            ? "bg-primary"
+                            : isCompleted || isSkipped
+                              ? "bg-success"
+                              : "bg-neutral-medium-2"
+                        }`}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            ) : (
+              <>
+                {workout.blocks.map((block, blockIndex) => (
               <View key={block.id} className="mb-4 last:mb-0">
                 <View className="rounded-xl p-3 mb-2">
                   <Text className="text-sm font-bold text-text-primary">
@@ -2422,6 +2508,8 @@ export default function WorkoutScreen() {
                 })}
               </View>
             ))}
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
