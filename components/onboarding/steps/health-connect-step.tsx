@@ -101,14 +101,18 @@ export default function HealthConnectStep() {
 
         {showButton && (
           <TouchableOpacity
-            className="bg-secondary rounded-xl py-4 items-center"
+            // [Bug fix] bg-secondary + colors.neutral.white track the same
+            // theme-relative "opposite of primary" value -- text was
+            // invisible. This is onboarding's Health Connect step, so every
+            // new user who saw this screen saw a blank button.
+            className="bg-neutral-light-2 rounded-xl py-4 items-center"
             onPress={handleConnect}
             disabled={isLoading || checkingStatus}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={colors.neutral.white} />
+              <ActivityIndicator size="small" color={colors.text.primary} />
             ) : (
-              <Text className="text-neutral-white font-semibold text-base">
+              <Text className="text-text-primary font-semibold text-base">
                 {buttonLabel}
               </Text>
             )}

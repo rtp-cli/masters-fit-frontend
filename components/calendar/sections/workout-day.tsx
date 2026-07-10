@@ -110,10 +110,12 @@ export default function WorkoutDaySection({
             <View className="flex-row items-center space-x-sm">
               {isToday && !isHistoricalWorkout && workoutPlan && (
                 <TouchableOpacity
-                  className="bg-secondary py-2 px-4 rounded-xl"
+                  // [Bug fix] bg-secondary + text-background resolve to the
+                  // SAME color in every theme -- this text was invisible.
+                  className="bg-neutral-light-2 py-2 px-4 rounded-xl"
                   onPress={onStartWorkout}
                 >
-                  <Text className="text-background font-semibold text-sm">
+                  <Text className="text-text-primary font-semibold text-sm">
                     Start
                   </Text>
                 </TouchableOpacity>

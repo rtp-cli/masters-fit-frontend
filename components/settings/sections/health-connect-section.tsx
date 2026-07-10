@@ -61,14 +61,21 @@ export default function HealthConnectSection() {
             )}
           </View>
           <TouchableOpacity
-            className="bg-secondary px-4 py-2 rounded-xl items-center justify-center"
+            // [Bug fix] bg-secondary + contentOnPrimary text resolve to the
+            // SAME color in every theme -- this text was invisible.
+            className="bg-neutral-light-2 px-4 py-2 rounded-xl items-center justify-center"
             onPress={handleConnectHealth}
             disabled={healthLoading}
           >
             {healthLoading ? (
-              <ActivityIndicator size="small" color={colors.contentOnPrimary} />
+              <ActivityIndicator size="small" color={colors.text.primary} />
             ) : (
-              <Text style={{ color: colors.contentOnPrimary }} className="text-sm font-semibold">Connect</Text>
+              <Text
+                style={{ color: colors.text.primary }}
+                className="text-sm font-semibold"
+              >
+                Connect
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -90,14 +97,16 @@ export default function HealthConnectSection() {
           </Text>
         </View>
         <TouchableOpacity
-          className="bg-secondary/20 px-3 py-1.5 rounded-lg"
+          // [Bug fix] bg-secondary/20 + text-secondary both key off the same
+          // top-level "secondary" token as the fill -- text was invisible.
+          className="bg-neutral-light-2 px-3 py-1.5 rounded-lg"
           onPress={handleConnectHealth}
           disabled={healthLoading}
         >
           {healthLoading ? (
-            <ActivityIndicator size="small" color={colors.brand.secondary} />
+            <ActivityIndicator size="small" color={colors.text.primary} />
           ) : (
-            <Text className="text-xs font-semibold text-secondary">
+            <Text className="text-xs font-semibold text-text-primary">
               Update Permissions
             </Text>
           )}

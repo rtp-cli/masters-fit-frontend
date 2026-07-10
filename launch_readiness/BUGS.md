@@ -57,4 +57,20 @@ P2 = cosmetic/minor.
   fired, entitlement activated, backend synced — LR-003/LR-004 confirmed via Render logs).
 
 ## Resolved
-(none yet)
+
+- [x] **BUG-003 · P1** — `bg-secondary` and its paired "on-secondary" text/icon colors
+      (`text-background`, `colors.background`, `colors.neutral.white`, `colors.contentOnPrimary`
+      used against a `bg-secondary` fill) resolve to the *same* color as each other in every theme
+      — both key off the same "opposite of primary" token (white in light themes, near-black in
+      dark). Any button using this pairing had invisible text/icons. Found 6 live instances:
+      `workout-choice-modal.tsx` ("Repeat a Past Workout"), `calendar-screen.tsx` ("Retry" on the
+      error state), `calendar/sections/workout-day.tsx` ("Start" today's workout),
+      `settings/sections/health-connect-section.tsx` (both "Connect" and "Update Permissions"),
+      `dashboard/sections/health-metrics-carousel.tsx` ("Connect Health"), and
+      `onboarding/steps/health-connect-step.tsx` (the Health Connect button — every new user who
+      reached this onboarding step saw a blank button). Fixed by switching all 6 to the
+      established secondary-button pairing already used elsewhere (`button.tsx`'s `secondary`
+      variant): `bg-neutral-light-2` fill + `text-text-primary` text. Found 2026-07-10 while
+      investigating what looked like an unnecessary extra prompt in the rest-day workout-creation
+      flow — the "Repeat a Past Workout" option wasn't actually missing, its text was just
+      invisible, making the choice modal look like it only offered one real option.

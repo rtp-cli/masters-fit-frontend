@@ -154,7 +154,12 @@ export default function WorkoutChoiceModal({
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="bg-secondary rounded-xl py-4 px-4 mt-2 flex-row items-center"
+              // [Bug fix] Was bg-secondary + text-background, which resolve
+              // to the SAME color in every theme (both the polar-opposite-of-
+              // primary token) — text/icons here were invisible. Match the
+              // established secondary-button pairing (button.tsx): light
+              // fill, dark text.
+              className="bg-neutral-light-2 rounded-xl py-4 px-4 mt-2 flex-row items-center"
               onPress={() => {
                 onClose();
                 onRepeatPast();
@@ -162,26 +167,26 @@ export default function WorkoutChoiceModal({
             >
               <View
                 className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                style={{ backgroundColor: colors.brand.primary + "15" }}
               >
                 <Ionicons
                   name="repeat"
                   size={20}
-                  color={colors.background}
+                  color={colors.text.primary}
                 />
               </View>
               <View className="flex-1">
-                <Text className="text-background font-semibold text-base">
+                <Text className="text-text-primary font-semibold text-base">
                   Repeat a Past Workout
                 </Text>
-                <Text className="text-background/70 text-xs mt-0.5">
+                <Text className="text-text-secondary text-xs mt-0.5">
                   Pick from one of your completed workouts
                 </Text>
               </View>
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color={colors.background}
+                color={colors.text.primary}
               />
             </TouchableOpacity>
 

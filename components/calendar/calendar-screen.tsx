@@ -520,10 +520,15 @@ export default function CalendarScreen() {
       <View className="flex-1 justify-center items-center bg-background px-5">
         <Text className="text-sm text-red-500 mb-md text-center">{error}</Text>
         <TouchableOpacity
-          className="bg-secondary py-3 px-6 rounded-xl"
+          // [Bug fix] bg-secondary + text-background resolve to the SAME
+          // color in every theme -- this text was invisible. Use the
+          // established secondary-button pairing instead.
+          className="bg-neutral-light-2 py-3 px-6 rounded-xl"
           onPress={refreshWorkout}
         >
-          <Text className="text-background font-semibold text-sm">Retry</Text>
+          <Text className="text-text-primary font-semibold text-sm">
+            Retry
+          </Text>
         </TouchableOpacity>
       </View>
     );

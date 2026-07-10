@@ -85,16 +85,18 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
     return (
       <View className="px-4 mb-8">
         <TouchableOpacity
-          className="bg-secondary rounded-xl py-3 px-4 flex-row items-center justify-center"
+          // [Bug fix] bg-secondary + colors.neutral.white track the same
+          // theme-relative "opposite of primary" value -- text was invisible.
+          className="bg-neutral-light-2 rounded-xl py-3 px-4 flex-row items-center justify-center"
           onPress={onConnect}
           disabled={healthLoading}
         >
           {healthLoading ? (
-            <ActivityIndicator size="small" color={colors.neutral.white} />
+            <ActivityIndicator size="small" color={colors.text.primary} />
           ) : (
             <>
-              <Ionicons name="fitness" size={18} color={colors.neutral.white} />
-              <Text className="text-neutral-white font-semibold text-sm ml-2">
+              <Ionicons name="fitness" size={18} color={colors.text.primary} />
+              <Text className="text-text-primary font-semibold text-sm ml-2">
                 Connect Health
               </Text>
             </>
