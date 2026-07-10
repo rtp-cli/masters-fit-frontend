@@ -3,7 +3,7 @@ import { FormData, ArrayFields, ArrayValue } from "@/types/components";
 import { PREFERRED_STYLES } from "@/types/enums";
 import { formatEnumValue } from "../utils/formatters";
 import IconComponent from "../ui/icon-component";
-import { useThemeColors } from "@/lib/theme";
+import { useThemeColors, type ThemeColorPalette } from "@/lib/theme";
 
 interface WorkoutStyleStepProps {
   formData: FormData;
@@ -24,6 +24,13 @@ export default function WorkoutStyleStep({
   onFieldChange,
 }: WorkoutStyleStepProps) {
   const colors = useThemeColors();
+  // [Bug fix] iOS silently ignores Switch's thumbColor -- the knob is
+  // always the native white default. brand.primary is pure white in dark
+  // theme, so an ON track using it plus an always-white knob is
+  // invisible. The reserved success accent is never pure white/black in
+  // any theme, so it stays visible regardless of thumbColor being honored.
+  const switchOnTrackColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
 
   const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
     switch (styleKey) {
@@ -128,7 +135,7 @@ export default function WorkoutStyleStep({
           <Switch
             value={formData.includeWarmup ?? true}
             onValueChange={(value) => onFieldChange("includeWarmup", value)}
-            trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
+            trackColor={{ false: "#E5E7EB", true: switchOnTrackColor }}
             thumbColor={formData.includeWarmup ? "#FFFFFF" : "#9CA3AF"}
           />
         </View>
@@ -146,7 +153,7 @@ export default function WorkoutStyleStep({
           <Switch
             value={formData.includeCooldown ?? true}
             onValueChange={(value) => onFieldChange("includeCooldown", value)}
-            trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
+            trackColor={{ false: "#E5E7EB", true: switchOnTrackColor }}
             thumbColor={formData.includeCooldown ? "#FFFFFF" : "#9CA3AF"}
           />
         </View>

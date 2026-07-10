@@ -74,3 +74,20 @@ P2 = cosmetic/minor.
       investigating what looked like an unnecessary extra prompt in the rest-day workout-creation
       flow — the "Repeat a Past Workout" option wasn't actually missing, its text was just
       invisible, making the choice modal look like it only offered one real option.
+
+- [x] **BUG-004 · P1** — All `<Switch>` toggles were unreadable in dark mode: solid white track +
+      indistinguishable knob (confirmed via pixel-sampling the rendered screenshot — literally
+      uniform white across the whole control, zero variation). Root cause, found in two layers:
+      1. `trackColor.true` used `colors.brand.primary`, which is pure white in dark theme.
+      2. On this iOS/RN version, `<Switch>`'s `thumbColor` prop is silently ignored — the knob is
+         always the native default white, regardless of what color is passed. Confirmed empirically
+         (pixel-sampled a fresh, cache-cleared rebuild; still uniform white) before concluding this
+         wasn't a caching issue.
+      Combined, every ON-state switch was a white knob on a white track. Not fixable at the thumb
+      level given (2), so fixed at the track level instead: `trackColor.true` now uses the reserved
+      success accent (`colors.success ?? colors.brand.primary`) instead of `brand.primary` — never
+      pure white/black in any theme, so a native white knob always has contrast. Fixed in all 4
+      live `<Switch>` instances: `settings/sections/app-settings-section.tsx` (Dark Mode, Playful
+      messages), `onboarding/steps/workout-style-step.tsx` and `profile-override-form.tsx`
+      (Include Warmup/Cooldown). Found 2026-07-10 from an on-device observation ("the toggle
+      controls are all white in dark mode"); verified via pixel-sampling before and after.

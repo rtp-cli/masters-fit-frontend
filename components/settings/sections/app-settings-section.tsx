@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "../../../lib/theme";
+import { useThemeColors, type ThemeColorPalette } from "../../../lib/theme";
 import { ThemeMode, ColorTheme, COLOR_THEMES } from "../../../lib/theme-context";
 import ThemeDropdown from "../../ui/theme-dropdown";
 import HealthConnectSection from "./health-connect-section";
@@ -30,6 +30,16 @@ export default function AppSettingsSection({
   const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
   const { playfulEnabled, setPlayfulEnabled } = usePlayfulMessages();
+  // [Bug fix] iOS silently ignores Switch's thumbColor prop on this RN/iOS
+  // version -- the knob is always the native white default, confirmed via
+  // pixel sampling (uniform white regardless of the color passed). That
+  // means the ON-state track can never be pure white/black (brand.primary),
+  // since a same-color knob-on-track becomes invisible. The reserved
+  // success accent is never pure white/black in any theme, so it's a safe
+  // ON-track color that still reads as "active" (same accent used for
+  // completion elsewhere this pass).
+  const switchOnTrackColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
 
   const isDarkMode = themeMode === "dark";
 
@@ -67,14 +77,10 @@ export default function AppSettingsSection({
             onValueChange={handleDarkModeToggle}
             trackColor={{
               false: colors.neutral.medium[1],
-              true: colors.brand.primary,
+              true: switchOnTrackColor,
             }}
             thumbColor={
-              Platform.OS === "android"
-                ? colors.text.primary
-                : isDarkMode
-                  ? colors.neutral.white
-                  : colors.neutral.light[1]
+              Platform.OS === "android" ? colors.text.primary : undefined
             }
             ios_backgroundColor={colors.neutral.medium[1]}
           />
@@ -108,14 +114,12 @@ export default function AppSettingsSection({
             onValueChange={setPlayfulEnabled}
             trackColor={{
               false: colors.neutral.medium[1],
-              true: colors.brand.primary,
+              true: switchOnTrackColor,
             }}
+            // [Bug fix] Same issue as the Dark Mode switch above -- see its
+            // comment.
             thumbColor={
-              Platform.OS === "android"
-                ? colors.text.primary
-                : playfulEnabled
-                  ? colors.neutral.white
-                  : colors.neutral.light[1]
+              Platform.OS === "android" ? colors.text.primary : undefined
             }
             ios_backgroundColor={colors.neutral.medium[1]}
           />

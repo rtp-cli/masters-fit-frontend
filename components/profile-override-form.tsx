@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
 import CustomSlider from "@/components/ui/slider";
 import IconComponent from "./onboarding/ui/icon-component";
 import { formatEnumValue } from "./onboarding/utils/formatters";
-import { useThemeColors } from "../lib/theme";
+import { useThemeColors, type ThemeColorPalette } from "../lib/theme";
 import {
   INTENSITY_LEVELS,
   WORKOUT_ENVIRONMENTS,
@@ -310,6 +310,13 @@ export default function ProfileOverrideForm({
   onOverrideChange,
 }: ProfileOverrideFormProps) {
   const colors = useThemeColors();
+  // [Bug fix] iOS silently ignores Switch's thumbColor -- the knob is
+  // always the native white default. brand.primary is pure white in dark
+  // theme, so an ON track using it plus an always-white knob is
+  // invisible. The reserved success accent is never pure white/black in
+  // any theme, so it stays visible regardless of thumbColor being honored.
+  const switchOnTrackColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
 
   const updateOverride = (updates: Partial<TemporaryOverrides>) => {
     onOverrideChange({ ...overrides, ...updates });
@@ -627,7 +634,7 @@ export default function ProfileOverrideForm({
           <Switch
             value={overrides.includeWarmup ?? true}
             onValueChange={(value) => updateOverride({ includeWarmup: value })}
-            trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
+            trackColor={{ false: "#E5E7EB", true: switchOnTrackColor }}
             thumbColor={overrides.includeWarmup ? "#FFFFFF" : "#9CA3AF"}
           />
         </View>
@@ -647,7 +654,7 @@ export default function ProfileOverrideForm({
             onValueChange={(value) =>
               updateOverride({ includeCooldown: value })
             }
-            trackColor={{ false: "#E5E7EB", true: colors.brand.primary }}
+            trackColor={{ false: "#E5E7EB", true: switchOnTrackColor }}
             thumbColor={overrides.includeCooldown ? "#FFFFFF" : "#9CA3AF"}
           />
         </View>
