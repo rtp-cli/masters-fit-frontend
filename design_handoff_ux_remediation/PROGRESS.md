@@ -87,10 +87,16 @@ Cannot be confirmed from a diff. Decision ① (success accent) gates MF-004/005.
       `stylesheet.day.basic.selected`: transparent background, 2px border, sized up to 36x36 so
       the border doesn't crowd the inner dot) and dropped the `selectedColor`/`selectedDotColor`
       overrides in `calendar-screen.tsx`'s `getMarkedDates` — the dot now keeps its real color
-      regardless of selection. Signed off on-device. **Still open, not part of this pass:** true
-      shape/icon-per-dot (needs a custom `dayComponent` — deferred, library limit); a broader
-      app-wide selection-as-status sweep beyond the calendar (this pass only covered the one
-      instance found).
+      regardless of selection. Signed off on-device. **App-wide selection-as-status sweep, done
+      2026-07-09**: checked 12 other selectable/status-bearing components (set trackers, workout
+      cards, search result rows, subscription plan picker, workout-repeat picker, segmented
+      controls, weekly bars, circuit tracker, onboarding option cards) — none share the bug. The
+      codebase already keeps status badges as independent elements with fixed colors; selection
+      only ever touches a container's background/border/text. The calendar was the one place a
+      status color lived *inside* the same element as the selection indicator (a dot inside the
+      day circle) rather than as an adjacent badge, which is why only it was exposed. **Still
+      open, deliberately not part of this pass:** true shape/icon-per-dot (needs a custom
+      `dayComponent` — deferred, library limit; explicitly left for a future session).
 - [ ] **MF-006 · P1** — Reserve solid ink for the single primary action per screen; document the rule.
 - [ ] **MF-010 · P1** — Cards read as distinct (wider tonal step or default border); bright-environment check.
 - [x] **MF-011 · P1** — Labeled the 3 bottom tabs (`tabBarShowLabel: true` + "Dashboard"/"Workout"/
