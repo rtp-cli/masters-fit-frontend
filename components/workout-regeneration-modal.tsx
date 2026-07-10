@@ -49,6 +49,7 @@ import {
 } from "@/types/enums";
 import { RegenerationType } from "@/constants/global.enum";
 import { resolveDefaultRegenerationTab } from "@/utils/regeneration-tab";
+import { SegmentedControl } from "./segmented-control";
 
 interface WorkoutRegenerationModalProps {
   visible: boolean;
@@ -985,85 +986,30 @@ export default function WorkoutRegenerationModal({
                   </Text>
                 )}
 
-                {/* Week/Day Toggle - Hidden when singleTabOnly */}
+                {/* [MF-022] Shared SegmentedControl instead of a hand-rolled
+                    duplicate -- consistent styling with the dashboard's
+                    time-range control, one place to fix instead of many. */}
                 {!singleTabOnly && (
-                <View className="flex-row bg-neutral-light-2 rounded-md p-1 mb-6">
-                  <TouchableOpacity
-                    className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                      selectedType === "day" ? "bg-primary" : "bg-transparent"
-                    } ${noActiveWorkoutDay ? "opacity-50" : ""}`}
-                    style={
-                      selectedType === "day"
-                        ? {
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 2,
-                            elevation: 2,
-                          }
-                        : undefined
-                    }
-                    onPress={() =>
-                      !noActiveWorkoutDay && setSelectedType("day")
-                    }
-                    disabled={noActiveWorkoutDay}
-                  >
-                    <Text
-                      className={`font-medium text-sm ${
-                        selectedType === "day"
-                          ? "text-content-on-primary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Single Day
-                    </Text>
-                    <Text
-                      className={`text-xs mt-1 text-center ${
-                        selectedType === "day"
-                          ? "text-content-on-primary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Today only
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className={`flex-1 py-3 px-2 rounded-sm items-center ${
-                      selectedType === "week" ? "bg-primary" : "bg-transparent"
-                    }`}
-                    style={
-                      selectedType === "week"
-                        ? {
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 2,
-                            elevation: 2,
-                          }
-                        : undefined
-                    }
-                    onPress={() => setSelectedType("week")}
-                  >
-                    <Text
-                      className={`font-medium text-sm ${
-                        selectedType === "week"
-                          ? "text-content-on-primary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Full Week
-                    </Text>
-                    <Text
-                      className={`text-xs mt-1 text-center ${
-                        selectedType === "week"
-                          ? "text-content-on-primary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      Next 7 days
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                  <View className="mb-6">
+                    <SegmentedControl
+                      options={[
+                        {
+                          value: "day",
+                          label: "Single Day",
+                          sublabel: "Today only",
+                          disabled: noActiveWorkoutDay,
+                        },
+                        {
+                          value: "week",
+                          label: "Full Week",
+                          sublabel: "Next 7 days",
+                        },
+                      ]}
+                      value={selectedType}
+                      onChange={setSelectedType}
+                      accessibilityLabel="Regeneration scope"
+                    />
+                  </View>
                 )}
 
                 {noActiveWorkoutDay && (

@@ -6,6 +6,9 @@ import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
+  /** Optional second line, e.g. "Today only" under "Single Day". */
+  sublabel?: string;
+  disabled?: boolean;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -40,13 +43,14 @@ export function SegmentedControl<T extends string>({
         return (
           <TouchableOpacity
             key={option.value}
-            className={`px-3 py-1 rounded-md ${
+            className={`flex-1 px-3 py-1 rounded-md items-center ${
               selected ? "bg-primary" : "bg-transparent"
-            }`}
-            onPress={() => onChange(option.value)}
+            } ${option.disabled ? "opacity-50" : ""}`}
+            onPress={() => !option.disabled && onChange(option.value)}
+            disabled={option.disabled}
             accessibilityRole="button"
             accessibilityLabel={option.label}
-            accessibilityState={{ selected }}
+            accessibilityState={{ selected, disabled: option.disabled }}
           >
             <Text
               className={`text-xs font-medium ${
@@ -55,6 +59,15 @@ export function SegmentedControl<T extends string>({
             >
               {option.label}
             </Text>
+            {option.sublabel && (
+              <Text
+                className={`text-xs mt-1 text-center ${
+                  selected ? "text-content-on-primary" : "text-text-muted"
+                }`}
+              >
+                {option.sublabel}
+              </Text>
+            )}
           </TouchableOpacity>
         );
       })}

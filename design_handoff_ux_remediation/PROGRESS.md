@@ -196,7 +196,30 @@ wraps).
       null` — it only looked always-visible tonight because we've been running a dev build).
       Verified on-device: all four group headers render in order with the right sections under each.
 - [ ] **MF-021 · P2** — Subscription clarity (monthly-equiv, terms, tokenized colors, restore state).
-- [ ] **MF-022 · P2** — Calendar regen copy + dot legend (depends on MF-001/005/015).
+- [x] **MF-022 · P2** — Calendar regen copy + dot legend. **Done 2026-07-10:**
+      - Dot legend was already done as part of MF-005.
+      - Day-vs-week regen was already well-built (clear tab toggle, dynamic CTA text) once you
+        reached it, but the calendar's "Regenerate Workout"/"Regenerate Week" buttons routed
+        through an unrelated intermediate step first — the "Create a New Workout: Generate New vs.
+        Repeat a Past Workout" choice modal — before ever reaching the day/week regeneration modal.
+        A button literally labeled "Regenerate" shouldn't make you answer a "create new vs. repeat
+        old" question first. Changed `calendar-screen.tsx`'s `CalendarActionButtons` wiring to call
+        `handleOpenRegeneration` directly, skipping that modal. Left the choice modal in place for
+        `WorkoutDaySection`'s `NoActiveWorkoutCard` (dates outside any existing plan — genuinely
+        nothing to "regenerate" there, so the choice is real).
+      - Also relabeled the entry button "Regenerate Workout" → "Regenerate Today" for parallel
+        construction with "Regenerate Week" (signals day-scope before the modal even opens).
+      - Migrated the day/week tab toggle from a hand-rolled duplicate to the shared
+        `SegmentedControl` primitive (MF-016), closing the exact "consistent primary/secondary
+        button styles" gap this ticket called out. Extended `SegmentedControl` with optional
+        `sublabel`/`disabled` per-option support to preserve the existing "Today only"/"Next 7
+        days" subtext and the disabled state for dates outside the plan.
+      Verified on-device: tapping "Regenerate Today" now goes straight to the day/week modal;
+      migrated toggle renders and behaves identically to the original. Not verified on-device (idb
+      automation couldn't scroll that far): the Dashboard's `TimeRangeSegmentedControl`, the other
+      consumer of the shared primitive, picked up a `flex-1` addition as part of this — low risk
+      (pure width redistribution, no prop/behavior change) but worth a glance next time you're on
+      the Dashboard.
 - [ ] **MF-023 · P2** — Rest-day / no-plan empty states (uses `EmptyState`).
 - [ ] **MF-025 · P2** — Onboarding review step before first plan generation.
 

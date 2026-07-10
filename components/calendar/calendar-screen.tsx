@@ -608,7 +608,16 @@ export default function CalendarScreen() {
           isHistoricalWorkout={isHistoricalWorkout}
           isPastDate={isPastDate()}
           currentSelectedPlanDay={currentSelectedPlanDay}
-          onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
+          // [MF-022] Go straight to the day/week regeneration modal --
+          // "Regenerate" already means "make something new," so routing
+          // through the separate "Create a New Workout: Generate New vs.
+          // Repeat a Past Workout" choice first was a confusing, irrelevant
+          // extra step. That choice modal still applies where it actually
+          // makes sense: WorkoutDaySection's NoActiveWorkoutCard, for dates
+          // outside any existing plan (nothing to "regenerate" there).
+          onShowWorkoutChoice={() =>
+            handleOpenRegeneration(currentSelectedPlanDay || undefined)
+          }
           onOpenEditExercises={(planDay) => {
             if (planDay.isComplete) return;
             setSelectedPlanDay(planDay);

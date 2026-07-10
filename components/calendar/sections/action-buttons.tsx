@@ -71,7 +71,7 @@ export default function CalendarActionButtons({
           className="flex-1 bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
           onPress={() => onShowWorkoutChoice()}
           accessibilityRole="button"
-          accessibilityLabel="Regenerate workout"
+          accessibilityLabel="Regenerate today"
         >
           <Ionicons
             name="settings-outline"
@@ -85,7 +85,10 @@ export default function CalendarActionButtons({
             adjustsFontSizeToFit
             maxFontSizeMultiplier={1.3}
           >
-            Regenerate Workout
+            {/* [MF-022] "Today" instead of the ambiguous "Workout" --
+                parallels "Regenerate Week" below and signals day-scope
+                before the modal even opens. */}
+            Regenerate Today
           </Text>
         </TouchableOpacity>
 
