@@ -10,6 +10,22 @@ This builds the production iOS app on **EAS** (Expo's cloud build servers) and s
 
 Run all commands from the **frontend repo root** (`masters-fit-frontend`).
 
+## Preflight — don't burn a 20-minute build on code that was never going to work
+
+A production build takes 15–25 minutes and costs a build credit, so catch failures *before* it
+starts. Run these first and stop on any failure:
+
+```bash
+npx expo-doctor     # catches Expo SDK / native-module mismatches that fail the native build
+npm run lint
+npm test
+```
+
+An Expo SDK / native-module mismatch (the classic mid-build failure) surfaces in `expo-doctor` in
+seconds instead of ~18 minutes into the cloud build. There is currently **no frontend `tsc`
+script**; if type safety matters for this release, run `npx tsc --noEmit` directly. (The
+`release-preflight` skill bundles these gates + the checks below — prefer it for a full release.)
+
 ## Before you build — get `main` ready
 
 The build ships whatever is on `main`, so land the work first.
@@ -27,6 +43,32 @@ The build ships whatever is on `main`, so land the work first.
    ```bash
    git checkout main && git pull origin main
    ```
+
+## Verify the production environment (secrets)
+
+The `production` build profile in `eas.json` sets `"environment": "production"`, so the build
+pulls **EAS-hosted** environment variables — **not** your local `.env`. Confirm the production
+environment actually has what the app needs before building:
+
+```bash
+eas env:list --environment production
+```
+
+- Confirm the `EXPO_PUBLIC_*` keys are present.
+- Confirm **RevenueCat keys are production**, not `test_...` sandbox keys — a prod build with
+  sandbox keys ships broken payments silently (see `launch_readiness/BACKLOG.md`, LR-002).
+
+## Decide the version
+
+`eas.json` sets `"appVersionSource": "remote"` with `autoIncrement: true`:
+- The **build number** auto-increments remotely — you don't manage it.
+- The **marketing version** (store-facing, e.g. `1.0.2 → 1.1.0`) is **manual** and is NOT bumped
+  by `autoIncrement`. Ask the user: does this release need a new marketing version? If yes, set it
+  in the remote source before building:
+  ```bash
+  eas build:version:set --platform ios
+  ```
+  If it's a bugfix/TestFlight iteration under the same store version, skip this.
 
 ## Check your tools
 
@@ -66,6 +108,16 @@ EAS prints a **build URL** — report it so the user can watch progress. Builds 
 
 **Capture the build ID** from the output (the UUID in the build URL,
 `…/builds/<BUILD_ID>`, also shown as "Build finished"). Step 2 needs it.
+
+### If the build fails
+
+Do **not** submit. Open the build URL — the failed phase and its log are there.
+- **Native build / "run fastlane" / pod install errors** → almost always an Expo SDK or
+  native-module mismatch. Run `npx expo-doctor` locally, resolve what it flags (often a
+  dependency version), commit, and rebuild.
+- **A credentials/signing prompt** → `eas build` can prompt for signing decisions, which hangs a
+  background shell. Have the user run the build once interactively to set credentials, then retry.
+- Report the failure and the log URL to the user rather than retrying blindly.
 
 ## Step 2 — Submit
 
