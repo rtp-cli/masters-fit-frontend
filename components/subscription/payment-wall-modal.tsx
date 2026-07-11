@@ -1,20 +1,23 @@
-import React, { useState, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  ScrollView,
-  ActivityIndicator,
 } from "react-native";
+import { type PurchasesPackage } from "react-native-purchases";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { PurchasesPackage } from "react-native-purchases";
-import { useThemeColors } from "@/lib/theme";
+
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
-import { PaywallLimits } from "@/types/api";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
+import { useThemeColors } from "@/lib/theme";
+import { type PaywallLimits } from "@/types/api";
+
 import SubscriptionPlansList from "./subscription-plans-list";
 
 interface ResultState {
@@ -62,8 +65,11 @@ export default function PaymentWallModal({
     if (visible) {
       setResultState(null);
       pendingSuccessRef.current = false;
+      // [AN-08] `source` = paywall trigger (feature-gate type / upgrade CTA), since
+      // this modal is mounted from several places.
+      trackEvent(AnalyticsEvent.PAYWALL_VIEWED, { source: paywallData?.type });
     }
-  }, [visible]);
+  }, [visible, paywallData?.type]);
 
   const handlePackageSelect = (pkg: PurchasesPackage) => {
     setSelectedPackage(pkg);
@@ -101,20 +107,28 @@ export default function PaymentWallModal({
       return;
     }
 
+    // [AN-08] Checkout intent, before the RevenueCat call.
+    trackEvent(AnalyticsEvent.CHECKOUT_STARTED, {
+      package_id: selectedPackage.identifier,
+      product_id: selectedPackage.product.identifier,
+      plan: selectedPackage.product.title,
+      price: selectedPackage.product.price,
+    });
+
     const success = await purchasePackage(selectedPackage);
 
     if (success) {
       setResultState({
         type: "success",
         title: "Success!",
-        description:
-          "Your subscription is now active. Enjoy unlimited access!",
+        description: "Your subscription is now active. Enjoy unlimited access!",
         icon: "checkmark-circle",
       });
     }
   };
 
   const handleRestore = async () => {
+    trackEvent(AnalyticsEvent.RESTORE_TAPPED, {}); // [AN-08]
     const success = await restorePurchases();
 
     if (success) {
@@ -128,8 +142,7 @@ export default function PaymentWallModal({
       setResultState({
         type: "error",
         title: "No Purchases Found",
-        description:
-          "We couldn't find any previous purchases to restore.",
+        description: "We couldn't find any previous purchases to restore.",
         icon: "alert-circle",
       });
     }
@@ -154,7 +167,7 @@ export default function PaymentWallModal({
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
             onPress={onClose}
-            className="w-9 h-9 items-center justify-center"
+            className="size-9 items-center justify-center"
             disabled={isPurchasing}
           >
             <Ionicons name="close" size={28} color={colors.text.primary} />
@@ -172,7 +185,7 @@ export default function PaymentWallModal({
           bounces={true}
         >
           {/* Icon */}
-          <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center self-center mb-4">
+          <View className="size-16 rounded-full bg-primary/10 items-center justify-center self-center mb-4">
             <Ionicons
               name="lock-closed"
               size={32}

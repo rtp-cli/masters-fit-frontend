@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { type Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/auth-context";
+import { useCallback, useEffect, useState } from "react";
+
+import { type DialogButton } from "@/components/ui";
 import { API_URL } from "@/config";
-import { saveUserToSecureStorage } from "@/lib/auth";
 import { CURRENT_WAIVER_VERSION, isWaiverUpdate } from "@/constants/waiver";
-import { DialogButton } from "@/components/ui";
+import { useAuth } from "@/contexts/auth-context";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
+import { saveUserToSecureStorage } from "@/lib/auth";
 
 export function useWaiverController() {
   const router = useRouter();
@@ -45,7 +47,7 @@ export function useWaiverController() {
     (type: "waiver" | "terms" | "privacy") => {
       router.push(`/legal-document?type=${type}`);
     },
-    [router]
+    [router],
   );
 
   const handleCancel = useCallback(() => {
@@ -121,6 +123,8 @@ export function useWaiverController() {
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Failed to accept waiver");
       }
+
+      trackEvent(AnalyticsEvent.WAIVER_ACCEPTED); // [AN-09]
 
       if (user) {
         const updatedUser = {

@@ -25,6 +25,7 @@ import {
 } from "@/contexts/background-job-context";
 import { WaiverProvider } from "@/contexts/waiver-context";
 import { MixpanelProvider } from "@/contexts/mixpanel-context";
+import { AnalyticsScreenTracker } from "@/components/analytics-screen-tracker";
 import { useFonts } from "expo-font";
 import {
   Manrope_400Regular,
@@ -458,6 +459,7 @@ const StableProviderTree = React.memo(function StableProviderTree() {
               <BackgroundJobProvider>
                 <SecretActivationProvider>
                   <SystemUIWrapper>
+                    <AnalyticsScreenTracker />
                     <AppContent />
                   </SystemUIWrapper>
                 </SecretActivationProvider>

@@ -1,12 +1,15 @@
-import { useCallback, useState } from "react";
+import { AnalyticsEvent, trackEvent } from "@lib/analytics-events";
+import { logger } from "@lib/logger";
+import { registerForPushNotifications } from "@lib/notifications";
+import { type OnboardingData } from "@lib/types";
+import { generateWorkoutPlanAsync } from "@lib/workouts";
 import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+
+import { RegenerationType } from "@/constants";
+
 import { useAuth } from "../../contexts/auth-context";
 import { useBackgroundJobs } from "../../contexts/background-job-context";
-import { OnboardingData } from "@lib/types";
-import { RegenerationType } from "@/constants";
-import { generateWorkoutPlanAsync } from "@lib/workouts";
-import { registerForPushNotifications } from "@lib/notifications";
-import { logger } from "@lib/logger";
 
 // Encapsulates onboarding side effects and data mapping
 export function useOnboardingController() {
@@ -78,6 +81,7 @@ export function useOnboardingController() {
         // Complete onboarding (updates profile)
         const success = await completeOnboarding(payload);
         if (success && user?.id) {
+          trackEvent(AnalyticsEvent.ONBOARDING_COMPLETED, {}); // [AN-09]
           // Start workout generation (calls the API)
           await startWorkoutGeneration();
           // Navigate to dashboard
@@ -104,7 +108,7 @@ export function useOnboardingController() {
       mapFormToProfileData,
       router,
       user?.id,
-    ]
+    ],
   );
 
   return {

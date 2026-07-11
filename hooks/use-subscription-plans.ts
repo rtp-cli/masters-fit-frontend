@@ -9,6 +9,7 @@ import Purchases, {
 
 import { SUPPRESS_REVENUECAT_LOGS } from "@/config";
 import { useAuth } from "@/contexts/auth-context";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { ensureIdentifiedBeforePurchase } from "@/lib/revenuecat-identity";
 import { Sentry } from "@/lib/sentry";
 import { getSubscriptionStatus } from "@/lib/subscriptions";
@@ -113,7 +114,7 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         // has error+retry UI wired to this hook's `error` field, it just
         // never got set for this specific failure mode. [LR-009]
         setError(
-          "We couldn't load subscription plans right now. Please try again."
+          "We couldn't load subscription plans right now. Please try again.",
         );
       }
 
@@ -194,6 +195,29 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
         // confirmation is still authoritative either way: we don't fail the
         // purchase just because our own backend hasn't caught up yet.
         if (hasActiveEntitlement) {
+          // [AN-08] Client purchase-completed (intent-confirmed-locally). The backend
+          // webhook owns the *verified* purchase; this is the client-side signal.
+          const activeEntitlement = Object.values(
+            updatedInfo.entitlements.active,
+          )[0];
+          const isTrial =
+            activeEntitlement?.periodType === "TRIAL" ||
+            activeEntitlement?.periodType === "INTRO";
+          trackEvent(AnalyticsEvent.PURCHASE_COMPLETED, {
+            package_id: pkg.identifier,
+            product_id: pkg.product.identifier,
+            plan: pkg.product.title,
+            price: pkg.product.price,
+            is_trial: isTrial,
+          });
+          if (isTrial) {
+            trackEvent(AnalyticsEvent.TRIAL_STARTED, {
+              package_id: pkg.identifier,
+              product_id: pkg.product.identifier,
+              plan: pkg.product.title,
+            });
+          }
+
           let backendSynced = false;
           for (let attempt = 0; attempt < 2 && !backendSynced; attempt++) {
             if (attempt > 0) {
@@ -223,6 +247,12 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
         ) {
           rcLog("[RevenueCat] Purchase cancelled by user");
+          trackEvent(AnalyticsEvent.PURCHASE_FAILED, {
+            package_id: pkg.identifier,
+            product_id: pkg.product.identifier,
+            user_cancelled: true,
+            error_code: purchaseError.code,
+          });
           return false;
         }
 
@@ -231,6 +261,13 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           purchaseError.message || "Failed to complete purchase";
         rcError("[RevenueCat] Purchase error:", purchaseError);
         setError(errorMessage);
+        trackEvent(AnalyticsEvent.PURCHASE_FAILED, {
+          package_id: pkg.identifier,
+          product_id: pkg.product.identifier,
+          user_cancelled: false,
+          error: errorMessage,
+          error_code: purchaseError.code,
+        });
         return false;
       } finally {
         setIsPurchasing(false);

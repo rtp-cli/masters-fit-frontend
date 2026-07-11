@@ -12,6 +12,10 @@ import React, {
 import Purchases from "react-native-purchases";
 
 import { AnalyticsUtils, trackAppOpened } from "@/lib/analytics";
+import {
+  identify as mixpanelIdentify,
+  reset as mixpanelReset,
+} from "@/lib/mixpanel";
 import { Sentry } from "@/lib/sentry";
 
 import { RegenerationType } from "../constants";
@@ -174,6 +178,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
   }, []);
 
+  // Tie Mixpanel's client SDK stream (autocapture + our custom events) to the
+  // user via their UUID — the same value the backend uses as the Mixpanel
+  // distinct_id — so client- and server-emitted events resolve to one person.
+  // Runs whenever the user becomes known (restore, verify, login); identifying
+  // with the same id is idempotent.
+  useEffect(() => {
+    if (user?.uuid) {
+      mixpanelIdentify(user.uuid);
+    }
+  }, [user]);
+
   // Check if the email exists in the system
   const checkEmail = async (email: string) => {
     setIsLoading(true);
@@ -309,6 +324,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       invalidateActiveWorkoutCache();
       await clearAllData();
       setUser(null);
+      // Clear Mixpanel identity so the next user on this shared device isn't
+      // attributed to the previous one.
+      mixpanelReset();
 
       // Log out from RevenueCat to clear subscription identity (best-effort)
       await logOutFromRevenueCat();
@@ -343,6 +361,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await logOutFromRevenueCat();
 
         setUser(null);
+        mixpanelReset();
         logger.info("Account deleted successfully", { userId: user?.id });
       }
 

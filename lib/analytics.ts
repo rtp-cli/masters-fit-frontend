@@ -1,6 +1,7 @@
+import { Platform } from "react-native";
+
 import { apiRequest } from "./api";
 import { logger } from "./logger";
-import { Platform } from "react-native";
 
 // ==================== Analytics API Types ====================
 
@@ -28,17 +29,6 @@ export interface WorkoutStartedData {
   workout_name: string;
 }
 
-export interface WorkoutCompletedData {
-  workout_id: number;
-  plan_day_id: number;
-  duration: number;
-  completion_percentage: number;
-}
-
-export interface OnboardingStartedData {
-  // No fields needed - user_id comes from authentication
-}
-
 interface AnalyticsResponse {
   success: boolean;
   message: string;
@@ -50,7 +40,9 @@ interface AnalyticsResponse {
 /**
  * Track video engagement event
  */
-export async function trackVideoEngagement(data: VideoEngagementData): Promise<AnalyticsResponse> {
+export async function trackVideoEngagement(
+  data: VideoEngagementData,
+): Promise<AnalyticsResponse> {
   try {
     return await apiRequest<AnalyticsResponse>("/analytics/video-engagement", {
       method: "POST",
@@ -65,7 +57,9 @@ export async function trackVideoEngagement(data: VideoEngagementData): Promise<A
 /**
  * Track app session start
  */
-export async function trackAppOpened(data: AppOpenedData): Promise<AnalyticsResponse> {
+export async function trackAppOpened(
+  data: AppOpenedData,
+): Promise<AnalyticsResponse> {
   try {
     return await apiRequest<AnalyticsResponse>("/analytics/app-opened", {
       method: "POST",
@@ -80,7 +74,9 @@ export async function trackAppOpened(data: AppOpenedData): Promise<AnalyticsResp
 /**
  * Track workout abandonment
  */
-export async function trackWorkoutAbandoned(data: WorkoutAbandonedData): Promise<AnalyticsResponse> {
+export async function trackWorkoutAbandoned(
+  data: WorkoutAbandonedData,
+): Promise<AnalyticsResponse> {
   try {
     return await apiRequest<AnalyticsResponse>("/analytics/workout-abandoned", {
       method: "POST",
@@ -95,7 +91,9 @@ export async function trackWorkoutAbandoned(data: WorkoutAbandonedData): Promise
 /**
  * Track workout started
  */
-export async function trackWorkoutStarted(data: WorkoutStartedData): Promise<AnalyticsResponse> {
+export async function trackWorkoutStarted(
+  data: WorkoutStartedData,
+): Promise<AnalyticsResponse> {
   try {
     return await apiRequest<AnalyticsResponse>("/analytics/workout-started", {
       method: "POST",
@@ -107,35 +105,10 @@ export async function trackWorkoutStarted(data: WorkoutStartedData): Promise<Ana
   }
 }
 
-/**
- * Track workout completed
- */
-export async function trackWorkoutCompleted(data: WorkoutCompletedData): Promise<AnalyticsResponse> {
-  try {
-    return await apiRequest<AnalyticsResponse>("/analytics/workout-completed", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  } catch (error) {
-    logger.error("Failed to track workout completed", error as Error);
-    throw error;
-  }
-}
-
-/**
- * Track onboarding started
- */
-export async function trackOnboardingStarted(data: OnboardingStartedData): Promise<AnalyticsResponse> {
-  try {
-    return await apiRequest<AnalyticsResponse>("/analytics/onboarding-started", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  } catch (error) {
-    logger.error("Failed to track onboarding started", error as Error);
-    throw error;
-  }
-}
+// Note: workout-completed and onboarding-started previously had wrapper functions
+// here that were never called (dead code). Removed 2026-07-11 (AN-03). These moments
+// are now client-owned Mixpanel events — see lib/analytics-events.ts (WORKOUT_COMPLETED,
+// ONBOARDING_COMPLETED) — rather than backend /analytics wrappers.
 
 // ==================== Analytics Utilities ====================
 

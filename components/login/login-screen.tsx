@@ -1,19 +1,22 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  Image,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
+
+import { CustomDialog, type DialogButton } from "../../components/ui";
 import { useAuth } from "../../contexts/auth-context";
 import { useThemeColors } from "../../lib/theme";
-import { CustomDialog, DialogButton } from "../../components/ui";
 
 export const LoginScreen = () => {
   const colors = useThemeColors();
@@ -70,8 +73,8 @@ export const LoginScreen = () => {
         if (loginResponse.success) {
           router.push(
             `/(auth)/verify?email=${encodeURIComponent(
-              email.trim().toLowerCase()
-            )}`
+              email.trim().toLowerCase(),
+            )}`,
           );
         } else {
           setDialogConfig({
@@ -131,6 +134,7 @@ export const LoginScreen = () => {
     setIsLoading(true);
     try {
       setIsSigningUp(true);
+      trackEvent(AnalyticsEvent.SIGNUP_STARTED, { is_new_user: true }); // [AN-09]
       const signupResponse = await signup({
         email: email.trim().toLowerCase(),
         name: name.trim(),
@@ -139,8 +143,8 @@ export const LoginScreen = () => {
       if (signupResponse.success) {
         router.push(
           `/(auth)/verify?email=${encodeURIComponent(
-            email.trim().toLowerCase()
-          )}&isNewUser=true`
+            email.trim().toLowerCase(),
+          )}&isNewUser=true`,
         );
       } else {
         setDialogConfig({
@@ -183,7 +187,11 @@ export const LoginScreen = () => {
   const emailFilled = email.length > 0;
   const nameFilled = name.length > 0;
 
-  const getInputStyle = (filled: boolean, focused: boolean, hasError = false) => ({
+  const getInputStyle = (
+    filled: boolean,
+    focused: boolean,
+    hasError = false,
+  ) => ({
     height: 58,
     paddingHorizontal: 18,
     fontSize: 17,
@@ -194,8 +202,8 @@ export const LoginScreen = () => {
     borderColor: hasError
       ? colors.danger
       : filled || focused
-      ? colors.brand.primary
-      : colors.neutral.medium[1],
+        ? colors.brand.primary
+        : colors.neutral.medium[1],
     backgroundColor: filled ? colors.surface : colors.background,
     color: colors.text.primary,
     ...(focused && {
@@ -300,7 +308,10 @@ export const LoginScreen = () => {
 
         {/* Email input */}
         <TextInput
-          style={[{ marginTop: 30 }, getInputStyle(emailFilled, isEmailFocused, !!emailError)]}
+          style={[
+            { marginTop: 30 },
+            getInputStyle(emailFilled, isEmailFocused, !!emailError),
+          ]}
           placeholder="Email address"
           value={email}
           onChangeText={(t) => {
@@ -323,7 +334,10 @@ export const LoginScreen = () => {
         {/* Name input (signup flow) */}
         {showNameField && (
           <TextInput
-            style={[{ marginTop: 12 }, getInputStyle(nameFilled, isNameFocused)]}
+            style={[
+              { marginTop: 12 },
+              getInputStyle(nameFilled, isNameFocused),
+            ]}
             placeholder="Full name"
             value={name}
             onChangeText={setName}

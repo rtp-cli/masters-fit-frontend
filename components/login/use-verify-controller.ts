@@ -1,11 +1,13 @@
-import { useCallback, useState } from "react";
+import { type Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/auth-context";
-import { verify, generateAuthCode } from "@/lib/auth";
-import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
+import { useCallback, useState } from "react";
+
 import type { DialogButton } from "@/components/ui";
+import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
+import { useAuth } from "@/contexts/auth-context";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
+import { generateAuthCode, verify } from "@/lib/auth";
 
 export function useVerifyController() {
   const router = useRouter();
@@ -79,6 +81,7 @@ export function useVerifyController() {
       setIsLoading(true);
       try {
         const response = await verify({ authCode: code.trim() });
+        trackEvent(AnalyticsEvent.OTP_SUBMITTED, { success: response.success }); // [AN-09]
 
         if (response.success) {
           if (!response.token) {
@@ -105,12 +108,12 @@ export function useVerifyController() {
             setUserData(userWithOnboardingStatus);
             await SecureStore.setItemAsync(
               "user",
-              JSON.stringify(userWithOnboardingStatus)
+              JSON.stringify(userWithOnboardingStatus),
             );
 
             const hasValidWaiver = hasAcceptedCurrentWaiver(
               response.user.waiverAcceptedAt || null,
-              response.user.waiverVersion || null
+              response.user.waiverVersion || null,
             );
 
             if (!hasValidWaiver) {
@@ -121,7 +124,7 @@ export function useVerifyController() {
                 SecureStore.setItemAsync("pendingEmail", email),
                 SecureStore.setItemAsync(
                   "pendingUserId",
-                  response.user.id.toString()
+                  response.user.id.toString(),
                 ),
                 SecureStore.setItemAsync("isVerifyingUser", "true"),
               ]);
@@ -166,7 +169,7 @@ export function useVerifyController() {
         setIsLoading(false);
       }
     },
-    [router, setUserData, setIsPreloadingData, requestNewCode]
+    [router, setUserData, setIsPreloadingData, requestNewCode],
   );
 
   return {

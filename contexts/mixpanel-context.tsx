@@ -2,13 +2,14 @@
 
 import React, {
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
-  ReactNode,
 } from "react";
-import { Mixpanel } from "mixpanel-react-native";
+
 import { logger } from "@/lib/logger";
+import { initMixpanel } from "@/lib/mixpanel";
 
 const MIXPANEL_TOKEN = process.env.EXPO_PUBLIC_MIXPANEL_TOKEN;
 
@@ -17,7 +18,7 @@ interface MixpanelContextType {
 }
 
 const MixpanelContext = createContext<MixpanelContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface MixpanelProviderProps {
@@ -48,25 +49,13 @@ export function MixpanelProvider({ children }: MixpanelProviderProps) {
         return;
       }
 
-      try {
-        const mixpanelInstance = new Mixpanel(MIXPANEL_TOKEN, {
-          // Autocapture provides useful baseline interaction data on RN
-          // (there is no native 'session replay' flag like on web)
-          trackAutomaticEvents: true,
-        } as any);
-
-        await mixpanelInstance.init();
-        setIsEnabled(true);
-
-        logger.info("Mixpanel initialized (RN)", {
-          autocapture: true,
-        });
-      } catch (error) {
-        logger.error("Failed to initialize Mixpanel", {
-          error_message: (error as Error)?.message,
-          error_stack: (error as Error)?.stack ?? undefined,
-        });
-        setIsEnabled(false);
+      // Delegates to the lib/mixpanel singleton, which retains the instance so
+      // custom events (track) and identity (identify/reset) work app-wide —
+      // autocapture stays on inside initMixpanel.
+      const ok = await initMixpanel(MIXPANEL_TOKEN as string);
+      setIsEnabled(ok);
+      if (ok) {
+        logger.info("Mixpanel initialized (RN)", { autocapture: true });
       }
     };
 
