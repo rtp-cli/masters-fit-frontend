@@ -64,7 +64,12 @@ export default function DashboardScreen() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
   const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
-  const { can: canEntitlement } = useEntitlements();
+  const { capabilities, isLoading: entitlementsLoading } = useEntitlements();
+  // Fail-CLOSED for the analytics gate: only fetch/show advanced analytics when
+  // the capability is definitely granted. (can() fails open, which would fire
+  // the gated fetches during the load window -> 403 -> auto-paywall.)
+  const canProgressAnalytics =
+    capabilities?.VIEW_PROGRESS_ANALYTICS === true;
   const scrollViewRef = useRef<ScrollView>(null);
   const [todaysWorkout, setTodaysWorkout] = useState<TodayWorkout | null>(null);
   const [workoutInfo, setWorkoutInfo] = useState<{
@@ -524,10 +529,12 @@ export default function DashboardScreen() {
         setRawWeightAccuracyData(data);
       } catch {}
     };
-    if (user?.id && hasLoadedInitialData) loadWeightAccuracyData();
+    if (user?.id && hasLoadedInitialData && canProgressAnalytics)
+      loadWeightAccuracyData();
   }, [
     user?.id,
     hasLoadedInitialData,
+    canProgressAnalytics,
     weeklySummary,
     dailyWorkoutProgress,
     lastDataRefreshTimestamp,
@@ -551,10 +558,12 @@ export default function DashboardScreen() {
         setRawWorkoutTypeData(data);
       } catch {}
     };
-    if (user?.id && hasLoadedInitialData) loadWorkoutTypeData();
+    if (user?.id && hasLoadedInitialData && canProgressAnalytics)
+      loadWorkoutTypeData();
   }, [
     user?.id,
     hasLoadedInitialData,
+    canProgressAnalytics,
     weeklySummary,
     dailyWorkoutProgress,
     lastDataRefreshTimestamp,
@@ -578,10 +587,12 @@ export default function DashboardScreen() {
         setRawWeightProgressionData(data);
       } catch {}
     };
-    if (user?.id && hasLoadedInitialData) loadWeightProgressionData();
+    if (user?.id && hasLoadedInitialData && canProgressAnalytics)
+      loadWeightProgressionData();
   }, [
     user?.id,
     hasLoadedInitialData,
+    canProgressAnalytics,
     weeklySummary,
     dailyWorkoutProgress,
     lastDataRefreshTimestamp,
@@ -977,8 +988,9 @@ export default function DashboardScreen() {
         )}
 
         {/* Progress analytics — MastersFit+ only (decision D4). FREE users see
-            a locked upsell card in place of the trend/progression sections. */}
-        {canEntitlement("VIEW_PROGRESS_ANALYTICS") ? (
+            a locked upsell card; while entitlements resolve, render neither
+            (avoids a charts<->locked flash and any premature gated fetch). */}
+        {entitlementsLoading ? null : canProgressAnalytics ? (
           <>
             <WeightPerformanceSection
               filteredWeightAccuracy={filteredWeightAccuracy}
