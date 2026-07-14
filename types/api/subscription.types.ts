@@ -71,7 +71,37 @@ export interface UserSubscriptionStatus {
   accessLevel: AccessLevel;
 }
 
+// New entitlement model (P2) — server-authoritative gating source of truth.
+export type AccessTier = "FREE" | "PLUS" | "COMPLIMENTARY" | "BYPASS";
+
+export type Capability =
+  | "GENERATE_INITIAL_PLAN"
+  | "GENERATE_NEW_PROGRAM"
+  | "ADJUST_WEEK"
+  | "ADJUST_DAY"
+  | "VIEW_PROGRESS_ANALYTICS"
+  | "SYNC_HEALTH";
+
+export interface AllowanceStatus {
+  limit: number;
+  used: number;
+  remaining: number;
+}
+
+export interface Entitlements {
+  tier: AccessTier;
+  capabilities: Record<Capability, boolean>;
+  // Free-tier lifetime allowances; null for paid/complimentary/bypass tiers.
+  freeAllowances: {
+    initialPlan: AllowanceStatus;
+    weekAdjustment: AllowanceStatus;
+    dayAdjustment: AllowanceStatus;
+  } | null;
+}
+
 export interface SubscriptionStatusResponse {
   success: boolean;
   subscription: UserSubscriptionStatus;
+  // Present once the backend P2 change is deployed; optional for compatibility.
+  entitlements?: Entitlements;
 }

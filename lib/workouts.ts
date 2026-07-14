@@ -798,6 +798,19 @@ export function isRepeatablePreviousWorkout(workout: {
 }
 
 /**
+ * Per-action idempotency key for AI-operation requests. The backend collapses
+ * duplicate reservations by this key (double-tap / network retry) so a single
+ * intentional user action reserves once. A fresh key per call is correct — each
+ * call is a distinct action, and apiRequest's internal 401-refresh retry reuses
+ * the same options (same key), so that retry dedupes on the server.
+ */
+function makeIdempotencyKey(userId: number, op: string): string {
+  return `mf-${op}-${userId}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
+}
+
+/**
  * Generate workout plan asynchronously (returns job ID immediately)
  */
 export async function generateWorkoutPlanAsync(
@@ -833,6 +846,7 @@ export async function generateWorkoutPlanAsync(
       {
         method: "POST",
         body: JSON.stringify(params || {}),
+        headers: { "Idempotency-Key": makeIdempotencyKey(userId, "generate") },
       }
     );
 
@@ -995,6 +1009,7 @@ export async function regenerateWorkoutPlanAsync(
         ...(params || {}),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }),
+      headers: { "Idempotency-Key": makeIdempotencyKey(userId, "regen-week") },
     });
 
     if (response?.success) {
@@ -1031,6 +1046,7 @@ export async function regenerateDailyWorkoutAsync(
     }>(`/workouts/${userId}/days/${planDayId}/regenerate-async`, {
       method: "POST",
       body: JSON.stringify(params),
+      headers: { "Idempotency-Key": makeIdempotencyKey(userId, "regen-day") },
     });
 
     if (response?.success) {
@@ -1065,6 +1081,7 @@ export async function generateRestDayWorkoutAsync(
     }>(`/workouts/${userId}/rest-day-workout`, {
       method: "POST",
       body: JSON.stringify(params),
+      headers: { "Idempotency-Key": makeIdempotencyKey(userId, "rest-day") },
     });
 
     if (response?.success) {
