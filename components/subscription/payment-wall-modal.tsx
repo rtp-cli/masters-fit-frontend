@@ -20,6 +20,15 @@ import { type PaywallLimits } from "@/types/api";
 
 import SubscriptionPlansList from "./subscription-plans-list";
 
+// Shared benefit list for the MastersFit+ tier. Product-level (not per-package)
+// to match the paywall design — both plans unlock the same features.
+const MASTERSFIT_PLUS_BENEFITS = [
+  "AI-powered workout plans",
+  "Priority workout adjustments",
+  "Advanced analytics & insights",
+  "Syncs workouts with Apple Health and Android Health Connect",
+];
+
 interface ResultState {
   type: "success" | "info" | "error";
   title: string;
@@ -47,7 +56,6 @@ export default function PaymentWallModal({
   const colors = useThemeColors();
   const {
     packages,
-    metadata,
     isLoading,
     error,
     isPurchasing,
@@ -195,13 +203,31 @@ export default function PaymentWallModal({
 
           {/* Title */}
           <Text className="text-2xl font-bold text-text-primary text-center mb-3">
-            Get MastersFit Pro
+            Upgrade to MastersFit+
           </Text>
 
           {/* Message */}
           <Text className="text-base text-text-secondary text-center leading-6 mb-4">
             {paywallData.message}
           </Text>
+
+          {/* Benefits — shared list for the MastersFit+ tier (matches the
+              marketing paywall design; per-package benefits were removed from
+              the plan cards in favor of this single list). */}
+          <View className="gap-3 mb-6 px-1">
+            {MASTERSFIT_PLUS_BENEFITS.map((benefit) => (
+              <View key={benefit} className="flex-row items-center gap-3">
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={colors.brand.primary}
+                />
+                <Text className="text-base text-text-primary flex-1">
+                  {benefit}
+                </Text>
+              </View>
+            ))}
+          </View>
 
           {/* Subscription Plans */}
           <View className="mb-4">
@@ -245,7 +271,6 @@ export default function PaymentWallModal({
                 packages={packages}
                 selectedPackageId={selectedPackage?.identifier}
                 onPackageSelect={handlePackageSelect}
-                metadata={metadata}
               />
             )}
           </View>

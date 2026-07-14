@@ -113,7 +113,7 @@ export default function WorkoutChoiceModal({
               />
             </View>
             <Text className="text-lg font-semibold text-text-primary mb-1">
-              Create a New Workout
+              New Workout
             </Text>
             <Text className="text-sm text-text-muted text-center">
               Generate a fresh workout or repeat one you've done before
@@ -140,7 +140,7 @@ export default function WorkoutChoiceModal({
               </View>
               <View className="flex-1">
                 <Text className="text-content-on-primary font-semibold text-base">
-                  Generate New
+                  Create New Workout
                 </Text>
                 <Text className="text-content-on-primary/70 text-xs mt-0.5">
                   AI creates a workout based on your preferences
@@ -177,7 +177,7 @@ export default function WorkoutChoiceModal({
               </View>
               <View className="flex-1">
                 <Text className="text-text-primary font-semibold text-base">
-                  Repeat a Past Workout
+                  Repeat Past Workout
                 </Text>
                 <Text className="text-text-secondary text-xs mt-0.5">
                   Pick from one of your completed workouts

@@ -302,12 +302,12 @@ export default function WorkoutRegenerationModal({
           } else if (result !== null) {
             // Only show error for genuine failures, not paywall-intercepted nulls
             setIsGeneratingWorkout(false);
-            onError?.("Regeneration failed to start");
+            onError?.("Adjustment failed to start");
           }
         } catch (error) {
           if (!(error instanceof PaywallError)) {
             setIsGeneratingWorkout(false);
-            onError?.("An error occurred while starting regeneration");
+            onError?.("An error occurred while starting adjustment");
           }
         }
       } else {
@@ -337,9 +337,9 @@ export default function WorkoutRegenerationModal({
             } else if (result !== null) {
               // Only show error dialog for genuine failures, not paywall-intercepted nulls
               setDialogConfig({
-                title: "Daily Regeneration Failed",
+                title: "Daily Adjustment Failed",
                 description:
-                  "Unable to start daily workout regeneration. Please check your connection and try again.",
+                  "Unable to start daily workout adjustment. Please check your connection and try again.",
                 primaryButton: {
                   text: "OK",
                   onPress: () => setDialogVisible(false),
@@ -351,9 +351,9 @@ export default function WorkoutRegenerationModal({
           } catch (error) {
             if (!(error instanceof PaywallError)) {
               setDialogConfig({
-                title: "Daily Regeneration Error",
+                title: "Daily Adjustment Error",
                 description:
-                  "An error occurred while starting daily workout regeneration. Please try again.",
+                  "An error occurred while starting daily workout adjustment. Please try again.",
                 primaryButton: {
                   text: "OK",
                   onPress: () => setDialogVisible(false),
@@ -423,7 +423,7 @@ export default function WorkoutRegenerationModal({
             onSuccess?.();
           } else if (result !== null) {
             // Only show error for genuine failures, not paywall-intercepted nulls
-            onError?.("Regeneration failed to start");
+            onError?.("Adjustment failed to start");
           }
         }
       } else {
@@ -484,9 +484,9 @@ export default function WorkoutRegenerationModal({
             } else if (result !== null) {
               // Only show error dialog for genuine failures, not paywall-intercepted nulls
               setDialogConfig({
-                title: "Daily Regeneration Failed",
+                title: "Daily Adjustment Failed",
                 description:
-                  "Unable to start daily workout regeneration. Please check your connection and try again.",
+                  "Unable to start daily workout adjustment. Please check your connection and try again.",
                 primaryButton: {
                   text: "OK",
                   onPress: () => setDialogVisible(false),
@@ -503,9 +503,9 @@ export default function WorkoutRegenerationModal({
         const message =
           error instanceof Error
             ? error.message
-            : "An error occurred while starting regeneration. Please try again.";
+            : "An error occurred while starting adjustment. Please try again.";
         setDialogConfig({
-          title: "Regeneration Error",
+          title: "Adjustment Error",
           description: message,
           primaryButton: {
             text: "OK",
@@ -933,7 +933,7 @@ export default function WorkoutRegenerationModal({
                   <Ionicons name="close" size={20} color={colors.text.muted} />
                 </TouchableOpacity>
                 <Text className="text-base font-semibold text-text-primary">
-                  Regenerate Workout
+                  Adjust Workout
                 </Text>
                 <View className="w-8" />
               </View>
@@ -982,7 +982,7 @@ export default function WorkoutRegenerationModal({
                   </View>
                 ) : (
                   <Text className="text-base text-text-muted mb-6 text-center">
-                    Choose how you would like to generate your workout plan:
+                    Choose how you would like to adjust your workout plan:
                   </Text>
                 )}
 
@@ -1007,14 +1007,14 @@ export default function WorkoutRegenerationModal({
                       ]}
                       value={selectedType}
                       onChange={setSelectedType}
-                      accessibilityLabel="Regeneration scope"
+                      accessibilityLabel="Adjustment scope"
                     />
                   </View>
                 )}
 
                 {noActiveWorkoutDay && (
                   <Text className="text-xs text-text-muted mb-4 text-center">
-                    Day regeneration is not available for days outside your
+                    Day adjustment is not available for days outside your
                     workout plan
                   </Text>
                 )}
@@ -1028,9 +1028,9 @@ export default function WorkoutRegenerationModal({
                         ? "Tell us what you'd like to change about your weekly workout plan:"
                         : noActiveWorkoutDay
                           ? "Tell us what you'd like to include in your next week's workout plan:"
-                          : `Tell us why you want to regenerate this ${
+                          : `Tell us why you want to adjust this ${
                               selectedType === "day" ? "day's" : "week's"
-                            } workout plan, and what you would like to change:`}
+                            } workout, and what you'd like to change:`}
                   </Text>
                   <TextInput
                     className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-text-primary px-4 py-6"
@@ -1061,7 +1061,7 @@ export default function WorkoutRegenerationModal({
 
                   {selectedType === "week" && (
                     <Text className="text-xs text-text-muted mt-3">
-                      Your regenerated weekly plan will begin on{" "}
+                      Your adjusted weekly plan will begin on{" "}
                       {formatWorkoutPlanStartDate()} and end on{" "}
                       {formatWorkoutPlanEndDate()}.
                     </Text>
@@ -1121,8 +1121,8 @@ export default function WorkoutRegenerationModal({
                       maxFontSizeMultiplier={1.3}
                     >
                       {selectedType === "week"
-                        ? "Regenerate Weekly Plan"
-                        : "Regenerate Today's Workout"}
+                        ? "Update Weekly Plan"
+                        : "Update Today's Workout"}
                     </Text>
                   </>
                 )}

@@ -45,7 +45,7 @@ const PremiumUpgradeBanner: React.FC<PremiumUpgradeBannerProps> = ({
             className="text-base font-bold mb-1"
             style={{ color: colors.text.primary }}
           >
-            Get MastersFit Pro
+            Get MastersFit+
           </Text>
           <Text
             className="text-sm leading-5"

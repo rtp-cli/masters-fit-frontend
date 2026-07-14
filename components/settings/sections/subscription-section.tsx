@@ -24,17 +24,17 @@ export default function SubscriptionSection({
 
   // Get plan name based on product identifier
   const getPlanName = (identifier: string | null): string => {
-    if (!identifier) return "MastersFit Pro";
+    if (!identifier) return "MastersFit+";
     if (identifier.includes("annual") || identifier.includes("yearly")) {
-      return "MastersFit Pro (Annual)";
+      return "MastersFit+ (Annual)";
     }
     if (identifier.includes("monthly")) {
-      return "MastersFit Pro (Monthly)";
+      return "MastersFit+ (Monthly)";
     }
     if (identifier.includes("weekly")) {
-      return "MastersFit Pro (Weekly)";
+      return "MastersFit+ (Weekly)";
     }
-    return "MastersFit Pro";
+    return "MastersFit+";
   };
 
   return (

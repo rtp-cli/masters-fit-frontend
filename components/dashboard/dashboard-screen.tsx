@@ -999,7 +999,7 @@ export default function DashboardScreen() {
         paywallData={{
           type: "subscription_required",
           message:
-            "Upgrade to MastersFit Pro to unlock unlimited workouts, advanced analytics, and exclusive features.",
+            "Upgrade to MastersFit+ to unlock unlimited workouts, advanced analytics, and exclusive features.",
         }}
         onPurchaseSuccess={() => {
           // Modal is already dismissed at this point (onDismiss fired)
@@ -1007,9 +1007,9 @@ export default function DashboardScreen() {
           // Small delay to let the view hierarchy settle before showing a new dialog
           setTimeout(() => {
             setDialogConfig({
-              title: "Welcome to MastersFit Pro!",
+              title: "Welcome to MastersFit+!",
               description:
-                "Your subscription is now active. Enjoy unlimited access to all Pro features!",
+                "Your subscription is now active. Enjoy unlimited access to all MastersFit+ features!",
               primaryButton: {
                 text: "OK",
                 onPress: () => setDialogVisible(false),

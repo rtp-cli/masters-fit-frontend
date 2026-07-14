@@ -34,17 +34,17 @@ export default function SubscriptionDetailsModal({
 
   // Extract product name from identifier (e.g., "masters_fit_monthly" -> "Monthly Premium")
   const getProductName = (identifier: string | null): string => {
-    if (!identifier) return "MastersFit Pro";
+    if (!identifier) return "MastersFit+";
 
     // Try to extract readable name from identifier
     if (identifier.includes("annual") || identifier.includes("yearly")) {
-      return "MastersFit Pro (Annual)";
+      return "MastersFit+ (Annual)";
     }
     if (identifier.includes("monthly")) {
-      return "MastersFit Pro (Monthly)";
+      return "MastersFit+ (Monthly)";
     }
     if (identifier.includes("weekly")) {
-      return "MastersFit Pro (Weekly)";
+      return "MastersFit+ (Weekly)";
     }
 
     // Fallback: capitalize and format
@@ -87,7 +87,7 @@ export default function SubscriptionDetailsModal({
           {/* Plan Name */}
           <View className="items-center mb-8">
             <Text className="text-xl font-bold text-primary">
-              MastersFit Pro
+              MastersFit+
             </Text>
           </View>
 
@@ -145,7 +145,7 @@ export default function SubscriptionDetailsModal({
           {/* Features */}
           <View className="mb-8">
             <Text className="text-lg font-semibold text-text-primary mb-4">
-              MastersFit Pro Benefits
+              MastersFit+ Benefits
             </Text>
             <View className="gap-3">
               <View className="flex-row items-center gap-3">

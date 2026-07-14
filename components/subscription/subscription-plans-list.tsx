@@ -1,22 +1,20 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { PurchasesPackage, PACKAGE_TYPE } from "react-native-purchases";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import { PACKAGE_TYPE, type PurchasesPackage } from "react-native-purchases";
+
 import { useThemeColors } from "@/lib/theme";
-import { OfferingMetadata } from "@/hooks/use-subscription-plans";
 
 interface SubscriptionPlansListProps {
   packages: PurchasesPackage[];
   selectedPackageId?: string;
   onPackageSelect: (pkg: PurchasesPackage) => void;
-  metadata?: OfferingMetadata | null;
 }
 
 export default function SubscriptionPlansList({
   packages,
   selectedPackageId,
   onPackageSelect,
-  metadata,
 }: SubscriptionPlansListProps) {
   const colors = useThemeColors();
   // Helper to determine if a package is annual
@@ -47,7 +45,7 @@ export default function SubscriptionPlansList({
   // Calculate savings between monthly and annual
   const calculateAnnualSavings = (
     monthlyPkg: PurchasesPackage | undefined,
-    annualPkg: PurchasesPackage | undefined
+    annualPkg: PurchasesPackage | undefined,
   ) => {
     if (!monthlyPkg || !annualPkg) return null;
 
@@ -64,13 +62,13 @@ export default function SubscriptionPlansList({
   const monthlyPackages = packages.filter(isMonthlyPackage);
   const annualPackages = packages.filter(isAnnualPackage);
   const otherPackages = packages.filter(
-    (p) => !isMonthlyPackage(p) && !isAnnualPackage(p)
+    (p) => !isMonthlyPackage(p) && !isAnnualPackage(p),
   );
 
   // Calculate savings if both exist
   const savingsInfo = calculateAnnualSavings(
     monthlyPackages[0],
-    annualPackages[0]
+    annualPackages[0],
   );
 
   // Get product description with period
@@ -89,42 +87,9 @@ export default function SubscriptionPlansList({
     return "";
   };
 
-  // Default benefits (fallback if metadata not configured in RevenueCat).
-  // Same list for both billing periods on purpose — Pro unlocks the same
-  // features regardless of monthly vs. annual, only price/duration differ.
-  const defaultBenefits = [
-    "Unlimited workout regenerations",
-    "AI-powered workout plans",
-    "Advanced analytics & insights",
-  ];
-
-  // Get benefits from metadata or use defaults
-  const getBenefitsForPackage = (
-    pkg: PurchasesPackage,
-    isAnnual: boolean
-  ): string[] => {
-    // Try to get benefits from metadata using package identifier
-    if (metadata?.benefits) {
-      // Try exact package identifier match (e.g., "$rc_annual", "$rc_monthly")
-      if (metadata.benefits[pkg.identifier]) {
-        return metadata.benefits[pkg.identifier];
-      }
-      // Try generic keys ("annual", "monthly")
-      if (isAnnual && metadata.benefits["annual"]) {
-        return metadata.benefits["annual"];
-      }
-      if (!isAnnual && metadata.benefits["monthly"]) {
-        return metadata.benefits["monthly"];
-      }
-    }
-    // Fall back to the shared default
-    return defaultBenefits;
-  };
-
   const renderPackage = (pkg: PurchasesPackage, isAnnual: boolean = false) => {
     const isSelected = selectedPackageId === pkg.identifier;
     const isPopular = isAnnual && savingsInfo && savingsInfo.savingsPercent > 0;
-    const benefits = getBenefitsForPackage(pkg, isAnnual);
 
     return (
       <TouchableOpacity
@@ -168,7 +133,7 @@ export default function SubscriptionPlansList({
         </View>
 
         <View className="mb-4">
-          <Text className="text-[32px] font-bold text-text-primary mb-1">
+          <Text className="text-4xl font-bold text-text-primary mb-1">
             {pkg.product.priceString}
             <Text className="text-base font-normal text-text-secondary">
               {" "}
@@ -181,21 +146,6 @@ export default function SubscriptionPlansList({
               /year
             </Text>
           )}
-        </View>
-
-        <View className="gap-2">
-          {benefits.map((benefit, index) => (
-            <View key={index} className="flex-row items-center gap-2">
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color={colors.brand.primary}
-              />
-              <Text className="text-sm text-text-secondary flex-1">
-                {benefit}
-              </Text>
-            </View>
-          ))}
         </View>
       </TouchableOpacity>
     );

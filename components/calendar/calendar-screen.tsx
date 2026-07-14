@@ -243,9 +243,9 @@ export default function CalendarScreen() {
           setIsGeneratingWorkout(false);
           // Only show error dialog for genuine failures, not paywall-intercepted nulls
           setDialogConfig({
-            title: "Regeneration Failed",
+            title: "Adjustment Failed",
             description:
-              "Unable to start workout regeneration. Please check your connection and try again.",
+              "Unable to start workout adjustment. Please check your connection and try again.",
             primaryButton: {
               text: "OK",
               onPress: () => setDialogVisible(false),
@@ -260,9 +260,9 @@ export default function CalendarScreen() {
       // Don't show error dialog if paywall modal is already handling it
       if (!(err instanceof PaywallError)) {
         setDialogConfig({
-          title: "Regeneration Error",
+          title: "Adjustment Error",
           description:
-            "An error occurred while starting regeneration. Please try again.",
+            "An error occurred while starting adjustment. Please try again.",
           primaryButton: {
             text: "OK",
             onPress: () => setDialogVisible(false),
