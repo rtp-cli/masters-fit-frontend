@@ -6,6 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../contexts/auth-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useEntitlements } from "@/hooks/use-entitlements";
 import {
   fetchHeartRateSamples,
   fetchCaloriesToday,
@@ -45,11 +46,13 @@ import StrengthProgressSection from "./sections/strength-progress";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
+import ProgressAnalyticsLocked from "./sections/progress-analytics-locked";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import { PAYWALL_COPY } from "@/lib/paywall-copy";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 import { CustomDialog } from "@/components/ui";
 import type { DialogButton } from "@/components/ui";
@@ -61,6 +64,7 @@ export default function DashboardScreen() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
   const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
+  const { can: canEntitlement } = useEntitlements();
   const scrollViewRef = useRef<ScrollView>(null);
   const [todaysWorkout, setTodaysWorkout] = useState<TodayWorkout | null>(null);
   const [workoutInfo, setWorkoutInfo] = useState<{
@@ -132,6 +136,13 @@ export default function DashboardScreen() {
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
   const [showPaywallTest, setShowPaywallTest] = useState(false);
   const [showPaymentWall, setShowPaymentWall] = useState(false);
+  const [paywallMessage, setPaywallMessage] = useState<string>(
+    PAYWALL_COPY.GENERIC
+  );
+  const openPaywall = (message: string) => {
+    setPaywallMessage(message);
+    setShowPaymentWall(true);
+  };
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -930,7 +941,7 @@ export default function DashboardScreen() {
         <PremiumUpgradeBanner
           isPro={isPro}
           isLoading={subscriptionLoading}
-          onPress={() => setShowPaymentWall(true)}
+          onPress={() => openPaywall(PAYWALL_COPY.GENERIC)}
         />
 
         <ActiveWorkoutCard
@@ -965,25 +976,35 @@ export default function DashboardScreen() {
           />
         )}
 
-        <WeightPerformanceSection
-          filteredWeightAccuracy={filteredWeightAccuracy}
-          weightPerformanceFilter={weightPerformanceFilter}
-          onChangeFilter={setWeightPerformanceFilter}
-        />
+        {/* Progress analytics — MastersFit+ only (decision D4). FREE users see
+            a locked upsell card in place of the trend/progression sections. */}
+        {canEntitlement("VIEW_PROGRESS_ANALYTICS") ? (
+          <>
+            <WeightPerformanceSection
+              filteredWeightAccuracy={filteredWeightAccuracy}
+              weightPerformanceFilter={weightPerformanceFilter}
+              onChangeFilter={setWeightPerformanceFilter}
+            />
 
-        {weightProgressionData && weightProgressionData.length > 0 && (
-          <StrengthProgressSection
-            data={weightProgressionData}
-            filter={strengthFilter}
-            onChangeFilter={setStrengthFilter}
+            {weightProgressionData && weightProgressionData.length > 0 && (
+              <StrengthProgressSection
+                data={weightProgressionData}
+                filter={strengthFilter}
+                onChangeFilter={setStrengthFilter}
+              />
+            )}
+
+            <WorkoutTypeDistributionSection
+              metrics={filteredWorkoutTypeMetrics}
+              filter={workoutTypeFilter}
+              onChangeFilter={setWorkoutTypeFilter}
+            />
+          </>
+        ) : (
+          <ProgressAnalyticsLocked
+            onUpgrade={() => openPaywall(PAYWALL_COPY.ANALYTICS)}
           />
         )}
-
-        <WorkoutTypeDistributionSection
-          metrics={filteredWorkoutTypeMetrics}
-          filter={workoutTypeFilter}
-          onChangeFilter={setWorkoutTypeFilter}
-        />
 
         <DashboardEmptyStateSection
           showLoading={showLoadingEmpty}
@@ -998,8 +1019,7 @@ export default function DashboardScreen() {
         onClose={() => setShowPaymentWall(false)}
         paywallData={{
           type: "subscription_required",
-          message:
-            "Upgrade to MastersFit+ to unlock unlimited workouts, advanced analytics, and exclusive features.",
+          message: paywallMessage,
         }}
         onPurchaseSuccess={() => {
           // Modal is already dismissed at this point (onDismiss fired)
