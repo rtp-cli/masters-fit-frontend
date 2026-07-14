@@ -26,6 +26,7 @@ import { useTheme } from "../lib/theme-context";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { useEntitlements } from "@/hooks/use-entitlements";
 import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
 import {
   regenerateWorkoutPlanAsync,
@@ -104,6 +105,7 @@ export default function WorkoutRegenerationModal({
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
+  const { freeAllowances } = useEntitlements();
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(
     null
   );
@@ -114,6 +116,24 @@ export default function WorkoutRegenerationModal({
   const [selectedType, setSelectedType] = useState<"week" | "day">(
     regenerationType
   );
+
+  // Contextual free-adjustment count (FREE tier only; null for paid). Shown in
+  // the normal adjust flow so the user knows this action spends an allowance.
+  const freeAdjustmentNote = (() => {
+    if (!freeAllowances || isRestDay || noActiveWorkoutDay) return null;
+    const a =
+      selectedType === "week"
+        ? freeAllowances.weekAdjustment
+        : freeAllowances.dayAdjustment;
+    const scope = selectedType === "week" ? "weekly" : "daily";
+    if (a.remaining <= 0) {
+      return `You've used your free ${scope} ${a.limit === 1 ? "adjustment" : "adjustments"} — this requires MastersFit+.`;
+    }
+    if (a.limit === 1) {
+      return `Uses your 1 free ${scope} adjustment.`;
+    }
+    return `Uses 1 of your ${a.limit} free ${scope} adjustments · ${a.remaining} left`;
+  })();
 
   // State for daily workout temporary overrides
   const [showDailyOverrideForm, setShowDailyOverrideForm] = useState(false);
@@ -1064,6 +1084,12 @@ export default function WorkoutRegenerationModal({
                       Your adjusted weekly plan will begin on{" "}
                       {formatWorkoutPlanStartDate()} and end on{" "}
                       {formatWorkoutPlanEndDate()}.
+                    </Text>
+                  )}
+
+                  {freeAdjustmentNote && (
+                    <Text className="text-xs text-primary font-medium mt-3">
+                      {freeAdjustmentNote}
                     </Text>
                   )}
 
