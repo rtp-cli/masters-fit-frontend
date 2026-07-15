@@ -21,6 +21,7 @@ import {
   isRepeatablePreviousWorkout,
 } from "@/lib/workouts";
 import { getCurrentUser } from "@/lib/auth";
+import { PaywallError } from "@/lib/api";
 import { formatDateAsString } from "@/utils";
 import WorkoutBlock from "@/components/workout-block";
 import { CustomDialog } from "@/components/ui";
@@ -163,8 +164,14 @@ export default function WorkoutRepeatPicker({
         throw new Error("Failed to copy workout");
       }
     } catch (error) {
+      // PaywallError is handled centrally (the paywall modal is already shown).
+      if (error instanceof PaywallError) return;
       console.error("Error copying past workout:", error);
-      showError("Failed to copy this workout. Please try again.");
+      showError(
+        error instanceof Error
+          ? error.message
+          : "Failed to copy this workout. Please try again."
+      );
     } finally {
       setCopying(false);
     }
@@ -212,9 +219,12 @@ export default function WorkoutRepeatPicker({
         throw new Error("Failed to repeat workout");
       }
     } catch (error) {
+      if (error instanceof PaywallError) return;
       console.error("Error repeating workout:", error);
       showError(
-        "Failed to repeat the workout. Please try again or generate a new workout."
+        error instanceof Error
+          ? error.message
+          : "Failed to repeat the workout. Please try again or generate a new workout."
       );
     } finally {
       setRepeating(false);

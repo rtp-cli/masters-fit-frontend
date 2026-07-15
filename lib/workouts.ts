@@ -661,27 +661,27 @@ export async function repeatPreviousWeekWorkout(
   userId: number,
   originalWorkoutId: number,
   newStartDate: string
-): Promise<WorkoutResponse | null> {
-  try {
-    const response = await apiRequest<WorkoutResponse>(
-      `/workouts/${userId}/repeat-week/${originalWorkoutId}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ newStartDate }),
-      }
-    );
-
-    if (response?.success) {
-      // Invalidate cache to force fresh data fetch
-      invalidateActiveWorkoutCache();
-      return response;
-    } else {
-      throw new Error(response?.message || "Failed to repeat workout");
+): Promise<WorkoutResponse> {
+  // Let the real error propagate (PaywallError or an Error carrying the server
+  // message) so callers can surface the actual cause. Previously this caught
+  // everything and returned null, collapsing every failure — auth, ownership,
+  // server errors — into a single opaque "Failed to repeat workout" message.
+  const response = await apiRequest<WorkoutResponse>(
+    `/workouts/${userId}/repeat-week/${originalWorkoutId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ newStartDate }),
     }
-  } catch (error) {
-    console.error("Error repeating previous week workout:", error);
-    return null;
+  );
+
+  if (!response?.success) {
+    // Note: a real HTTP failure is already thrown by apiRequest with the
+    // server's message; this only covers a 200 body with success:false.
+    throw new Error("Failed to repeat workout");
   }
+  // Invalidate cache to force fresh data fetch
+  invalidateActiveWorkoutCache();
+  return response;
 }
 
 /**
@@ -713,29 +713,26 @@ export async function fetchPastCompletedDays(): Promise<PlanDayWithBlocks[]> {
  */
 export async function repeatPastDay(
   planDayId: number
-): Promise<WorkoutResponse | null> {
+): Promise<WorkoutResponse> {
   const user = await getCurrentUser();
   if (!user) throw new Error("User not authenticated");
 
-  try {
-    const response = await apiRequest<WorkoutResponse>(
-      `/workouts/${user.id}/repeat-day/${planDayId}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ newDate: getCurrentDate() }),
-      }
-    );
-
-    if (response?.success) {
-      invalidateActiveWorkoutCache();
-      return response;
-    } else {
-      throw new Error("Failed to repeat past day workout");
+  // Let the real error propagate (PaywallError or an Error carrying the server
+  // message) instead of swallowing it into null — that collapsed every failure
+  // into an opaque "Failed to copy workout" and hid the actual HTTP status.
+  const response = await apiRequest<WorkoutResponse>(
+    `/workouts/${user.id}/repeat-day/${planDayId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ newDate: getCurrentDate() }),
     }
-  } catch (error) {
-    console.error("Error repeating past day workout:", error);
-    return null;
+  );
+
+  if (!response?.success) {
+    throw new Error("Failed to repeat past day workout");
   }
+  invalidateActiveWorkoutCache();
+  return response;
 }
 
 /**

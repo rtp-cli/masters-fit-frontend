@@ -15,6 +15,7 @@ import {
   invalidateActiveWorkoutCache,
 } from "@lib/workouts";
 import { getCurrentUser } from "@lib/auth";
+import { PaywallError } from "@lib/api";
 import { useThemeColors } from "@lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import { formatDate, formatDateAsString } from "@utils/index";
@@ -159,12 +160,16 @@ export default function WorkoutRepeatModal({
         throw new Error("Failed to repeat workout");
       }
     } catch (error) {
-      console.error("Error repeating workout:", error);
       setIsGeneratingWorkout(false);
+      // PaywallError is handled centrally (the paywall modal is already shown).
+      if (error instanceof PaywallError) return;
+      console.error("Error repeating workout:", error);
       setDialogConfig({
         title: "Error",
         description:
-          "Failed to repeat the workout. Please try again or generate a new workout.",
+          error instanceof Error
+            ? error.message
+            : "Failed to repeat the workout. Please try again or generate a new workout.",
         primaryButton: {
           text: "OK",
           onPress: () => setDialogVisible(false),

@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/lib/theme";
 import { fetchPastCompletedDays, repeatPastDay } from "@/lib/workouts";
+import { PaywallError } from "@/lib/api";
 import WorkoutBlock from "@/components/workout-block";
 import { CustomDialog } from "@/components/ui";
 import {
@@ -81,10 +82,15 @@ export default function PastWorkoutPicker({
         throw new Error("Failed to copy workout");
       }
     } catch (error) {
+      // PaywallError is handled centrally (the paywall modal is already shown).
+      if (error instanceof PaywallError) return;
       console.error("Error copying past workout:", error);
       setDialogConfig({
         title: "Error",
-        description: "Failed to copy this workout. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to copy this workout. Please try again.",
         primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
         icon: "alert-circle",
       });
