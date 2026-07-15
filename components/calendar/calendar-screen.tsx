@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { PaywallError } from "@/lib/api";
 import { registerForPushNotifications } from "@/lib/notifications";
+import { tabEvents } from "@/lib/tab-events";
 import {
   type PlanDayWithBlocks,
   type WorkoutBlockWithExercises,
@@ -160,7 +161,6 @@ export default function CalendarScreen() {
       setCalendarKey((prev) => prev + 1);
     };
 
-    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:calendar", handleScrollToTop);
     tabEvents.on("selectToday:calendar", handleSelectToday);
 

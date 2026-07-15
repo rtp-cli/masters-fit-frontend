@@ -18,6 +18,9 @@ import {
   type WorkoutsResponse,
   type WorkoutWithDetails,
 } from "@/types/api";
+// The barrel's ExerciseLog differs from the logs.types one (which carries
+// roundNumber); fetchExerciseLogsForPlanDay needs the latter.
+import type { ExerciseLog as PlanDayExerciseLog } from "@/types/api/logs.types";
 
 import { formatDateAsString, getCurrentDate,getTodayString } from "../utils";
 import { apiRequest, PaywallError } from "./api";
@@ -436,17 +439,17 @@ export async function getExerciseLogs(
  */
 export async function fetchExerciseLogsForPlanDay(
   planDayId: number
-): Promise<Record<number, import("@/types/api/logs.types").ExerciseLog[]>> {
+): Promise<Record<number, PlanDayExerciseLog[]>> {
   try {
     const response = await apiRequest<{
       success: boolean;
-      logs: import("@/types/api/logs.types").ExerciseLog[];
+      logs: PlanDayExerciseLog[];
     }>(`/logs/exercise/${planDayId}`);
 
     const logs = response?.logs || [];
 
     // Group by planDayExerciseId
-    const grouped: Record<number, import("@/types/api/logs.types").ExerciseLog[]> = {};
+    const grouped: Record<number, PlanDayExerciseLog[]> = {};
     for (const log of logs) {
       if (!grouped[log.planDayExerciseId]) {
         grouped[log.planDayExerciseId] = [];

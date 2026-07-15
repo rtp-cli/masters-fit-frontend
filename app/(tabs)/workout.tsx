@@ -43,6 +43,7 @@ import { trackWorkoutStarted } from "@/lib/analytics";
 import { getCurrentUser } from "@/lib/auth";
 import { logCircuitCompletion } from "@/lib/circuits";
 import { registerForPushNotifications } from "@/lib/notifications";
+import { tabEvents } from "@/lib/tab-events";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import {
@@ -881,7 +882,6 @@ export default function WorkoutScreen() {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:workout", handleScrollToTop);
 
     return () => {

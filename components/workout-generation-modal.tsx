@@ -464,13 +464,19 @@ export default function WorkoutGenerationModal() {
   );
 
   // ── Shared footer pill + cancel ───────────────────────────────────────────
-  const renderFooter = (
-    primaryLabel: string,
-    onPrimary: () => void,
-    secondaryLabel?: string,
-    onSecondary?: () => void,
-    primaryDanger?: boolean,
-  ) => (
+  const renderFooter = ({
+    primaryLabel,
+    onPrimary,
+    secondaryLabel,
+    onSecondary,
+    primaryDanger,
+  }: {
+    primaryLabel: string;
+    onPrimary: () => void;
+    secondaryLabel?: string;
+    onSecondary?: () => void;
+    primaryDanger?: boolean;
+  }) => (
     <View
       style={{
         paddingTop: 12,
@@ -578,7 +584,7 @@ export default function WorkoutGenerationModal() {
                 </Text>
               </View>
             </ScrollView>
-            {renderFooter("Dismiss", handleDismiss)}
+            {renderFooter({ primaryLabel: "Dismiss", onPrimary: handleDismiss })}
           </>
         ) : showCancelConfirm ? (
           /* ── Cancel confirmation ─────────────────────────────────────── */
@@ -619,12 +625,12 @@ export default function WorkoutGenerationModal() {
                 </Text>
               </View>
             </ScrollView>
-            {renderFooter(
-              "Keep Generating",
-              () => setShowCancelConfirm(false),
-              "Cancel Generation",
-              handleCancelConfirm,
-            )}
+            {renderFooter({
+              primaryLabel: "Keep Generating",
+              onPrimary: () => setShowCancelConfirm(false),
+              secondaryLabel: "Cancel Generation",
+              onSecondary: handleCancelConfirm,
+            })}
           </>
         ) : (
           /* ── Main timeline view ──────────────────────────────────────── */
@@ -844,12 +850,12 @@ export default function WorkoutGenerationModal() {
             </ScrollView>
 
             {/* ── Footer ──────────────────────────────────────────────── */}
-            {renderFooter(
-              isFinished ? "View Your Workout" : "Continue Using App",
-              isFinished ? handleViewWorkout : handleContinueInBackground,
-              isJobActive ? "Cancel Generation" : undefined,
-              isJobActive ? () => setShowCancelConfirm(true) : undefined,
-            )}
+            {renderFooter({
+              primaryLabel: isFinished ? "View Your Workout" : "Continue Using App",
+              onPrimary: isFinished ? handleViewWorkout : handleContinueInBackground,
+              secondaryLabel: isJobActive ? "Cancel Generation" : undefined,
+              onSecondary: isJobActive ? () => setShowCancelConfirm(true) : undefined,
+            })}
           </>
         )}
       </View>

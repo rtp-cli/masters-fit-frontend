@@ -19,6 +19,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useSecretActivationContext } from "@/contexts/secret-activation-context";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { tabEvents } from "@/lib/tab-events";
 
 import { useThemeColors } from "../../lib/theme";
 import ComingSoonModal from "../coming-soon-modal";
@@ -143,7 +144,6 @@ export default function SettingsView({
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:settings", handleScrollToTop);
 
     return () => {

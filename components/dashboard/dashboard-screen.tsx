@@ -31,6 +31,7 @@ import { useEntitlements } from "@/hooks/use-entitlements";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { PAYWALL_COPY } from "@/lib/paywall-copy";
+import { tabEvents } from "@/lib/tab-events";
 import {
   type PlanDayWithBlocks,
   type PlanDayWithExercises,
@@ -283,7 +284,6 @@ export default function DashboardScreen() {
     const handleScrollToTop = () => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
-    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:dashboard", handleScrollToTop);
     return () => {
       tabEvents.off("scrollToTop:dashboard", handleScrollToTop);

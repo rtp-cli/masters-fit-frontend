@@ -38,6 +38,7 @@ import { HIT_SLOP_10 } from "@/constants";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
+import { tabEvents } from "@/lib/tab-events";
 import { useThemeColors } from "@/lib/theme";
 import {
   type DateSearchExercise,
@@ -147,7 +148,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     };
 
-    const { tabEvents } = require("../../lib/tab-events");
     tabEvents.on("scrollToTop:search", handleScrollToTop);
 
     return () => {
