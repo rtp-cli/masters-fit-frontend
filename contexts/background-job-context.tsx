@@ -158,7 +158,7 @@ export function BackgroundJobProvider({
   const [isLoading, setIsLoading] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const processedCompletionsRef = useRef<Set<number>>(new Set()); // Track processed job completions
-  const { user, triggerWorkoutReady } = useAuth();
+  const { triggerWorkoutReady } = useAuth();
   const router = useRouter();
   // Ref so landing callbacks always route via the live router without
   // re-creating themselves on every render.

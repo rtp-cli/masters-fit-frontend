@@ -62,8 +62,6 @@ export default function SettingsView({
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Settings state
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // Coming Soon modals state
   const [comingSoonModal, setComingSoonModal] = useState<{

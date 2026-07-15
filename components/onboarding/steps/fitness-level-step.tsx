@@ -1,7 +1,6 @@
 import { Text, TouchableOpacity,View } from "react-native";
 
 import CustomSlider from "@/components/ui/slider";
-import { useThemeColors } from "@/lib/theme";
 import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
 import {
   FITNESS_LEVELS,
@@ -29,8 +28,6 @@ export default function FitnessLevelStep({
   onFieldChange,
   onToggle,
 }: FitnessLevelStepProps) {
-  const colors = useThemeColors();
-
   // Fitness level configuration helper
   const getFitnessLevelConfig = (levelKey: FITNESS_LEVELS) => {
     switch (levelKey) {

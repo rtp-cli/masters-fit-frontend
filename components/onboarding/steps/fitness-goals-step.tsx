@@ -1,6 +1,5 @@
 import { Text, TouchableOpacity,View } from "react-native";
 
-import { useThemeColors } from "@/lib/theme";
 import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
 import { FITNESS_GOALS } from "@/types/enums/fitness.enums";
 
@@ -16,8 +15,6 @@ export default function FitnessGoalsStep({
   formData,
   onToggle,
 }: FitnessGoalsStepProps) {
-  const colors = useThemeColors();
-
   // Goal configuration helper
   const getGoalConfig = (goalKey: FITNESS_GOALS) => {
     switch (goalKey) {

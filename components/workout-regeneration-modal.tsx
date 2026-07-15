@@ -23,7 +23,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { RegenerationType } from "@/constants/global.enum";
-import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
@@ -94,7 +93,6 @@ interface WorkoutRegenerationModalProps {
 export default function WorkoutRegenerationModal({
   visible,
   onClose,
-  onRegenerate,
   loading = false,
   regenerationType = "day",
   onSuccess,
@@ -145,10 +143,6 @@ export default function WorkoutRegenerationModal({
       includeCooldown: true,
     });
 
-  // Get refresh functions for data refresh after regeneration
-  const {
-    refresh: { refreshAll },
-  } = useAppDataContext();
   const { setIsGeneratingWorkout } = useAuth();
 
   // Background job tracking

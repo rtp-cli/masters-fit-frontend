@@ -39,8 +39,6 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
   const [exerciseData, setExerciseData] = useState<ExerciseSessionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const exerciseTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const workoutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const workoutStartTime = useRef<Date | null>(null);
   const exerciseStartTime = useRef<Date | null>(null);
   const appStateRef = useRef(AppState.currentState);
@@ -78,12 +76,6 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
     const flattenedExercises = getFlattenedExercises(activeWorkout);
     return flattenedExercises[currentExerciseIndex] || null;
   }, [activeWorkout, currentExerciseIndex, getFlattenedExercises]);
-
-  // Get current block information
-  const getCurrentBlock = useCallback(() => {
-    if (!activeWorkout || !activeWorkout.blocks) return null;
-    return activeWorkout.blocks[currentBlockIndex] || null;
-  }, [activeWorkout, currentBlockIndex]);
 
   // Timer management with timestamp-based calculation
   useEffect(() => {
@@ -389,14 +381,12 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
       // Check exercise logs and update local state
       const updatedData = [...initialData];
-      let lastCompletedIndex = -1;
 
       for (let i = 0; i < exercisesArray.length; i++) {
         const exercise = exercisesArray[i];
         const isCompleted = completedExerciseIds.includes(exercise.id);
 
         if (isCompleted) {
-          lastCompletedIndex = i;
           // Get the latest exercise log for this exercise
           const logs = await getExerciseLogs(exercise.id);
           if (logs.length > 0) {
@@ -421,7 +411,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
 
       // Set current exercise index to the next incomplete exercise
       const nextIncompleteIndex = exercisesArray.findIndex(
-        (exercise: WorkoutBlockWithExercise, idx: number) =>
+        (exercise: WorkoutBlockWithExercise, _idx: number) =>
           !completedExerciseIds.includes(exercise.id)
       );
 

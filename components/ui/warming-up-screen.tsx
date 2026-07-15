@@ -12,7 +12,6 @@ interface WarmingUpScreenProps {
 }
 
 export default function WarmingUpScreen({
-  onComplete,
   duration = 8000,
 }: WarmingUpScreenProps) {
   const colors = useThemeColors();

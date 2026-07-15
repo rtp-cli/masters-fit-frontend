@@ -151,8 +151,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = await getCurrentUser();
 
         // Track app session start
-        const sessionId = AnalyticsUtils.generateSessionId();
-
         trackAppOpened({
           app_version: Application.nativeApplicationVersion || "1.0.0",
           platform: AnalyticsUtils.getPlatform(),

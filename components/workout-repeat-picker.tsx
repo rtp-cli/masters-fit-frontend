@@ -51,7 +51,6 @@ interface WorkoutRepeatPickerProps {
 export default function WorkoutRepeatPicker({
   visible,
   onClose,
-  onSuccess,
   singleDayOnly = false,
 }: WorkoutRepeatPickerProps) {
   const colors = useThemeColors();
@@ -86,7 +85,6 @@ export default function WorkoutRepeatPicker({
   const [expandedWorkouts, setExpandedWorkouts] = useState<
     Record<number, boolean>
   >({});
-  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -105,7 +103,6 @@ export default function WorkoutRepeatPicker({
       setExpandedDayCards({});
       setSelectedWorkout(null);
       setExpandedWorkouts({});
-      setExpandedDays({});
       loadDayData();
       loadWeekData();
     }
@@ -269,30 +266,6 @@ export default function WorkoutRepeatPicker({
       ...prev,
       [workoutId]: !prev[workoutId],
     }));
-  };
-
-  const toggleDayExpanded = (dayId: string) => {
-    setExpandedDays((prev) => {
-      const newState: Record<string, boolean> = {};
-      if (!prev[dayId]) newState[dayId] = true;
-      return newState;
-    });
-  };
-
-  const getBlockIcon = (blockType?: string) => {
-    const icons: Record<string, string> = {
-      traditional: "barbell-outline",
-      amrap: "timer-outline",
-      emom: "stopwatch-outline",
-      for_time: "flash-outline",
-      circuit: "refresh-circle-outline",
-      tabata: "pulse-outline",
-      warmup: "sunny-outline",
-      cooldown: "moon-outline",
-      superset: "layers-outline",
-      flow: "water-outline",
-    };
-    return icons[blockType || ""] || "fitness-outline";
   };
 
   const getBlockTypeDisplayName = (blockType?: string) => {

@@ -1,5 +1,5 @@
 import { type Ionicons } from "@expo/vector-icons";
-import { fetchActiveWorkout,generateWorkoutPlanAsync } from "@lib/workouts";
+import { fetchActiveWorkout } from "@lib/workouts";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import { useFocusEffect } from "@react-navigation/native";
 import {
@@ -29,7 +29,6 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
-import { registerForPushNotifications } from "@/lib/notifications";
 import { PAYWALL_COPY } from "@/lib/paywall-copy";
 import { tabEvents } from "@/lib/tab-events";
 import {
@@ -65,7 +64,7 @@ export default function DashboardScreen() {
   const colors = useThemeColors();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { addJob, reloadJobs, isGenerating } = useBackgroundJobs();
+  const { reloadJobs, isGenerating } = useBackgroundJobs();
   const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
   const { capabilities, isLoading: entitlementsLoading } = useEntitlements();
   // Fail-CLOSED for the analytics gate: only fetch/show advanced analytics when
@@ -85,15 +84,15 @@ export default function DashboardScreen() {
   const [loadingToday, setLoadingToday] = useState(false);
   const [stepsCount, setStepsCount] = useState<number | null>(null);
   const [maxHeartRate, setMaxHeartRate] = useState<number | null>(null);
-  const [avgHeartRate, setAvgHeartRate] = useState<number | null>(null);
+  const [, setAvgHeartRate] = useState<number | null>(null);
   const [caloriesBurned, setCaloriesBurned] = useState<number | null>(null);
   const [nutritionCaloriesConsumed, setNutritionCaloriesConsumed] = useState<
     number | null
   >(null);
-  const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
+  const [, setWorkoutDuration] = useState<number | null>(null);
   const [healthReady, setHealthReady] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
-  const [healthError, setHealthError] = useState<string | null>(null);
+  const [, setHealthError] = useState<string | null>(null);
 
   const [strengthFilter, setStrengthFilter] = useState<TIME_RANGE_FILTER>(
     TIME_RANGE_FILTER.THREE_MONTHS
@@ -142,7 +141,6 @@ export default function DashboardScreen() {
   const [showSingleDayRegenModal, setShowSingleDayRegenModal] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
-  const [showPaywallTest, setShowPaywallTest] = useState(false);
   const [showPaymentWall, setShowPaymentWall] = useState(false);
   const [paywallMessage, setPaywallMessage] = useState<string>(
     PAYWALL_COPY.GENERIC
@@ -163,9 +161,6 @@ export default function DashboardScreen() {
   const {
     data: {
       weeklySummary,
-      workoutConsistency,
-      weightMetrics,
-      totalVolumeMetrics,
       dailyWorkoutProgress,
       lastDataRefreshTimestamp,
     },
@@ -638,60 +633,6 @@ export default function DashboardScreen() {
       fetchTodaysWorkout();
       fetchHealthData();
     }
-  };
-
-  const handleGenerateNewWorkout = async () => {
-    if (!user?.id) return;
-    if (isGenerating) {
-      setDialogConfig({
-        title: "Generation in Progress",
-        description:
-          "A workout is already being generated. Please wait for it to complete.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "information-circle",
-      });
-      setDialogVisible(true);
-      return;
-    }
-    try {
-      await registerForPushNotifications();
-      const result = await generateWorkoutPlanAsync(user.id);
-      if (result?.success && result.jobId) {
-        await addJob(result.jobId, "generation");
-      } else if (result !== null) {
-        // Only show error dialog for genuine failures, not paywall-intercepted nulls
-        setDialogConfig({
-          title: "Generation Failed",
-          description:
-            "Unable to start workout generation. Please check your connection and try again.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "alert-circle",
-        });
-        setDialogVisible(true);
-      }
-    } catch (error) {
-      setDialogConfig({
-        title: "Generation Error",
-        description:
-          "An error occurred while starting workout generation. Please try again.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
-    }
-  };
-
-  const handleRepeatWorkoutSuccess = () => {
-    handleRefresh();
   };
 
   const handleFetchStepsToday = async () => {

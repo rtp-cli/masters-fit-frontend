@@ -42,7 +42,6 @@ import { useCircuitSession } from "@/hooks/use-circuit-session";
 import { trackWorkoutStarted } from "@/lib/analytics";
 import { getCurrentUser } from "@/lib/auth";
 import { logCircuitCompletion } from "@/lib/circuits";
-import { registerForPushNotifications } from "@/lib/notifications";
 import { tabEvents } from "@/lib/tab-events";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -53,10 +52,7 @@ import {
   markPlanDayAsComplete,
   skipExercise,
 } from "@/lib/workouts";
-import {
-  generateWorkoutPlanAsync,
-  invalidateActiveWorkoutCache,
-} from "@/lib/workouts";
+import { invalidateActiveWorkoutCache } from "@/lib/workouts";
 import {
   type CircuitRound,
   type CircuitSessionConfig,
@@ -70,7 +66,6 @@ import {
 } from "@/types/api/workout.types";
 import { formatDateAsString,formatEquipment, getCurrentDate } from "@/utils";
 import {
-  getLoggingInterface,
   isCircuitBlock,
   isWarmupCooldownBlock,
 } from "@/utils/circuit-utils";
@@ -90,20 +85,11 @@ interface ExerciseProgress {
   isSkipped?: boolean;
 }
 
-// Utility functions
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
 // Circuit Logging Interface Component
 function CircuitLoggingInterface({
   block,
-  workout,
   isWorkoutStarted,
   circuitSession,
-  onError,
 }: {
   block: WorkoutBlockWithExercises;
   workout: PlanDayWithBlocks;
@@ -117,12 +103,7 @@ function CircuitLoggingInterface({
 
   const {
     sessionData,
-    currentRoundData,
-    metrics,
     actions,
-    isLoading,
-    canCompleteRound,
-    canCompleteCircuit,
     canUndoRound,
     updateTimerState,
   } = circuitSession;
@@ -152,7 +133,7 @@ function CircuitLoggingInterface({
         <CircuitTracker
           block={block}
           sessionData={sessionData}
-          onSessionUpdate={(updatedSessionData) => {
+          onSessionUpdate={(_updatedSessionData) => {
             // Update session data through the hook's actions
             // This is handled internally by the useCircuitSession hook
           }}
@@ -188,12 +169,12 @@ export default function WorkoutScreen() {
   const router = useRouter();
 
   // Background job tracking
-  const { isGenerating, addJob, justGenerated, clearJustGenerated } =
+  const { isGenerating, justGenerated, clearJustGenerated } =
     useBackgroundJobs();
 
   // Get data refresh functions
   const {
-    refresh: { refreshDashboard, refreshWorkout, reset, refreshAll },
+    refresh: { refreshDashboard, refreshWorkout, reset },
   } = useAppDataContext();
 
   // Core state
@@ -227,17 +208,6 @@ export default function WorkoutScreen() {
 
   // Skip state
   const [skippedExercises, setSkippedExercises] = useState<number[]>([]);
-  const [skippedBlocks, setSkippedBlocks] = useState<number[]>([]);
-
-  // Timer visibility state
-  const [showRestTimer, setShowRestTimer] = useState(false);
-
-  // Format timer display for compact view
-  const formatRestTimerDisplay = () => {
-    const minutes = Math.floor(restTimerCountdown / 60);
-    const seconds = restTimerCountdown % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   // Modal state
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -624,7 +594,6 @@ export default function WorkoutScreen() {
       // Only add first set if no sets exist for this exercise
       if (currentProgress.sets.length === 0) {
         // Use the same target values that are passed to SetTracker
-        const targetSets = currentExercise.sets || 3;
         const targetReps = currentExercise.reps || 10;
         const targetWeight = currentExercise.weight || 0;
 
@@ -747,75 +716,6 @@ export default function WorkoutScreen() {
     setRefreshing(true);
     loadWorkout(true);
   }, []);
-
-  // Handle generating new workout
-  const handleGenerateNewWorkout = async () => {
-    if (!user?.id) return;
-
-    // Simple prevention using the isGenerating flag
-    if (isGenerating) {
-      setDialogConfig({
-        title: "Generation in Progress",
-        description:
-          "A workout is already being generated. Please wait for it to complete.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "information-circle",
-      });
-      setDialogVisible(true);
-      return;
-    }
-
-    try {
-      // Register for push notifications
-      await registerForPushNotifications();
-
-      const result = await generateWorkoutPlanAsync(user.id);
-
-      if (result?.success && result.jobId) {
-        // Register the job with background context for FAB tracking
-        await addJob(result.jobId, "generation");
-
-        // Job started successfully - FAB will show progress
-        // Data refresh will happen when generation completes
-        // Navigate to dashboard to show the FAB
-        router.replace("/");
-      } else if (result !== null) {
-        // Only show error dialog for genuine failures, not paywall-intercepted nulls
-        setDialogConfig({
-          title: "Generation Failed",
-          description:
-            "Unable to start workout generation. Please check your connection and try again.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "alert-circle",
-        });
-        setDialogVisible(true);
-      }
-    } catch (error) {
-      setDialogConfig({
-        title: "Generation Error",
-        description:
-          "An error occurred while starting workout generation. Please try again.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
-    }
-  };
-
-  // Handle successful workout repetition
-  const handleRepeatWorkoutSuccess = () => {
-    // Refresh workout data after successful repetition
-    loadWorkout(true);
-  };
 
   // Set up notification handler and request permissions
   useEffect(() => {
@@ -979,84 +879,6 @@ export default function WorkoutScreen() {
   // Toggle pause
   const togglePause = () => {
     setIsPaused(!isPaused);
-  };
-
-  // Start rest timer
-  const startRestTimer = () => {
-    const restTime = currentExercise?.restTime || 0;
-    if (restTime > 0) {
-      setRestTimerCountdown(restTime);
-      setIsRestTimerActive(true);
-      setIsRestTimerPaused(false);
-      restTimerStartTime.current = Date.now();
-    }
-  };
-
-  // Pause/Resume rest timer
-  const toggleRestTimerPause = () => {
-    if (isRestTimerPaused) {
-      // Resuming - adjust start time based on current countdown
-      const targetDuration = currentExercise?.restTime || 0;
-      const elapsed = targetDuration - restTimerCountdown;
-      restTimerStartTime.current = Date.now() - elapsed * 1000;
-    }
-    setIsRestTimerPaused(!isRestTimerPaused);
-  };
-
-  // Reset rest timer
-  const resetRestTimer = () => {
-    const restTime = currentExercise?.restTime || 0;
-    setRestTimerCountdown(restTime);
-    setIsRestTimerPaused(false);
-    restTimerStartTime.current = null;
-  };
-
-  // Cancel rest timer
-  const cancelRestTimer = () => {
-    setIsRestTimerActive(false);
-    setIsRestTimerPaused(false);
-    setRestTimerCountdown(0);
-    restTimerStartTime.current = null;
-    deactivateKeepAwake("rest-timer");
-    if (restTimerRef.current) {
-      // TIMER DISABLED: Clear interval commented out
-      // clearInterval(restTimerRef.current);
-    }
-  };
-
-  // Handle rest timer start/pause for CircularTimerDisplay
-  const handleRestTimerStartPause = () => {
-    if (restTimerCountdown === 0) return; // Don't allow start/pause when completed
-    if (isRestTimerActive) {
-      toggleRestTimerPause();
-    } else {
-      startRestTimer();
-    }
-  };
-
-  // Handle rest timer reset for CircularTimerDisplay
-  const handleRestTimerReset = () => {
-    // Reset timer to beginning and restart automatically
-    const restTime = currentExercise?.restTime || 0;
-    setRestTimerCountdown(restTime);
-    setIsRestTimerActive(true);
-    setIsRestTimerPaused(false);
-    restTimerStartTime.current = Date.now();
-  };
-
-  // Handle rest timer cancel for CircularTimerDisplay
-  const handleRestTimerCancel = () => {
-    // Cancel timer and return to initial state (not active, full duration)
-    const restTime = currentExercise?.restTime || 0;
-    setIsRestTimerActive(false);
-    setIsRestTimerPaused(false);
-    setRestTimerCountdown(restTime);
-    restTimerStartTime.current = null;
-    deactivateKeepAwake("rest-timer");
-    if (restTimerRef.current) {
-      // TIMER DISABLED: Clear interval commented out
-      // clearInterval(restTimerRef.current);
-    }
   };
 
   // Complete current exercise
@@ -1654,7 +1476,6 @@ export default function WorkoutScreen() {
   };
 
   const currentBlock = getCurrentBlock();
-  const loggingInterface = getLoggingInterface(currentBlock || undefined);
   const isCurrentBlockCircuit = currentBlock
     ? isCircuitBlock(currentBlock.blockType)
     : false;
@@ -1681,8 +1502,6 @@ export default function WorkoutScreen() {
   };
 
   const circuitSession = useCircuitSession(circuitConfig);
-  const circuitActions =
-    isCurrentBlockCircuit && currentBlock ? circuitSession.actions : null;
 
   // Render loading state
   if (loading) {
@@ -2412,7 +2231,7 @@ export default function WorkoutScreen() {
               </View>
             ) : (
               <>
-                {workout.blocks.map((block, blockIndex) => (
+                {workout.blocks.map((block, _blockIndex) => (
               <View key={block.id} className="mb-4 last:mb-0">
                 <View className="rounded-xl p-3 mb-2">
                   <Text className="text-sm font-bold text-text-primary">
@@ -2426,7 +2245,7 @@ export default function WorkoutScreen() {
                   ) : null}
                 </View>
 
-                {block.exercises.map((exercise, exerciseIndex) => {
+                {block.exercises.map((exercise, _exerciseIndex) => {
                   const globalIndex = exercises.findIndex(
                     (ex) => ex.id === exercise.id,
                   );

@@ -10,7 +10,7 @@ import OnboardingForm from "../onboarding-form";
 export const OnboardingScreen = () => {
   const { user } = useAuth();
 
-  const { isLoading, isCompletingOnboarding, pendingEmail, handleSubmit } =
+  const { isLoading, pendingEmail, handleSubmit } =
     useOnboardingController();
 
   // Pending email and user state are handled in the controller

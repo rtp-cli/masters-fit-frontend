@@ -3,10 +3,7 @@ import { type BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Tabs, usePathname } from "expo-router";
 import React, { useRef,useState } from "react";
 import { type GestureResponderEvent,TouchableOpacity, View } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import GenerationDockChip from "@/components/generation-dock-chip";
 import { CustomDialog } from "@/components/ui";
@@ -126,7 +123,6 @@ function DisabledTabButton({
 export default function TabLayout() {
   const colors = useThemeColors();
   const { isWorkoutInProgress } = useWorkout();
-  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView className="flex-1 bg-background">

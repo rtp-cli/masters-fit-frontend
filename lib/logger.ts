@@ -14,14 +14,6 @@ interface LogContext {
   [key: string]: string | number | boolean | undefined | null | unknown;
 }
 
-interface LogEntry {
-  level: LogLevel;
-  message: string;
-  context?: LogContext;
-  timestamp: string;
-  component?: string;
-}
-
 class Logger {
   private isDevelopment = __DEV__ || process.env.NODE_ENV === "development";
   private component?: string;
@@ -31,14 +23,6 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, context?: LogContext) {
-    const entry: LogEntry = {
-      level,
-      message,
-      context: this.sanitizeContext(context),
-      timestamp: new Date().toISOString(),
-      component: this.component,
-    };
-
     // Format for console output
     const formattedMessage = this.component
       ? `[${this.component}] ${message}`

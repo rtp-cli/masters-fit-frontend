@@ -49,7 +49,7 @@ export function getExerciseRequirementsText(exercise: WorkoutBlockWithExercise):
 }
 
 // Helper to determine if weight input should be shown
-export function shouldShowWeightInput(exercise: WorkoutBlockWithExercise): boolean {
+export function shouldShowWeightInput(_exercise: WorkoutBlockWithExercise): boolean {
   // Always show weight input - user requested weight logging be available in all cases
   return true;
 }

@@ -274,7 +274,7 @@ function AppContent() {
 
   // Handle notification taps for cache invalidation
   useEffect(() => {
-    const subscription = addNotificationResponseListener((response) => {
+    const subscription = addNotificationResponseListener((_response) => {
       console.log(
         "[Notification] Tapped - checking if cache invalidation needed"
       );

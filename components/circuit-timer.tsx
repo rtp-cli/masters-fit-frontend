@@ -1,6 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity,View } from "react-native";
 
@@ -23,19 +21,15 @@ export default function CircuitTimer({
 }: CircuitTimerProps) {
   const colors = useThemeColors();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastProcessedMinuteRef = useRef<number>(0);
   const timerConfig = getCircuitTimerConfig(blockType);
   const [resetDialogVisible, setResetDialogVisible] = useState(false);
 
   // Calculate display time based on timer type
   const getDisplayTime = () => {
-    const { currentTime, currentInterval, isWorkPhase } = timerState;
+    const { currentTime, isWorkPhase } = timerState;
 
     if (timerConfig.type === "intervals" && blockType === "tabata") {
       // Tabata: show interval time
-      const intervalTime = isWorkPhase
-        ? timerConfig.workInterval
-        : timerConfig.restInterval;
       const elapsedInInterval =
         currentTime % (timerConfig.workInterval + timerConfig.restInterval);
 
@@ -154,206 +148,6 @@ export default function CircuitTimer({
     timeCapMinutes,
     rounds,
   ]);
-
-  // Tabata interval logic
-  const handleTabataLogic = (
-    currentTime: number,
-    newState: CircuitTimerState
-  ) => {
-    const totalIntervalTime =
-      timerConfig.workInterval + timerConfig.restInterval; // 30 seconds
-    const elapsedInInterval = currentTime % totalIntervalTime;
-    const currentInterval = Math.floor(currentTime / totalIntervalTime) + 1;
-    const isWorkPhase = elapsedInInterval < timerConfig.workInterval;
-
-    // Update interval state
-    if (
-      currentInterval !== timerState.currentInterval ||
-      isWorkPhase !== timerState.isWorkPhase
-    ) {
-      newState.currentInterval = currentInterval;
-      newState.isWorkPhase = isWorkPhase;
-
-      // Provide haptic feedback only for transitions (no sound)
-      try {
-        if (elapsedInInterval === 0) {
-          // Starting work phase
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } else if (elapsedInInterval === timerConfig.workInterval) {
-          // Starting rest phase
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      } catch (error) {
-        console.log("Haptic feedback error:", error);
-      }
-    }
-
-    // Check if Tabata is complete (8 rounds)
-    if (currentInterval > 8) {
-      newState.isActive = false;
-      onTimerEvent?.("complete");
-
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Tabata Complete!",
-            body: "8 rounds finished - great work!",
-            sound: "chime",
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.log("Notification/haptic feedback error:", error);
-      }
-    }
-  };
-
-  // EMOM logic
-  const handleEmomLogic = (
-    currentTime: number,
-    newState: CircuitTimerState
-  ) => {
-    const currentMinute = Math.floor(currentTime / 60) + 1;
-    const secondsInMinute = currentTime % 60;
-
-    // Update current interval if minute changed
-    if (currentMinute !== timerState.currentInterval) {
-      newState.currentInterval = currentMinute;
-
-      // Auto-complete the previous minute's round (only after the first minute)
-      if (currentMinute > 1) {
-        // Reset timer to start of new minute (keep total elapsed time tracking)
-        newState.currentTime = (currentMinute - 1) * 60;
-        newState.startTime = new Date(Date.now() - newState.currentTime * 1000);
-        newState.totalPausedTime = 0; // Reset paused time for clean minute
-
-        // Guard against duplicate processing for the same minute (for haptics/notifications only)
-        if (lastProcessedMinuteRef.current !== currentMinute) {
-          lastProcessedMinuteRef.current = currentMinute;
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            Notifications.scheduleNotificationAsync({
-              content: {
-                title: `Minute ${currentMinute}`,
-                body: "New minute started!",
-                sound: "tri-tone",
-              },
-              trigger: null,
-            });
-          } catch (error) {
-            console.log("Notification/haptic feedback error:", error);
-          }
-        }
-      }
-    } else if (!newState.currentInterval && currentMinute === 1) {
-      // Initialize currentInterval if it's not set and we're in the first minute
-      newState.currentInterval = 1;
-    }
-
-    // Check if EMOM is complete
-    if (rounds && currentMinute > rounds) {
-      newState.isActive = false;
-      newState.currentTime = rounds * 60; // Ensure time doesn't exceed target
-      onTimerEvent?.("complete");
-
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "EMOM Complete!",
-            body: `${rounds} minutes finished - great work!`,
-            sound: "chime",
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.log("Notification/haptic feedback error:", error);
-      }
-    }
-  };
-
-  // AMRAP with time cap logic
-  const handleAmrapLogic = (
-    currentTime: number,
-    newState: CircuitTimerState
-  ) => {
-    const timeCapSeconds = (timeCapMinutes || 0) * 60;
-    const remainingTime = timeCapSeconds - currentTime;
-
-    // Warning at 1 minute remaining (haptic only)
-    if (remainingTime === 60 && currentTime > 0) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      } catch (error) {
-        console.log("Haptic feedback error:", error);
-      }
-    }
-
-    // Time cap reached
-    if (remainingTime <= 0) {
-      newState.isActive = false;
-      newState.currentTime = timeCapSeconds;
-      onTimerEvent?.("complete");
-
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Time Cap Reached!",
-            body: "AMRAP complete - great work!",
-            sound: "chime",
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.log("Notification/haptic feedback error:", error);
-      }
-    }
-  };
-
-  // For Time logic - warn about time cap but don't auto-complete
-  const handleForTimeLogic = (
-    currentTime: number,
-    newState: CircuitTimerState
-  ) => {
-    const timeCapSeconds = (timeCapMinutes || 0) * 60;
-    const remainingTime = timeCapSeconds - currentTime;
-
-    // Warning at 1 minute remaining
-    if (remainingTime === 60 && currentTime > 0) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "1 Minute Remaining!",
-            body: "Time cap approaching - keep pushing!",
-            sound: "submarine",
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.log("Notification/haptic feedback error:", error);
-      }
-    }
-
-    // Time cap reached - warn but don't stop (For Time continues until rounds are done)
-    if (remainingTime <= 0 && currentTime === timeCapSeconds) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Time Cap Reached!",
-            body: "Finish your current round when possible",
-            sound: "tri-tone",
-          },
-          trigger: null,
-        });
-      } catch (error) {
-        console.log("Notification/haptic feedback error:", error);
-      }
-    }
-  };
 
   // Timer controls
   const handleStartPause = () => {

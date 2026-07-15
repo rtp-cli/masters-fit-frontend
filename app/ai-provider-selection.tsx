@@ -44,8 +44,8 @@ export default function AIProviderSelectionPage() {
   );
   // Start with empty - no assumptions about what should be available
   const [availableProviders, setAvailableProviders] = useState<{
-    [key in AI_PROVIDER]: ProviderInfo;
-  }>({} as { [key in AI_PROVIDER]: ProviderInfo });
+    [_key in AI_PROVIDER]: ProviderInfo;
+  }>({} as { [_key in AI_PROVIDER]: ProviderInfo });
   const [isLoading, setIsLoading] = useState(true);
   const [switching, setSwitching] = useState<{
     provider: AI_PROVIDER;

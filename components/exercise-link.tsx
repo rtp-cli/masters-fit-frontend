@@ -10,7 +10,6 @@ import {
 import YoutubePlayer from "react-native-youtube-iframe";
 
 import { images } from "@/assets";
-import { useAuth } from "@/contexts/auth-context";
 import { trackVideoEngagement } from "@/lib/analytics";
 
 import { useThemeColors } from "../lib/theme";
@@ -51,9 +50,8 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
   // The hero thumbnail tries maxresdefault first; many valid videos lack it,
   // so we fall back to hqdefault (almost always present) before giving up.
   const [thumbFailed, setThumbFailed] = useState(false);
-  const { user } = useAuth();
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState<{
+  const [dialogConfig] = useState<{
     title: string;
     description: string;
     primaryButton: DialogButton;

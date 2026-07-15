@@ -182,11 +182,6 @@ export default function WorkoutEditModal({
       .join(" ");
   };
 
-  // Convert display name back to raw enum value
-  const toRawEnumValue = (displayName: string) => {
-    return displayName.toLowerCase().replace(/\s+/g, "_");
-  };
-
   // Format equipment names for display
   const formatEquipmentDisplay = (equipment: string) => {
     return equipment

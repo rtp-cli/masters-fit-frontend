@@ -36,7 +36,6 @@ interface WorkoutRepeatModalProps {
 export default function WorkoutRepeatModal({
   visible,
   onClose,
-  onSuccess,
 }: WorkoutRepeatModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();

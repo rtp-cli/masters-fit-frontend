@@ -6,7 +6,6 @@ import React, {
   useState,
 } from "react";
 
-import { useAuth } from "@/contexts/auth-context";
 import { trackWorkoutAbandoned } from "@/lib/analytics";
 
 // Workout abandonment tracking data
@@ -50,7 +49,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [isWorkoutInProgress, setIsWorkoutInProgress] = useState(false);
   const [currentWorkoutData, setCurrentWorkoutData] =
     useState<WorkoutAbandonmentData | null>(null);
-  const { user } = useAuth();
   const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const endWorkoutEarlyRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -90,7 +88,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
   };
 
   const abandonWorkout = (
-    reason:
+    _reason:
       | "manual_exit"
       | "navigation"
       | "app_backgrounded"

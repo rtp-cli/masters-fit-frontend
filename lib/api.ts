@@ -170,8 +170,6 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
-    const duration = Date.now() - startTime;
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.log(

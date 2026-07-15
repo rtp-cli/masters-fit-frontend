@@ -48,10 +48,7 @@ export type {
 export default function OnboardingForm({
   initialData,
   onSubmit,
-  onCancel,
   isLoading = false,
-  showNavigation = true,
-  title,
   submitButtonText = "Generate Weekly Plan",
   excludePersonalInfo = false,
 }: OnboardingFormProps) {

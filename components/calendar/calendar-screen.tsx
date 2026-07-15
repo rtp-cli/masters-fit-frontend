@@ -1,7 +1,6 @@
 import { type Ionicons } from "@expo/vector-icons";
 import { getCurrentUser } from "@lib/auth";
 import {
-  generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
   regenerateDailyWorkoutAsync,
   regenerateWorkoutPlanAsync,
@@ -30,7 +29,6 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { PaywallError } from "@/lib/api";
-import { registerForPushNotifications } from "@/lib/notifications";
 import { tabEvents } from "@/lib/tab-events";
 import {
   type PlanDayWithBlocks,
@@ -56,7 +54,6 @@ export default function CalendarScreen() {
   const router = useRouter();
   const {
     setIsGeneratingWorkout,
-    setIsPreloadingData,
     user,
     isLoading: authLoading,
   } = useAuth();
@@ -279,65 +276,6 @@ export default function CalendarScreen() {
     if (planDay?.isComplete) return;
     setSelectedPlanDay(planDay || null);
     setShowRegenerationModal(true);
-  };
-
-  const handleGenerateNewWorkout = async () => {
-    if (!user?.id) return;
-
-    if (isGenerating) {
-      setDialogConfig({
-        title: "Generation in Progress",
-        description:
-          "A workout is already being generated. Please wait for it to complete.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "information-circle",
-      });
-      setDialogVisible(true);
-      return;
-    }
-
-    try {
-      await registerForPushNotifications();
-
-      const result = await generateWorkoutPlanAsync(user.id);
-      if (result?.success && result.jobId) {
-        await addJob(result.jobId, "generation");
-        router.replace("/(tabs)/dashboard");
-      } else if (result !== null) {
-        // Only show error dialog for genuine failures, not paywall-intercepted nulls
-        setDialogConfig({
-          title: "Generation Failed",
-          description:
-            "Unable to start workout generation. Please check your connection and try again.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "alert-circle",
-        });
-        setDialogVisible(true);
-      }
-    } catch (error) {
-      setDialogConfig({
-        title: "Generation Error",
-        description:
-          "An error occurred while starting workout generation. Please try again.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
-    }
-  };
-
-  const handleRepeatWorkoutSuccess = () => {
-    setIsPreloadingData(true);
-    router.replace("/(tabs)/dashboard");
   };
 
   const getPlanDayForDate = (

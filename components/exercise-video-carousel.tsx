@@ -142,7 +142,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
           snapToAlignment="start"
           contentContainerStyle={{ paddingHorizontal: showHeader ? 24 : 0 }}
         >
-          {exercisesWithVideos.map((item, index) => (
+          {exercisesWithVideos.map((item, _index) => (
             <View
               key={item.exercise.id}
               style={{ width: cardWidth }}

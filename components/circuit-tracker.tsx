@@ -36,7 +36,6 @@ export default function CircuitTracker({
   isActive,
   circuitActions,
   updateTimerState,
-  shouldShowTimer,
   canUndoRound = false,
 }: CircuitTrackerProps & {
   circuitActions?: CircuitActions;
@@ -102,21 +101,6 @@ export default function CircuitTracker({
     ? block.exercises.find((ex) => ex.id === currentExercise.planDayExerciseId)
     : null;
 
-  // Navigation functions
-  const canGoNext =
-    currentExerciseIndex < (currentRoundData?.exercises.length || 0) - 1;
-  const canGoPrev = currentExerciseIndex > 0;
-  const completedRounds = sessionData.rounds.filter(
-    (r) => r.isCompleted
-  ).length;
-
-  // Format timer display for compact view
-  const formatTimerDisplay = () => {
-    const minutes = Math.floor(sessionData.timer.currentTime / 60);
-    const seconds = sessionData.timer.currentTime % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
   // Handle scroll to specific exercise
   const scrollToExercise = (index: number) => {
     if (exerciseScrollRef.current) {
@@ -138,24 +122,6 @@ export default function CircuitTracker({
       newIndex < (currentRoundData?.exercises.length || 0)
     ) {
       setCurrentExerciseIndex(newIndex);
-    }
-  };
-
-  const goToNextExercise = () => {
-    if (canGoNext) {
-      const nextIndex = currentExerciseIndex + 1;
-      setCurrentExerciseIndex(nextIndex);
-      scrollToExercise(nextIndex);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
-  const goToPrevExercise = () => {
-    if (canGoPrev) {
-      const prevIndex = currentExerciseIndex - 1;
-      setCurrentExerciseIndex(prevIndex);
-      scrollToExercise(prevIndex);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 

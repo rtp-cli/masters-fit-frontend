@@ -31,7 +31,7 @@ interface ProfileOverrideFormProps {
 }
 
 // Intensity level configuration helper - exact copy from onboarding
-const getIntensityLevelConfig = (intensityKey: string, colors: any) => {
+const getIntensityLevelConfig = (intensityKey: string, _colors: any) => {
   switch (intensityKey) {
     case "LOW":
       return {
@@ -65,7 +65,7 @@ const getIntensityLevelConfig = (intensityKey: string, colors: any) => {
 };
 
 // Workout style configuration helper - exact copy from onboarding
-const getStyleConfig = (styleKey: string, colors: any) => {
+const getStyleConfig = (styleKey: string, _colors: any) => {
   switch (styleKey) {
     case "HIIT":
       return {
@@ -148,7 +148,7 @@ const getStyleConfig = (styleKey: string, colors: any) => {
 };
 
 // Environment configuration helper - exact copy from onboarding
-const getEnvironmentConfig = (envKey: string, colors: any) => {
+const getEnvironmentConfig = (envKey: string, _colors: any) => {
   switch (envKey) {
     case "COMMERCIAL_GYM":
       return {
@@ -182,7 +182,7 @@ const getEnvironmentConfig = (envKey: string, colors: any) => {
 };
 
 // Equipment configuration helper - exact copy from onboarding
-const getEquipmentConfig = (equipKey: string, colors: any) => {
+const getEquipmentConfig = (equipKey: string, _colors: any) => {
   switch (equipKey) {
     case "BARBELLS":
       return {

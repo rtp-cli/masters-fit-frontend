@@ -34,8 +34,6 @@ export default function AdaptiveSetTracker({
   exercise,
   sets,
   onSetsChange,
-  onProgressUpdate,
-  blockType = "traditional",
 }: AdaptiveSetTrackerProps) {
   const colors = useThemeColors();
   const loggingType = getExerciseLoggingType(exercise);
@@ -50,15 +48,7 @@ export default function AdaptiveSetTracker({
   const [countdown, setCountdown] = useState(exercise.duration || 0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
-  const [showExerciseTimer, setShowExerciseTimer] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Format timer display for button
-  const formatExerciseTimerDisplay = () => {
-    const minutes = Math.floor(countdown / 60);
-    const seconds = countdown % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   // Initialize duration sets if needed
   useEffect(() => {
@@ -163,60 +153,6 @@ export default function AdaptiveSetTracker({
     currentSetIndex,
     exercise.sets,
   ]);
-
-  // Handle timer completion (log duration but don't advance)
-  const handleTimerCompletion = () => {
-    const updatedSets = [...durationSets];
-    updatedSets[currentSetIndex] = {
-      ...updatedSets[currentSetIndex],
-      durationCompleted: exercise.duration || 0,
-      isCompleted: true,
-    };
-    setDurationSets(updatedSets);
-    onSetsChange(updatedSets);
-
-    // Update progress but don't advance to next set
-    const completedSets = updatedSets.filter((set) => set.isCompleted).length;
-    // Calculate total duration from all completed sets for backend logging
-    const totalDuration = updatedSets
-      .filter((set) => set.isCompleted)
-      .reduce((sum, set) => sum + (set.durationCompleted || 0), 0);
-
-    onProgressUpdate?.({
-      setsCompleted: completedSets,
-      duration: totalDuration, // Send total duration, not individual set duration
-      isComplete: false, // Don't mark as complete to prevent auto-advance
-    });
-  };
-
-  const handleStartPause = () => {
-    if (isCompleted) return; // Don't allow start/pause when completed
-
-    if (!isTimerActive) {
-      // Starting timer for first time
-      setIsTimerActive(true);
-      setIsTimerPaused(false);
-    } else {
-      // Toggle pause/resume
-      setIsTimerPaused(!isTimerPaused);
-    }
-  };
-
-  const handleReset = () => {
-    // Reset timer to beginning and restart automatically
-    setIsTimerActive(true);
-    setIsTimerPaused(false);
-    setCountdown(exercise.duration || 0);
-    setIsCompleted(false);
-  };
-
-  const handleCancel = () => {
-    // Cancel timer and return to initial state (not active, full duration)
-    setIsTimerActive(false);
-    setIsTimerPaused(false);
-    setCountdown(exercise.duration || 0);
-    setIsCompleted(false);
-  };
 
   // Update duration set function
   const updateDurationSet = <K extends keyof DurationSet>(

@@ -4,7 +4,6 @@ import { Text, TouchableOpacity,View } from "react-native";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import WorkoutBlock from "@/components/workout-block";
 import WorkoutSummary from "@/components/workout-summary";
-import { useThemeColors } from "@/lib/theme";
 import {
   type PlanDayWithBlocks,
   type WorkoutBlockWithExercises,
@@ -43,8 +42,6 @@ export default function WorkoutDaySection({
   onStartWorkout,
   onShowWorkoutChoice,
 }: WorkoutDaySectionProps) {
-  const colors = useThemeColors();
-
   if (!selectedDate) {
     return null;
   }

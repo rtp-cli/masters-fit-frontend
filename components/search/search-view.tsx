@@ -6,9 +6,7 @@ import {
   type ExerciseDetails,
   type ExerciseUserStats,
 } from "@lib/search";
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   forwardRef,
@@ -73,7 +71,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   const [dateQuery, setDateQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [searchType, setSearchType] = useState<SearchType>("general");
+  const [, setSearchType] = useState<SearchType>("general");
   // Use centralized loading state
   const isLoading = loading.searchLoading;
 
@@ -112,11 +110,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   const exerciseItemRefs = useRef<Map<number, View>>(new Map());
   const pendingScrollToIndexRef = useRef<number | null>(null);
 
-  // UI state
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
-    null
-  );
-
   // Exercise Link Modal state
   const [linkModalVisible, setLinkModalVisible] = useState(false);
   const [selectedExerciseForLink, setSelectedExerciseForLink] = useState<{
@@ -154,34 +147,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
       tabEvents.off("scrollToTop:search", handleScrollToTop);
     };
   }, []);
-
-  // Handle date selection from DateTimePicker
-  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
-    // Hide picker after date selection on both platforms
-    setShowDatePicker(false);
-
-    if (date) {
-      setSelectedDate(date);
-      // Format date in local timezone to avoid timezone conversion issues
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}`;
-
-      setDateQuery(formattedDate);
-      setExerciseQuery(""); // Clear exercise query
-
-      // Automatically perform date search
-      if (user) {
-        performDateSearchWithDate(formattedDate);
-      }
-    }
-  };
-
-  // Handle date picker cancellation
-  const handleDatePickerCancel = () => {
-    setShowDatePicker(false);
-  };
 
   // Perform date search with formatted date
   const performDateSearchWithDate = async (dateString: string) => {
@@ -414,24 +379,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   };
 
   // Clear all search results
-  const clearSearch = () => {
-    setExerciseQuery("");
-    setDateQuery("");
-    setSelectedDate(null);
-    setDateResult(null);
-    setExerciseResult(null);
-    setGeneralResults([]);
-    setSelectedExercise(null);
-    setSearchType("general");
-  };
-
-  // Handle date search submission
-  const handleDateSubmit = () => {
-    if (dateQuery.trim()) {
-      performDateSearchWithDate(dateQuery);
-    }
-  };
-
   // Handle exercise link modal
   const handleOpenLinkModal = (exercise: {
     id: number;
@@ -511,23 +458,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    try {
-      if (!dateString) return "Unknown Date";
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString; // Invalid date, return original
-      return date.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch (error) {
-      return dateString || "Unknown Date"; // fallback to original string if date parsing fails
-    }
-  };
-
   // Format date for last performed
   const formatLastPerformedDate = (date: Date | string | null | undefined) => {
     try {
@@ -577,11 +507,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     return instructions || "No instructions available";
   };
 
-  // Format numeric value safely
-  const formatNumber = (value: number | null | undefined) => {
-    return value?.toString() || "0";
-  };
-
   // Format name safely
   const formatName = (name: string | null | undefined) => {
     return name || "Unknown Exercise";
@@ -591,22 +516,6 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
   const safeString = (value: any): string => {
     if (value === null || value === undefined) return "";
     return String(value);
-  };
-
-  // Safe array join with fallback
-  const safeArrayJoin = (arr: any[], separator: string = ", "): string => {
-    if (!Array.isArray(arr)) return "";
-    return arr
-      .filter((item) => item !== null && item !== undefined)
-      .map((item) => String(item))
-      .join(separator);
-  };
-
-  // Safe number conversion for styles
-  const safeNumber = (value: any): number => {
-    if (value === null || value === undefined) return 0;
-    const num = Number(value);
-    return isNaN(num) ? 0 : num;
   };
 
   // Calculate completion rate for workout based on completed exercises

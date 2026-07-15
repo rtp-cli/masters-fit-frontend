@@ -250,17 +250,6 @@ export default function LegalDocumentScreen() {
     );
   }
 
-  // Calculate reading time (approx 200 words per minute)
-  const wordCount = documentData.sections.reduce((acc, section) => {
-    if (section.type === "paragraph")
-      return acc + section.content.split(" ").length;
-    if (section.type === "list" && section.items) {
-      return acc + section.items.join(" ").split(" ").length;
-    }
-    return acc;
-  }, 0);
-  const readingTime = Math.ceil(wordCount / 200);
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="light" />
