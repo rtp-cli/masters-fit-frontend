@@ -1,5 +1,5 @@
-import { colors, darkColors, colorThemes } from "@/lib/theme";
-import { ColorTheme } from "@/lib/theme-context";
+import { colors, colorThemes,darkColors } from "@/lib/theme";
+import { type ColorTheme } from "@/lib/theme-context";
 
 // Type for theme colors - generic to accept any theme palette
 interface ThemeColorPalette {

@@ -1,61 +1,62 @@
-import * as SplashScreen from "expo-splash-screen";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import {
-  LogBox,
-  Platform,
-  View,
-  useColorScheme as useSystemColorScheme,
-} from "react-native";
+import "../global.css";
 
-if (__DEV__) {
-  LogBox.ignoreLogs(["[RevenueCat]"]);
-}
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
-import { initSentry, Sentry } from "@/lib/sentry";
-import { AuthProvider, useAuth } from "@/contexts/auth-context";
-import { WorkoutProvider } from "@/contexts/workout-context";
-import {
-  AppDataProvider,
-  useAppDataContext,
-} from "@/contexts/app-data-context";
-import {
-  BackgroundJobProvider,
-  useBackgroundJobs,
-} from "@/contexts/background-job-context";
-import { WaiverProvider } from "@/contexts/waiver-context";
-import { MixpanelProvider } from "@/contexts/mixpanel-context";
-import { AnalyticsScreenTracker } from "@/components/analytics-screen-tracker";
-import { useFonts } from "expo-font";
 import {
   Manrope_400Regular,
   Manrope_500Medium,
   Manrope_600SemiBold,
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import WarmingUpScreen from "@/components/ui/warming-up-screen";
-import AnimatedSplashScreen from "@/components/ui/splash-screen";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ensureHealthConnectInitialized } from "@utils/health";
+import { useFonts } from "expo-font";
+import * as NavigationBar from "expo-navigation-bar";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import * as TrackingTransparency from "expo-tracking-transparency";
+import { useColorScheme as useNativeWindColorScheme } from "nativewind";
+import React, { useCallback, useEffect, useMemo, useRef,useState } from "react";
+import {
+  LogBox,
+  Platform,
+  useColorScheme as useSystemColorScheme,
+  View,
+} from "react-native";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
+
+import { AnalyticsScreenTracker } from "@/components/analytics-screen-tracker";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
+import AnimatedSplashScreen from "@/components/ui/splash-screen";
+import WarmingUpScreen from "@/components/ui/warming-up-screen";
+import {
+  AppDataProvider,
+  useAppDataContext,
+} from "@/contexts/app-data-context";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import {
+  BackgroundJobProvider,
+  useBackgroundJobs,
+} from "@/contexts/background-job-context";
+import { MixpanelProvider } from "@/contexts/mixpanel-context";
+import { SecretActivationProvider } from "@/contexts/secret-activation-context";
+import { WaiverProvider } from "@/contexts/waiver-context";
+import { WorkoutProvider } from "@/contexts/workout-context";
 import { setPaywallCallback, updateThemeAPI } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
-import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import {
-  registerForPushNotifications,
   addNotificationResponseListener,
+  registerForPushNotifications,
   setupNotificationCategories,
 } from "@/lib/notifications";
-import "../global.css";
-import { ensureHealthConnectInitialized } from "@utils/health";
-import * as NavigationBar from "expo-navigation-bar";
-import { colorThemes, themes, ThemeKey } from "@/lib/theme";
-import { ThemeContext, ThemeMode, ColorTheme, useTheme } from "@/lib/theme-context";
+import { initSentry, Sentry } from "@/lib/sentry";
+import { colorThemes, type ThemeKey,themes } from "@/lib/theme";
+import { type ColorTheme, ThemeContext, type ThemeMode, useTheme } from "@/lib/theme-context";
 
-import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
-import { SecretActivationProvider } from "@/contexts/secret-activation-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useColorScheme as useNativeWindColorScheme } from "nativewind";
-import * as TrackingTransparency from "expo-tracking-transparency";
+if (__DEV__) {
+  LogBox.ignoreLogs(["[RevenueCat]"]);
+}
 
 // Keep native splash pinned until JS splash takes over
 SplashScreen.preventAutoHideAsync().catch(() => {});

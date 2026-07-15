@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
-import { View, Text, Image, Animated, Easing } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useThemeColors } from "@/lib/theme";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing,Image, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { images } from "@/assets";
+import { useThemeColors } from "@/lib/theme";
 
 interface WarmingUpScreenProps {
   onComplete?: () => void;

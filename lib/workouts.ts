@@ -1,26 +1,27 @@
+import { LIMITS,TIMEOUTS } from "@/constants";
+import {
+  type ActiveWorkoutResponse,
+  type ApiResponse,
+  type AsyncJobResponse,
+  type CompletedExercisesResponse,
+  type CreateExerciseLogParams,
+  type CreateWorkoutLogParams,
+  type CreateWorkoutParams,
+  type ExerciseLog,
+  type PlanDayLog,
+  type PlanDayWithBlocks,
+  type PreviousWorkout,
+  type UpdateWorkoutParams,
+  type Workout,
+  type WorkoutLog,
+  type WorkoutResponse,
+  type WorkoutsResponse,
+  type WorkoutWithDetails,
+} from "@/types/api";
+
+import { formatDateAsString, getCurrentDate,getTodayString } from "../utils";
 import { apiRequest, PaywallError } from "./api";
 import { getCurrentUser } from "./auth";
-import { formatDateAsString, getTodayString, getCurrentDate } from "../utils";
-import { TIMEOUTS, LIMITS } from "@/constants";
-import {
-  Workout,
-  CreateWorkoutParams,
-  UpdateWorkoutParams,
-  CreateExerciseLogParams,
-  CreateWorkoutLogParams,
-  ExerciseLog,
-  PlanDayWithBlocks,
-  WorkoutLog,
-  AsyncJobResponse,
-  PlanDayLog,
-  ApiResponse,
-  WorkoutResponse,
-  CompletedExercisesResponse,
-  WorkoutsResponse,
-  WorkoutWithDetails,
-  ActiveWorkoutResponse,
-  PreviousWorkout,
-} from "@/types/api";
 
 // Simple cache for active workout
 let activeWorkoutCache: {
@@ -29,7 +30,7 @@ let activeWorkoutCache: {
 } | null = null;
 
 // Simple event system for workout data updates
-const workoutUpdateListeners: Array<() => void> = [];
+const workoutUpdateListeners: (() => void)[] = [];
 
 export const subscribeToWorkoutUpdates = (listener: () => void) => {
   // Prevent unbounded growth - remove oldest listeners if at max capacity
@@ -916,7 +917,7 @@ export async function getJobStatus(jobId: number): Promise<{
  */
 export async function getUserJobs(userId: number): Promise<{
   success: boolean;
-  jobs: Array<{
+  jobs: {
     id: number;
     status: string;
     progress: number;
@@ -924,12 +925,12 @@ export async function getUserJobs(userId: number): Promise<{
     workoutId?: number;
     createdAt: string;
     completedAt?: string;
-  }>;
+  }[];
 } | null> {
   try {
     const response = await apiRequest<{
       success: boolean;
-      jobs: Array<{
+      jobs: {
         id: number;
         status: string;
         progress: number;
@@ -937,7 +938,7 @@ export async function getUserJobs(userId: number): Promise<{
         workoutId?: number;
         createdAt: string;
         completedAt?: string;
-      }>;
+      }[];
     }>(`/workouts/${userId}/jobs`);
 
     return response;

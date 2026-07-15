@@ -1,9 +1,10 @@
-import React from "react";
-import { Modal, View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "@/lib/theme";
+import React from "react";
+import { Modal, ScrollView,Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useThemeColors } from "@/lib/theme";
 
 interface SubscriptionDetailsModalProps {
   visible: boolean;
@@ -70,7 +71,7 @@ export default function SubscriptionDetailsModal({
           </Text>
           <TouchableOpacity
             onPress={onClose}
-            className="w-9 h-9 items-center justify-center"
+            className="size-9 items-center justify-center"
           >
             <Ionicons name="close" size={28} color={colors.text.primary} />
           </TouchableOpacity>
@@ -104,7 +105,7 @@ export default function SubscriptionDetailsModal({
               <Text className="text-sm text-text-secondary">Status</Text>
               <View className="flex-row items-center gap-1.5">
                 <View
-                  className="w-2 h-2 rounded-full"
+                  className="size-2 rounded-full"
                   style={{ backgroundColor: colors.brand.primary }}
                 />
                 <Text

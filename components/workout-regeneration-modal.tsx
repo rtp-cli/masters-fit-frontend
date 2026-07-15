@@ -1,57 +1,58 @@
-import React, { useState, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { getCurrentUser } from "@lib/auth";
+import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import {
-  View,
-  Text,
-  TextInput,
-  Modal,
+  generateRestDayWorkoutAsync,
+  regenerateDailyWorkoutAsync,
+  regenerateWorkoutPlanAsync,
+} from "@lib/workouts";
+import React, { useEffect,useState } from "react";
+import {
   ActivityIndicator,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import ProfileOverrideForm, {
-  TemporaryOverrides,
-} from "./profile-override-form";
-import { fetchUserProfile, updateUserProfile } from "@lib/profile";
-import { getCurrentUser } from "@lib/auth";
-import OnboardingForm, { FormData } from "./onboarding-form";
-import { formatEnumValue } from "./onboarding/utils/formatters";
-import { useThemeColors } from "../lib/theme";
-import { useTheme } from "../lib/theme-context";
+
+import { RegenerationType } from "@/constants/global.enum";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
-import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
-import { computeFreeAdjustmentNote } from "@/utils/entitlements";
-import {
-  regenerateWorkoutPlanAsync,
-  regenerateDailyWorkoutAsync,
-  generateRestDayWorkoutAsync,
-} from "@lib/workouts";
-import { Profile as UserProfile } from "@/types/api";
 import { PaywallError } from "@/lib/api";
-import { CustomDialog, DialogButton } from "./ui";
-
+import { type Profile as UserProfile } from "@/types/api";
 import {
-  GENDER,
-  FITNESS_GOALS,
+  type AVAILABLE_EQUIPMENT,
+  type FITNESS_GOALS,
   FITNESS_LEVELS,
-  WORKOUT_ENVIRONMENTS,
-  PREFERRED_DAYS,
-  PHYSICAL_LIMITATIONS,
-  AVAILABLE_EQUIPMENT,
-  PREFERRED_STYLES,
+  GENDER,
   INTENSITY_LEVELS,
+  type PHYSICAL_LIMITATIONS,
+  type PREFERRED_DAYS,
+  PREFERRED_STYLES,
+  WORKOUT_ENVIRONMENTS,
 } from "@/types/enums";
-import { RegenerationType } from "@/constants/global.enum";
+import { formatWorkoutPlanEndDate,formatWorkoutPlanStartDate } from "@/utils";
+import { computeFreeAdjustmentNote } from "@/utils/entitlements";
 import { resolveDefaultRegenerationTab } from "@/utils/regeneration-tab";
+
+import { useThemeColors } from "../lib/theme";
+import { useTheme } from "../lib/theme-context";
+import { formatEnumValue } from "./onboarding/utils/formatters";
+import OnboardingForm, { type FormData } from "./onboarding-form";
+import ProfileOverrideForm, {
+  type TemporaryOverrides,
+} from "./profile-override-form";
 import { SegmentedControl } from "./segmented-control";
+import { CustomDialog, type DialogButton } from "./ui";
 
 interface WorkoutRegenerationModalProps {
   visible: boolean;
@@ -941,7 +942,7 @@ export default function WorkoutRegenerationModal({
               <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
                 <TouchableOpacity
                   onPress={onClose}
-                  className="w-8 h-8 items-center justify-center"
+                  className="size-8 items-center justify-center"
                 >
                   <Ionicons name="close" size={20} color={colors.text.muted} />
                 </TouchableOpacity>
@@ -963,7 +964,7 @@ export default function WorkoutRegenerationModal({
               scrollEventThrottle={16}
               removeClippedSubviews={true}
             >
-              <View className="px-5 py-5">
+              <View className="p-5">
                 {isRestDay && selectedType === "day" ? (
                   <View className="mb-6">
                     <Text className="text-lg font-semibold text-text-primary mb-2 text-center">

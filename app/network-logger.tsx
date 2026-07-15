@@ -1,11 +1,12 @@
-import React from "react";
-import { View, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import NetworkLogger from "react-native-network-logger";
-import { useThemeColors } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React from "react";
+import { TouchableOpacity,View } from "react-native";
+import NetworkLogger from "react-native-network-logger";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useThemeColors } from "@/lib/theme";
 
 export default function NetworkLoggerScreen() {
   const colors = useThemeColors();

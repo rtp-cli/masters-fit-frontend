@@ -1,14 +1,16 @@
-import React from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "../../../lib/theme";
+import React from "react";
+import { ActivityIndicator, Text, TouchableOpacity,View } from "react-native";
+
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
-import { formatNumber, formatWorkoutDuration } from "../../../utils";
 import {
-  TodayWorkout,
-  PlanDayWithExercises,
-  WorkoutBlockWithExercises,
+  type PlanDayWithExercises,
+  type TodayWorkout,
+  type WorkoutBlockWithExercises,
 } from "@/types/api";
+
+import { useThemeColors } from "../../../lib/theme";
+import { formatNumber, formatWorkoutDuration } from "../../../utils";
 
 type ActiveWorkoutCardProps = {
   workoutInfo: { name: string; description: string } | null;
@@ -73,7 +75,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
         {workoutInfo || todaysWorkout ? (
           <View>
             <View className="flex-row items-center mb-6">
-              <View className="w-16 h-16 rounded-full items-center justify-center mr-4 bg-primary">
+              <View className="size-16 rounded-full items-center justify-center mr-4 bg-primary">
                 <Ionicons
                   name={todaysWorkout ? "heart-outline" : "bed-outline"}
                   size={24}

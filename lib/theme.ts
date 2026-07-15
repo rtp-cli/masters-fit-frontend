@@ -1,6 +1,11 @@
 import { vars } from "nativewind";
 
 // ============================================
+// Color theme palettes for JS usage
+// ============================================
+import {useTheme } from "./theme-context";
+
+// ============================================
 // Theme Key Type - All 8 theme variants
 // ============================================
 export type ThemeKey =
@@ -549,11 +554,6 @@ export const carbonVioletDarkColors = {
   warning: "#E1B95F",
   contentOnPrimary: "#121212",
 } as const;
-
-// ============================================
-// Color theme palettes for JS usage
-// ============================================
-import { useTheme, ColorTheme } from "./theme-context";
 
 export const colorThemes = {
   original: { light: colors, dark: darkColors },

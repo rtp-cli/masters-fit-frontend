@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect,useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
   Text,
   TouchableOpacity,
-  Modal,
-  FlatList,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
+import { CustomDialog } from "@/components/ui";
+import WorkoutBlock from "@/components/workout-block";
+import { PaywallError } from "@/lib/api";
 import { useThemeColors } from "@/lib/theme";
 import { fetchPastCompletedDays, repeatPastDay } from "@/lib/workouts";
-import { PaywallError } from "@/lib/api";
-import WorkoutBlock from "@/components/workout-block";
-import { CustomDialog } from "@/components/ui";
 import {
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercises,
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import {
   calculatePlanDayDuration,

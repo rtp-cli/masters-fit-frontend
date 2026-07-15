@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import { ONBOARDING_STEP } from "@/types/enums";
+import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
+import { ONBOARDING_STEP } from "@/types/enums";
 
 interface NavigationButtonsProps {
   currentStep: ONBOARDING_STEP;

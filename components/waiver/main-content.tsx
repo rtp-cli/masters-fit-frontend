@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
 
 interface MainContentProps {

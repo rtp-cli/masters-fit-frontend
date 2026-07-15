@@ -1,6 +1,5 @@
 import {
-  WorkoutBlockWithExercise,
-  WorkoutBlockWithExercises,
+  type WorkoutBlockWithExercises,
 } from "./workout.types";
 
 /**

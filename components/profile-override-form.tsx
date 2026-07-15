@@ -1,15 +1,17 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
+import { Switch,Text, TextInput, TouchableOpacity, View } from "react-native";
+
 import CustomSlider from "@/components/ui/slider";
+import {
+  AVAILABLE_EQUIPMENT,
+  INTENSITY_LEVELS,
+  PREFERRED_STYLES,
+  WORKOUT_ENVIRONMENTS,
+} from "@/types/enums";
+
+import { type ThemeColorPalette,useThemeColors } from "../lib/theme";
 import IconComponent from "./onboarding/ui/icon-component";
 import { formatEnumValue } from "./onboarding/utils/formatters";
-import { useThemeColors, type ThemeColorPalette } from "../lib/theme";
-import {
-  INTENSITY_LEVELS,
-  WORKOUT_ENVIRONMENTS,
-  AVAILABLE_EQUIPMENT,
-  PREFERRED_STYLES,
-} from "@/types/enums";
 
 // Interface for temporary overrides (not saved to profile)
 export interface TemporaryOverrides {

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { useThemeColors, shadows } from "../../../lib/theme";
+import { shadows,useThemeColors } from "../../../lib/theme";
 
 type PremiumUpgradeBannerProps = {
   isPro: boolean;
@@ -35,7 +35,7 @@ const PremiumUpgradeBanner: React.FC<PremiumUpgradeBannerProps> = ({
     >
       <View className="flex-row items-center px-5 py-4">
         {/* Icon Container */}
-        <View className="w-12 h-12 rounded-full items-center justify-center mr-4">
+        <View className="size-12 rounded-full items-center justify-center mr-4">
           <Ionicons name="star" size={24} color={colors.brand.primary} />
         </View>
 

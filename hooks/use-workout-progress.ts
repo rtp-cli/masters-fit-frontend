@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { getCurrentUser } from '@/lib/auth';
+import { useCallback,useEffect, useRef, useState } from 'react';
+import { io, type Socket } from 'socket.io-client';
+
 import { API_BASE_URL } from "@/constants";
+import { getCurrentUser } from '@/lib/auth';
 
 export interface GenerationDayStatus {
   dayNumber: number;

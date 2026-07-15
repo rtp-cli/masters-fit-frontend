@@ -1,22 +1,23 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors, type ThemeColorPalette } from "@/lib/theme";
-import {
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercises,
-  getBlockTypeDisplayName,
-} from "@/types/api/workout.types";
-import { ExerciseLog, PlanDayLog } from "@/types/api/logs.types";
-import { isCircuitBlock, isWarmupCooldownBlock } from "@/utils/circuit-utils";
-import { getPlanDayLog, fetchExerciseLogsForPlanDay } from "@/lib/workouts";
+
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
+import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
+import { fetchExerciseLogsForPlanDay,getPlanDayLog } from "@/lib/workouts";
+import { type ExerciseLog, type PlanDayLog } from "@/types/api/logs.types";
+import {
+  getBlockTypeDisplayName,
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercises,
+} from "@/types/api/workout.types";
+import { isCircuitBlock, isWarmupCooldownBlock } from "@/utils/circuit-utils";
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -45,7 +46,7 @@ function SummarySkeleton({ compact }: { compact: boolean }) {
     <View className="flex-1 bg-background">
       {/* Header skeleton */}
       {compact ? (
-        <View className="px-4 pt-4 pb-4">
+        <View className="p-4">
           <View className="flex-row items-center mb-2">
             <SkeletonLoader width={18} height={18} variant="circular" />
             <View className="ml-2 flex-1">

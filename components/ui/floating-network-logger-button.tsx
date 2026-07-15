@@ -1,7 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
 import { TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+
 import { useSecretActivationContext } from "@/contexts/secret-activation-context";
 import { useThemeColors } from "@/lib/theme";
 
@@ -17,7 +18,7 @@ export function FloatingNetworkLoggerButton() {
 
   return (
     <TouchableOpacity
-      className="absolute right-6 bottom-[152px] w-14 h-14 rounded-full justify-center items-center bg-primary shadow-lg z-[9999]"
+      className="absolute right-6 bottom-[152px] size-14 rounded-full justify-center items-center bg-primary shadow-lg z-[9999]"
       onPress={() => router.push("/network-logger")}
       activeOpacity={0.8}
     >

@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
 
 export default function LegalAccordion() {

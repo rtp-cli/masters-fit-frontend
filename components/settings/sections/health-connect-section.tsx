@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useCallback,useEffect, useState } from "react";
+import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
+
 import { connectHealth, getHealthConnection } from "@/utils/health";
+
 import { useThemeColors } from "../../../lib/theme";
 
 export default function HealthConnectSection() {

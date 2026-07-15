@@ -1,39 +1,41 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  Platform,
-} from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/auth-context";
+import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useAppDataContext } from "@/contexts/app-data-context";
-import { useThemeColors } from "../../lib/theme";
+import { useCallback,useEffect, useRef, useState } from "react";
+import {
+  Platform,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
 import { useTheme } from "@/app/_layout";
-import { SettingsSkeleton } from "../skeletons/skeleton-screens";
-import ComingSoonModal from "../coming-soon-modal";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import SubscriptionDetailsModal from "@/components/subscription/subscription-details-modal";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
 import { useSecretActivationContext } from "@/contexts/secret-activation-context";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
-import * as Haptics from "expo-haptics";
-import { CustomDialog, DialogButton } from "../ui";
-import ProfileSection from "./sections/profile-section";
+
+import { useThemeColors } from "../../lib/theme";
+import ComingSoonModal from "../coming-soon-modal";
+import { SettingsSkeleton } from "../skeletons/skeleton-screens";
+import { CustomDialog, type DialogButton } from "../ui";
 import AppSettingsSection from "./sections/app-settings-section";
-import DeveloperToolsSection from "./sections/developer-tools-section";
-import PersonalInformationSection from "./sections/personal-information-section";
-import FitnessGoalsSection from "./sections/fitness-goals-section";
-import PreferredWorkoutTypesSection from "./sections/preferred-workout-types-section";
-import EquipmentSection from "./sections/equipment-section";
-import WeeklyScheduleSection from "./sections/weekly-schedule-section";
-import HealthInformationSection from "./sections/health-information-section";
-import SubscriptionSection from "./sections/subscription-section";
-import LogoutSection from "./sections/logout-section";
 import AppVersionSection from "./sections/app-version-section";
+import DeveloperToolsSection from "./sections/developer-tools-section";
+import EquipmentSection from "./sections/equipment-section";
+import FitnessGoalsSection from "./sections/fitness-goals-section";
+import HealthInformationSection from "./sections/health-information-section";
+import LogoutSection from "./sections/logout-section";
+import PersonalInformationSection from "./sections/personal-information-section";
+import PreferredWorkoutTypesSection from "./sections/preferred-workout-types-section";
+import ProfileSection from "./sections/profile-section";
+import SubscriptionSection from "./sections/subscription-section";
+import WeeklyScheduleSection from "./sections/weekly-schedule-section";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -416,7 +418,7 @@ export default function SettingsView({
                 router.push("/profile-edit");
               }}
             >
-              <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
+              <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="person-outline"
                   size={20}
@@ -430,7 +432,7 @@ export default function SettingsView({
               className="items-center"
               onPress={() => showComingSoonModal("help-circle-outline")}
             >
-              <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
+              <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="help-circle-outline"
                   size={20}
@@ -444,7 +446,7 @@ export default function SettingsView({
               className="items-center"
               onPress={() => showComingSoonModal("share-outline")}
             >
-              <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mb-2">
+              <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
                   name="share-outline"
                   size={20}

@@ -1,6 +1,7 @@
 import React from "react";
-import { View, TouchableOpacity, Text } from "react-native";
-import { Calendar as RNCalendar, DateData } from "react-native-calendars";
+import { Text,TouchableOpacity, View } from "react-native";
+import { Calendar as RNCalendar, type DateData } from "react-native-calendars";
+
 import { HIT_SLOP_6 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
 

@@ -1,3 +1,13 @@
+import * as SecureStore from "expo-secure-store";
+
+import {
+  apiRequest,
+  PaywallError,
+  setAuthFailureCallback,
+  setPaywallCallback,
+  setWaiverRedirectCallback,
+} from "@/lib/api";
+
 jest.mock("expo-secure-store", () => ({
   getItemAsync: jest.fn(),
   setItemAsync: jest.fn(async () => undefined),
@@ -5,15 +15,6 @@ jest.mock("expo-secure-store", () => ({
 }));
 
 jest.mock("@/config", () => ({ API_URL: "http://test.local/api" }));
-
-import * as SecureStore from "expo-secure-store";
-import {
-  apiRequest,
-  setAuthFailureCallback,
-  setWaiverRedirectCallback,
-  setPaywallCallback,
-  PaywallError,
-} from "@/lib/api";
 
 const mockedGetItemAsync = SecureStore.getItemAsync as jest.Mock;
 

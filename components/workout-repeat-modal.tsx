@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { PaywallError } from "@lib/api";
+import { getCurrentUser } from "@lib/auth";
+import { useThemeColors } from "@lib/theme";
 import {
   fetchPreviousWorkouts,
-  repeatPreviousWeekWorkout,
   invalidateActiveWorkoutCache,
+  repeatPreviousWeekWorkout,
 } from "@lib/workouts";
-import { getCurrentUser } from "@lib/auth";
-import { PaywallError } from "@lib/api";
-import { useThemeColors } from "@lib/theme";
-import { useTheme } from "@/lib/theme-context";
 import { formatDate, formatDateAsString } from "@utils/index";
-import type { PreviousWorkout } from "@/types/api/workout.types";
-import { useAuth } from "@/contexts/auth-context";
-import { useAppDataContext } from "@/contexts/app-data-context";
 import { useRouter } from "expo-router";
-import { CustomDialog } from "@/components/ui";
+import React, { useEffect,useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import type { DialogButton } from "@/components/ui";
+import { CustomDialog } from "@/components/ui";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/lib/theme-context";
+import type { PreviousWorkout } from "@/types/api/workout.types";
 
 interface WorkoutRepeatModalProps {
   visible: boolean;
@@ -336,7 +337,7 @@ export default function WorkoutRepeatModal({
               </View>
             </View>
             <View
-              className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+              className={`size-6 rounded-full border-2 items-center justify-center ${
                 isSelected
                   ? "border-primary bg-primary"
                   : "border-neutral-medium-1"
@@ -443,7 +444,7 @@ export default function WorkoutRepeatModal({
                               <View className="flex-row items-start justify-between">
                                 <View className="flex-1">
                                   <View className="flex-row items-center mb-1">
-                                    <View className="w-6 h-6 rounded-full bg-surface-elevated items-center justify-center mr-3">
+                                    <View className="size-6 rounded-full bg-surface-elevated items-center justify-center mr-3">
                                       <Text className="text-xs font-bold text-text-primary">
                                         {index + 1}
                                       </Text>
@@ -519,7 +520,7 @@ export default function WorkoutRepeatModal({
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
           <TouchableOpacity
             onPress={onClose}
-            className="w-8 h-8 items-center justify-center"
+            className="size-8 items-center justify-center"
             disabled={repeating}
           >
             <Ionicons name="close" size={20} color={colors.text.muted} />
@@ -531,7 +532,7 @@ export default function WorkoutRepeatModal({
         </View>
 
         {/* Content */}
-        <View className="flex-1 px-5 py-5">
+        <View className="flex-1 p-5">
           <Text className="text-base text-text-muted mb-6 text-center leading-6">
             Choose a previous workout to repeat:
           </Text>

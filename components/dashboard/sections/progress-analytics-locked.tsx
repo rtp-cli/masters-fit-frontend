@@ -3,7 +3,7 @@ import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { PAYWALL_COPY } from "../../../lib/paywall-copy";
-import { useThemeColors, shadows } from "../../../lib/theme";
+import { shadows,useThemeColors } from "../../../lib/theme";
 
 type Props = {
   onUpgrade: () => void;
@@ -27,7 +27,7 @@ const ProgressAnalyticsLocked: React.FC<Props> = ({ onUpgrade }) => {
       accessibilityRole="button"
       accessibilityLabel="Unlock progress analytics with MastersFit+"
     >
-      <View className="px-5 py-5">
+      <View className="p-5">
         <View className="flex-row items-center mb-2">
           <Ionicons name="lock-closed" size={18} color={colors.brand.primary} />
           <Text

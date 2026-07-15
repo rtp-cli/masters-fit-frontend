@@ -1,10 +1,12 @@
-import { useRef } from "react";
-import { Modal, View, TouchableOpacity, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRef } from "react";
+import { Modal, Text,TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
-import SearchView, { SearchViewHandle } from "./search-view";
+
+import SearchView, { type SearchViewHandle } from "./search-view";
 
 interface SearchModalProps {
   visible: boolean;

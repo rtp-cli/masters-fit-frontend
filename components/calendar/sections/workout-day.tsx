@@ -1,21 +1,20 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Text, TouchableOpacity,View } from "react-native";
 
-import { useThemeColors } from "@/lib/theme";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import WorkoutBlock from "@/components/workout-block";
 import WorkoutSummary from "@/components/workout-summary";
+import { useThemeColors } from "@/lib/theme";
+import {
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercises,
+  type WorkoutWithDetails,
+} from "@/types/api";
 import {
   calculatePlanDayDuration,
   formatDateAsString,
   formatWorkoutDuration,
 } from "@/utils";
-import {
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercises,
-  WorkoutWithDetails,
-} from "@/types/api";
 
 type WorkoutDaySectionProps = {
   selectedDate: string;

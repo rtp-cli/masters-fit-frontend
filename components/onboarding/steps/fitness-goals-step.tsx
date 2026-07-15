@@ -1,9 +1,11 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { FITNESS_GOALS } from "@/types/enums/fitness.enums";
-import { formatEnumValue } from "../utils/formatters";
-import IconComponent from "../ui/icon-component";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
+import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
+import { FITNESS_GOALS } from "@/types/enums/fitness.enums";
+
+import IconComponent from "../ui/icon-component";
+import { formatEnumValue } from "../utils/formatters";
 
 interface FitnessGoalsStepProps {
   formData: FormData;

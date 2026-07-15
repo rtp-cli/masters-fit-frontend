@@ -1,5 +1,6 @@
-import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Text, TouchableOpacity, View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
 
 interface WaiverHeaderProps {

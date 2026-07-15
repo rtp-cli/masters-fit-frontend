@@ -1,19 +1,20 @@
-import { apiRequest } from "./api";
 import {
-  DateSearchResponse,
-  ExerciseSearchResponse,
-  ExercisesSearchResponse,
-  SearchExercise,
+  type DateSearchResponse,
+  type ExerciseSearchResponse,
+  type ExercisesSearchResponse,
+  type SearchExercise,
 } from "@/types/api";
+
+import { apiRequest } from "./api";
 
 // Re-export types for backward compatibility
 export type {
   DateSearchResponse,
+  DateSearchWorkout,
+  SearchExercise as Exercise,
+  ExerciseDetails,
   ExerciseSearchResponse,
   ExercisesSearchResponse,
-  SearchExercise as Exercise,
-  DateSearchWorkout,
-  ExerciseDetails,
   ExerciseUserStats,
 } from "@/types/api";
 

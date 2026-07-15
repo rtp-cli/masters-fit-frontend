@@ -1,49 +1,50 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { type Ionicons } from "@expo/vector-icons";
+import { getCurrentUser } from "@lib/auth";
 import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-} from "react-native";
-import { DateData } from "react-native-calendars";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-
-import { useBackgroundJobs } from "@/contexts/background-job-context";
-import { useAppDataContext } from "@/contexts/app-data-context";
-import { useAuth } from "@/contexts/auth-context";
-import {
-  regenerateWorkoutPlanAsync,
-  regenerateDailyWorkoutAsync,
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
+  regenerateDailyWorkoutAsync,
+  regenerateWorkoutPlanAsync,
 } from "@lib/workouts";
-import { registerForPushNotifications } from "@/lib/notifications";
-import { getCurrentUser } from "@lib/auth";
-import { PaywallError } from "@/lib/api";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef,useState } from "react";
+import {
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { type DateData } from "react-native-calendars";
+
 import Header from "@/components/header";
+import JustGeneratedBadge from "@/components/just-generated-badge";
+import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
+import WorkoutChoiceModal from "@/components/workout-choice-modal";
+import WorkoutEditModal from "@/components/workout-edit-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
-import WorkoutEditModal from "@/components/workout-edit-modal";
-import { CustomDialog, DialogButton } from "../ui";
-import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import { RegenerationType } from "@/constants/global.enum";
-import { useThemeColors, type ThemeColorPalette } from "../../lib/theme";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { PaywallError } from "@/lib/api";
+import { registerForPushNotifications } from "@/lib/notifications";
+import {
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercises,
+  type WorkoutWithDetails,
+} from "@/types/api";
+import { type RegenerationData } from "@/types/calendar.types";
+
+import { type ThemeColorPalette,useThemeColors } from "../../lib/theme";
 import { useTheme } from "../../lib/theme-context";
 import { formatDateAsString } from "../../utils";
-import {
-  PlanDayWithBlocks,
-  WorkoutWithDetails,
-  WorkoutBlockWithExercises,
-} from "@/types/api";
-import { RegenerationData } from "@/types/calendar.types";
-import CalendarViewSection from "./sections/calendar-view";
+import { CustomDialog, type DialogButton } from "../ui";
 import CalendarActionButtons from "./sections/action-buttons";
+import CalendarViewSection from "./sections/calendar-view";
 import WorkoutDaySection from "./sections/workout-day";
-import WorkoutChoiceModal from "@/components/workout-choice-modal";
-import JustGeneratedBadge from "@/components/just-generated-badge";
 
 export default function CalendarScreen() {
   const colors = useThemeColors();
@@ -590,15 +591,15 @@ export default function CalendarScreen() {
         {/* Dot legend — so calendar status isn't conveyed by color alone (MF-005). */}
         <View className="flex-row flex-wrap justify-center gap-4 px-lg mb-3">
           <View className="flex-row items-center">
-            <View className="w-2 h-2 rounded-full bg-success mr-1.5" />
+            <View className="size-2 rounded-full bg-success mr-1.5" />
             <Text className="text-xs text-text-muted">Completed</Text>
           </View>
           <View className="flex-row items-center">
-            <View className="w-2 h-2 rounded-full bg-text-secondary mr-1.5" />
+            <View className="size-2 rounded-full bg-text-secondary mr-1.5" />
             <Text className="text-xs text-text-muted">Scheduled</Text>
           </View>
           <View className="flex-row items-center">
-            <View className="w-3 h-3 rounded-full border border-primary mr-1.5" />
+            <View className="size-3 rounded-full border border-primary mr-1.5" />
             <Text className="text-xs text-text-muted">Today</Text>
           </View>
         </View>

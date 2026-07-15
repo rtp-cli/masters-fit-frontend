@@ -1,18 +1,19 @@
-import { Tabs, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState, useRef } from "react";
-import { View, TouchableOpacity, GestureResponderEvent } from "react-native";
+import { type BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { Tabs, usePathname } from "expo-router";
+import React, { useRef,useState } from "react";
+import { type GestureResponderEvent,TouchableOpacity, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import WorkoutGenerationModal from "@/components/workout-generation-modal";
+
 import GenerationDockChip from "@/components/generation-dock-chip";
-import { useThemeColors } from "@/lib/theme";
+import { CustomDialog } from "@/components/ui";
+import WorkoutGenerationModal from "@/components/workout-generation-modal";
 import { useWorkout } from "@/contexts/workout-context";
 import { tabEvents } from "@/lib/tab-events";
-import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
-import { CustomDialog } from "@/components/ui";
+import { useThemeColors } from "@/lib/theme";
 
 function TabBarIcon({
   name,

@@ -1,10 +1,10 @@
-import { apiRequest } from "./api";
 import {
-  ProviderAvailabilityResponse,
-  UpdateProviderRequest,
-  UserProviderResponse,
-  AI_PROVIDER,
+  type AI_PROVIDER,
+  type ProviderAvailabilityResponse,
+  type UserProviderResponse,
 } from "@/types/ai-provider.types";
+
+import { apiRequest } from "./api";
 
 export const getAvailableProviders =
   async (): Promise<ProviderAvailabilityResponse> => {

@@ -26,12 +26,12 @@ export interface WeightAccuracyMetrics {
   higherWeight: number;
   lowerWeight: number;
   avgWeightDifference: number;
-  chartData?: Array<{
+  chartData?: {
     label: string;
     value: number;
     color: string;
     count?: number;
-  }>;
+  }[];
   hasPlannedWeights?: boolean;
   hasExerciseData?: boolean;
 }

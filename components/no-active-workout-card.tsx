@@ -1,6 +1,7 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
 
 interface NoActiveWorkoutCardProps {
@@ -54,7 +55,7 @@ export default function NoActiveWorkoutCard({
 
   return (
     <View className="items-center py-6">
-      <View className="w-16 h-16 bg-surface-elevated rounded-full items-center justify-center mb-4">
+      <View className="size-16 bg-surface-elevated rounded-full items-center justify-center mb-4">
         <Ionicons
           name={variantStyles.icon}
           size={24}

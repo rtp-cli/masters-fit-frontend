@@ -1,81 +1,80 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  ActivityIndicator,
-  TextInput,
-  RefreshControl,
-  AppStateStatus,
-  ViewStyle,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
 import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
+import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
+import React, { useCallback,useEffect, useRef, useState } from "react";
 import {
-  fetchActiveWorkout,
-  createExerciseLog,
-  markPlanDayAsComplete,
-  getPlanDayLog,
-  skipExercise,
-  fetchExerciseLogsForPlanDay,
-} from "@/lib/workouts";
-import { getCurrentUser } from "@/lib/auth";
-import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
-import { formatEquipment, getCurrentDate, formatDateAsString } from "@/utils";
+  ActivityIndicator,
+  type AppStateStatus,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type ViewStyle,
+} from "react-native";
+import { AppState } from "react-native";
+
+import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
+import CircuitTracker from "@/components/circuit-tracker";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
 import JustGeneratedBadge from "@/components/just-generated-badge";
-import { ExerciseSet } from "@/components/set-tracker";
-import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
-import CircuitTracker from "@/components/circuit-tracker";
+import NoActiveWorkoutCard from "@/components/no-active-workout-card";
+import { type ExerciseSet } from "@/components/set-tracker";
 import { StreakBadge } from "@/components/streak";
+import type { DialogButton } from "@/components/ui";
+import { CustomDialog } from "@/components/ui";
+import WorkoutChoiceModal from "@/components/workout-choice-modal";
+import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
+import WorkoutSummary from "@/components/workout-summary";
+import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { useWorkout } from "@/contexts/workout-context";
+import { useCircuitSession } from "@/hooks/use-circuit-session";
+import { trackWorkoutStarted } from "@/lib/analytics";
+import { getCurrentUser } from "@/lib/auth";
+import { logCircuitCompletion } from "@/lib/circuits";
+import { registerForPushNotifications } from "@/lib/notifications";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import {
-  WorkoutBlockWithExercises,
-  WorkoutBlockWithExercise,
-  PlanDayWithBlocks,
-  getBlockTypeDisplayName,
-} from "@/types/api/workout.types";
-import {
-  CircuitSessionData,
-  CircuitSessionConfig,
-  CircuitRound,
-  CircuitExerciseLog as CircuitExercise,
-} from "@/types/api/circuit.types";
-import {
-  isCircuitBlock,
-  getLoggingInterface,
-  isWarmupCooldownBlock,
-} from "@/utils/circuit-utils";
-import { useCircuitSession } from "@/hooks/use-circuit-session";
-import { logCircuitCompletion } from "@/lib/circuits";
-import { useWorkout } from "@/contexts/workout-context";
-import { useAppDataContext } from "@/contexts/app-data-context";
-import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
-import WorkoutSummary from "@/components/workout-summary";
-import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
-import WorkoutChoiceModal from "@/components/workout-choice-modal";
-import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
+  createExerciseLog,
+  fetchActiveWorkout,
+  fetchExerciseLogsForPlanDay,
+  markPlanDayAsComplete,
+  skipExercise,
+} from "@/lib/workouts";
 import {
   generateWorkoutPlanAsync,
   invalidateActiveWorkoutCache,
 } from "@/lib/workouts";
-import { registerForPushNotifications } from "@/lib/notifications";
-import { useAuth } from "@/contexts/auth-context";
-import { useBackgroundJobs } from "@/contexts/background-job-context";
-import { trackWorkoutStarted } from "@/lib/analytics";
-import NoActiveWorkoutCard from "@/components/no-active-workout-card";
-import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
-import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
-import { AppState } from "react-native";
-import { CustomDialog } from "@/components/ui";
-import type { DialogButton } from "@/components/ui";
+import {
+  type CircuitRound,
+  type CircuitSessionConfig,
+  type CircuitSessionData,
+} from "@/types/api/circuit.types";
+import {
+  getBlockTypeDisplayName,
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercises,
+} from "@/types/api/workout.types";
+import { formatDateAsString,formatEquipment, getCurrentDate } from "@/utils";
+import {
+  getLoggingInterface,
+  isCircuitBlock,
+  isWarmupCooldownBlock,
+} from "@/utils/circuit-utils";
+
+import { WorkoutSkeleton } from "../../components/skeletons/skeleton-screens";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -2175,7 +2174,7 @@ export default function WorkoutScreen() {
                                 return (
                                   <TouchableOpacity
                                     key={i}
-                                    className={`w-9 h-9 rounded-full items-center justify-center border-2 ${
+                                    className={`size-9 rounded-full items-center justify-center border-2 ${
                                       isCompleted
                                         ? "border-success bg-success"
                                         : "border-neutral-medium-1 bg-background"
@@ -2447,7 +2446,7 @@ export default function WorkoutScreen() {
                       }`}
                     >
                       <View
-                        className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
+                        className={`size-8 rounded-full items-center justify-center mr-3 ${
                           isCompleted ? "bg-success" : "bg-brand-medium-2"
                         }`}
                       >

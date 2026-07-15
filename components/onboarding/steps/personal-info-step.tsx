@@ -1,9 +1,11 @@
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Text,TouchableOpacity, View } from "react-native";
+
 import CustomSlider from "@/components/ui/slider";
-import { FormData } from "@/types/components";
-import { GENDER } from "@/types/enums/fitness.enums";
 import { useThemeColors } from "@/lib/theme";
+import { type FormData } from "@/types/components";
+import { GENDER } from "@/types/enums/fitness.enums";
+
 import {
   convertCmToInches,
   convertInchesToCm,
@@ -57,7 +59,7 @@ export default function PersonalInfoStep({
             onPress={() => onFieldChange("gender", GENDER.MALE)}
           >
             <View
-              className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
+              className={`size-8 rounded-full items-center justify-center mb-2 ${
                 formData.gender === GENDER.MALE
                   ? "bg-white"
                   : "bg-neutral-light-2"
@@ -89,7 +91,7 @@ export default function PersonalInfoStep({
             onPress={() => onFieldChange("gender", GENDER.FEMALE)}
           >
             <View
-              className={`w-8 h-8 rounded-full items-center justify-center mb-2 ${
+              className={`size-8 rounded-full items-center justify-center mb-2 ${
                 formData.gender === GENDER.FEMALE
                   ? "bg-white"
                   : "bg-neutral-light-2"

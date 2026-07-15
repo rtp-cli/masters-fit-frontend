@@ -1,8 +1,8 @@
-import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { Platform } from "react-native";
-import { registerPushToken } from "./workouts";
+import * as Notifications from "expo-notifications";
+
 import { getCurrentUser } from "./auth";
+import { registerPushToken } from "./workouts";
 
 export type NotificationData = Record<string, any>;
 

@@ -1,5 +1,7 @@
-import { View, Text } from "react-native";
-import { User } from "@/lib/types";
+import { Text,View } from "react-native";
+
+import { type User } from "@/lib/types";
+
 import { useThemeColors } from "../../../lib/theme";
 
 interface ProfileSectionProps {
@@ -24,7 +26,7 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
 
   return (
     <View className="items-center px-6 mb-6">
-      <View className="w-20 h-20 rounded-full bg-primary items-center justify-center mb-4">
+      <View className="size-20 rounded-full bg-primary items-center justify-center mb-4">
         <Text
           className="text-3xl font-bold"
           style={{ color: colors.contentOnPrimary }}

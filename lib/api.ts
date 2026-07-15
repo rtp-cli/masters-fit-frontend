@@ -1,7 +1,8 @@
-import { API_URL } from "../config";
-import { User, OnboardingData, AuthResponse } from "./types";
 import * as SecureStore from "expo-secure-store";
+
+import { API_URL } from "../config";
 import { logger } from "./logger";
+import { type AuthResponse,type OnboardingData, type User } from "./types";
 
 // Callback for handling waiver redirects (set by WaiverContext)
 let waiverRedirectCallback: (() => void) | null = null;
@@ -723,7 +724,7 @@ export async function completeOnboardingAPI(
  */
 export async function fetchSubscriptionPlans(): Promise<{
   success: boolean;
-  plans: Array<{
+  plans: {
     id: number;
     planId: string;
     name: string;
@@ -733,7 +734,7 @@ export async function fetchSubscriptionPlans(): Promise<{
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
-  }>;
+  }[];
   error?: string;
 }> {
   try {

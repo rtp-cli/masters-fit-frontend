@@ -1,20 +1,21 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import * as Haptics from "expo-haptics";
+import { useCallback, useEffect, useRef,useState } from "react";
+
+import { logger } from "@/lib/logger";
 import {
-  CircuitSessionData,
-  CircuitRound,
-  CircuitExerciseLog,
-  CircuitTimerState,
-  CircuitMetrics,
-  UseCircuitSessionReturn,
-  CircuitSessionConfig,
+  type CircuitExerciseLog,
+  type CircuitMetrics,
+  type CircuitRound,
+  type CircuitSessionConfig,
+  type CircuitSessionData,
+  type CircuitTimerState,
+  type UseCircuitSessionReturn,
 } from "@/types/api/circuit.types";
 import {
-  WorkoutBlockWithExercises,
-  WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { calculateCircuitScore } from "@/utils/circuit-utils";
-import { logger } from "@/lib/logger";
-import * as Haptics from "expo-haptics";
 
 /** Duration in ms for the undo round window — used by both the timeout and the UI animation */
 export const UNDO_DURATION_MS = 3000;

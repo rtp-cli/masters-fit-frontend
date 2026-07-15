@@ -1,32 +1,33 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  Modal,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useThemeColors } from "@/lib/theme";
-import { useTheme } from "@/lib/theme-context";
+import React, { useEffect,useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { CustomDialog, type DialogButton } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getAvailableProviders,
-  updateUserProvider,
   getUserProvider,
+  updateUserProvider,
 } from "@/lib/ai-provider";
+import { logger } from "@/lib/logger";
+import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import {
   AI_PROVIDER,
-  ProviderInfo,
-  UserProviderResponse,
-  ProviderAvailabilityResponse,
+  type ProviderAvailabilityResponse,
+  type ProviderInfo,
+  type UserProviderResponse,
 } from "@/types/ai-provider.types";
-import { logger } from "@/lib/logger";
-import { CustomDialog, DialogButton } from "@/components/ui";
 
 export default function AIProviderSelectionPage() {
   const colors = useThemeColors();
@@ -324,7 +325,7 @@ export default function AIProviderSelectionPage() {
         <View className="mx-5 mb-4">
           <View className="bg-surface rounded-xl p-3 border border-primary">
             <View className="flex-row items-center">
-              <View className="w-6 h-6 rounded-full items-center justify-center mr-3 bg-primary">
+              <View className="size-6 rounded-full items-center justify-center mr-3 bg-primary">
                 <Ionicons
                   name="checkmark"
                   size={12}
@@ -430,7 +431,7 @@ export default function AIProviderSelectionPage() {
                                   {model.displayName}
                                 </Text>
                                 {isSelected && (
-                                  <View className="w-4 h-4 rounded-full items-center justify-center bg-primary">
+                                  <View className="size-4 rounded-full items-center justify-center bg-primary">
                                     <Ionicons
                                       name="checkmark"
                                       size={10}
@@ -480,7 +481,7 @@ export default function AIProviderSelectionPage() {
             <TouchableWithoutFeedback>
               <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
                 {/* Icon */}
-                <View className="w-16 h-16 rounded-full items-center justify-center mb-4 mx-auto bg-primary/10">
+                <View className="size-16 rounded-full items-center justify-center mb-4 mx-auto bg-primary/10">
                   <Ionicons
                     name="swap-horizontal"
                     size={32}

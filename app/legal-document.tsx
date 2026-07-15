@@ -1,25 +1,25 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams,useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useRef,useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
   Image,
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useEffect, useState, useRef } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "@/lib/theme";
-import { images } from "@/assets";
 
+import { images } from "@/assets";
 // Import legal documents
 import {
-  waiverDocument,
-  termsDocument,
   privacyDocument,
+  termsDocument,
+  waiverDocument,
 } from "@/lib/legal-documents";
+import { useThemeColors } from "@/lib/theme";
 
 interface MarkdownSection {
   type: "heading2" | "heading3" | "paragraph" | "list";
@@ -290,7 +290,7 @@ export default function LegalDocumentScreen() {
             </View>
             <Image
               source={images.logo}
-              className="w-8 h-8"
+              className="size-8"
               resizeMode="contain"
             />
           </View>
@@ -311,7 +311,7 @@ export default function LegalDocumentScreen() {
             <View className="flex-row items-center mb-4">
               <Image
                 source={images.logo}
-                className="w-10 h-10 mr-3"
+                className="size-10 mr-3"
                 resizeMode="contain"
                 style={{ tintColor: colors.neutral.white }}
               />
@@ -362,7 +362,7 @@ export default function LegalDocumentScreen() {
           )}
 
           {/* Document Sections */}
-          <View className="bg-surface rounded-xl px-6 py-6 border border-neutral-medium-1">
+          <View className="bg-surface rounded-xl p-6 border border-neutral-medium-1">
             {groupedSections.map((group, groupIndex) => (
               <View key={groupIndex} className={groupIndex > 0 ? "mt-8" : ""}>
                 {/* Section Header */}
@@ -400,7 +400,7 @@ export default function LegalDocumentScreen() {
                   className="ml-4"
                   onPress={() => Linking.openURL("mailto:legal@mastersfit.ai")}
                 >
-                  <View className="w-12 h-12 rounded-full items-center justify-center bg-primary">
+                  <View className="size-12 rounded-full items-center justify-center bg-primary">
                     <Ionicons name="mail" size={20} color={colors.neutral.white} />
                   </View>
                 </TouchableOpacity>

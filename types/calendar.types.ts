@@ -1,4 +1,4 @@
-import { UserProfile } from "./api";
+import { type UserProfile } from "./api";
 
 export interface RegenerationData {
   customFeedback?: string;

@@ -5,7 +5,7 @@ import { PieChart } from "@/components/charts/pie-chart";
 import { TimeRangeSegmentedControl } from "@/components/segmented-control";
 import { getThemedPieChartColors } from "@/constants/colors";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
-import { WeightAccuracyMetrics } from "@/types/api";
+import { type WeightAccuracyMetrics } from "@/types/api";
 import { formatTimeRangeLabel } from "@/utils";
 
 import { useTheme } from "../../../lib/theme-context";

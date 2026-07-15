@@ -1,9 +1,11 @@
-import { View, Text, TouchableOpacity, Switch } from "react-native";
-import { FormData, ArrayFields, ArrayValue } from "@/types/components";
+import { Switch,Text, TouchableOpacity, View } from "react-native";
+
+import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
+import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
 import { PREFERRED_STYLES } from "@/types/enums";
-import { formatEnumValue } from "../utils/formatters";
+
 import IconComponent from "../ui/icon-component";
-import { useThemeColors, type ThemeColorPalette } from "@/lib/theme";
+import { formatEnumValue } from "../utils/formatters";
 
 interface WorkoutStyleStepProps {
   formData: FormData;

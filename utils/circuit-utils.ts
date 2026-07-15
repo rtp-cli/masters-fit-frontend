@@ -1,4 +1,4 @@
-import { WorkoutBlockWithExercises } from "@/types/api/workout.types";
+import { type WorkoutBlockWithExercises } from "@/types/api/workout.types";
 
 /**
  * Circuit workout types that require round-based logging

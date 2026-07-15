@@ -1,16 +1,18 @@
+import { usePathname,useRouter } from "expo-router";
 import React, {
   createContext,
+  type ReactNode,
   useContext,
-  useState,
   useEffect,
-  ReactNode,
   useRef,
+  useState,
 } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, type AppStateStatus } from "react-native";
+
 import { getWaiverStatusAPI, setWaiverRedirectCallback } from "@/lib/api";
-import { useAuth } from "./auth-context";
-import { useRouter, usePathname } from "expo-router";
 import { logger } from "@/lib/logger";
+
+import { useAuth } from "./auth-context";
 
 interface WaiverContextType {
   isCheckingWaiver: boolean;

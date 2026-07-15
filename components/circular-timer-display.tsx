@@ -1,6 +1,7 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
 
 interface CircularTimerDisplayProps {
@@ -43,13 +44,13 @@ export default function CircularTimerDisplay({
       <View className="relative items-center justify-center mb-2">
         {/* Progress Circle Background */}
         <View 
-          className="w-24 h-24 rounded-full border-3"
+          className="size-24 rounded-full border-3"
           style={{ borderColor: colors.neutral.light[2] }}
         />
         
         {/* Progress Circle Foreground */}
         <View 
-          className="absolute w-24 h-24 rounded-full"
+          className="absolute size-24 rounded-full"
           style={{ 
             width: 96,
             height: 96,

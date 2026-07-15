@@ -1,17 +1,17 @@
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { PHYSICAL_LIMITATIONS } from "@/types/enums/fitness.enums";
+
 import { useThemeColors } from "@/lib/theme";
-import { formatEnumValue } from "../utils/formatters";
+import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
+import { PHYSICAL_LIMITATIONS } from "@/types/enums/fitness.enums";
+
 import IconComponent from "../ui/icon-component";
+import { formatEnumValue } from "../utils/formatters";
 
 interface PhysicalLimitationsStepProps {
   formData: FormData;

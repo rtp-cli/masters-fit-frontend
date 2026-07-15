@@ -1,62 +1,64 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { type Ionicons } from "@expo/vector-icons";
+import { fetchActiveWorkout,generateWorkoutPlanAsync } from "@lib/workouts";
+import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAuth } from "../../contexts/auth-context";
-import { useAppDataContext } from "@/contexts/app-data-context";
-import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
-import { useEntitlements } from "@/hooks/use-entitlements";
 import {
-  fetchHeartRateSamples,
-  fetchCaloriesToday,
-  fetchWorkoutDuration,
   connectHealth as connectHealthAPI,
-  fetchStepsToday as fetchStepsTodayAPI,
+  fetchCaloriesToday,
+  fetchHeartRateSamples,
   fetchNutritionCaloriesToday,
+  fetchStepsToday as fetchStepsTodayAPI,
+  fetchWorkoutDuration,
   getHealthConnection,
 } from "@utils/health";
+import { useRouter } from "expo-router";
+import React, { useCallback,useEffect, useRef, useState } from "react";
+import { RefreshControl,ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import Header from "@/components/header";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
-import { generateWorkoutPlanAsync, fetchActiveWorkout } from "@lib/workouts";
-import { registerForPushNotifications } from "@/lib/notifications";
+import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import type { DialogButton } from "@/components/ui";
+import { CustomDialog } from "@/components/ui";
+import WorkoutChoiceModal from "@/components/workout-choice-modal";
+import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
+import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
+import { TIME_RANGE_FILTER } from "@/constants/global.enum";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { useEntitlements } from "@/hooks/use-entitlements";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { registerForPushNotifications } from "@/lib/notifications";
+import { PAYWALL_COPY } from "@/lib/paywall-copy";
 import {
-  WeightAccuracyMetrics,
-  WorkoutTypeMetrics,
-  TodayWorkout,
-  PlanDayWithBlocks,
-  PlanDayWithExercises,
-  WorkoutBlockWithExercises,
-  WorkoutBlockWithExercise,
+  type PlanDayWithBlocks,
+  type PlanDayWithExercises,
+  type TodayWorkout,
+  type WeightAccuracyMetrics,
+  type WorkoutBlockWithExercise,
+  type WorkoutBlockWithExercises,
+  type WorkoutTypeMetrics,
 } from "@/types/api";
-import {
-  formatDate,
-  calculateWorkoutDuration,
-  calculatePlanDayDuration,
-  getCurrentDate,
-  formatDateAsString,
-} from "../../utils";
+
+import { useAuth } from "../../contexts/auth-context";
 import { useThemeColors } from "../../lib/theme";
-import HealthMetricsCarousel from "./sections/health-metrics-carousel";
+import {
+  calculatePlanDayDuration,
+  calculateWorkoutDuration,
+  formatDate,
+  formatDateAsString,
+  getCurrentDate,
+} from "../../utils";
 import ActiveWorkoutCard from "./sections/active-workout-card";
-import WeeklyProgressSection from "./sections/weekly-progress";
-import WeightPerformanceSection from "./sections/weight-performance";
-import StrengthProgressSection from "./sections/strength-progress";
-import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
+import HealthMetricsCarousel from "./sections/health-metrics-carousel";
 import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
 import ProgressAnalyticsLocked from "./sections/progress-analytics-locked";
-import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
-import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
-import WorkoutChoiceModal from "@/components/workout-choice-modal";
-import { invalidateActiveWorkoutCache } from "@lib/workouts";
-import PaymentWallModal from "@/components/subscription/payment-wall-modal";
-import { PAYWALL_COPY } from "@/lib/paywall-copy";
-import { TIME_RANGE_FILTER } from "@/constants/global.enum";
-import { CustomDialog } from "@/components/ui";
-import type { DialogButton } from "@/components/ui";
-import { Ionicons } from "@expo/vector-icons";
+import StrengthProgressSection from "./sections/strength-progress";
+import WeeklyProgressSection from "./sections/weekly-progress";
+import WeightPerformanceSection from "./sections/weight-performance";
+import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
 
 export default function DashboardScreen() {
   const colors = useThemeColors();

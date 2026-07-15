@@ -1,26 +1,27 @@
-import { useState, useCallback, useMemo } from "react";
-import { apiRequest } from "@/lib/api";
-import { fetchActiveWorkout, fetchWorkoutHistory } from "@lib/workouts";
 import { fetchUserProfile } from "@lib/profile";
 import {
   searchByDateAPI,
   searchExerciseAPI,
   searchExercisesAPI,
 } from "@lib/search";
+import { fetchActiveWorkout, fetchWorkoutHistory } from "@lib/workouts";
+import { useCallback, useMemo,useState } from "react";
+
 import { useAuth } from "@/contexts/auth-context";
+import { apiRequest } from "@/lib/api";
 import {
-  DashboardMetrics,
-  DashboardFilters,
-  WeeklySummary,
-  WorkoutConsistency,
-  WeightMetrics,
-  WeightAccuracyMetrics,
-  GoalProgress,
-  TotalVolumeMetrics,
-  WorkoutTypeMetrics,
-  DailyWorkoutProgress,
-  WorkoutWithDetails,
-  Profile,
+  type DailyWorkoutProgress,
+  type DashboardFilters,
+  type DashboardMetrics,
+  type GoalProgress,
+  type Profile,
+  type TotalVolumeMetrics,
+  type WeeklySummary,
+  type WeightAccuracyMetrics,
+  type WeightMetrics,
+  type WorkoutConsistency,
+  type WorkoutTypeMetrics,
+  type WorkoutWithDetails,
 } from "@/types/api";
 
 // Centralized app data state

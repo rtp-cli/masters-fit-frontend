@@ -6,7 +6,7 @@ import {
 
 import { apiRequest } from "./api";
 
-export type { UserSubscriptionStatus, Entitlements } from "@/types/api";
+export type { Entitlements,UserSubscriptionStatus } from "@/types/api";
 
 /**
  * Fetch the full /subscriptions/status response (subscription + entitlements).

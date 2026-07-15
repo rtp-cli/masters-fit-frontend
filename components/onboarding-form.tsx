@@ -1,47 +1,48 @@
-import { useState, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useRef,useState } from "react";
 import {
   Image,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
+  ScrollView,
+  Text,
   TouchableOpacity,
   View,
-  Text,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { useThemeColors } from "@/lib/theme";
 import {
-  FormData,
-  OnboardingFormProps,
-  ArrayFields,
-  ArrayValue,
+  type ArrayFields,
+  type ArrayValue,
+  type FormData,
+  type OnboardingFormProps,
 } from "@/types/components";
 import {
-  ONBOARDING_STEP,
   FITNESS_LEVELS,
-  INTENSITY_LEVELS,
-  WORKOUT_ENVIRONMENTS,
   GENDER,
+  INTENSITY_LEVELS,
+  ONBOARDING_STEP,
+  type WORKOUT_ENVIRONMENTS,
 } from "@/types/enums";
-import { validateStep } from "./onboarding/utils/validation";
-import { getEquipmentForEnvironment } from "./onboarding/utils/equipment-logic";
-import OnboardingHeader from "./onboarding/ui/onboarding-header";
-import NavigationButtons from "./onboarding/ui/navigation-buttons";
-import PersonalInfoStep from "./onboarding/steps/personal-info-step";
+
 import FitnessGoalsStep from "./onboarding/steps/fitness-goals-step";
-import PhysicalLimitationsStep from "./onboarding/steps/physical-limitations-step";
 import FitnessLevelStep from "./onboarding/steps/fitness-level-step";
+import HealthConnectStep from "./onboarding/steps/health-connect-step";
+import PersonalInfoStep from "./onboarding/steps/personal-info-step";
+import PhysicalLimitationsStep from "./onboarding/steps/physical-limitations-step";
 import WorkoutEnvironmentStep from "./onboarding/steps/workout-environment-step";
 import WorkoutStyleStep from "./onboarding/steps/workout-style-step";
-import HealthConnectStep from "./onboarding/steps/health-connect-step";
+import NavigationButtons from "./onboarding/ui/navigation-buttons";
+import OnboardingHeader from "./onboarding/ui/onboarding-header";
+import { getEquipmentForEnvironment } from "./onboarding/utils/equipment-logic";
+import { validateStep } from "./onboarding/utils/validation";
 
 // Re-export types for backward compatibility
 export type {
-  FormData,
-  OnboardingFormProps,
   ArrayFields,
   ArrayValue,
+  FormData,
+  OnboardingFormProps,
 } from "@/types/components";
 
 export default function OnboardingForm({

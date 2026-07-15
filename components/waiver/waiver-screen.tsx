@@ -1,14 +1,15 @@
+import { StatusBar } from "expo-status-bar";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+
+import { CustomDialog } from "@/components/ui";
+import AgreementCheckbox from "@/components/waiver/agreement-checkbox";
+import BottomActions from "@/components/waiver/bottom-actions";
+import DocumentLinks from "@/components/waiver/document-links";
 import WaiverHeader from "@/components/waiver/header";
 import MainContent from "@/components/waiver/main-content";
-import AgreementCheckbox from "@/components/waiver/agreement-checkbox";
-import DocumentLinks from "@/components/waiver/document-links";
-import BottomActions from "@/components/waiver/bottom-actions";
 import { useWaiverController } from "@/components/waiver/use-waiver-controller";
 import { useThemeColors } from "@/lib/theme";
-import { CustomDialog } from "@/components/ui";
 
 export default function WaiverScreen() {
   const {

@@ -1,9 +1,11 @@
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
-import { FormData, ArrayFields, ArrayValue } from "@/types/components";
-import { WORKOUT_ENVIRONMENTS, AVAILABLE_EQUIPMENT } from "@/types/enums";
+import { Text, TextInput,TouchableOpacity, View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
-import { formatEnumValue } from "../utils/formatters";
+import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
+import { AVAILABLE_EQUIPMENT,WORKOUT_ENVIRONMENTS } from "@/types/enums";
+
 import IconComponent from "../ui/icon-component";
+import { formatEnumValue } from "../utils/formatters";
 
 interface WorkoutEnvironmentStepProps {
   formData: FormData;

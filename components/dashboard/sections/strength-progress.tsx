@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 
 import { LineChart } from "@/components/charts/line-chart";
 import { TimeRangeSegmentedControl } from "@/components/segmented-control";
-import { TIME_RANGE_FILTER } from "@/constants/global.enum";
+import { type TIME_RANGE_FILTER } from "@/constants/global.enum";
 import { formatTimeRangeLabel } from "@/utils";
 
 import { useThemeColors } from "../../../lib/theme";

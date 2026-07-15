@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from "react";
+
 import { useSecretActivation } from "@/hooks/use-secret-activation";
 
 type SecretActivationContextValue = ReturnType<typeof useSecretActivation>;

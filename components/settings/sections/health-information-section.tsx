@@ -1,5 +1,5 @@
-import { View, Text } from "react-native";
 import { formatEnumValue } from "@utils/index";
+import { Text,View } from "react-native";
 
 interface HealthInformationSectionProps {
   limitations?: string[];

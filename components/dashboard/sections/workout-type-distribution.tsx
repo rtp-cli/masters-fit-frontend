@@ -3,9 +3,9 @@ import { Text, View } from "react-native";
 
 import { PieChart } from "@/components/charts/pie-chart";
 import { TimeRangeSegmentedControl } from "@/components/segmented-control";
-import { getThemedDonutColors, TIME_RANGE_FILTER } from "@/constants";
+import { getThemedDonutColors, type TIME_RANGE_FILTER } from "@/constants";
 import { useTheme } from "@/lib/theme-context";
-import { WorkoutTypeMetrics } from "@/types/api";
+import { type WorkoutTypeMetrics } from "@/types/api";
 import { formatTimeRangeLabel } from "@/utils";
 
 type WorkoutTypeDistributionSectionProps = {
@@ -122,7 +122,7 @@ const WorkoutTypeDistributionSection: React.FC<
             {legendData.map((item, index) => (
               <View key={index} className="flex-row items-center mx-2 mb-2">
                 <View
-                  className="w-3 h-3 rounded-full mr-2"
+                  className="size-3 rounded-full mr-2"
                   style={{ backgroundColor: (item as any).color }}
                 />
                 <Text className="text-xs text-text-primary font-medium">

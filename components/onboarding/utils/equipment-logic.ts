@@ -1,4 +1,4 @@
-import { WORKOUT_ENVIRONMENTS, AVAILABLE_EQUIPMENT } from "@/types/enums";
+import { AVAILABLE_EQUIPMENT,WORKOUT_ENVIRONMENTS } from "@/types/enums";
 
 // Auto-assign equipment based on environment selection
 export const getEquipmentForEnvironment = (

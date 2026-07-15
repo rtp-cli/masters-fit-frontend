@@ -1,19 +1,21 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useThemeColors } from "../lib/theme";
-import {
-  View,
-  Image,
-  TouchableOpacity,
-  Linking,
-  ViewStyle,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback,useEffect, useState } from "react";
+import {
+  Image,
+  Linking,
+  TouchableOpacity,
+  View,
+  type ViewStyle,
+} from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
-import Text from "./text";
+
 import { images } from "@/assets";
-import { trackVideoEngagement } from "@/lib/analytics";
 import { useAuth } from "@/contexts/auth-context";
-import { CustomDialog, DialogButton } from "./ui";
+import { trackVideoEngagement } from "@/lib/analytics";
+
+import { useThemeColors } from "../lib/theme";
+import Text from "./text";
+import { CustomDialog, type DialogButton } from "./ui";
 
 interface ExerciseLinkProps {
   link: string | null | undefined;
@@ -223,7 +225,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
         {!imageError ? (
           <Image
             source={imageUrl}
-            className="w-full h-full"
+            className="size-full"
             resizeMode="cover"
             onError={() => {
               if (!useFallback) {
@@ -367,7 +369,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
               }}
             />
             <TouchableOpacity
-              className="absolute top-3 right-3 bg-black/60 rounded-full w-9 h-9 items-center justify-center z-10"
+              className="absolute top-3 right-3 bg-black/60 rounded-full size-9 items-center justify-center z-10"
               onPress={() => setShowVideo(false)}
             >
               <Ionicons name="chevron-down" size={18} color="white" />
@@ -426,7 +428,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
           {!imageError ? (
             <Image
               source={{ uri: thumbUri }}
-              className="w-full h-full"
+              className="size-full"
               resizeMode="cover"
               onError={onThumbError}
             />
@@ -439,7 +441,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             </View>
           )}
           <View className="absolute inset-0 bg-black/20 items-center justify-center">
-            <View className="bg-red-600 rounded-full w-20 h-20 items-center justify-center shadow-lg">
+            <View className="bg-red-600 rounded-full size-20 items-center justify-center shadow-lg">
               <Ionicons name="play" size={32} color="white" />
             </View>
           </View>
@@ -473,7 +475,7 @@ const ExerciseLink: React.FC<ExerciseLinkProps> = ({
             </View>
           )}
           <View className="absolute inset-0 bg-black/20 items-center justify-center">
-            <View className="bg-red-600 rounded-full w-16 h-16 items-center justify-center shadow-lg">
+            <View className="bg-red-600 rounded-full size-16 items-center justify-center shadow-lg">
               <Ionicons name="play" size={24} color="white" />
             </View>
           </View>

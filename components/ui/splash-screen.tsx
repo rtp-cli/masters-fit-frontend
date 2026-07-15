@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useCallback } from "react";
-import { StyleSheet, Image, Text } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useCallback,useEffect, useRef } from "react";
+import { Image, StyleSheet, Text } from "react-native";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
   Easing,
   runOnJS,
+  useAnimatedStyle,
   useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
 } from "react-native-reanimated";
-import * as SplashScreen from "expo-splash-screen";
+
 import { images } from "@/assets";
 
 const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1);

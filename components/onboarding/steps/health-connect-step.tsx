@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator,TouchableOpacity, View } from "react-native";
+
+import Text from "@/components/text";
 import { useThemeColors } from "@/lib/theme";
 import { connectHealth, getHealthConnection } from "@/utils/health";
-import Text from "@/components/text";
 
 export default function HealthConnectStep() {
   const colors = useThemeColors();
@@ -57,7 +58,7 @@ export default function HealthConnectStep() {
     <View className="px-6">
       <View className="bg-surface rounded-2xl p-5 border border-neutral-medium-1">
         <View className="flex-row items-center mb-3">
-          <View className="w-10 h-10 rounded-full bg-secondary/10 items-center justify-center mr-3">
+          <View className="size-10 rounded-full bg-secondary/10 items-center justify-center mr-3">
             <Ionicons name="fitness" size={22} color={colors.brand.primary} />
           </View>
           <View className="flex-1">

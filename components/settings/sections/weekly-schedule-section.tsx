@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+
 import { useThemeColors } from "../../../lib/theme";
 
 interface WeeklyScheduleSectionProps {
@@ -51,7 +52,7 @@ export default function WeeklyScheduleSection({
         {dayInfo.map((dayInfo) => (
           <View
             key={dayInfo.index}
-            className={`w-8 h-8 rounded-full items-center justify-center ${
+            className={`size-8 rounded-full items-center justify-center ${
               dayInfo.active ? "bg-primary" : "bg-neutral-light-2"
             }`}
           >

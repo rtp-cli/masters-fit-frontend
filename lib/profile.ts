@@ -1,6 +1,7 @@
+import { type Profile, type UpdateProfileParams } from "@/types/api";
+
 import { apiRequest } from "./api";
 import { getCurrentUser } from "./auth";
-import { Profile, UpdateProfileParams } from "@/types/api";
 
 // Re-export types for backward compatibility
 export type { Profile, UpdateProfileParams } from "@/types/api";

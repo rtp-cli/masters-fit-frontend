@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { Modal,Text, TouchableOpacity, View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
-import { COLOR_THEMES } from "@/lib/theme-context";
 import type { ColorTheme } from "@/lib/theme-context";
+import { COLOR_THEMES } from "@/lib/theme-context";
 
 interface ThemeDropdownProps {
   value: ColorTheme;

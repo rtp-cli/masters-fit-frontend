@@ -376,11 +376,11 @@ export function calculateExerciseTime(
  * @returns Total workout time in seconds
  */
 export function calculateWorkoutDuration(
-  exercises: Array<{
+  exercises: {
     duration?: number;
     sets?: number;
     restTime?: number;
-  }>
+  }[]
 ): number {
   return exercises.reduce((total, exercise) => {
     return (
@@ -400,14 +400,14 @@ export function calculateWorkoutDuration(
  * @returns Total workout time in minutes
  */
 export function calculateWorkoutDurationFromBlocks(
-  blocks: Array<{
+  blocks: {
     blockDurationMinutes?: number;
-    exercises?: Array<{
+    exercises?: {
       duration?: number;
       sets?: number;
       restTime?: number;
-    }>;
-  }>
+    }[];
+  }[]
 ): number {
   return blocks.reduce((total, block) => {
     // Use blockDurationMinutes if available (most accurate)
@@ -431,14 +431,14 @@ export function calculateWorkoutDurationFromBlocks(
  * @returns Total estimated workout time in minutes
  */
 export function calculatePlanDayDuration(planDay: {
-  blocks?: Array<{
+  blocks?: {
     blockDurationMinutes?: number;
-    exercises?: Array<{
+    exercises?: {
       duration?: number;
       sets?: number;
       restTime?: number;
-    }>;
-  }>;
+    }[];
+  }[];
 }): number {
   if (!planDay.blocks || planDay.blocks.length === 0) {
     return 0;

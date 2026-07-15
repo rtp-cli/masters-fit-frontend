@@ -3,8 +3,8 @@ import Purchases, { type CustomerInfo } from "react-native-purchases";
 
 import { useAuth } from "@/contexts/auth-context";
 import { getSubscriptionStatus } from "@/lib/subscriptions";
-import { reconcileSubscriptionStatus } from "@/utils/subscription-status-reconciliation";
 import { isDemoProAccount } from "@/utils/demo-account";
+import { reconcileSubscriptionStatus } from "@/utils/subscription-status-reconciliation";
 
 // Extract EntitlementInfo type from CustomerInfo
 type EntitlementInfo = CustomerInfo["entitlements"]["active"][string];

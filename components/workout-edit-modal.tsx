@@ -1,47 +1,48 @@
-import React, { useState, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef,useState } from "react";
 import {
-  View,
-  Text,
-  Modal,
   ActivityIndicator,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
+  Alert,
+  FlatList,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
+  Text,
   TextInput,
-  FlatList,
-  Alert,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "@/lib/theme";
-import { useTheme } from "@/lib/theme-context";
+
+import WorkoutBlock from "@/components/workout-block";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  replaceExercise,
-  deleteExerciseFromBlock,
-  addExerciseToBlock,
-} from "@/lib/workouts";
-import {
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercise,
-} from "@/types/api/workout.types";
-import { Exercise } from "@/types/api/exercise.types";
-import { SearchExercise } from "@/types/api/search.types";
-import {
-  searchExercisesWithFiltersAPI,
   getFilterOptionsAPI,
+  searchExercisesWithFiltersAPI,
 } from "@/lib/search";
-import WorkoutBlock from "@/components/workout-block";
+import { useThemeColors } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 import {
-  formatWorkoutDuration,
+  addExerciseToBlock,
+  deleteExerciseFromBlock,
+  replaceExercise,
+} from "@/lib/workouts";
+import { type SearchExercise } from "@/types/api/search.types";
+import {
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercise,
+} from "@/types/api/workout.types";
+import {
   calculatePlanDayDuration,
   formatEquipment,
+  formatWorkoutDuration,
 } from "@/utils";
-import { CustomDialog, DialogButton } from "./ui";
+
+import { CustomDialog, type DialogButton } from "./ui";
 
 interface WorkoutEditModalProps {
   visible: boolean;
@@ -658,7 +659,7 @@ export default function WorkoutEditModal({
               <View className="flex-row items-center justify-between px-5 py-4 border-b border-neutral-light-2">
                 <TouchableOpacity
                   onPress={handleCancel}
-                  className="w-8 h-8 items-center justify-center"
+                  className="size-8 items-center justify-center"
                 >
                   <Ionicons name="close" size={20} color={colors.text.muted} />
                 </TouchableOpacity>
@@ -1043,7 +1044,7 @@ export default function WorkoutEditModal({
                               {/* Selection Indicator */}
                               {selectedExercise?.id === item.id && (
                                 <View className="ml-3">
-                                  <View className="w-6 h-6 bg-brand-primary rounded-full items-center justify-center">
+                                  <View className="size-6 bg-brand-primary rounded-full items-center justify-center">
                                     <Ionicons
                                       name="checkmark"
                                       size={14}

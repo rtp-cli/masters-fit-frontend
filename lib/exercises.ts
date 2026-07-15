@@ -1,5 +1,6 @@
+import { type ExerciseFromLib as Exercise, type WorkoutExercise } from "@/types/api";
+
 import { apiRequest } from "./api";
-import { ExerciseFromLib as Exercise, WorkoutExercise } from "@/types/api";
 
 /**
  * Fetch all exercises from the API

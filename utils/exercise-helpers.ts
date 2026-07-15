@@ -1,4 +1,4 @@
-import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
+import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
 
 // Exercise logging types
 export type ExerciseLoggingType = 

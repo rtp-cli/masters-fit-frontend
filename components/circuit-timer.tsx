@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
+import React, { useEffect, useRef, useState } from "react";
+import { Text, TouchableOpacity,View } from "react-native";
+
+import { CustomDialog } from "@/components/ui";
 import { useThemeColors } from "@/lib/theme";
 import {
-  CircuitTimerProps,
-  CircuitTimerState,
+  type CircuitTimerProps,
+  type CircuitTimerState,
 } from "@/types/api/circuit.types";
 import { getCircuitTimerConfig } from "@/utils/circuit-utils";
-import { CustomDialog } from "@/components/ui";
 
 export default function CircuitTimer({
   blockType,
@@ -475,13 +476,13 @@ export default function CircuitTimer({
         <View className="relative items-center justify-center mb-2">
           {/* Progress Circle Background */}
           <View
-            className="w-24 h-24 rounded-full border-3"
+            className="size-24 rounded-full border-3"
             style={{ borderColor: colors.neutral.light[2] }}
           />
 
           {/* Progress Circle Foreground */}
           <View
-            className="absolute w-24 h-24 rounded-full"
+            className="absolute size-24 rounded-full"
             style={{
               width: 96,
               height: 96,

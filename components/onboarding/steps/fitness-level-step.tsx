@@ -1,15 +1,17 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity,View } from "react-native";
+
 import CustomSlider from "@/components/ui/slider";
-import { FormData, ArrayFields, ArrayValue } from "@/types/components";
+import { useThemeColors } from "@/lib/theme";
+import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
 import {
   FITNESS_LEVELS,
-  PREFERRED_DAYS,
   INTENSITY_LEVELS,
+  PREFERRED_DAYS,
 } from "@/types/enums";
-import { formatEnumValue } from "../utils/formatters";
+import { formatWorkoutPlanEndDate,formatWorkoutPlanStartDate } from "@/utils";
+
 import IconComponent from "../ui/icon-component";
-import { useThemeColors } from "@/lib/theme";
-import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
+import { formatEnumValue } from "../utils/formatters";
 
 interface FitnessLevelStepProps {
   formData: FormData;

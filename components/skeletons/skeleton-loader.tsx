@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, type DimensionValue, type ViewProps } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
 
 interface SkeletonLoaderProps extends ViewProps {

@@ -43,7 +43,7 @@ export default function LegalSection({
       {expanded && (
         <View className="bg-neutral-light-1">
           <TouchableOpacity
-            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
+            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
             onPress={() => {
               onBeforeNavigate?.();
               router.push({
@@ -70,7 +70,7 @@ export default function LegalSection({
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
+            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
             onPress={() => {
               onBeforeNavigate?.();
               router.push({
@@ -97,7 +97,7 @@ export default function LegalSection({
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2 pl-4"
+            className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
             onPress={() => {
               onBeforeNavigate?.();
               router.push({

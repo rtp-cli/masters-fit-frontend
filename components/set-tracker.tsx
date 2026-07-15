@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect,useState } from "react";
 import {
-  View,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
 
@@ -202,7 +203,7 @@ export default function SetTracker({
               >
                 <View className="flex-row items-center justify-between mb-3">
                   <View
-                    className="w-6 h-6 rounded-full bg-opacity-20 items-center justify-center"
+                    className="size-6 rounded-full bg-opacity-20 items-center justify-center"
                     style={{ backgroundColor: colors.brand.primary + "30" }}
                   >
                     <Text
@@ -252,7 +253,7 @@ export default function SetTracker({
                   </Text>
                   <View className="flex-row items-center justify-center gap-2">
                     <TouchableOpacity
-                      className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                      className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
                       accessibilityRole="button"
                       accessibilityLabel="Decrease weight 10 pounds"
                       hitSlop={HIT_SLOP_6}
@@ -272,7 +273,7 @@ export default function SetTracker({
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                      className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
                       accessibilityRole="button"
                       accessibilityLabel="Decrease weight 5 pounds"
                       hitSlop={HIT_SLOP_6}
@@ -311,7 +312,7 @@ export default function SetTracker({
                     </View>
 
                     <TouchableOpacity
-                      className="w-8 h-8 rounded-full items-center justify-center"
+                      className="size-8 rounded-full items-center justify-center"
                       style={{ backgroundColor: colors.brand.primary }}
                       accessibilityRole="button"
                       accessibilityLabel="Increase weight 5 pounds"
@@ -328,7 +329,7 @@ export default function SetTracker({
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className="w-8 h-8 rounded-full items-center justify-center"
+                      className="size-8 rounded-full items-center justify-center"
                       style={{ backgroundColor: colors.brand.primary }}
                       accessibilityRole="button"
                       accessibilityLabel="Increase weight 10 pounds"
@@ -357,7 +358,7 @@ export default function SetTracker({
                   </Text>
                   <View className="flex-row items-center justify-center gap-3">
                     <TouchableOpacity
-                      className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                      className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
                       accessibilityRole="button"
                       accessibilityLabel="Decrease reps"
                       hitSlop={HIT_SLOP_6}
@@ -391,7 +392,7 @@ export default function SetTracker({
                     </View>
 
                     <TouchableOpacity
-                      className="w-8 h-8 rounded-full items-center justify-center"
+                      className="size-8 rounded-full items-center justify-center"
                       style={{ backgroundColor: colors.brand.primary }}
                       accessibilityRole="button"
                       accessibilityLabel="Increase reps"

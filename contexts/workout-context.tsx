@@ -1,12 +1,13 @@
 import React, {
   createContext,
-  useState,
-  ReactNode,
+  type ReactNode,
   useContext,
   useRef,
+  useState,
 } from "react";
-import { trackWorkoutAbandoned } from "@/lib/analytics";
+
 import { useAuth } from "@/contexts/auth-context";
+import { trackWorkoutAbandoned } from "@/lib/analytics";
 
 // Workout abandonment tracking data
 interface WorkoutAbandonmentData {

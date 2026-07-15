@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors, type ThemeColorPalette } from "../../../lib/theme";
-import { ThemeMode, ColorTheme, COLOR_THEMES } from "../../../lib/theme-context";
+import { useState } from "react";
+import { Platform,Switch, Text, TouchableOpacity, View } from "react-native";
+
+import { usePlayfulMessages } from "@/hooks/use-playful-messages";
+
+import { type ThemeColorPalette,useThemeColors } from "../../../lib/theme";
+import {type ColorTheme, type ThemeMode } from "../../../lib/theme-context";
 import ThemeDropdown from "../../ui/theme-dropdown";
 import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
-import { usePlayfulMessages } from "@/hooks/use-playful-messages";
 
 interface AppSettingsSectionProps {
   debugTapCount: number;

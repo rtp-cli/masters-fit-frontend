@@ -1,28 +1,30 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
+import { useCallback,useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
+
+import { type ExerciseSet } from "@/components/set-tracker";
 import {
-  fetchActiveWorkout,
   createExerciseLog,
+  fetchActiveWorkout,
+  getCompletedExercises,
+  getExerciseLogs,
   getExistingWorkoutLog,
   getOrCreateWorkoutLog,
-  updateWorkoutLog,
-  getExerciseLogs,
-  getCompletedExercises,
   markExerciseCompleted,
   markWorkoutComplete,
   subscribeToWorkoutUpdates,
+  updateWorkoutLog,
 } from "@/lib/workouts";
 import {
-  ExerciseSessionData,
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercise,
-  CreateExerciseLogParams,
-  PlanDayWithExercisesLegacy,
+  type CreateExerciseLogParams,
+  type ExerciseSessionData,
+  type PlanDayWithBlocks,
+  type PlanDayWithExercisesLegacy,
+  type WorkoutBlockWithExercise,
 } from "@/types/api";
-import { ExerciseSet } from "@/components/set-tracker";
-import { UseWorkoutSessionReturn } from "@/types/hooks";
+import { type UseWorkoutSessionReturn } from "@/types/hooks";
 import { formatDateAsLocalString } from "@/utils";
+
 import { logger } from "../lib/logger";
 export function useWorkoutSession(): UseWorkoutSessionReturn {
   const [activeWorkout, setActiveWorkout] = useState<PlanDayWithBlocks | null>(

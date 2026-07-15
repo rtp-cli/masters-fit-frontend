@@ -1,16 +1,17 @@
-import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { User, AuthResponse, OnboardingData } from "./types";
+import * as SecureStore from "expo-secure-store";
+
 import {
   checkEmailAPI,
   completeOnboardingAPI,
-  loginAPI,
-  verifyAPI,
-  signupAPI,
-  generateAuthCodeAPI,
-  refreshTokenAPI,
   deleteAccountAPI,
+  generateAuthCodeAPI,
+  loginAPI,
+  refreshTokenAPI,
+  signupAPI,
+  verifyAPI,
 } from "./api";
+import { type AuthResponse, type OnboardingData,type User } from "./types";
 
 // List of all keys used in SecureStore
 const STORAGE_KEYS = [

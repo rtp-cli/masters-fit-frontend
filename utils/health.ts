@@ -1,17 +1,17 @@
-import { Platform, AppState, Linking } from "react-native";
-import BrokenHealthKit, { HealthKitPermissions } from "react-native-health";
-import { NativeModules } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState, Linking,Platform } from "react-native";
+import { NativeModules } from "react-native";
+import BrokenHealthKit, { type HealthKitPermissions } from "react-native-health";
+import {
+  initialize,
+  readRecords,
+  requestPermission,
+} from "react-native-health-connect";
 
 const AppleHealthKit = NativeModules.AppleHealthKit as typeof BrokenHealthKit;
 if (Platform.OS === "ios") {
   AppleHealthKit.Constants = BrokenHealthKit.Constants;
 }
-import {
-  initialize,
-  requestPermission,
-  readRecords,
-} from "react-native-health-connect";
 
 export const HEALTH_CONNECTION_KEY = "health_connection_enabled";
 

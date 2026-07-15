@@ -1,8 +1,8 @@
 import {
-  ExerciseSessionData,
-  PlanDayWithBlocks,
-  WorkoutBlockWithExercise,
-  ExerciseSet,
+  type ExerciseSessionData,
+  type ExerciseSet,
+  type PlanDayWithBlocks,
+  type WorkoutBlockWithExercise,
 } from "../api/workout.types";
 
 export interface UseWorkoutSessionReturn {

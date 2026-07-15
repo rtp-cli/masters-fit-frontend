@@ -1,25 +1,27 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Dimensions,
-  Animated,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import React, { useEffect,useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { UNDO_DURATION_MS } from "@/hooks/use-circuit-session";
 import { useThemeColors } from "@/lib/theme";
 import {
-  CircuitTrackerProps,
-  CircuitExerciseLog,
-  CircuitRound,
-  UseCircuitSessionReturn,
+  type CircuitExerciseLog,
+  type CircuitRound,
+  type CircuitTrackerProps,
+  type UseCircuitSessionReturn,
 } from "@/types/api/circuit.types";
-import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
+import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { getRoundCompleteButtonText } from "@/utils/circuit-utils";
-import { UNDO_DURATION_MS } from "@/hooks/use-circuit-session";
+
 import CircuitTimer from "./circuit-timer";
 
 // Type alias for circuit actions
@@ -445,7 +447,7 @@ export default function CircuitTracker({
                   <View className="p-5 rounded-lg border border-neutral-medium-1 bg-background">
                     <View className="flex-row items-center justify-between mb-5">
                       <View
-                        className="w-8 h-8 rounded-full items-center justify-center"
+                        className="size-8 rounded-full items-center justify-center"
                         style={{ backgroundColor: colors.brand.primary + "30" }}
                       >
                         <Text
@@ -489,7 +491,7 @@ export default function CircuitTracker({
                       </Text>
                       <View className="flex-row items-center justify-center gap-5">
                         <TouchableOpacity
-                          className="w-10 h-10 rounded-full bg-neutral-light-2 items-center justify-center"
+                          className="size-10 rounded-full bg-neutral-light-2 items-center justify-center"
                           onPress={() =>
                             updateExerciseWeight(
                               exercise.exerciseId,
@@ -519,7 +521,7 @@ export default function CircuitTracker({
                         </View>
 
                         <TouchableOpacity
-                          className="w-10 h-10 rounded-full items-center justify-center"
+                          className="size-10 rounded-full items-center justify-center"
                           style={{ backgroundColor: colors.brand.primary }}
                           onPress={() =>
                             updateExerciseWeight(
@@ -545,7 +547,7 @@ export default function CircuitTracker({
                       </Text>
                       <View className="flex-row items-center justify-center gap-5">
                         <TouchableOpacity
-                          className="w-10 h-10 rounded-full bg-neutral-light-2 items-center justify-center"
+                          className="size-10 rounded-full bg-neutral-light-2 items-center justify-center"
                           onPress={() =>
                             updateExerciseReps(
                               exercise.exerciseId,
@@ -577,7 +579,7 @@ export default function CircuitTracker({
                         </View>
 
                         <TouchableOpacity
-                          className="w-10 h-10 rounded-full items-center justify-center"
+                          className="size-10 rounded-full items-center justify-center"
                           style={{ backgroundColor: colors.brand.primary }}
                           onPress={() =>
                             updateExerciseReps(

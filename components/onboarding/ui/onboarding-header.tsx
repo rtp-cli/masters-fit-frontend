@@ -1,6 +1,8 @@
-import { View, Text } from "react-native";
+import { Text,View } from "react-native";
+
 import ProgressIndicator from "@/components/progressive-indicator";
-import { ONBOARDING_STEP } from "@/types/enums";
+import { type ONBOARDING_STEP } from "@/types/enums";
+
 import { getStepConfig } from "../utils/step-config";
 
 interface OnboardingHeaderProps {

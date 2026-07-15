@@ -1,5 +1,6 @@
-import { View, Text } from "react-native";
 import { formatEnumValue, getIntensityText } from "@utils/index";
+import { Text,View } from "react-native";
+
 import { formatHeight } from "@/components/onboarding/utils/formatters";
 
 interface Profile {

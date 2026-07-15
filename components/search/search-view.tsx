@@ -1,48 +1,48 @@
+import { Ionicons } from "@expo/vector-icons";
+import { updateExerciseLink } from "@lib/exercises";
 import {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
+  type DateSearchWorkout,
+  type Exercise,
+  type ExerciseDetails,
+  type ExerciseUserStats,
+} from "@lib/search";
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
+import {
   forwardRef,
+  useCallback,
+  useEffect,
   useImperativeHandle,
+  useRef,
+  useState,
 } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Modal,
+  Platform,
   ScrollView,
+  Text,
   TextInput,
   TouchableOpacity,
-  Platform,
-  Modal,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import { useAuth } from "@/contexts/auth-context";
-import { HIT_SLOP_10 } from "@/constants";
+
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseLinkModal from "@/components/exercise-link-modal";
-import {
-  Exercise,
-  DateSearchWorkout,
-  ExerciseDetails,
-  ExerciseUserStats,
-} from "@lib/search";
-import {
-  DateSearchWorkoutBlock,
-  DateSearchExercise,
-} from "@/types/api/search.types";
-import { useAppDataContext } from "@/contexts/app-data-context";
-import { useRecentSearches } from "@/hooks/use-recent-searches";
-import { updateExerciseLink } from "@lib/exercises";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
-
-import { useThemeColors } from "@/lib/theme";
-import { CustomDialog } from "@/components/ui";
 import type { DialogButton } from "@/components/ui";
+import { CustomDialog } from "@/components/ui";
+import { HIT_SLOP_10 } from "@/constants";
+import { useAppDataContext } from "@/contexts/app-data-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useRecentSearches } from "@/hooks/use-recent-searches";
+import { useThemeColors } from "@/lib/theme";
+import {
+  type DateSearchExercise,
+  type DateSearchWorkoutBlock,
+} from "@/types/api/search.types";
 
 type SearchType = "date" | "exercise" | "general";
 
@@ -1089,7 +1089,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                   </Text>
 
                   <View className="flex-row justify-around mb-4 flex-wrap">
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
+                    <View className="items-center justify-center size-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.totalAssignments || 0}`}
                       </Text>
@@ -1097,7 +1097,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                         Assigned
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
+                    <View className="items-center justify-center size-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.totalCompletions || 0}`}
                       </Text>
@@ -1105,7 +1105,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                         Done
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
+                    <View className="items-center justify-center size-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.completionRate || 0}%`}
                       </Text>
@@ -1116,7 +1116,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                   </View>
 
                   <View className="flex-row justify-around mb-4 flex-wrap">
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
+                    <View className="items-center justify-center size-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.averageSets || 0}`}
                       </Text>
@@ -1124,7 +1124,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                         Avg Sets
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
+                    <View className="items-center justify-center size-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {`${exerciseResult.userStats.averageReps || 0}`}
                       </Text>
@@ -1132,7 +1132,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                         Avg Reps
                       </Text>
                     </View>
-                    <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
+                    <View className="items-center justify-center size-20 rounded-full bg-brand-primary mb-3 shadow-rn-sm">
                       <Text className="text-s font-bold text-neutral-light-1 mb-1">
                         {exerciseResult.userStats.averageWeight
                           ? `${exerciseResult.userStats.averageWeight}`
@@ -1150,7 +1150,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                       Personal Records
                     </Text>
                     <View className="flex-row justify-around">
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-rn-sm">
+                      <View className="items-center justify-center size-20 rounded-full bg-brand-primary shadow-rn-sm">
                         <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxSets || 0
@@ -1160,7 +1160,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                           Max Sets
                         </Text>
                       </View>
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-rn-sm">
+                      <View className="items-center justify-center size-20 rounded-full bg-brand-primary shadow-rn-sm">
                         <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxReps || 0
@@ -1170,7 +1170,7 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
                           Max Reps
                         </Text>
                       </View>
-                      <View className="items-center justify-center w-20 h-20 rounded-full bg-brand-primary shadow-rn-sm">
+                      <View className="items-center justify-center size-20 rounded-full bg-brand-primary shadow-rn-sm">
                         <Text className="text-s font-bold text-neutral-light-1 mb-1">
                           {`${
                             exerciseResult.userStats.personalRecord.maxWeight ||

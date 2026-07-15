@@ -1,5 +1,6 @@
-import { TouchableOpacity, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Text,TouchableOpacity, View } from "react-native";
+
 import { CURRENT_WAIVER_VERSION } from "@/constants/waiver";
 import { useThemeColors } from "@/lib/theme";
 

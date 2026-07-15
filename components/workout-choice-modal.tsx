@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Modal, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import { Modal, Pressable,Text, TouchableOpacity, View } from "react-native";
+
+import { getCurrentUser } from "@/lib/auth";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import {
@@ -8,7 +10,6 @@ import {
   fetchPreviousWorkouts,
   isRepeatablePreviousWorkout,
 } from "@/lib/workouts";
-import { getCurrentUser } from "@/lib/auth";
 import type { PreviousWorkout } from "@/types/api/workout.types";
 
 interface WorkoutChoiceModalProps {
@@ -103,7 +104,7 @@ export default function WorkoutChoiceModal({
         >
           <View className="px-6 pt-6 pb-4 items-center">
             <View
-              className="w-12 h-12 rounded-full items-center justify-center mb-3"
+              className="size-12 rounded-full items-center justify-center mb-3"
               style={{ backgroundColor: colors.brand.primary + "15" }}
             >
               <Ionicons
@@ -122,14 +123,14 @@ export default function WorkoutChoiceModal({
 
           <View className="px-5 pb-5 space-y-3">
             <TouchableOpacity
-              className="bg-primary rounded-xl py-4 px-4 flex-row items-center"
+              className="bg-primary rounded-xl p-4 flex-row items-center"
               onPress={() => {
                 onClose();
                 onGenerateNew();
               }}
             >
               <View
-                className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                className="size-10 rounded-full items-center justify-center mr-3"
                 style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
               >
                 <Ionicons
@@ -159,14 +160,14 @@ export default function WorkoutChoiceModal({
               // primary token) — text/icons here were invisible. Match the
               // established secondary-button pairing (button.tsx): light
               // fill, dark text.
-              className="bg-neutral-light-2 rounded-xl py-4 px-4 mt-2 flex-row items-center"
+              className="bg-neutral-light-2 rounded-xl p-4 mt-2 flex-row items-center"
               onPress={() => {
                 onClose();
                 onRepeatPast();
               }}
             >
               <View
-                className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                className="size-10 rounded-full items-center justify-center mr-3"
                 style={{ backgroundColor: colors.brand.primary + "15" }}
               >
                 <Ionicons

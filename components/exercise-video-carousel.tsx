@@ -1,15 +1,17 @@
-import React, { useState, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useRef,useState } from "react";
 import {
-  View,
+  Dimensions,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Dimensions,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { useThemeColors } from "@/lib/theme";
+import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
+
 import ExerciseLink from "./exercise-link";
-import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
 
 interface ExerciseVideoCarouselProps {
   exercises: WorkoutBlockWithExercise[];
@@ -81,7 +83,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
       {showHeader && (
         <View className="flex-row items-center justify-between px-6 mb-4">
           <View className="flex-row items-center">
-            <View className="bg-brand-primary/10 rounded-full w-8 h-8 items-center justify-center mr-3">
+            <View className="bg-brand-primary/10 rounded-full size-8 items-center justify-center mr-3">
               <Ionicons
                 name="play-circle-outline"
                 size={18}
@@ -103,7 +105,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
             <View className="flex-row items-center gap-2">
               <TouchableOpacity
                 onPress={goToPrevious}
-                className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
               >
                 <Ionicons
                   name="chevron-back"
@@ -113,7 +115,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={goToNext}
-                className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
               >
                 <Ionicons
                   name="chevron-forward"
@@ -198,7 +200,7 @@ const ExerciseVideoCarousel: React.FC<ExerciseVideoCarouselProps> = ({
             <TouchableOpacity
               key={index}
               onPress={() => scrollToIndex(index)}
-              className={`w-2 h-2 rounded-full ${
+              className={`size-2 rounded-full ${
                 index === currentIndex
                   ? "bg-brand-primary"
                   : "bg-neutral-light-2"

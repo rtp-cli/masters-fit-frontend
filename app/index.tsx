@@ -1,16 +1,17 @@
-import { View, Text, TouchableOpacity, Image } from "react-native";
-import { useThemeColors } from "@/lib/theme";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, usePathname } from "expo-router";
-import { useAuth } from "@/contexts/auth-context";
-import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { usePathname,useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import WarmingUpScreen from "@/components/ui/warming-up-screen";
-import { useDataPreload } from "@/hooks/use-data-preload";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useRef, useState } from "react";
+import { Image,Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { images } from "@/assets";
+import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
+import { useAuth } from "@/contexts/auth-context";
+import { useDataPreload } from "@/hooks/use-data-preload";
+import { useThemeColors } from "@/lib/theme";
 
 export default function GetStarted() {
   const colors = useThemeColors();

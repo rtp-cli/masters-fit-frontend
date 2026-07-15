@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
+import React, { useEffect, useRef,useState } from "react";
+import { Text, TextInput, TouchableOpacity,View } from "react-native";
+
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
-import { WorkoutBlockWithExercise } from "@/types/api/workout.types";
-import { ExerciseSet } from "./set-tracker";
-import CircularTimerDisplay from "./circular-timer-display";
+import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import {
   getExerciseLoggingType,
   getExerciseRequirementsText,
   shouldShowWeightInput,
 } from "@/utils/exercise-helpers";
+
+import { type ExerciseSet } from "./set-tracker";
 
 interface AdaptiveSetTrackerProps {
   exercise: WorkoutBlockWithExercise;
@@ -333,7 +332,7 @@ export default function AdaptiveSetTracker({
         >
           <View className="flex-row items-center justify-between mb-3">
             <View
-              className="w-6 h-6 rounded-full items-center justify-center"
+              className="size-6 rounded-full items-center justify-center"
               style={{ backgroundColor: colors.brand.primary + "30" }}
             >
               <Text
@@ -378,7 +377,7 @@ export default function AdaptiveSetTracker({
               <Text className="text-xs mb-2 text-text-muted">Weight (lbs)</Text>
               <View className="flex-row items-center justify-center gap-2">
                 <TouchableOpacity
-                  className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                  className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Decrease weight 5 pounds"
                   hitSlop={HIT_SLOP_6}
@@ -405,7 +404,7 @@ export default function AdaptiveSetTracker({
                 </View>
 
                 <TouchableOpacity
-                  className="w-8 h-8 rounded-full items-center justify-center"
+                  className="size-8 rounded-full items-center justify-center"
                   style={{ backgroundColor: colors.brand.primary }}
                   accessibilityRole="button"
                   accessibilityLabel="Increase weight 5 pounds"
@@ -428,7 +427,7 @@ export default function AdaptiveSetTracker({
             <Text className="text-xs mb-2 text-text-muted">Reps</Text>
             <View className="flex-row items-center justify-center gap-3">
               <TouchableOpacity
-                className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
                 accessibilityRole="button"
                 accessibilityLabel="Decrease reps"
                 hitSlop={HIT_SLOP_6}
@@ -453,7 +452,7 @@ export default function AdaptiveSetTracker({
               </View>
 
               <TouchableOpacity
-                className="w-8 h-8 rounded-full items-center justify-center"
+                className="size-8 rounded-full items-center justify-center"
                 style={{ backgroundColor: colors.brand.primary }}
                 accessibilityRole="button"
                 accessibilityLabel="Increase reps"
@@ -519,7 +518,7 @@ export default function AdaptiveSetTracker({
           >
             <View className="flex-row items-center justify-between mb-3">
               <View
-                className="w-6 h-6 rounded-full items-center justify-center"
+                className="size-6 rounded-full items-center justify-center"
                 style={{ backgroundColor: colors.brand.primary + "30" }}
               >
                 <Text
@@ -548,7 +547,7 @@ export default function AdaptiveSetTracker({
               <Text className="text-xs mb-2 text-text-muted">Weight (lbs)</Text>
               <View className="flex-row items-center justify-center gap-2">
                 <TouchableOpacity
-                  className="w-8 h-8 rounded-full bg-neutral-light-2 items-center justify-center"
+                  className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Decrease weight 5 pounds"
                   hitSlop={HIT_SLOP_6}
@@ -579,7 +578,7 @@ export default function AdaptiveSetTracker({
                 </View>
 
                 <TouchableOpacity
-                  className="w-8 h-8 rounded-full items-center justify-center"
+                  className="size-8 rounded-full items-center justify-center"
                   style={{ backgroundColor: colors.brand.primary }}
                   accessibilityRole="button"
                   accessibilityLabel="Increase weight 5 pounds"

@@ -1,9 +1,10 @@
-import { apiRequest } from "./api";
-import { CircuitRound } from "@/types/api/circuit.types";
+import { type CircuitRound } from "@/types/api/circuit.types";
 import {
-  CreateExerciseLogParams,
-  WorkoutBlockWithExercises,
+  type CreateExerciseLogParams,
+  type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
+
+import { apiRequest } from "./api";
 import { logger } from "./logger";
 
 /**

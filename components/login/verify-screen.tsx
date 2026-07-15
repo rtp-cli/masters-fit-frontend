@@ -1,23 +1,25 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  Animated,
-  Easing,
-  ActivityIndicator,
-  NativeSyntheticEvent,
-  TextInputKeyPressEventData,
-} from "react-native";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors } from "../../lib/theme";
+import { useLocalSearchParams,useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useCallback,useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Image,
+  type NativeSyntheticEvent,
+  Text,
+  TextInput,
+  type TextInputKeyPressEventData,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { CustomDialog } from "@/components/ui";
+
+import { useThemeColors } from "../../lib/theme";
 
 type VerifyStatus = "idle" | "verifying" | "success" | "error";
 

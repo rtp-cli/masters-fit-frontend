@@ -1,24 +1,25 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useMemo,useRef, useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Image,
+  AccessibilityInfo,
+  ActivityIndicator,
   Animated,
   Easing,
-  ActivityIndicator,
-  AccessibilityInfo,
+  Image,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { images } from "@/assets";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
-import { useWorkoutProgress } from "@/hooks/use-workout-progress";
 import { usePlayfulMessages } from "@/hooks/use-playful-messages";
+import { useWorkoutProgress } from "@/hooks/use-workout-progress";
 import { buildStream, COMPLETION_LINE } from "@/lib/generation-stream";
 import { useThemeColors } from "@/lib/theme";
-import { images } from "@/assets";
 
 function getErrorMessage(error?: string, status?: string): string {
   if (!error && status === "timeout") {

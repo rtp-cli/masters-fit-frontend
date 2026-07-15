@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/auth-context";
+import { fetchUserProfile, type Profile,updateUserProfile } from "@lib/profile";
+import { useRouter } from "expo-router";
+import React, { useEffect,useState } from "react";
+import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import OnboardingForm, { type FormData } from "@/components/onboarding-form";
+import { CustomDialog, type DialogButton } from "@/components/ui";
 import { useAppDataContext } from "@/contexts/app-data-context";
-import { fetchUserProfile, updateUserProfile, Profile } from "@lib/profile";
-import OnboardingForm, { FormData } from "@/components/onboarding-form";
-import { CustomDialog, DialogButton } from "@/components/ui";
-import { useThemeColors } from "../lib/theme";
+import { useAuth } from "@/contexts/auth-context";
 import {
+  AVAILABLE_EQUIPMENT,
   FITNESS_GOALS,
   FITNESS_LEVELS,
   GENDER,
-  PHYSICAL_LIMITATIONS,
-  WORKOUT_ENVIRONMENTS,
-  AVAILABLE_EQUIPMENT,
-  PREFERRED_STYLES,
-  PREFERRED_DAYS,
   INTENSITY_LEVELS,
+  PHYSICAL_LIMITATIONS,
+  PREFERRED_DAYS,
+  PREFERRED_STYLES,
+  WORKOUT_ENVIRONMENTS,
 } from "@/types/enums/fitness.enums";
+
+import { useThemeColors } from "../lib/theme";
 
 export default function ProfileEditScreen() {
   const colors = useThemeColors();

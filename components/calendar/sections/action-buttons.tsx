@@ -1,8 +1,9 @@
-import React from "react";
-import { View, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text,TouchableOpacity, View } from "react-native";
+
 import { useThemeColors } from "@/lib/theme";
-import { PlanDayWithBlocks, WorkoutWithDetails } from "@/types/api";
+import { type PlanDayWithBlocks, type WorkoutWithDetails } from "@/types/api";
 
 type CalendarActionButtonsProps = {
   workoutPlan: WorkoutWithDetails | null;
@@ -35,7 +36,7 @@ export default function CalendarActionButtons({
     return (
       <View className="px-lg my-lg">
         <TouchableOpacity
-          className="bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
+          className="bg-primary p-3 rounded-xl items-center flex-row justify-center"
           onPress={() => onShowWorkoutChoice()}
           accessibilityRole="button"
           accessibilityLabel="Adjust week"
@@ -68,7 +69,7 @@ export default function CalendarActionButtons({
     <View className="px-lg my-lg">
       <View className="flex-row" style={{ gap: 8 }}>
         <TouchableOpacity
-          className="flex-1 bg-primary py-3 px-3 rounded-xl items-center flex-row justify-center"
+          className="flex-1 bg-primary p-3 rounded-xl items-center flex-row justify-center"
           onPress={() => onShowWorkoutChoice()}
           accessibilityRole="button"
           accessibilityLabel="Adjust today"
@@ -94,7 +95,7 @@ export default function CalendarActionButtons({
 
         {currentSelectedPlanDay && (
           <TouchableOpacity
-            className="flex-1 bg-card border border-neutral-light-2 py-3 px-3 rounded-xl items-center flex-row justify-center"
+            className="flex-1 bg-card border border-neutral-light-2 p-3 rounded-xl items-center flex-row justify-center"
             onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
             accessibilityRole="button"
             accessibilityLabel="Edit workout"

@@ -1,5 +1,5 @@
-import { Exercise } from "./exercise.types";
-import { ApiResponse } from "./common.types";
+import { type ApiResponse } from "./common.types";
+import { type Exercise } from "./exercise.types";
 
 export interface Workout {
   id: number;
@@ -37,13 +37,13 @@ export interface UpdateWorkoutParams {
 export interface CreateExerciseLogParams {
   planDayExerciseId: number;
   roundNumber?: number;
-  sets: Array<{
+  sets: {
     roundNumber: number;
     setNumber: number;
     weight: number;
     reps: number;
     restAfter?: number;
-  }>;
+  }[];
   durationCompleted?: number;
   isComplete: boolean;
   timeTaken?: number;

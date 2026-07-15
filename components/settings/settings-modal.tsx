@@ -1,9 +1,11 @@
-import { Modal, View, TouchableOpacity, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import SettingsView from "./settings-view";
 import { Ionicons } from "@expo/vector-icons";
+import { Modal, Text,TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
+
+import SettingsView from "./settings-view";
 
 interface SettingsModalProps {
   visible: boolean;

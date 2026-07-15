@@ -1,11 +1,11 @@
+import { useOnboardingController } from "@components/onboarding/use-onboarding-controller";
+import { StatusBar } from "expo-status-bar";
 import {} from "react";
 import {} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+
 import { useAuth } from "../../contexts/auth-context";
 import OnboardingForm from "../onboarding-form";
-import Header from "@/components/header";
-import { useOnboardingController } from "@components/onboarding/use-onboarding-controller";
 
 export const OnboardingScreen = () => {
   const { user } = useAuth();

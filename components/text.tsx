@@ -1,8 +1,8 @@
 import React from "react";
 import {
   Text as RNText,
-  TextProps as RNTextProps,
-  TextStyle,
+  type TextProps as RNTextProps,
+  type TextStyle,
 } from "react-native";
 
 type TextVariant =

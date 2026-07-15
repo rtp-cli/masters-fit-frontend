@@ -1,5 +1,6 @@
-import { describe, it, expect } from "@jest/globals";
-import { isDemoProAccount, DEMO_PRO_EMAIL } from "@/utils/demo-account";
+import { describe, expect,it } from "@jest/globals";
+
+import { DEMO_PRO_EMAIL,isDemoProAccount } from "@/utils/demo-account";
 
 describe("isDemoProAccount [LR-011]", () => {
   it("matches the exact demo account email", () => {

@@ -1,10 +1,12 @@
-import { useEffect } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/contexts/auth-context";
-import { useThemeColors } from "../../lib/theme";
+import { useEffect } from "react";
+import { ActivityIndicator,Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { OnboardingScreen } from "@/components/onboarding";
+import { useAuth } from "@/contexts/auth-context";
+
+import { useThemeColors } from "../../lib/theme";
 
 export default function OnboardingRoute() {
   const colors = useThemeColors();

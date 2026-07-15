@@ -1,4 +1,4 @@
-import { FormData } from "@/types/components";
+import { type FormData } from "@/types/components";
 import { ONBOARDING_STEP, WORKOUT_ENVIRONMENTS } from "@/types/enums";
 
 // Form validation helper
