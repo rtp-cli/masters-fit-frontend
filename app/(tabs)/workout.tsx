@@ -1424,10 +1424,17 @@ export default function WorkoutScreen() {
     }
   };
 
-  // Register endWorkoutEarly with context so _layout.tsx can call it
+  // Register endWorkoutEarly with the context so _layout.tsx can invoke it.
+  // No dep array on purpose: the setter only writes a ref (no re-render, no
+  // loop), and endWorkoutEarly closes over frequently-changing state
+  // (exerciseProgress[currentExerciseIndex], circuit sessionData, exerciseTimer).
+  // Keying on [workout?.id, currentExerciseIndex] left a stale closure, so
+  // ending early from the global header could flush an old snapshot and drop the
+  // current exercise's just-logged sets/notes. Re-register the latest closure
+  // every render.
   useEffect(() => {
     setEndWorkoutEarlyHandler(endWorkoutEarly);
-  }, [workout?.id, currentExerciseIndex]);
+  });
 
   const showEndEarlyDialog = () => {
     setDialogConfig({

@@ -599,7 +599,7 @@ export function useWorkoutSession(): UseWorkoutSessionReturn {
         return false;
       }
     },
-    [activeWorkout, workoutTimer, getFlattenedExercises]
+    [activeWorkout, workoutTimer, getFlattenedExercises, exerciseData]
   );
 
   const resetSession = useCallback(() => {
