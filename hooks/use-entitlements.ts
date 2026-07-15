@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import Purchases, { type CustomerInfo } from "react-native-purchases";
 
 import { useAuth } from "@/contexts/auth-context";
-import { getEntitlements, type Entitlements } from "@/lib/subscriptions";
+import { type Entitlements, getEntitlements } from "@/lib/subscriptions";
 import type { Capability } from "@/types/api";
+import { resolveCapability } from "@/utils/entitlements";
 
 /**
  * Server-authoritative entitlements for UI gating (P2). Reads
@@ -45,8 +46,8 @@ export function useEntitlements() {
 
   const can = useCallback(
     (capability: Capability): boolean =>
-      entitlements ? !!entitlements.capabilities[capability] : true,
-    [entitlements]
+      resolveCapability(entitlements, capability),
+    [entitlements],
   );
 
   return {

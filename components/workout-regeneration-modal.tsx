@@ -28,6 +28,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { formatWorkoutPlanStartDate, formatWorkoutPlanEndDate } from "@/utils";
+import { computeFreeAdjustmentNote } from "@/utils/entitlements";
 import {
   regenerateWorkoutPlanAsync,
   regenerateDailyWorkoutAsync,
@@ -117,32 +118,15 @@ export default function WorkoutRegenerationModal({
     regenerationType
   );
 
-  // Contextual free-adjustment count (FREE tier only; null for paid). Shown in
+  // Contextual free-adjustment note (FREE tier only; null for paid). Shown in
   // the normal adjust flow so the user knows this action spends an allowance.
-  // Returns the display text plus whether the allowance is spent, so the UI can
-  // style the "you're out" state as a gentle upsell vs. the "you have some left"
-  // informational state.
-  const freeAdjustmentNote = (() => {
-    if (!freeAllowances || isRestDay || noActiveWorkoutDay) return null;
-    const a =
-      selectedType === "week"
-        ? freeAllowances.weekAdjustment
-        : freeAllowances.dayAdjustment;
-    const scope = selectedType === "week" ? "weekly" : "daily";
-    if (a.remaining <= 0) {
-      return {
-        exhausted: true,
-        text: `You've used your free ${scope} ${a.limit === 1 ? "adjustment" : "adjustments"}. Upgrade to MastersFit+ to keep adjusting.`,
-      };
-    }
-    if (a.limit === 1) {
-      return { exhausted: false, text: `Uses your 1 free ${scope} adjustment` };
-    }
-    return {
-      exhausted: false,
-      text: `Uses 1 of your ${a.limit} free ${scope} adjustments · ${a.remaining} left`,
-    };
-  })();
+  // Logic lives in a pure, unit-tested util; the component just renders it.
+  const freeAdjustmentNote = computeFreeAdjustmentNote({
+    freeAllowances,
+    selectedType,
+    isRestDay,
+    noActiveWorkoutDay,
+  });
 
   // State for daily workout temporary overrides
   const [showDailyOverrideForm, setShowDailyOverrideForm] = useState(false);
