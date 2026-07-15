@@ -129,7 +129,8 @@ export default function PaymentWallModal({
       setResultState({
         type: "success",
         title: "Success!",
-        description: "Your subscription is now active. Enjoy unlimited access!",
+        description:
+          "Your subscription is now active. Enjoy full access to MastersFit+!",
         icon: "checkmark-circle",
       });
     }

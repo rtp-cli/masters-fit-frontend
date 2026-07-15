@@ -155,7 +155,7 @@ export default function SubscriptionDetailsModal({
                   color={colors.brand.primary}
                 />
                 <Text className="text-sm text-text-secondary flex-1">
-                  Unlimited workout generations
+                  New plans & workout adjustments
                 </Text>
               </View>
               <View className="flex-row items-center gap-3">

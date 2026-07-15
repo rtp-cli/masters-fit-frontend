@@ -45,13 +45,14 @@ const PremiumUpgradeBanner: React.FC<PremiumUpgradeBannerProps> = ({
             className="text-base font-bold mb-1"
             style={{ color: colors.text.primary }}
           >
-            Get MastersFit+
+            Upgrade to MastersFit+
           </Text>
           <Text
             className="text-sm leading-5"
             style={{ color: colors.text.secondary }}
           >
-            Get unlimited access to all features and workouts
+            Unlock new plans, workout adjustments, progress analytics, and
+            health sync
           </Text>
         </View>
 

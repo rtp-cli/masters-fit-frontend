@@ -1041,7 +1041,7 @@ export default function DashboardScreen() {
             setDialogConfig({
               title: "Welcome to MastersFit+!",
               description:
-                "Your subscription is now active. Enjoy unlimited access to all MastersFit+ features!",
+                "Your subscription is now active. Enjoy full access to MastersFit+!",
               primaryButton: {
                 text: "OK",
                 onPress: () => setDialogVisible(false),

@@ -576,7 +576,7 @@ export default function SettingsView({
         paywallData={{
           type: "subscription_required",
           message:
-            "Upgrade to MastersFit+ to unlock unlimited workouts, advanced analytics, and exclusive features.",
+            "Upgrade to MastersFit+ to unlock new training plans, workout adjustments, progress analytics, and health sync.",
         }}
         onPurchaseSuccess={() => {
           setShowUpgradeModal(false);
@@ -584,7 +584,7 @@ export default function SettingsView({
             setDialogConfig({
               title: "Welcome to MastersFit+!",
               description:
-                "Your subscription is now active. Enjoy unlimited access to all MastersFit+ features!",
+                "Your subscription is now active. Enjoy full access to MastersFit+!",
               primaryButton: {
                 text: "OK",
                 onPress: () => setDialogVisible(false),
