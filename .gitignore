@@ -7,4 +7,7 @@ node_modules
 google-play-service-account.json
 docs/superpowers/*
 design_handoff_workout_generation/
+# Local-only planning docs + marketing/logo scratch — not app code, keep out of builds
+launch_readiness/
+logo-exports/
 .DS_Store
