@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
+import { useEntitlements } from "@/hooks/use-entitlements";
+
 import { useThemeColors } from "../../../lib/theme";
 
 interface SubscriptionSectionProps {
@@ -21,6 +23,15 @@ export default function SubscriptionSection({
   onUpgradePress,
 }: SubscriptionSectionProps) {
   const colors = useThemeColors();
+  const { tier } = useEntitlements();
+
+  // Server-authoritative paid state. Backend-granted PLUS/COMPLIMENTARY/BYPASS
+  // users have no RevenueCat `activeEntitlement` locally, so the old
+  // `isPro && activeEntitlement` check wrongly showed them the "Upgrade" CTA.
+  // Trust the entitlements tier first; fall back to RC for the detail display.
+  const isPaidTier =
+    tier === "PLUS" || tier === "COMPLIMENTARY" || tier === "BYPASS";
+  const showSubscribed = isPaidTier || (isPro && !!activeEntitlement);
 
   // Get plan name based on product identifier
   const getPlanName = (identifier: string | null): string => {
@@ -43,7 +54,7 @@ export default function SubscriptionSection({
         Subscription
       </Text>
 
-      {isPro && activeEntitlement ? (
+      {showSubscribed ? (
         <TouchableOpacity
           className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2"
           onPress={onPress}
