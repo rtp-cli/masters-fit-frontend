@@ -119,6 +119,9 @@ export default function WorkoutRegenerationModal({
 
   // Contextual free-adjustment count (FREE tier only; null for paid). Shown in
   // the normal adjust flow so the user knows this action spends an allowance.
+  // Returns the display text plus whether the allowance is spent, so the UI can
+  // style the "you're out" state as a gentle upsell vs. the "you have some left"
+  // informational state.
   const freeAdjustmentNote = (() => {
     if (!freeAllowances || isRestDay || noActiveWorkoutDay) return null;
     const a =
@@ -127,12 +130,18 @@ export default function WorkoutRegenerationModal({
         : freeAllowances.dayAdjustment;
     const scope = selectedType === "week" ? "weekly" : "daily";
     if (a.remaining <= 0) {
-      return `You've used your free ${scope} ${a.limit === 1 ? "adjustment" : "adjustments"} — this requires MastersFit+.`;
+      return {
+        exhausted: true,
+        text: `You've used your free ${scope} ${a.limit === 1 ? "adjustment" : "adjustments"}. Upgrade to MastersFit+ to keep adjusting.`,
+      };
     }
     if (a.limit === 1) {
-      return `Uses your 1 free ${scope} adjustment.`;
+      return { exhausted: false, text: `Uses your 1 free ${scope} adjustment` };
     }
-    return `Uses 1 of your ${a.limit} free ${scope} adjustments · ${a.remaining} left`;
+    return {
+      exhausted: false,
+      text: `Uses 1 of your ${a.limit} free ${scope} adjustments · ${a.remaining} left`,
+    };
   })();
 
   // State for daily workout temporary overrides
@@ -1088,9 +1097,23 @@ export default function WorkoutRegenerationModal({
                   )}
 
                   {freeAdjustmentNote && (
-                    <Text className="text-xs text-primary font-medium mt-3">
-                      {freeAdjustmentNote}
-                    </Text>
+                    <View className="flex-row items-center bg-accent-subtle rounded-xl px-3.5 py-3 mt-4">
+                      <Ionicons
+                        name={
+                          freeAdjustmentNote.exhausted
+                            ? "lock-closed"
+                            : "sparkles"
+                        }
+                        size={16}
+                        color={colors.brand.primary}
+                      />
+                      <Text
+                        className="text-xs font-medium ml-2 flex-1 leading-4"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        {freeAdjustmentNote.text}
+                      </Text>
+                    </View>
                   )}
 
                   {/* Daily Override Button */}
@@ -1113,7 +1136,7 @@ export default function WorkoutRegenerationModal({
                       disabled={loading}
                     >
                       <Text className="text-sm text-primary font-medium text-center">
-                        Need to update your fitness preferences? Tap here
+                        Update your fitness preferences
                       </Text>
                     </TouchableOpacity>
                   )}
