@@ -3,6 +3,7 @@ import React from "react";
 import { Modal, ScrollView,Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useEntitlements } from "@/hooks/use-entitlements";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import { useThemeColors } from "@/lib/theme";
 
@@ -19,8 +20,16 @@ export default function SubscriptionDetailsModal({
   const insets = useSafeAreaInsets();
   const { activeEntitlement, productIdentifier, expirationDate, willRenew } =
     useSubscriptionStatus();
+  const { tier } = useEntitlements();
 
-  if (!activeEntitlement) {
+  const isPaidTier =
+    tier === "PLUS" || tier === "COMPLIMENTARY" || tier === "BYPASS";
+  const isGranted = tier === "COMPLIMENTARY" || tier === "BYPASS";
+
+  // Render for any paid tier. Backend-granted COMPLIMENTARY/BYPASS users have
+  // no RevenueCat entitlement, so gating on activeEntitlement alone made this
+  // modal a silent no-op for them (tapping the row did nothing).
+  if (!isPaidTier && !activeEntitlement) {
     return null;
   }
 
@@ -128,7 +137,16 @@ export default function SubscriptionDetailsModal({
               </View>
             )}
 
-            {activeEntitlement.periodType && (
+            {!expirationDate && isGranted && (
+              <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
+                <Text className="text-sm text-text-secondary">Access</Text>
+                <Text className="text-sm font-semibold text-text-primary">
+                  Complimentary
+                </Text>
+              </View>
+            )}
+
+            {activeEntitlement?.periodType && (
               <View className="flex-row justify-between items-center py-3 border-b border-neutral-light-1">
                 <Text className="text-sm text-text-secondary">
                   Billing Period

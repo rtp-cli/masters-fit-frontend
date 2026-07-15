@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Platform,Switch, Text, TouchableOpacity, View } from "react-native";
+import { Platform, Switch, Text, View } from "react-native";
 
 import { usePlayfulMessages } from "@/hooks/use-playful-messages";
 
@@ -11,8 +11,6 @@ import HealthConnectSection from "./health-connect-section";
 import LegalSection from "./legal-section";
 
 interface AppSettingsSectionProps {
-  debugTapCount: number;
-  onDebugTap: () => void;
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   colorTheme: ColorTheme;
@@ -21,8 +19,6 @@ interface AppSettingsSectionProps {
 }
 
 export default function AppSettingsSection({
-  debugTapCount,
-  onDebugTap,
   themeMode,
   setThemeMode,
   colorTheme,
@@ -52,21 +48,6 @@ export default function AppSettingsSection({
   return (
     <>
       <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-        <TouchableOpacity
-          onPress={onDebugTap}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 10, right: 10 }}
-        >
-          <Text
-            className="text-base font-semibold text-text-primary p-4 pb-2"
-            style={{
-              opacity: debugTapCount > 0 ? 0.7 + debugTapCount * 0.03 : 1,
-            }}
-          >
-            App Settings{debugTapCount >= 7 ? ` (${10 - debugTapCount})` : ""}
-          </Text>
-        </TouchableOpacity>
-
         <HealthConnectSection />
 
         <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">

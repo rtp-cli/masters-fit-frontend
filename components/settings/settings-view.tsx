@@ -31,7 +31,6 @@ import DeveloperToolsSection from "./sections/developer-tools-section";
 import EquipmentSection from "./sections/equipment-section";
 import FitnessGoalsSection from "./sections/fitness-goals-section";
 import HealthInformationSection from "./sections/health-information-section";
-import LogoutSection from "./sections/logout-section";
 import PersonalInformationSection from "./sections/personal-information-section";
 import PreferredWorkoutTypesSection from "./sections/preferred-workout-types-section";
 import ProfileSection from "./sections/profile-section";
@@ -428,30 +427,27 @@ export default function SettingsView({
 
             <TouchableOpacity
               className="items-center"
-              onPress={() => showComingSoonModal("help-circle-outline")}
+              onPress={() => showComingSoonModal("chatbubble-ellipses-outline")}
             >
               <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
-                  name="help-circle-outline"
+                  name="chatbubble-ellipses-outline"
                   size={20}
                   color={colors.neutral.light[1]}
                 />
               </View>
-              <Text className="text-xs text-text-muted">Help</Text>
+              <Text className="text-xs text-text-muted">Feedback</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              className="items-center"
-              onPress={() => showComingSoonModal("share-outline")}
-            >
+            <TouchableOpacity className="items-center" onPress={handleLogout}>
               <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
-                  name="share-outline"
+                  name="log-out-outline"
                   size={20}
                   color={colors.neutral.light[1]}
                 />
               </View>
-              <Text className="text-xs text-text-muted">Share</Text>
+              <Text className="text-xs text-text-muted">Log Out</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -461,10 +457,6 @@ export default function SettingsView({
           Account
         </Text>
         {profile && <PersonalInformationSection profile={profile} />}
-        <LogoutSection
-          onLogout={handleLogout}
-          onDeleteAccount={handleDeleteAccount}
-        />
 
         {/* [MF-020] Training Profile */}
         <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
@@ -505,13 +497,19 @@ export default function SettingsView({
           onUpgradePress={() => setShowUpgradeModal(true)}
         />
 
-        {/* [MF-020] App */}
-        <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
-          App
-        </Text>
+        {/* [MF-020] Application Settings — this header doubles as the hidden
+            10-tap debug-mode activator (moved here from the removed card title). */}
+        <TouchableOpacity
+          onPress={handleDebugTap}
+          activeOpacity={0.7}
+          hitSlop={{ top: 5, bottom: 5, left: 10, right: 10 }}
+        >
+          <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
+            Application Settings
+            {debugTapCount >= 7 ? ` (${10 - debugTapCount})` : ""}
+          </Text>
+        </TouchableOpacity>
         <AppSettingsSection
-          debugTapCount={debugTapCount}
-          onDebugTap={handleDebugTap}
           themeMode={themeMode}
           setThemeMode={setThemeMode}
           colorTheme={colorTheme}
@@ -527,6 +525,27 @@ export default function SettingsView({
           onForceLogout={handleForceLogout}
           onClose={onClose}
         />
+        {/* Delete Account — pinned to the very bottom, below Application
+            Settings and just above the version tag. */}
+        <View className="px-6 mt-6 mb-4">
+          <TouchableOpacity
+            className="rounded-xl p-4 flex-row items-center justify-center"
+            style={{ backgroundColor: `${colors.danger}15` }}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={20}
+              color={colors.danger}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={{ color: colors.danger }} className="font-semibold">
+              Delete Account
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <AppVersionSection tapCount={tapCount} onTap={handleVersionTap} />
       </ScrollView>
 

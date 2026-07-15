@@ -64,14 +64,20 @@ export default function SubscriptionSection({
             <Text className="text-sm font-semibold text-text-primary">
               {getPlanName(productIdentifier ?? null)}
             </Text>
-            {expirationDate && (
+            {expirationDate ? (
               <Text className="text-xs text-text-muted mt-0.5">
-                {activeEntitlement.willRenew ? "Renews" : "Expires"}{" "}
+                {activeEntitlement?.willRenew ? "Renews" : "Expires"}{" "}
                 {expirationDate.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
                 })}
+              </Text>
+            ) : (
+              <Text className="text-xs text-text-muted mt-0.5">
+                {tier === "PLUS"
+                  ? "Active subscription"
+                  : "Complimentary access"}
               </Text>
             )}
           </View>

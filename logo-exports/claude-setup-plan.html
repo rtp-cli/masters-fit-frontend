@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Claude Code Setup & Plan</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d2129; --line:#2a2f3a;
+    --ink:#e8eaed; --mut:#9aa3b2; --dim:#6b7280;
+    --acc:#d97757; --acc2:#7aa2f7; --ok:#5cc98c; --warn:#e0af68;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;font-size:16px;padding:0 0 80px}
+  .wrap{max-width:840px;margin:0 auto;padding:0 20px}
+  header{padding:48px 0 28px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{color:var(--acc);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12.5px;margin:0 0 10px}
+  h1{font-size:32px;line-height:1.15;margin:0 0 14px;letter-spacing:-.02em}
+  .lede{font-size:18px;color:var(--mut);margin:0;max-width:62ch}
+  .lede b{color:var(--ink)}
+  h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);
+    margin:44px 0 16px;font-weight:700}
+  h3{font-size:18px;margin:0 0 6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:0 0 14px}
+  .card.tight{padding:16px 18px}
+  .row{display:flex;gap:14px;align-items:flex-start}
+  .num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--card2);
+    border:1px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--acc2)}
+  .badge{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;vertical-align:middle}
+  .b-done{background:rgba(92,201,140,.15);color:var(--ok)}
+  .b-you{background:rgba(224,175,104,.15);color:var(--warn)}
+  .b-next{background:rgba(122,162,247,.15);color:var(--acc2)}
+  p{margin:8px 0}
+  .mut{color:var(--mut)}
+  .sm{font-size:14.5px}
+  code{background:#0a0c10;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13.5px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#e3c9bd}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:6px 0 4px}
+  table{border-collapse:collapse;width:100%;min-width:520px;font-size:14.5px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--card2);color:var(--mut);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+  td:first-child{color:var(--mut);white-space:nowrap}
+  td b{color:var(--ink)}
+  .arrow{color:var(--acc)}
+  .callout{border-left:3px solid var(--acc);background:var(--card2);border-radius:0 10px 10px 0;padding:14px 18px;margin:14px 0}
+  .step h3 .badge{margin-left:8px}
+  ul{margin:8px 0;padding-left:20px}
+  li{margin:5px 0}
+  .footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:13.5px}
+  .pill-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 2px}
+  .pill{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:13.5px;color:var(--mut)}
+  .pill b{color:var(--ink)}
+  .big-quote{font-size:19px;color:var(--ink);margin:6px 0;line-height:1.5}
+  .big-quote b{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Claude Code · Personal setup review</p>
+    <h1>You don't have a setup problem.<br>You have a usage problem.</h1>
+    <p class="lede">The machinery is already built — you're driving it in first gear. Here's the honest assessment, what we fixed today, and the plan to shift up. <b>The single biggest unlock is using what you already have.</b></p>
+  </header>
+
+  <h2>The honest headline</h2>
+  <div class="card">
+    <p class="big-quote">You called yourself a <b>troglodyte</b>. You're not. You're already in the top few percent of Claude Code setups — closer to <b>~60% of the potential</b>, not 5%.</p>
+    <p class="mut sm">Across 64 sessions you've accumulated a real configuration. The article that inspired you is ~90% about <b>Claude.ai</b> (the web/desktop chat app) — a different product from <b>Claude Code</b> (the agent in your terminal/IDE). Most of its "50 features" don't apply here; the ones that matter, you mostly already have.</p>
+  </div>
+
+  <h2>What you already had (before today)</h2>
+  <div class="card tight">
+    <div class="pill-list">
+      <span class="pill"><b>Open permissions</b> — Bash/Edit/Write + WebSearch already allowed</span>
+      <span class="pill"><b>Project CLAUDE.md</b> — excellent house rules</span>
+      <span class="pill"><b>4 custom skills</b> — add-component, add-screen, deploy-ios/android</span>
+      <span class="pill"><b>Slash commands</b> — /deploy-backend, /deploy-db, /deploy-ios</span>
+      <span class="pill"><b>Verify hook</b> — auto "how to test" after edits</span>
+      <span class="pill"><b>Persistent memory</b> — 10+ saved facts</span>
+      <span class="pill"><b>MCP wired</b> — GitHub + ~15 connectors</span>
+      <span class="pill"><b>Remote control + push notifications</b></span>
+    </div>
+    <p class="mut sm" style="margin-top:12px">Translation: the two things you asked me to "turn on" — open permissions and web search — were <b>already on</b>. You shouldn't be getting many prompts.</p>
+  </div>
+
+  <h2>What we changed today</h2>
+
+  <div class="card step">
+    <div class="row">
+      <div class="num">1</div>
+      <div>
+        <h3>Closed a real security hole <span class="badge b-done">Done</span></h3>
+        <p class="sm">Your GitHub token was sitting in <b>plaintext</b> in <code>~/.claude/settings.json</code>. We rotated it and moved the new one into the encrypted <b>macOS keychain</b>. Verified live against GitHub: <code>HTTP 200</code>, authenticated as <code>rtp-cli</code>. No secret lives in any file now.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card step">
+    <div class="row">
+      <div class="num">2</div>
+      <div>
+        <h3>Added global preferences <span class="badge b-done">Done</span></h3>
+        <p class="sm">Created <code>~/.claude/CLAUDE.md</code> — standing instructions that apply to <b>every</b> project (be direct, act on low-risk steps, confirm risky ones, never write secrets to files). This is the Claude Code version of the article's "User Preferences." Edit it anytime; it's yours.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card step">
+    <div class="row">
+      <div class="num">3</div>
+      <div>
+        <h3>Sorted your shells <span class="badge b-done">Done</span></h3>
+        <p class="sm">Your default shell is <b>zsh</b> but your terminal was opening <b>bash</b>. The token now loads in both, so you can't get stuck. Recommendation: switch your terminal to zsh (Terminal → Settings → General → "Shells open with: Default login shell").</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>MCP, in one breath</h2>
+  <div class="callout">
+    <p style="margin:0 0 6px"><b>MCP is a universal adapter that lets Claude reach tools and data outside your codebase.</b></p>
+    <p class="mut sm" style="margin:0">Without it, I see only your files + shell. With it, I can read your Sentry crashes, query Mixpanel usage, or file a Linear ticket — through one interface, no copy-paste. You already have ~15 connectors <b>connected</b>; they just need a one-time browser login each to become <b>usable</b>. You don't need all 15 — pick the 2–3 that match your real workflow.</p>
+  </div>
+
+  <h2>The article, translated to your world</h2>
+  <div class="tablewrap">
+    <table>
+      <tr><th>Article concept (Claude.ai)</th><th>Your equivalent in Claude Code</th></tr>
+      <tr><td>User Preferences</td><td><span class="arrow">→</span> <b>~/.claude/CLAUDE.md</b> (added today)</td></tr>
+      <tr><td>Projects / Instructions</td><td><span class="arrow">→</span> per-repo <b>CLAUDE.md</b> (you have a great one)</td></tr>
+      <tr><td>Skills</td><td><span class="arrow">→</span> <b>.claude/skills/</b> (you have 4)</td></tr>
+      <tr><td>Slash Commands</td><td><span class="arrow">→</span> <b>.claude/commands/</b> (you have 3)</td></tr>
+      <tr><td>MCP Connectors</td><td><span class="arrow">→</span> GitHub + claude.ai connectors (wired)</td></tr>
+      <tr><td>Sub-Agent Coordination</td><td><span class="arrow">→</span> the <b>Agent</b> tool + workflows (built in)</td></tr>
+      <tr><td>Scheduled Tasks</td><td><span class="arrow">→</span> <b>/schedule</b> (cloud cron) and <b>/loop</b></td></tr>
+      <tr><td>Deep Research</td><td><span class="arrow">→</span> your <b>deep-research</b> skill</td></tr>
+      <tr><td>Artifacts</td><td><span class="arrow">→</span> the <b>Artifact</b> tool (this page is one)</td></tr>
+      <tr><td>Cowork / autopilot</td><td><span class="arrow">→</span> Claude Code <i>is</i> this, for code</td></tr>
+    </table>
+  </div>
+  <p class="mut sm">Safe to ignore for now: Cowork, Claude in Excel/PowerPoint/Chrome, Custom Styles, community-artifact remixing. Consumer features — not where your leverage is as someone shipping a product through code.</p>
+
+  <h2>The plan — in priority order</h2>
+
+  <div class="card">
+    <h3>This week — use what you have <span class="badge b-next">Now</span></h3>
+    <ul class="sm">
+      <li><b>Finish the token rotation</b> — done ✅. Restart Claude Code once so the GitHub tools go live, then try <i>"list my recent GitHub PRs."</i></li>
+      <li><b>Authenticate Sentry + Mixpanel + Linear</b> — your highest-value upgrade. Lets me work with real product data: crashes, usage, tickets. ~2 min each.</li>
+      <li><b>Actually fire a skill</b> — next component you need, just say "add a component for X" and watch <code>add-component</code> run.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Next — multiply yourself</h3>
+    <ul class="sm">
+      <li><b>Sub-agents</b> — for big jobs ("audit the whole app for X"), I fan out parallel agents. No config; just ask.</li>
+      <li><b>/schedule</b> — a Monday-morning brief: weekend Sentry crashes + key Mixpanel numbers, summarized automatically.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Later — only when you hit a ceiling</h3>
+    <ul class="sm">
+      <li><b>Build your own skill</b> when you catch yourself explaining the same multi-step task twice. Copy one of your existing four.</li>
+      <li><b>Artifacts</b> — shareable HTML dashboards (live-ish metrics, etc.). Ask when you want one.</li>
+    </ul>
+  </div>
+
+  <div class="callout" style="margin-top:24px">
+    <p style="margin:0"><b>Your next move:</b> restart Claude Code, then say the word and we'll authenticate <b>Sentry + Mixpanel + Linear</b> together.</p>
+  </div>
+
+  <p class="footer">A great setup never saves a vague request — it amplifies a clear one. The real work is still knowing exactly what you want; this just makes the clarity pay off faster. · Generated with Claude Code</p>
+</div>
+</body>
+</html>
