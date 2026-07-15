@@ -34,8 +34,12 @@ export default function CircularTimerDisplay({
   onCancel,
 }: CircularTimerDisplayProps) {
   const colors = useThemeColors();
-  // TIMER DISPLAY HIDDEN: CircularTimerDisplay component hidden
-  return null;
+  // TIMER DISPLAY HIDDEN: this component intentionally renders nothing for now.
+  // The full circular-timer UI below is preserved — flip this to re-enable it.
+  const TIMER_DISPLAY_HIDDEN = true;
+  if (TIMER_DISPLAY_HIDDEN) {
+    return null;
+  }
 
   const progress = targetDuration > 0 ? ((targetDuration - countdown) / targetDuration) * 100 : 0;
 
