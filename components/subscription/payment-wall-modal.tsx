@@ -79,6 +79,21 @@ export default function PaymentWallModal({
     }
   }, [visible, paywallData?.type]);
 
+  // Pre-select a default plan once packages load, so the CTA is immediately
+  // actionable ("Subscribe for $X") instead of a disabled "Select a Plan" that
+  // requires an extra tap. Prefer an annual package (best value) when multiple
+  // exist, else the only/first one.
+  useEffect(() => {
+    if (packages.length > 0 && !selectedPackage) {
+      const annual = packages.find(
+        (p) =>
+          /annual|year/i.test(p.identifier) ||
+          /annual|year/i.test(p.product.identifier)
+      );
+      setSelectedPackage(annual ?? packages[0]);
+    }
+  }, [packages, selectedPackage]);
+
   const handlePackageSelect = (pkg: PurchasesPackage) => {
     setSelectedPackage(pkg);
   };
