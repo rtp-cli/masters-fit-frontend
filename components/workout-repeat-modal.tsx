@@ -144,19 +144,17 @@ export default function WorkoutRepeatModal({
       );
 
       if (result?.success) {
-        // Trigger app reload to show warming up screen
         invalidateActiveWorkoutCache();
-        setNeedsFullAppRefresh(true);
-        setIsPreloadingData(true);
-
         // Reset all cached data
         reset();
-
         // Trigger fresh data load - this will show warming up screen during loading
         refreshAll();
 
-        // Navigate to dashboard to trigger the warming up flow
+        // Navigate first, then flip the warming-up flags. (Warming-up is now an
+        // overlay that keeps the navigator mounted — see app/_layout.tsx.)
         router.replace("/(tabs)/dashboard");
+        setNeedsFullAppRefresh(true);
+        setIsPreloadingData(true);
       } else {
         throw new Error("Failed to repeat workout");
       }

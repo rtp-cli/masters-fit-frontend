@@ -149,13 +149,16 @@ export default function WorkoutRepeatPicker({
       const result = await repeatPastDay(selectedDay.id);
       if (result?.success) {
         onClose();
-        setIsGeneratingWorkout(true, "repeat");
         invalidateActiveWorkoutCache();
-        setNeedsFullAppRefresh(true);
-        setIsPreloadingData(true);
         reset();
         refreshAll();
+        // Navigate first, then flip the warming-up flags. (The warming-up screen
+        // is now an overlay that keeps the navigator mounted — see app/_layout.tsx
+        // — so this ordering is just belt-and-suspenders.)
         router.replace("/(tabs)/dashboard");
+        setIsGeneratingWorkout(true, "repeat");
+        setNeedsFullAppRefresh(true);
+        setIsPreloadingData(true);
       } else {
         throw new Error("Failed to copy workout");
       }
@@ -197,13 +200,14 @@ export default function WorkoutRepeatPicker({
 
       if (result?.success) {
         onClose();
-        setIsGeneratingWorkout(true, "repeat");
         invalidateActiveWorkoutCache();
-        setNeedsFullAppRefresh(true);
-        setIsPreloadingData(true);
         reset();
         refreshAll();
+        // Navigate before the warming-up flags (see handleRepeatDay).
         router.replace("/(tabs)/dashboard");
+        setIsGeneratingWorkout(true, "repeat");
+        setNeedsFullAppRefresh(true);
+        setIsPreloadingData(true);
       } else {
         throw new Error("Failed to repeat workout");
       }

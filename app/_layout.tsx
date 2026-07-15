@@ -385,19 +385,10 @@ function AppContent() {
   // Flip to true to pin the warming-up screen for visual inspection (dev only)
   const DEBUG_WARMING_UP = __DEV__ && false;
 
-  // Show warming up screen only during full app refresh after workout generation
-  if (isDoingFullAppRefresh || DEBUG_WARMING_UP) {
+  // Show warming up screen only during full app refresh after workout generation.
+  const showWarmingUp = isDoingFullAppRefresh || DEBUG_WARMING_UP;
+  if (showWarmingUp) {
     console.log("[WarmingUp] Showing warming up screen");
-    return (
-      <WarmingUpScreen
-        onComplete={() => {
-          console.log(
-            "[WarmingUp] WarmingUpScreen onComplete called (unexpected)"
-          );
-        }}
-        duration={5000}
-      />
-    );
   }
 
   return (
@@ -443,6 +434,25 @@ function AppContent() {
           isAppReady={!isLoading}
           onDismissed={() => setSplashDismissed(true)}
         />
+      )}
+      {/* Warming-up is an OVERLAY, not a replacement, so the <Stack> above stays
+          mounted underneath. Previously this early-returned <WarmingUpScreen/>
+          instead of the Stack, which unmounted the navigator mid-transition and
+          dropped any in-flight router.replace (e.g. repeat-workout → dashboard),
+          producing a dev-only "no route named 'dashboard'" warning. Keeping the
+          Stack mounted lets that navigation commit cleanly beneath the opaque
+          overlay — visually identical to the user. */}
+      {showWarmingUp && (
+        <View className="absolute inset-0 z-50 bg-background">
+          <WarmingUpScreen
+            onComplete={() => {
+              console.log(
+                "[WarmingUp] WarmingUpScreen onComplete called (unexpected)"
+              );
+            }}
+            duration={5000}
+          />
+        </View>
       )}
     </>
   );
