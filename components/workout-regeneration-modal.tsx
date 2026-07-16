@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { PaywallError } from "@/lib/api";
+import { clearPendingResume, setPendingResume } from "@/lib/paywall-resume";
 import { type Profile as UserProfile } from "@/types/api";
 import {
   type AVAILABLE_EQUIPMENT,
@@ -290,6 +291,12 @@ export default function WorkoutRegenerationModal({
           : RegenerationType.Daily
       );
 
+      // Arm resume-after-purchase: if the server gates this adjustment behind a
+      // paywall and the user subscribes, re-run this whole handler.
+      setPendingResume(() => {
+        void handleUpdateProfile(formData);
+      });
+
       if (selectedType === "week") {
         // Weekly regeneration: call the weekly endpoint directly with profile data
         try {
@@ -302,6 +309,7 @@ export default function WorkoutRegenerationModal({
           });
 
           if (result?.success && result.jobId) {
+            clearPendingResume();
             // Add job to background tracking
             await addJob(result.jobId, "regeneration");
 
@@ -336,6 +344,7 @@ export default function WorkoutRegenerationModal({
             );
 
             if (result?.success && result.jobId) {
+              clearPendingResume();
               // Add job to background tracking
               await addJob(result.jobId, "daily-regeneration");
 
@@ -415,6 +424,12 @@ export default function WorkoutRegenerationModal({
       // Close modal immediately - no generating screen
       onClose();
 
+      // Arm resume-after-purchase: if the server gates this behind a paywall and
+      // the user subscribes, re-run this whole handler.
+      setPendingResume(() => {
+        void handleRegenerateWithFeedback();
+      });
+
       if (selectedType === "week") {
         // Weekly regeneration: call the weekly endpoint directly
         const user = await getCurrentUser();
@@ -424,6 +439,7 @@ export default function WorkoutRegenerationModal({
           });
 
           if (result?.success && result.jobId) {
+            clearPendingResume();
             // Add job to background tracking
             await addJob(result.jobId, "regeneration");
 
@@ -450,6 +466,7 @@ export default function WorkoutRegenerationModal({
             });
 
             if (result?.success && result.jobId) {
+              clearPendingResume();
               // Add job to background tracking
               await addJob(result.jobId, "daily-regeneration");
 
@@ -484,6 +501,7 @@ export default function WorkoutRegenerationModal({
             );
 
             if (result?.success && result.jobId) {
+              clearPendingResume();
               // Add job to background tracking
               await addJob(result.jobId, "daily-regeneration");
 

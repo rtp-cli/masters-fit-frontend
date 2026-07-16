@@ -29,6 +29,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { PaywallError } from "@/lib/api";
+import { clearPendingResume, setPendingResume } from "@/lib/paywall-resume";
 import { tabEvents } from "@/lib/tab-events";
 import {
   type PlanDayWithBlocks,
@@ -197,6 +198,12 @@ export default function CalendarScreen() {
         return;
       }
 
+      // Arm resume-after-purchase: if the server gates this behind a paywall and
+      // the user subscribes, re-run this whole handler with the same args.
+      setPendingResume(() => {
+        void handleRegenerate(data, selectedType);
+      });
+
       if (regenerateType === "day") {
         const currentPlanDayResult = getPlanDayForDate(selectedDate);
         const dayToRegenerate = selectedPlanDay || currentPlanDayResult?.day;
@@ -214,6 +221,7 @@ export default function CalendarScreen() {
           }
         );
         if (response?.success && response.jobId) {
+          clearPendingResume();
           await addJob(response.jobId, "daily-regeneration");
           router.replace("/(tabs)/dashboard");
         } else {
@@ -235,6 +243,7 @@ export default function CalendarScreen() {
 
         const response = await regenerateWorkoutPlanAsync(user.id, apiData);
         if (response?.success && response.jobId) {
+          clearPendingResume();
           await addJob(response.jobId, "regeneration");
           router.replace("/(tabs)/dashboard");
         } else if (response !== null) {

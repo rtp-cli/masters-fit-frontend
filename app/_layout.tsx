@@ -50,6 +50,7 @@ import {
   registerForPushNotifications,
   setupNotificationCategories,
 } from "@/lib/notifications";
+import { runPendingResume } from "@/lib/paywall-resume";
 import { initSentry, Sentry } from "@/lib/sentry";
 import { colorThemes, type ThemeKey,themes } from "@/lib/theme";
 import { type ColorTheme, ThemeContext, type ThemeMode, useTheme } from "@/lib/theme-context";
@@ -414,6 +415,11 @@ function AppContent() {
         {isRevenueCatReady && <PaymentWallModal
           visible={showPaymentWall}
           onClose={() => {
+            // NOTE: don't clear the pending resume here — on a successful
+            // purchase the modal calls onClose() *before* onPurchaseSuccess(),
+            // so clearing here would wipe the resume before it can run. A plain
+            // dismiss leaves a harmless armed thunk that the next gated action
+            // overwrites; runPendingResume only ever fires from purchase-success.
             setShowPaymentWall(false);
             setPaywallData(null);
           }}
@@ -427,6 +433,9 @@ function AppContent() {
           onPurchaseSuccess={() => {
             setShowPaymentWall(false);
             setPaywallData(null);
+            // Re-run the action that hit the paywall (if any) now that the user
+            // has MastersFit+, so they don't have to manually re-tap it.
+            runPendingResume();
           }}
         />}
       </View>

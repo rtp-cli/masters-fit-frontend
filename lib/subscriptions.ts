@@ -36,3 +36,24 @@ export async function getSubscriptionStatus(): Promise<UserSubscriptionStatus | 
 export async function getEntitlements(): Promise<Entitlements | null> {
   return (await getSubscriptionStatusResponse())?.entitlements ?? null;
 }
+
+/**
+ * Actively reconcile our backend with RevenueCat right after a purchase
+ * (POST /subscriptions/sync). The backend calls RevenueCat's REST API to
+ * confirm the live entitlement and flips the DB to ACTIVE immediately — it does
+ * NOT wait for the async RevenueCat webhook, which never reaches a localhost
+ * backend in dev and lags in prod. This is what closes the post-purchase race
+ * (otherwise a just-paid user stays FREE and the server keeps 403-ing them).
+ * Returns the freshly-resolved status (same shape as /status), or null on error.
+ */
+export async function syncSubscription(): Promise<SubscriptionStatusResponse | null> {
+  try {
+    return await apiRequest<SubscriptionStatusResponse>(
+      "/subscriptions/sync",
+      { method: "POST" },
+    );
+  } catch (error) {
+    console.error("Error syncing subscription:", error);
+    return null;
+  }
+}

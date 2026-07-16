@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { ensureIdentifiedBeforePurchase } from "@/lib/revenuecat-identity";
 import { Sentry } from "@/lib/sentry";
-import { getSubscriptionStatus } from "@/lib/subscriptions";
+import { syncSubscription } from "@/lib/subscriptions";
 
 const rcLog = (...args: unknown[]) => {
   if (!SUPPRESS_REVENUECAT_LOGS) console.log(...args);
@@ -187,13 +187,16 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           activeEntitlements: Object.keys(updatedInfo.entitlements.active),
         });
 
-        // RevenueCat confirms the purchase locally, but our backend only
-        // updates once its webhook has landed — which can lag behind this
-        // response. Give it a couple of short checks so a caller that
-        // immediately hits a backend-gated feature doesn't get bounced by a
-        // paywall right after a successful purchase. RevenueCat's local
-        // confirmation is still authoritative either way: we don't fail the
-        // purchase just because our own backend hasn't caught up yet.
+        // RevenueCat confirms the purchase locally, but our backend gates
+        // features on its own subscription row — which only flips once the
+        // RevenueCat webhook lands. That webhook never reaches a localhost
+        // backend in dev and lags in prod, so instead of passively polling we
+        // actively reconcile via POST /subscriptions/sync (backend re-checks
+        // RevenueCat's REST API and flips the DB to ACTIVE now). This closes
+        // the post-purchase race so a resume-after-purchase / immediate gated
+        // call isn't bounced right back to the paywall. RevenueCat's local
+        // confirmation is still authoritative — we never fail the purchase
+        // just because our own backend hasn't caught up yet.
         if (hasActiveEntitlement) {
           // [AN-08] Client purchase-completed (intent-confirmed-locally). The backend
           // webhook owns the *verified* purchase; this is the client-side signal.
@@ -219,12 +222,16 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           }
 
           let backendSynced = false;
-          for (let attempt = 0; attempt < 2 && !backendSynced; attempt++) {
+          for (let attempt = 0; attempt < 3 && !backendSynced; attempt++) {
             if (attempt > 0) {
               await new Promise((resolve) => setTimeout(resolve, 1500));
             }
-            const status = await getSubscriptionStatus();
-            backendSynced = status?.accessLevel === "unlimited";
+            const status = await syncSubscription();
+            // Converted once the server tier is anything but FREE (new P2 model);
+            // fall back to the legacy accessLevel for older backends.
+            backendSynced =
+              (!!status?.entitlements && status.entitlements.tier !== "FREE") ||
+              status?.subscription?.accessLevel === "unlimited";
           }
 
           if (!backendSynced) {

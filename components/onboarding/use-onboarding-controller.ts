@@ -1,6 +1,7 @@
 import { AnalyticsEvent, trackEvent } from "@lib/analytics-events";
 import { logger } from "@lib/logger";
 import { registerForPushNotifications } from "@lib/notifications";
+import { clearPendingResume, setPendingResume } from "@lib/paywall-resume";
 import { type OnboardingData } from "@lib/types";
 import { generateWorkoutPlanAsync } from "@lib/workouts";
 import { useRouter } from "expo-router";
@@ -43,10 +44,16 @@ export function useOnboardingController() {
       // Register for push notifications
       await registerForPushNotifications();
 
+      // Arm resume-after-purchase in case the server gates this behind a paywall
+      setPendingResume(() => {
+        void startWorkoutGeneration();
+      });
+
       // Call the workout generation API
       const result = await generateWorkoutPlanAsync(user.id);
 
       if (result?.success && result.jobId) {
+        clearPendingResume();
         // Register the job with background context for FAB tracking
         await addJob(result.jobId, "generation");
         logger.info("Workout generation started after onboarding", {
