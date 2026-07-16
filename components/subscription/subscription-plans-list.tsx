@@ -95,7 +95,7 @@ export default function SubscriptionPlansList({
       <TouchableOpacity
         key={pkg.identifier}
         onPress={() => onPackageSelect(pkg)}
-        className={`bg-background rounded-2xl p-5 border-2 relative ${
+        className={`bg-background rounded-2xl p-4 border-2 relative ${
           isSelected
             ? "border-primary bg-primary/10"
             : isPopular
@@ -112,7 +112,7 @@ export default function SubscriptionPlansList({
           </View>
         )}
 
-        <View className="flex-row justify-between items-start mb-3">
+        <View className="flex-row justify-between items-start mb-2">
           <View className="flex-1">
             <Text className="text-xl font-bold text-text-primary mb-1">
               {pkg.product.title || pkg.identifier}
@@ -132,7 +132,7 @@ export default function SubscriptionPlansList({
           )}
         </View>
 
-        <View className="mb-4">
+        <View>
           <Text className="text-4xl font-bold text-text-primary mb-1">
             {pkg.product.priceString}
             <Text className="text-base font-normal text-text-secondary">

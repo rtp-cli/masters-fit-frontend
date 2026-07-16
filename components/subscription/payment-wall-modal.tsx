@@ -202,35 +202,31 @@ export default function PaymentWallModal({
           className="flex-1"
           contentContainerStyle={{
             paddingHorizontal: 24,
-            paddingTop: 24,
-            paddingBottom: 40,
+            paddingTop: 16,
+            paddingBottom: 24,
           }}
           showsVerticalScrollIndicator={true}
           bounces={true}
         >
-          {/* Icon */}
-          <View className="size-16 rounded-full bg-primary/10 items-center justify-center self-center mb-4">
-            <Ionicons
-              name="lock-closed"
-              size={32}
-              color={colors.brand.primary}
-            />
+          {/* Title — small bolt inline to the left, left-aligned to match the
+              body copy and checklist below. (Replaces the old large circular
+              lock badge, which pushed the CTA below the fold on short screens.) */}
+          <View className="flex-row items-center gap-2 mb-2">
+            <Ionicons name="flash" size={22} color={colors.brand.primary} />
+            <Text className="text-2xl font-bold text-text-primary">
+              Upgrade to MastersFit+
+            </Text>
           </View>
 
-          {/* Title */}
-          <Text className="text-2xl font-bold text-text-primary text-center mb-3">
-            Upgrade to MastersFit+
-          </Text>
-
-          {/* Message */}
-          <Text className="text-base text-text-secondary text-center leading-6 mb-4">
+          {/* Message — left-aligned to match the checklist. */}
+          <Text className="text-base text-text-secondary leading-6 mb-4">
             {paywallData.message}
           </Text>
 
           {/* Benefits — shared list for the MastersFit+ tier (matches the
               marketing paywall design; per-package benefits were removed from
               the plan cards in favor of this single list). */}
-          <View className="gap-3 mb-6 px-1">
+          <View className="gap-3 mb-5 px-1">
             {MASTERSFIT_PLUS_BENEFITS.map((benefit) => (
               <View key={benefit} className="flex-row items-center gap-3">
                 <Ionicons
@@ -246,7 +242,7 @@ export default function PaymentWallModal({
           </View>
 
           {/* Subscription Plans */}
-          <View className="mb-4">
+          <View className="mb-5">
             {isLoading ? (
               <View className="py-8 items-center">
                 <ActivityIndicator size="large" color={colors.brand.primary} />
@@ -329,7 +325,7 @@ export default function PaymentWallModal({
 
           {/* Footer */}
           <View className="border-t border-neutral-light-2 pt-4">
-            <Text className="text-xs text-text-muted text-center leading-[18px]">
+            <Text className="text-xs text-text-muted leading-[18px]">
               You can continue using your existing workout plans without a
               subscription. Subscription automatically renews unless canceled at
               least 24 hours before the end of the current period.
