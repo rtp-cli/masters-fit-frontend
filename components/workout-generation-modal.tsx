@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { images } from "@/assets";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
-import { usePlayfulMessages } from "@/hooks/use-playful-messages";
 import { useWorkoutProgress } from "@/hooks/use-workout-progress";
 import { buildStream, COMPLETION_LINE } from "@/lib/generation-stream";
 import { useThemeColors } from "@/lib/theme";
@@ -141,8 +140,6 @@ export default function WorkoutGenerationModal() {
     landAfterGeneration,
     notifyJobComplete,
   } = useBackgroundJobs();
-  const { playfulEnabled } = usePlayfulMessages();
-
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const autoShownRef = useRef(new Set<number>());
   // Vertical offset (within the timeline) of the LAST day marker's center.
@@ -164,9 +161,6 @@ export default function WorkoutGenerationModal() {
     );
     return () => sub?.remove();
   }, []);
-
-  // The woven status stream (credible backbone + optional playful lines).
-  const stream = useMemo(() => buildStream(playfulEnabled), [playfulEnabled]);
 
   // Token map → useThemeColors()
   const C = {
@@ -214,6 +208,13 @@ export default function WorkoutGenerationModal() {
     );
   const currentJob =
     pickNewest(activeBackgroundJobs) ?? pickNewest(failedBackgroundJobs) ?? null;
+
+  // The randomized status stream for THIS generation. Keyed on the job id so it
+  // shuffles once per run and stays stable while playing (a bare buildStream()
+  // would reshuffle every render and make the visible line jump). The job id is
+  // a deliberate cache key, not a closure dep — hence the disable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stream = useMemo(() => buildStream(), [currentJob?.id]);
 
   // Polled fallback for the progressive timeline. The websocket is the fast
   // path, but on a physical device behind Render's proxy it can drop or never
@@ -354,7 +355,7 @@ export default function WorkoutGenerationModal() {
           useNativeDriver: true,
         }).start();
       });
-    }, 2800);
+    }, 4000);
     return () => clearInterval(id);
   }, [showModal, showRotatingCaption, reduceMotion, stream.length, captionFade]);
 

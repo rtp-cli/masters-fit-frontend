@@ -2,8 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Platform, Switch, Text, View } from "react-native";
 
-import { usePlayfulMessages } from "@/hooks/use-playful-messages";
-
 import { type ThemeColorPalette,useThemeColors } from "../../../lib/theme";
 import {type ColorTheme, type ThemeMode } from "../../../lib/theme-context";
 import ThemeDropdown from "../../ui/theme-dropdown";
@@ -27,7 +25,6 @@ export default function AppSettingsSection({
 }: AppSettingsSectionProps) {
   const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
-  const { playfulEnabled, setPlayfulEnabled } = usePlayfulMessages();
   // [Bug fix] iOS silently ignores Switch's thumbColor prop on this RN/iOS
   // version -- the knob is always the native white default, confirmed via
   // pixel sampling (uniform white regardless of the color passed). That
@@ -79,33 +76,6 @@ export default function AppSettingsSection({
             <Text className="text-sm text-text-primary ml-3">Color Theme</Text>
           </View>
           <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
-        </View>
-
-        <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-          <View className="flex-row items-center flex-1">
-            <Ionicons
-              name="happy-outline"
-              size={20}
-              color={colors.text.muted}
-            />
-            <Text className="text-sm text-text-primary ml-3">
-              Playful messages
-            </Text>
-          </View>
-          <Switch
-            value={playfulEnabled}
-            onValueChange={setPlayfulEnabled}
-            trackColor={{
-              false: colors.neutral.medium[1],
-              true: switchOnTrackColor,
-            }}
-            // [Bug fix] Same issue as the Dark Mode switch above -- see its
-            // comment.
-            thumbColor={
-              Platform.OS === "android" ? colors.text.primary : undefined
-            }
-            ios_backgroundColor={colors.neutral.medium[1]}
-          />
         </View>
 
         <LegalSection
