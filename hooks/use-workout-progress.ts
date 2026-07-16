@@ -240,21 +240,26 @@ export function useWorkoutProgress(
     };
   }, [processProgressEvent]);
 
-  // Reset all progress state when the active job changes. A new generation —
-  // or switching from a weekly to a daily regen — must not inherit the
-  // previous job's timeline. Forward-only processing won't clear it on its own
-  // because a job that emits no `days` (e.g. daily regen) never overwrites the
-  // old ones. Declared before the polled effect so the reset runs first.
+  // Reset all progress state the instant the active job changes — synchronously
+  // during render, NOT in a post-commit effect. A superseded job's completed
+  // timeline (e.g. a prior daily regen's done "Day 1") must never paint while
+  // the new job spins up. This matters because the websocket handler isn't
+  // job-scoped and the day merge is forward-only (a `done` day is never
+  // reverted), so if the reset lands late the OLD timeline stays on screen for
+  // the entire new run and only "flashes" clear at the very end. Doing the
+  // reset in an effect left exactly that window open on consecutive daily
+  // adjustments; setting state during render is React's supported "reset on
+  // prop change" pattern — it re-renders immediately and discards the stale
+  // output before it ever commits.
   const activeJobIdRef = useRef<number | null | undefined>(activeJobId);
-  useEffect(() => {
-    if (activeJobIdRef.current === activeJobId) return;
+  if (activeJobIdRef.current !== activeJobId) {
     activeJobIdRef.current = activeJobId;
     resetDayState();
     setProgress(0);
     setIsComplete(false);
     setError(null);
     setPhase(null);
-  }, [activeJobId, resetDayState]);
+  }
 
   // Polled source — reliable fallback that drives the same pipeline. Runs
   // whenever a fresh polled snapshot arrives.

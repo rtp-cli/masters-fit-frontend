@@ -322,9 +322,17 @@ export default function WorkoutGenerationModal() {
   useEffect(() => {
     captionIdxRef.current = 0;
     setCaptionIdx(0);
-  }, [currentJob?.id]);
+    // Hide the completion note immediately on a job switch. It's a persistent
+    // Animated.View whose opacity is otherwise only reset by the isFinished
+    // *transition* effect, which lags a render on a fast consecutive
+    // adjustment — leaving the prior run's "locked and loaded" copy visible for
+    // one extra iteration. Resetting here keys off the job id directly, so it's
+    // deterministic regardless of when isFinished recomputes.
+    finishOpacity.setValue(0);
+    finishTranslate.setValue(6);
+  }, [currentJob?.id, finishOpacity, finishTranslate]);
 
-  // Cycle the status stream every ~2.8s with a soft cross-fade, advancing until
+  // Cycle the status stream every ~4s with a soft cross-fade, advancing until
   // the last line (no looping). Disabled under reduced motion (steady line).
   useEffect(() => {
     if (!showModal || !showRotatingCaption || reduceMotion) return;
