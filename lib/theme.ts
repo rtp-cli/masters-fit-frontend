@@ -70,14 +70,14 @@ export const colors = {
   text: {
     primary: "#0A0A0A",
     secondary: "#3C3C3C",
-    muted: "#757575",
+    muted: "#6E6E6E",
   },
   background: "#FFFFFF",
   // [MF-010] Aligned to neutral.light[1] so surface is a real, named step
   // rather than an ad-hoc value.
   surface: "#FAFAFA",
   danger: "#DC2626",
-  warning: "#D97706",
+  warning: "#B06105",
   contentOnPrimary: "#FFFFFF",
   // MF-004: success decoupled from brand.primary — one reserved green accent for
   // completion, so a done item is distinguishable from ordinary ink without reading it.
@@ -183,15 +183,15 @@ export const steelBlueColors = {
   text: {
     primary: "#1C1D1F",
     secondary: "#464B55",
-    muted: "#6E7887",
+    muted: "#636B79",
   },
   background: "#F2F4F7",
   // [MF-010] neutral.light[2] -- light[1] here is lighter than background
   // (wrong direction for a tinted, non-white background); light[2] steps
   // toward grey instead, matching the visible "elevated surface" look.
   surface: "#EBEEF2",
-  danger: "#DC5050",
-  warning: "#D2A03C",
+  danger: "#D32A2A",
+  warning: "#8D6820",
   contentOnPrimary: "#FFFFFF",
 } as const;
 
@@ -235,7 +235,7 @@ export const steelBlueDarkColors = {
   text: {
     primary: "#F0F3F6",
     secondary: "#B4B9C3",
-    muted: "#737882",
+    muted: "#92979F",
   },
   background: "#171A1E",
   // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
@@ -288,13 +288,13 @@ export const dustyDenimColors = {
   text: {
     primary: "#19191B",
     secondary: "#484E58",
-    muted: "#707A88",
+    muted: "#636B78",
   },
   background: "#EFF1F5",
   // [MF-010] neutral.light[2] -- see Steel Blue's comment for why light[2].
   surface: "#ECEEF2",
-  danger: "#DA5252",
-  warning: "#D09E3A",
+  danger: "#CE2C2C",
+  warning: "#896721",
   contentOnPrimary: "#FFFFFF",
 } as const;
 
@@ -338,7 +338,7 @@ export const dustyDenimDarkColors = {
   text: {
     primary: "#F2F4F6",
     secondary: "#B2B6C0",
-    muted: "#707680",
+    muted: "#8D939B",
   },
   background: "#16171A",
   // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
@@ -391,13 +391,13 @@ export const dustySageColors = {
   text: {
     primary: "#1B1C1B",
     secondary: "#485048",
-    muted: "#707C70",
+    muted: "#646E64",
   },
   background: "#F3F4F3",
   // [MF-010] neutral.light[2] -- see Steel Blue's comment for why light[2].
   surface: "#ECF0EC",
-  danger: "#D25555",
-  warning: "#C89E3C",
+  danger: "#CA3838",
+  warning: "#886A26",
   contentOnPrimary: "#FFFFFF",
 } as const;
 
@@ -441,7 +441,7 @@ export const dustySageDarkColors = {
   text: {
     primary: "#F2F4F2",
     secondary: "#B2BAB2",
-    muted: "#707870",
+    muted: "#909890",
   },
   background: "#181918",
   // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
@@ -494,14 +494,14 @@ export const carbonVioletColors = {
   text: {
     primary: "#1A1A1A",
     secondary: "#4B5563",
-    muted: "#6B7280",
+    muted: "#636A77",
   },
   background: "#F5F5F5",
   // [MF-010] neutral.light[2] -- light[1] equals background exactly here,
   // so it can't create separation; light[2] steps toward grey instead.
   surface: "#ECECEC",
-  danger: "#C8555F",
-  warning: "#C8A04B",
+  danger: "#C2424E",
+  warning: "#896A2A",
   contentOnPrimary: "#FFFFFF",
 } as const;
 
@@ -545,7 +545,7 @@ export const carbonVioletDarkColors = {
   text: {
     primary: "#F5F5F5",
     secondary: "#B8B8B8",
-    muted: "#6B6B6B",
+    muted: "#8C8C8C",
   },
   background: "#121212",
   // [MF-010] neutral.light[1] -- dark surfaces elevate by going lighter.
