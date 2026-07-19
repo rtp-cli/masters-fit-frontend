@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -330,6 +331,30 @@ export default function PaymentWallModal({
               subscription. Subscription automatically renews unless canceled at
               least 24 hours before the end of the current period.
             </Text>
+
+            {/* [LR-032] Apple App Store Review Guideline 3.1.2 requires functional
+                Terms of Use (EULA) + Privacy Policy links on the paywall. These
+                open the canonical hosted docs in the browser — an in-app
+                router.push would render behind this native Modal. */}
+            <View className="flex-row items-center mt-3">
+              <TouchableOpacity
+                onPress={() => Linking.openURL("https://mastersfit.ai/terms")}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+              >
+                <Text className="text-xs text-primary font-semibold">
+                  Terms of Use
+                </Text>
+              </TouchableOpacity>
+              <Text className="text-xs text-text-muted mx-2">•</Text>
+              <TouchableOpacity
+                onPress={() => Linking.openURL("https://mastersfit.ai/privacy")}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}
+              >
+                <Text className="text-xs text-primary font-semibold">
+                  Privacy Policy
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
