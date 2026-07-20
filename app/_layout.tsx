@@ -191,7 +191,10 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    ensureHealthConnectInitialized();
+    // [LR-026] Fire-and-forget pre-warm. Swallow failures (e.g. Health Connect
+    // not installed on Android) so an unavailable provider can't surface as an
+    // unhandled rejection at startup — connect/read paths surface it in-context.
+    ensureHealthConnectInitialized().catch(() => {});
   }, []);
 
   // State to track notification-triggered refreshes

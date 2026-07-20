@@ -3,9 +3,11 @@ import { AppState, Linking,Platform } from "react-native";
 import { NativeModules } from "react-native";
 import BrokenHealthKit, { type HealthKitPermissions } from "react-native-health";
 import {
+  getSdkStatus,
   initialize,
   readRecords,
   requestPermission,
+  SdkAvailabilityStatus,
 } from "react-native-health-connect";
 
 const AppleHealthKit = NativeModules.AppleHealthKit as typeof BrokenHealthKit;
@@ -40,6 +42,50 @@ export async function clearHealthConnection(): Promise<void> {
     await AsyncStorage.removeItem(HEALTH_CONNECTION_KEY);
   } catch {
     // ignore cleanup errors
+  }
+}
+
+/**
+ * [LR-026] Thrown when Health Connect can't be used on this Android device —
+ * the Health Connect app isn't installed, or its provider needs a Play-store
+ * update. Carries a user-facing `message` (callers already surface `err.message`
+ * gracefully) plus a machine-readable `reason`. Replaces the previous behavior
+ * where requesting permissions with no availability check would crash rather
+ * than degrade.
+ */
+export class HealthConnectUnavailableError extends Error {
+  reason: "unavailable" | "update-required";
+  constructor(reason: "unavailable" | "update-required") {
+    super(
+      reason === "update-required"
+        ? "Health Connect needs an update from the Play Store before it can sync your health data."
+        : "Health Connect isn't set up on this device. Install it from the Play Store to sync your health data."
+    );
+    this.name = "HealthConnectUnavailableError";
+    this.reason = reason;
+  }
+}
+
+/**
+ * [LR-026] Health Connect SDK availability (Android only). Returns
+ * "not-supported" on non-Android so callers can branch without a Platform
+ * check. Never throws — a missing native module resolves to "unavailable".
+ */
+export async function getHealthConnectStatus(): Promise<
+  "available" | "unavailable" | "update-required" | "not-supported"
+> {
+  if (Platform.OS !== "android") return "not-supported";
+  try {
+    const status = await getSdkStatus();
+    if (status === SdkAvailabilityStatus.SDK_AVAILABLE) return "available";
+    if (
+      status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
+    ) {
+      return "update-required";
+    }
+    return "unavailable";
+  } catch {
+    return "unavailable";
   }
 }
 
@@ -113,6 +159,16 @@ export async function ensureHealthConnectInitialized(): Promise<void> {
       }
     });
   });
+  // [LR-026] Check availability BEFORE initialize()/requestPermission — on a
+  // device without Health Connect (or one needing a provider update) those
+  // native calls would otherwise throw opaquely / crash. Throw a clean, typed
+  // error the UI already surfaces gracefully instead.
+  const status = await getHealthConnectStatus();
+  if (status !== "available") {
+    throw new HealthConnectUnavailableError(
+      status === "update-required" ? "update-required" : "unavailable"
+    );
+  }
   await initialize();
   await new Promise((r) => setTimeout(r, 200));
   hcInitialized = true;
