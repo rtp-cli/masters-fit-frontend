@@ -22,7 +22,6 @@ import {
 import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import { getRoundCompleteButtonText } from "@/utils/circuit-utils";
 
-import CircuitTimer from "./circuit-timer";
 
 // Type alias for circuit actions
 type CircuitActions = UseCircuitSessionReturn["actions"];
@@ -35,23 +34,19 @@ export default function CircuitTracker({
   onCircuitComplete,
   isActive,
   circuitActions,
-  updateTimerState,
   canUndoRound = false,
 }: CircuitTrackerProps & {
   circuitActions?: CircuitActions;
   canUndoRound?: boolean;
 }) {
   const colors = useThemeColors();
-  // TIMER DISPLAY HIDDEN: Override shouldShowTimer to false
-  const hideTimers = false;
+  // [T5-3/MF-003] The circuit timer (toggle + CircuitTimer render) was removed
+  // entirely — timers are not supported (owner decision).
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];
   const isCurrentRoundCompleted = currentRoundData?.isCompleted || false;
 
   // Navigation state
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-
-  // Timer visibility state
-  const [showTimer, setShowTimer] = useState(false);
 
   // Local state for round notes to prevent re-rendering issues
   const [localRoundNotes, setLocalRoundNotes] = useState(
@@ -88,18 +83,10 @@ export default function CircuitTracker({
     }
   }, [canUndoRound]);
 
-  // Tabata exercise work timer state
-  const [exerciseWorkActive, setExerciseWorkActive] = useState(false);
-  const [exerciseWorkPaused, setExerciseWorkPaused] = useState(false);
-  const [exerciseWorkCountdown, setExerciseWorkCountdown] = useState(0);
-  const [showExerciseWork, setShowExerciseWork] = useState(false);
-  const exerciseWorkTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // [T5-3/MF-003] The Tabata work timer (state + countdown + "Start Work"
+  // button) was removed entirely — the countdown interval had long been
+  // disabled, so the button was a live affordance that did nothing.
 
-  // Get current exercise
-  const currentExercise = currentRoundData?.exercises[currentExerciseIndex];
-  const currentBlockExercise = currentExercise
-    ? block.exercises.find((ex) => ex.id === currentExercise.planDayExerciseId)
-    : null;
 
   // Handle scroll to specific exercise
   const scrollToExercise = (index: number) => {
@@ -129,21 +116,9 @@ export default function CircuitTracker({
   useEffect(() => {
     setCurrentExerciseIndex(0);
     scrollToExercise(0);
-    setShowExerciseWork(false);
-    setExerciseWorkActive(false);
-    setExerciseWorkPaused(false);
-    setExerciseWorkCountdown(0);
     // Update local notes when round changes
     setLocalRoundNotes(currentRoundData?.notes || "");
   }, [sessionData.currentRound, currentRoundData?.notes]);
-
-  // Tabata: work duration per exercise (seconds)
-  const getExerciseWorkDuration = () => {
-    if (block.blockType === "tabata") {
-      return currentBlockExercise?.duration || 20; // default 20s for Tabata work
-    }
-    return currentBlockExercise?.duration || 0;
-  };
 
   // Update exercise reps in current round
   const updateExerciseReps = (exerciseId: number, newReps: number) => {
@@ -309,58 +284,6 @@ export default function CircuitTracker({
     isCompleted: false,
     notes: "",
   });
-
-  // Exercise work timer effects (Tabata)
-  useEffect(() => {
-    if (
-      exerciseWorkActive &&
-      !exerciseWorkPaused &&
-      exerciseWorkCountdown > 0
-    ) {
-      // TIMER DISABLED: Exercise work timer timeout commented out
-      // exerciseWorkTimerRef.current = setTimeout(() => {
-      //   setExerciseWorkCountdown((prev) => {
-      //     const newValue = prev - 1;
-      //     if (newValue <= 0) {
-      //       setExerciseWorkActive(false);
-      //       setExerciseWorkPaused(false);
-      //       setShowExerciseWork(false);
-      //       try {
-      //         Haptics.notificationAsync(
-      //           Haptics.NotificationFeedbackType.Success
-      //         );
-      //         Notifications.scheduleNotificationAsync({
-      //           content: {
-      //             title: "Work Interval Complete!",
-      //             body: "Great effort on that interval",
-      //             sound: "tri-tone",
-      //           },
-      //           trigger: null,
-      //         });
-      //       } catch (error) {
-      //         console.log("Notification error:", error);
-      //       }
-      //       return 0;
-      //     }
-      //     return newValue;
-      //   });
-      // }, 1000);
-    } else {
-      if (exerciseWorkTimerRef.current) {
-        // TIMER DISABLED: Clear timeout commented out
-        // clearTimeout(exerciseWorkTimerRef.current);
-        exerciseWorkTimerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (exerciseWorkTimerRef.current) {
-        // TIMER DISABLED: Clear timeout commented out
-        // clearTimeout(exerciseWorkTimerRef.current);
-        exerciseWorkTimerRef.current = null;
-      }
-    };
-  }, [exerciseWorkActive, exerciseWorkPaused, exerciseWorkCountdown]);
 
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -563,83 +486,6 @@ export default function CircuitTracker({
                       </View>
                     </View>
 
-                    {/* TIMER DISPLAY HIDDEN: Exercise Work Timer commented out */}
-                    {/* {block.blockType === "tabata" &&
-                      showExerciseWork &&
-                      index === currentExerciseIndex && (
-                        <View className="mt-6">
-                          <View className="flex-row items-center justify-between mb-3">
-                            <Text className="text-sm font-semibold text-text-primary flex-row items-center">
-                              Work Timer
-                            </Text>
-                          </View>
-                          <CircularTimerDisplay
-                            countdown={exerciseWorkCountdown}
-                            targetDuration={getExerciseWorkDuration()}
-                            isActive={exerciseWorkActive}
-                            isPaused={exerciseWorkPaused}
-                            isCompleted={exerciseWorkCountdown === 0}
-                            startButtonText="Start Work"
-                            onStartPause={() => {
-                              if (exerciseWorkCountdown === 0) {
-                                const duration = getExerciseWorkDuration();
-                                setExerciseWorkCountdown(duration);
-                                setExerciseWorkActive(true);
-                                setExerciseWorkPaused(false);
-                              } else {
-                                setExerciseWorkPaused(!exerciseWorkPaused);
-                              }
-                            }}
-                            onReset={() => {
-                              const duration = getExerciseWorkDuration();
-                              setExerciseWorkCountdown(duration);
-                              setExerciseWorkActive(true);
-                              setExerciseWorkPaused(false);
-                            }}
-                            onCancel={() => {
-                              setExerciseWorkActive(false);
-                              setExerciseWorkPaused(false);
-                              const duration = getExerciseWorkDuration();
-                              setExerciseWorkCountdown(duration);
-                              setShowExerciseWork(false);
-                            }}
-                          />
-                        </View>
-                      )} */}
-
-                    {/* Start Exercise Work Button (Tabata) */}
-                    {block.blockType === "tabata" &&
-                      !showExerciseWork &&
-                      index === currentExerciseIndex && (
-                        <View className="mt-4">
-                          <TouchableOpacity
-                            className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
-                            style={{
-                              borderColor: colors.brand.primary,
-                              backgroundColor: colors.brand.primary + "10",
-                            }}
-                            onPress={() => {
-                              const duration = getExerciseWorkDuration();
-                              setExerciseWorkCountdown(duration);
-                              setExerciseWorkActive(true);
-                              setExerciseWorkPaused(false);
-                              setShowExerciseWork(true);
-                            }}
-                          >
-                            <Ionicons
-                              name="timer-outline"
-                              size={20}
-                              color={colors.brand.primary}
-                            />
-                            <Text
-                              className="text-sm font-semibold ml-2"
-                              style={{ color: colors.brand.primary }}
-                            >
-                              Start Work ({getExerciseWorkDuration()}s)
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
                   </View>
                 </View>
               );
@@ -730,57 +576,6 @@ export default function CircuitTracker({
             multiline
             numberOfLines={2}
           />
-        </View>
-      )}
-
-      {hideTimers && (
-        <View className="mb-3">
-          {/* Timer Toggle Button */}
-          <TouchableOpacity
-            className={`py-3 px-6 rounded-lg items-center border-2 ${
-              showTimer
-                ? "bg-brand-primary border-brand-primary"
-                : "border-brand-primary bg-transparent"
-            }`}
-            onPress={() => setShowTimer(!showTimer)}
-          >
-            <Text
-              className={`text-sm font-semibold ${
-                showTimer ? "text-neutral-white" : ""
-              }`}
-              style={!showTimer ? { color: colors.brand.primary } : {}}
-            >
-              {showTimer ? "Hide Circuit Timer" : "Show Circuit Timer"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Timer */}
-          {showTimer && (
-            <View className="bg-card rounded-2xl mt-2 p-6 border border-neutral-light-2">
-              <CircuitTimer
-                blockType={block.blockType || "circuit"}
-                timeCapMinutes={block.timeCapMinutes}
-                rounds={block.rounds}
-                timerState={sessionData.timer}
-                onTimerUpdate={updateTimerState}
-                onTimerEvent={async (event) => {
-                  if (
-                    event === "completeRound" &&
-                    circuitActions?.completeRound
-                  ) {
-                    try {
-                      await circuitActions.completeRound(
-                        "Auto-completed: minute ended"
-                      );
-                    } catch (error) {
-                      console.error("Error auto-completing EMOM round:", error);
-                    }
-                  }
-                }}
-                disabled={!isActive}
-              />
-            </View>
-          )}
         </View>
       )}
 

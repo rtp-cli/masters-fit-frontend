@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef,useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity,View } from "react-native";
 
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
@@ -40,15 +40,11 @@ export default function AdaptiveSetTracker({
   const showWeightInput = shouldShowWeightInput(exercise);
 
   // Duration-based exercise state
+  // [T5-3/MF-003] The exercise countdown timer (state + effects + the
+  // CircularTimerDisplay hookup) was removed entirely — timers are not
+  // supported (owner decision). Duration sets are logged manually.
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
-  const [isTimerActive, setIsTimerActive] = useState(false);
   const [durationSets, setDurationSets] = useState<DurationSet[]>([]);
-
-  // Timer state for CircularTimerDisplay
-  const [countdown, setCountdown] = useState(exercise.duration || 0);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isTimerPaused, setIsTimerPaused] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize duration sets if needed
   useEffect(() => {
@@ -73,86 +69,10 @@ export default function AdaptiveSetTracker({
     }
   }, [loggingType, exercise, durationSets.length, onSetsChange]);
 
-  // Reset countdown when not active or exercise changes
+  // Reset set position when exercise changes (on exercise completion/navigation)
   useEffect(() => {
-    if (!isTimerActive) {
-      setCountdown(exercise.duration || 0);
-      setIsCompleted(false);
-      setIsTimerPaused(false);
-    }
-  }, [exercise.duration, currentSetIndex, isTimerActive]);
-
-  // Reset timer state when exercise changes (on exercise completion/navigation)
-  useEffect(() => {
-    setIsTimerActive(false);
-    setIsTimerPaused(false);
-    setCountdown(exercise.duration || 0);
-    setIsCompleted(false);
     setCurrentSetIndex(0);
   }, [exercise.id]); // Reset when exercise ID changes
-
-  // Timer countdown logic
-  useEffect(() => {
-    if (isTimerActive && !isTimerPaused && countdown > 0 && !isCompleted) {
-      // TIMER DISABLED: Exercise timer timeout commented out
-      // timerRef.current = setTimeout(() => {
-      //   setCountdown((prev) => {
-      //     const newValue = prev - 1;
-      //     if (newValue <= 0) {
-      //       // Timer finished
-      //       setIsCompleted(true);
-      //       setIsTimerActive(false);
-      //       setIsTimerPaused(false);
-      //       // Add notification and haptic feedback
-      //       try {
-      //         // Send local notification with sound (no banner will show)
-      //         Notifications.scheduleNotificationAsync({
-      //           content: {
-      //             title: "Exercise Complete!",
-      //             body: "Your exercise duration has ended.",
-      //             sound: "tri-tone", // iOS notification sound
-      //           },
-      //           trigger: null, // Show immediately
-      //         });
-      //         // Add haptic feedback
-      //         Haptics.notificationAsync(
-      //           Haptics.NotificationFeedbackType.Success
-      //         );
-      //       } catch (error) {
-      //         console.log("Notification/haptic feedback error:", error);
-      //       }
-      //       // Handle duration logging (but don't auto-advance)
-      //       setTimeout(() => {
-      //         handleTimerCompletion();
-      //       }, 100);
-      //       return 0;
-      //     }
-      //     return newValue;
-      //   });
-      // }, 1000);
-    } else {
-      if (timerRef.current) {
-        // TIMER DISABLED: Clear timeout commented out
-        // clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (timerRef.current) {
-        // TIMER DISABLED: Clear timeout commented out
-        // clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [
-    isTimerActive,
-    isTimerPaused,
-    countdown,
-    isCompleted,
-    currentSetIndex,
-    exercise.sets,
-  ]);
 
   // Update duration set function
   const updateDurationSet = <K extends keyof DurationSet>(

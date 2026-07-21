@@ -181,31 +181,6 @@ export interface CircuitTrackerProps {
   onCircuitComplete: (sessionData: CircuitSessionData) => void;
   /** Whether the session is active */
   isActive: boolean;
-  updateTimerState: (state: CircuitTimerState) => void;
-  /** Whether to show the timer */
-  shouldShowTimer: boolean;
-}
-
-/**
- * Props for CircuitTimer component
- */
-export interface CircuitTimerProps {
-  /** Block type for timer configuration */
-  blockType: string;
-  /** Time cap in minutes (if applicable) */
-  timeCapMinutes?: number;
-  /** Number of rounds (if applicable) */
-  rounds?: number;
-  /** Current timer state */
-  timerState: CircuitTimerState;
-  /** Callback when timer state changes */
-  onTimerUpdate: (state: CircuitTimerState) => void;
-  /** Callback for timer events (start, pause, complete) */
-  onTimerEvent?: (
-    event: "start" | "pause" | "resume" | "complete" | "reset" | "completeRound"
-  ) => void;
-  /** Whether timer is disabled */
-  disabled?: boolean;
 }
 
 /**

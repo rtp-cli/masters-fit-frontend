@@ -100,12 +100,7 @@ function CircuitLoggingInterface({
     return null; // Don't render if no circuit session
   }
 
-  const {
-    sessionData,
-    actions,
-    canUndoRound,
-    updateTimerState,
-  } = circuitSession;
+  const { sessionData, actions, canUndoRound } = circuitSession;
 
   // Round/circuit completion callbacks are no-ops for logging — all logging
   // is batched into a single call via logCircuitCompletion() when the user
@@ -117,13 +112,6 @@ function CircuitLoggingInterface({
   const handleCircuitComplete = async (_sessionData: CircuitSessionData) => {
     // No incremental API calls — data is logged in batch at circuit completion
   };
-
-  // TIMER DISPLAY HIDDEN: Timer display disabled
-  // const shouldShowTimer = Boolean(
-  //   (block.timeCapMinutes && block.timeCapMinutes > 0) ||
-  //     block.blockType === "for_time"
-  // );
-  const shouldShowTimer = false;
 
   return (
     <View className="space-y-6">
@@ -140,11 +128,8 @@ function CircuitLoggingInterface({
           onCircuitComplete={handleCircuitComplete}
           isActive={isWorkoutStarted}
           circuitActions={actions}
-          updateTimerState={updateTimerState}
-          shouldShowTimer={shouldShowTimer}
           canUndoRound={canUndoRound}
         />
-        {/* Circuit Timer - Only show when there's a time cap */}
       </View>
     </View>
   );
@@ -210,7 +195,6 @@ export function WorkoutScreen() {
 
   // Modal state
   const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [showRestCompleteModal, setShowRestCompleteModal] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
   const [isSkippingExercise, setIsSkippingExercise] = useState(false);
@@ -248,12 +232,10 @@ export function WorkoutScreen() {
     setDialogVisible(true);
   }, []);
 
-  // Rest timer state
-  const [isRestTimerActive, setIsRestTimerActive] = useState(false);
-  const [isRestTimerPaused, setIsRestTimerPaused] = useState(false);
-  const [restTimerCountdown, setRestTimerCountdown] = useState(0);
-  const restTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const restTimerStartTime = useRef<number | null>(null);
+  // [T5-3/MF-003] Rest-timer state, countdown, UI, and the Rest Complete modal
+  // were removed entirely (owner decision: no timers). The workout/exercise
+  // elapsed "timers" below are an invisible analytics stopwatch feeding
+  // timeTaken/duration — deliberately kept.
   const workoutStartTime = useRef<number | null>(null);
   const exerciseStartTime = useRef<number | null>(null);
   const appStateRef = useRef(AppState.currentState);
@@ -365,100 +347,6 @@ export function WorkoutScreen() {
     };
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
 
-  // Rest timer management with timestamp-based calculation
-  useEffect(() => {
-    if (isRestTimerActive && !isRestTimerPaused && restTimerCountdown > 0) {
-      // Activate keep awake for rest timer
-      activateKeepAwake("rest-timer");
-
-      // Initialize start time if not set
-      if (!restTimerStartTime.current) {
-        const targetDuration = currentExercise?.restTime || 0;
-        restTimerStartTime.current =
-          Date.now() - (targetDuration - restTimerCountdown) * 1000;
-      }
-
-      // TIMER DISABLED: Rest timer interval commented out
-      // restTimerRef.current = setInterval(() => {
-      //   const now = Date.now();
-      //   const targetDuration = currentExercise?.restTime || 0;
-
-      //   if (restTimerStartTime.current) {
-      //     const elapsed = Math.floor((now - restTimerStartTime.current) / 1000);
-      //     const remaining = Math.max(0, targetDuration - elapsed);
-
-      //     setRestTimerCountdown(remaining);
-
-      //     if (remaining <= 0) {
-      //       // Timer finished - add notification + haptic feedback
-      //       try {
-      //         // Send local notification with sound (no banner will show)
-      //         Notifications.scheduleNotificationAsync({
-      //           content: {
-      //             title: "Rest Complete!",
-      //             body: "Your rest period has ended. Ready for the next set?",
-      //             sound: "tri-tone", // Different iOS notification sound
-      //           },
-      //           trigger: null, // Show immediately
-      //         });
-
-      //         // Add haptic feedback
-      //         Haptics.notificationAsync(
-      //           Haptics.NotificationFeedbackType.Success
-      //         );
-      //       } catch (error) {
-      //         console.log("Notification/haptic feedback error:", error);
-      //       }
-
-      //       setIsRestTimerActive(false);
-      //       setIsRestTimerPaused(false);
-      //       restTimerStartTime.current = null;
-      //       deactivateKeepAwake("rest-timer");
-
-      //       if (restTimerRef.current) {
-      //         clearInterval(restTimerRef.current);
-      //       }
-
-      //       // Show rest completion modal when rest timer finishes
-      //       setShowRestCompleteModal(true);
-      //     }
-      //   }
-      // }, 1000);
-    } else {
-      if (!isRestTimerActive) {
-        deactivateKeepAwake("rest-timer");
-        restTimerStartTime.current = null;
-      }
-
-      if (restTimerRef.current) {
-        // TIMER DISABLED: Clear interval commented out
-        // clearInterval(restTimerRef.current);
-      }
-    }
-
-    return () => {
-      deactivateKeepAwake("rest-timer");
-      if (restTimerRef.current) {
-        // TIMER DISABLED: Clear interval commented out
-        // clearInterval(restTimerRef.current);
-      }
-    };
-  }, [
-    isRestTimerActive,
-    isRestTimerPaused,
-    restTimerCountdown,
-    currentExercise?.restTime,
-  ]);
-
-  // Reset rest timer countdown when not active or exercise changes
-  useEffect(() => {
-    if (!isRestTimerActive) {
-      const restTime = currentExercise?.restTime || 0;
-      setRestTimerCountdown(restTime);
-      restTimerStartTime.current = null;
-    }
-  }, [isRestTimerActive, currentExercise?.restTime]);
-
   // Handle app state changes to manage timers during background/foreground transitions
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -484,36 +372,6 @@ export function WorkoutScreen() {
           }
         }
 
-        // Recalculate rest timer
-        if (isRestTimerActive && !isRestTimerPaused) {
-          const now = Date.now();
-          const targetDuration = currentExercise?.restTime || 0;
-
-          if (restTimerStartTime.current) {
-            const elapsed = Math.floor(
-              (now - restTimerStartTime.current) / 1000,
-            );
-            const remaining = Math.max(0, targetDuration - elapsed);
-            setRestTimerCountdown(remaining);
-
-            // If timer finished while in background, trigger completion
-            if (remaining <= 0) {
-              setIsRestTimerActive(false);
-              setIsRestTimerPaused(false);
-              restTimerStartTime.current = null;
-              setShowRestCompleteModal(true);
-
-              // Add haptic feedback for completion
-              try {
-                Haptics.notificationAsync(
-                  Haptics.NotificationFeedbackType.Success,
-                );
-              } catch (error) {
-                console.log("Haptic feedback error:", error);
-              }
-            }
-          }
-        }
       } else if (nextAppState.match(/inactive|background/)) {
         // App going to background - timers will continue based on timestamps
         console.log(
@@ -529,14 +387,7 @@ export function WorkoutScreen() {
       handleAppStateChange,
     );
     return () => subscription?.remove();
-  }, [
-    isWorkoutStarted,
-    isPaused,
-    isWorkoutCompleted,
-    isRestTimerActive,
-    isRestTimerPaused,
-    currentExercise?.restTime,
-  ]);
+  }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
 
   // Sync context with workout state
   useEffect(() => {
@@ -558,26 +409,18 @@ export function WorkoutScreen() {
       setWorkoutTimer(0);
       setExerciseTimer(0);
       setCurrentExerciseIndex(0);
-      setIsRestTimerActive(false);
-      setIsRestTimerPaused(false);
-      setRestTimerCountdown(0);
 
       // Reset timestamp references
       workoutStartTime.current = null;
       exerciseStartTime.current = null;
-      restTimerStartTime.current = null;
 
       // Deactivate keep awake
       deactivateKeepAwake("workout-timer");
-      deactivateKeepAwake("rest-timer");
 
       // Clear any active timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
-      }
-      if (restTimerRef.current) {
-        // clearInterval(restTimerRef.current);
       }
     }
   }, [isWorkoutInProgress, isWorkoutStarted, isWorkoutCompleted]);
@@ -620,14 +463,10 @@ export function WorkoutScreen() {
       setWorkoutInProgress(false);
       // Cleanup keep awake on unmount
       deactivateKeepAwake("workout-timer");
-      deactivateKeepAwake("rest-timer");
       // Clear timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
-      }
-      if (restTimerRef.current) {
-        // clearInterval(restTimerRef.current);
       }
     };
   }, [setWorkoutInProgress]);
@@ -2052,51 +1891,6 @@ export function WorkoutScreen() {
                         />
                       </View>
 
-                      {/* TIMER DISPLAY HIDDEN: Rest timer interface commented out */}
-                      {/* {currentExercise.restTime && currentExercise.restTime > 0 ? (
-                        <View className="mt-2 px-3 mb-3">
-                          <TouchableOpacity
-                            className={`py-3 px-6 rounded-lg items-center border-2 mb-2 ${
-                              showRestTimer
-                                ? "bg-brand-primary border-brand-primary"
-                                : "border-brand-primary bg-transparent"
-                            }`}
-                            onPress={() => setShowRestTimer(!showRestTimer)}
-                          >
-                            <Text
-                              className={`text-sm font-semibold ${
-                                showRestTimer ? "text-content-on-primary" : ""
-                              }`}
-                              style={
-                                !showRestTimer
-                                  ? { color: colors.brand.primary }
-                                  : {}
-                              }
-                            >
-                              {showRestTimer
-                                ? "Hide Rest Timer"
-                                : `Show Rest Timer (${formatRestTimerDisplay()})`}
-                            </Text>
-                          </TouchableOpacity>
-
-                          {showRestTimer && (
-                            <View className="rounded-2xl p-4 border border-neutral-light-2 bg-card">
-                              <CircularTimerDisplay
-                                countdown={restTimerCountdown}
-                                targetDuration={currentExercise?.restTime || 0}
-                                isActive={isRestTimerActive}
-                                isPaused={isRestTimerPaused}
-                                isCompleted={restTimerCountdown === 0}
-                                startButtonText={`Start Rest`}
-                                onStartPause={handleRestTimerStartPause}
-                                onReset={handleRestTimerReset}
-                                onCancel={handleRestTimerCancel}
-                              />
-                            </View>
-                          )}
-                        </View>
-                      ) : null} */}
-
                       {/* Notes - collapsed behind a row unless already used (MF-012) */}
                       <View className="rounded-2xl p-4">
                         {isNotesExpanded || currentProgress.notes ? (
@@ -2554,81 +2348,6 @@ export function WorkoutScreen() {
                     Skip
                   </Text>
                 )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Rest Complete Modal */}
-      <Modal visible={showRestCompleteModal} transparent animationType="fade">
-        <View
-          className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
-        >
-          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
-            {/* TIMER DISPLAY HIDDEN: Timer icon commented out */}
-            {/* <View className="items-center mb-4">
-              <Ionicons name="timer" size={48} color={colors.brand.primary} />
-            </View> */}
-            <Text className="text-xl font-bold text-text-primary mb-4 text-center">
-              Rest Complete!
-            </Text>
-            <Text className="text-base text-text-secondary text-center mb-6 leading-6">
-              Your {currentExercise?.restTime}s rest is finished. What would you
-              like to do next?
-            </Text>
-
-            {/* Show current progress */}
-            {currentProgress && currentExercise && (
-              <View className="bg-neutral-light-1 rounded-xl p-3 mb-6">
-                <Text className="text-sm font-semibold text-text-primary mb-2 text-center">
-                  Current Progress
-                </Text>
-                <View className="flex-row justify-center items-center space-x-4">
-                  <View className="items-center">
-                    <Text className="text-lg font-bold text-text-primary">
-                      {currentProgress.sets?.length || 0}
-                    </Text>
-                    <Text className="text-xs text-text-muted">
-                      of {currentExercise.sets || 3} sets
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            <View className="space-y-3">
-              {/* Continue button - only show if more sets are needed */}
-              {currentProgress &&
-                currentExercise &&
-                (currentProgress.sets?.length || 0) <
-                  (currentExercise.sets || 3) && (
-                  <TouchableOpacity
-                    className="bg-primary rounded-xl py-3 mb-3 px-6"
-                    onPress={() => {
-                      setShowRestCompleteModal(false);
-                      // Timer is already finished, user can continue with next set
-                    }}
-                  >
-                    <Text className="text-content-on-primary font-semibold text-center">
-                      Continue Exercise
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-              {/* Complete exercise button */}
-              <TouchableOpacity
-                className="bg-neutral-light-2 rounded-xl py-3 px-6"
-                onPress={() => {
-                  setShowRestCompleteModal(false);
-                  setShowCompleteModal(true);
-                }}
-              >
-                <Text className="text-text-primary font-semibold text-center">
-                  {isCurrentBlockCircuit
-                    ? "Complete Circuit"
-                    : "Complete Exercise"}
-                </Text>
               </TouchableOpacity>
             </View>
           </View>
