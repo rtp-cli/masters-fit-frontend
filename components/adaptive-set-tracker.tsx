@@ -4,14 +4,13 @@ import { Text, TextInput, TouchableOpacity,View } from "react-native";
 
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { useThemeColors } from "@/lib/theme";
+import { type ExerciseSet } from "@/types/api/logs.types";
 import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import {
   getExerciseLoggingType,
   getExerciseRequirementsText,
   shouldShowWeightInput,
 } from "@/utils/exercise-helpers";
-
-import { type ExerciseSet } from "./set-tracker";
 
 interface AdaptiveSetTrackerProps {
   exercise: WorkoutBlockWithExercise;

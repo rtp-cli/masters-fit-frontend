@@ -14,6 +14,20 @@ export interface ExerciseLog {
   sets?: ExerciseSetLog[];
 }
 
+/**
+ * A set as built up in the client during an active session (before it's
+ * persisted as an ExerciseSetLog). Relocated from the deleted dead
+ * components/set-tracker.tsx (T5-8 cleanup) — the live consumers are
+ * adaptive-set-tracker and the workout session screen.
+ */
+export interface ExerciseSet {
+  roundNumber: number;
+  setNumber: number;
+  weight: number;
+  reps: number;
+  restAfter?: number;
+}
+
 export interface ExerciseSetLog {
   id: number;
   exerciseLogId: number;

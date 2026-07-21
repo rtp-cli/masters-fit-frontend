@@ -25,7 +25,6 @@ import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
 import JustGeneratedBadge from "@/components/just-generated-badge";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
-import { type ExerciseSet } from "@/components/set-tracker";
 import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
 import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
@@ -59,6 +58,7 @@ import {
   type CircuitSessionConfig,
   type CircuitSessionData,
 } from "@/types/api/circuit.types";
+import { type ExerciseSet } from "@/types/api/logs.types";
 import {
   getBlockTypeDisplayName,
   type PlanDayWithBlocks,
