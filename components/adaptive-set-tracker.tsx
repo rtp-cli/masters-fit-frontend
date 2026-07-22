@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity,View } from "react-native";
 
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
-import { useThemeColors } from "@/lib/theme";
+import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import { type ExerciseSet } from "@/types/api/logs.types";
 import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
 import {
@@ -21,6 +22,8 @@ interface AdaptiveSetTrackerProps {
     duration: number;
     isComplete: boolean;
   }) => void;
+  /** [T5-2] Fires when the user checks off the final remaining set. */
+  onAllSetsCompleted?: () => void;
   blockType?: string;
 }
 
@@ -33,10 +36,15 @@ export default function AdaptiveSetTracker({
   exercise,
   sets,
   onSetsChange,
+  onAllSetsCompleted,
 }: AdaptiveSetTrackerProps) {
   const colors = useThemeColors();
   const loggingType = getExerciseLoggingType(exercise);
   const showWeightInput = shouldShowWeightInput(exercise);
+  // Reserved completion accent (MF-004); falls back to ink for themes without
+  // it (same pattern as workout-summary.tsx).
+  const successColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
 
   // Duration-based exercise state
   // [T5-3/MF-003] The exercise countdown timer (state + effects + the
@@ -44,6 +52,10 @@ export default function AdaptiveSetTracker({
   // supported (owner decision). Duration sets are logged manually.
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [durationSets, setDurationSets] = useState<DurationSet[]>([]);
+
+  // [T5-1] Which traditional set row is expanded for editing (steppers).
+  // Collapsed rows show just the prescription + the ✓ target.
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   // Initialize duration sets if needed
   useEffect(() => {
@@ -71,7 +83,25 @@ export default function AdaptiveSetTracker({
   // Reset set position when exercise changes (on exercise completion/navigation)
   useEffect(() => {
     setCurrentSetIndex(0);
+    setExpandedIndex(null);
   }, [exercise.id]); // Reset when exercise ID changes
+
+  // [T5-1/T5-2] Toggle a set's done state. Checking a set collapses any open
+  // editor; checking the FINAL remaining set notifies the parent (which
+  // auto-advances with an Undo window — T5-2).
+  const toggleSetCompleted = (index: number) => {
+    const updatedSets = [...sets];
+    const wasCompleted = !!updatedSets[index].isCompleted;
+    updatedSets[index] = { ...updatedSets[index], isCompleted: !wasCompleted };
+    onSetsChange(updatedSets);
+    if (!wasCompleted) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      setExpandedIndex(null);
+      if (updatedSets.length > 0 && updatedSets.every((s) => s.isCompleted)) {
+        onAllSetsCompleted?.();
+      }
+    }
+  };
 
   // Update duration set function
   const updateDurationSet = <K extends keyof DurationSet>(
@@ -165,66 +195,113 @@ export default function AdaptiveSetTracker({
     onSetsChange(updatedSets);
   };
 
-  // Render traditional sets/reps interface
-  const renderTraditionalSets = () => (
-    <View>
-      {/* Target Information */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-text-primary mb-2">
-          Target: {getExerciseRequirementsText(exercise)}
-        </Text>
-        <Text className="text-xs text-text-muted">
-          {sets.length} / {exercise.sets || 3} sets logged
-        </Text>
-        <View className="h-0.5 mt-2 bg-neutral-medium-1" />
-      </View>
+  // Render traditional sets/reps interface — [T5-1] "tap what you did".
+  // Every prescribed set is pre-rendered and pre-filled (see workout-screen's
+  // pre-materialization); finishing a set is ONE tap on its ✓. Tapping the
+  // prescription text expands a stepper editor for that row — no keyboard on
+  // the happy path. Checking the final set triggers auto-advance (T5-2).
+  const renderTraditionalSets = () => {
+    const doneCount = sets.filter((s) => s.isCompleted).length;
+    return (
+      <View>
+        {/* Target Information */}
+        <View className="mb-4">
+          <Text className="text-sm font-semibold text-text-primary mb-2">
+            Target: {getExerciseRequirementsText(exercise)}
+          </Text>
+          <Text className="text-xs text-text-muted">
+            {doneCount} of {sets.length} sets done
+          </Text>
+          <View className="h-0.5 mt-2 bg-neutral-medium-1" />
+        </View>
 
-      {/* Sets */}
-      {sets.map((set, index) => (
-        <View
-          key={index}
-          className="mb-4 p-3 rounded-lg border border-neutral-medium-1 bg-background"
-        >
-          <View className="flex-row items-center justify-between mb-3">
+        {/* Sets */}
+        {sets.map((set, index) => {
+          const isDone = !!set.isCompleted;
+          const isExpanded = expandedIndex === index && !isDone;
+          return (
             <View
-              className="size-6 rounded-full items-center justify-center"
-              style={{ backgroundColor: colors.brand.primary + "30" }}
+              key={index}
+              className="mb-3 rounded-xl border bg-background"
+              style={{
+                borderColor: isDone ? successColor : colors.neutral.medium[1],
+                backgroundColor: isDone ? successColor + "14" : undefined,
+              }}
             >
-              <Text
-                className="text-xs font-semibold"
-                style={{ color: colors.brand.primary }}
-              >
-                {set.setNumber}
-              </Text>
-            </View>
-            <View className="flex-row items-center">
-              <TouchableOpacity
-                className="p-1 mr-1"
-                onPress={() => resetSetToTarget(index)}
-                accessibilityRole="button"
-                accessibilityLabel="Reset set to target"
-                hitSlop={HIT_SLOP_10}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={16}
-                  color={colors.brand.primary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => removeSet(index)}
-                accessibilityRole="button"
-                accessibilityLabel="Remove set"
-                hitSlop={HIT_SLOP_10}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={colors.neutral.medium[3]}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+              <View className="flex-row items-center p-3">
+                {/* Prescription — tap to adjust (locked once checked) */}
+                <TouchableOpacity
+                  className="flex-1 flex-row items-center"
+                  onPress={() => setExpandedIndex(isExpanded ? null : index)}
+                  disabled={isDone}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set ${set.setNumber}: ${set.reps} reps${
+                    showWeightInput ? ` at ${set.weight} pounds` : ""
+                  }. ${isDone ? "Done. Tap the checkmark to undo." : "Tap to adjust."}`}
+                >
+                  <View
+                    className="size-7 rounded-full items-center justify-center mr-3"
+                    style={{
+                      backgroundColor:
+                        (isDone ? successColor : colors.brand.primary) + "30",
+                    }}
+                  >
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{
+                        color: isDone ? successColor : colors.brand.primary,
+                      }}
+                    >
+                      {set.setNumber}
+                    </Text>
+                  </View>
+                  <Text className="text-base font-semibold text-text-primary">
+                    {set.reps} reps
+                    {showWeightInput ? ` · ${set.weight} lb` : ""}
+                  </Text>
+                  {!isDone && (
+                    <Ionicons
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={14}
+                      color={colors.text.muted}
+                      style={{ marginLeft: 6 }}
+                    />
+                  )}
+                </TouchableOpacity>
+
+                {/* The one big tap: mark this set done (≥44×44 target) */}
+                <TouchableOpacity
+                  className="size-11 rounded-full items-center justify-center border-2"
+                  style={{
+                    borderColor: isDone
+                      ? successColor
+                      : colors.neutral.medium[2],
+                    backgroundColor: isDone ? successColor : "transparent",
+                  }}
+                  onPress={() => toggleSetCompleted(index)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    isDone
+                      ? `Set ${set.setNumber} done. Tap to undo.`
+                      : `Mark set ${set.setNumber} done`
+                  }
+                  hitSlop={HIT_SLOP_6}
+                >
+                  <Ionicons
+                    name="checkmark"
+                    size={22}
+                    color={
+                      isDone
+                        ? colors.contentOnPrimary
+                        : colors.neutral.medium[2]
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Expanded editor — steppers; keyboard only as a fallback */}
+              {isExpanded && (
+                <View className="px-3 pb-3">
 
           {/* Weight Input */}
           {showWeightInput && (
@@ -318,34 +395,78 @@ export default function AdaptiveSetTracker({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      ))}
 
-      {/* Add Set Button */}
-      <TouchableOpacity
-        className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
-        style={{
-          borderColor: colors.brand.primary,
-          backgroundColor: colors.brand.primary,
-        }}
-        onPress={addSet}
-        accessibilityRole="button"
-        accessibilityLabel="Add set"
-      >
-        <Ionicons
-          name="add-circle-outline"
-          size={20}
-          color={colors.contentOnPrimary}
-        />
-        <Text
-          className="text-sm font-semibold ml-2"
-          style={{ color: colors.contentOnPrimary }}
+                  {/* Editor actions */}
+                  <View className="flex-row items-center justify-end mt-3 gap-4">
+                    <TouchableOpacity
+                      className="flex-row items-center p-1"
+                      onPress={() => resetSetToTarget(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Reset set to target"
+                      hitSlop={HIT_SLOP_10}
+                    >
+                      <Ionicons
+                        name="refresh-outline"
+                        size={16}
+                        color={colors.brand.primary}
+                      />
+                      <Text
+                        className="text-xs font-semibold ml-1"
+                        style={{ color: colors.brand.primary }}
+                      >
+                        Reset
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="flex-row items-center p-1"
+                      onPress={() => {
+                        setExpandedIndex(null);
+                        removeSet(index);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove set"
+                      hitSlop={HIT_SLOP_10}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={colors.neutral.medium[3]}
+                      />
+                      <Text className="text-xs font-semibold ml-1 text-text-muted">
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {/* Add an EXTRA set — prescribed sets are already rendered, so this is
+            a secondary affordance now, not the filled-primary it used to be */}
+        <TouchableOpacity
+          className="flex-row items-center justify-center py-3 px-6 rounded-lg border"
+          style={{ borderColor: colors.brand.primary }}
+          onPress={addSet}
+          accessibilityRole="button"
+          accessibilityLabel="Add extra set"
         >
-          Add Set
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+          <Ionicons
+            name="add-circle-outline"
+            size={20}
+            color={colors.brand.primary}
+          />
+          <Text
+            className="text-sm font-semibold ml-2"
+            style={{ color: colors.brand.primary }}
+          >
+            Add Extra Set
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   // Render duration-based interface
   const renderDurationInterface = () => {

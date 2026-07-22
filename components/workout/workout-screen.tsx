@@ -29,6 +29,7 @@ import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
 import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
+import ExerciseCompleteSnackbar from "@/components/workout/exercise-complete-snackbar";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
@@ -194,7 +195,6 @@ export function WorkoutScreen() {
   const [skippedExercises, setSkippedExercises] = useState<number[]>([]);
 
   // Modal state
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
   const [isSkippingExercise, setIsSkippingExercise] = useState(false);
@@ -425,7 +425,10 @@ export function WorkoutScreen() {
     }
   }, [isWorkoutInProgress, isWorkoutStarted, isWorkoutCompleted]);
 
-  // Auto-add first set when moving to a new exercise
+  // [T5-1] Pre-materialize ALL prescribed sets when moving to a new exercise
+  // (previously only set 1 was auto-created and the user hand-built the rest
+  // via Add Set). Each set is pre-filled from the prescription and starts
+  // unchecked; the user just taps ✓ as they finish each one.
   useEffect(() => {
     if (
       isWorkoutStarted &&
@@ -433,19 +436,20 @@ export function WorkoutScreen() {
       currentExercise &&
       currentProgress
     ) {
-      // Only add first set if no sets exist for this exercise
+      // Only materialize if no sets exist for this exercise yet
       if (currentProgress.sets.length === 0) {
-        // Use the same target values that are passed to SetTracker
+        const targetSets = currentExercise.sets || 1;
         const targetReps = currentExercise.reps || 10;
         const targetWeight = currentExercise.weight || 0;
 
-        const firstSet = {
+        const prescribedSets = Array.from({ length: targetSets }, (_, i) => ({
           roundNumber: 1,
-          setNumber: 1,
+          setNumber: i + 1,
           weight: targetWeight,
           reps: targetReps,
-        };
-        updateProgress("sets", [firstSet]);
+          isCompleted: false,
+        }));
+        updateProgress("sets", prescribedSets);
       }
     }
   }, [currentExerciseIndex, isWorkoutStarted, isWorkoutCompleted]);
@@ -460,6 +464,9 @@ export function WorkoutScreen() {
   // Cleanup workout context on unmount
   useEffect(() => {
     return () => {
+      // [T5-2] Land any deferred auto-advance commit (reads a ref, so the
+      // stale closure is safe); fire-and-forget on teardown.
+      void flushPendingCommit();
       setWorkoutInProgress(false);
       // Cleanup keep awake on unmount
       deactivateKeepAwake("workout-timer");
@@ -469,6 +476,7 @@ export function WorkoutScreen() {
         timerRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setWorkoutInProgress]);
 
   // Load workout data
@@ -720,8 +728,125 @@ export function WorkoutScreen() {
   };
 
   // Complete current exercise
+  // ── [T5-2] Auto-advance with a deferred commit + Undo window ──────────────
+  // When the final set is checked, the UI advances immediately but the
+  // exercise log is committed after UNDO_WINDOW_MS. Undo cancels the commit
+  // and returns to the exercise. Every other flow that persists or leaves the
+  // session flushes the pending commit first so logs always land in order.
+  const UNDO_WINDOW_MS = 5000;
+  const pendingCommitRef = useRef<{
+    timeout: NodeJS.Timeout;
+    exerciseIndex: number;
+    payload: Parameters<typeof createExerciseLog>[0];
+  } | null>(null);
+  const [undoSnackbar, setUndoSnackbar] = useState<{
+    exerciseName: string;
+  } | null>(null);
+
+  // [T5-1] isCompleted is client-side only — strip it before the API call.
+  const toApiSets = (setsToStrip: ExerciseSet[]) =>
+    setsToStrip.map(({ isCompleted: _isCompleted, ...rest }) => rest);
+
+  const flushPendingCommit = async () => {
+    const pending = pendingCommitRef.current;
+    if (!pending) return;
+    pendingCommitRef.current = null;
+    clearTimeout(pending.timeout);
+    setUndoSnackbar(null);
+    try {
+      await createExerciseLog(pending.payload);
+    } catch (err) {
+      // The user has already moved on — surface without blocking the session.
+      console.error("Error committing auto-completed exercise log:", err);
+      showErrorDialog(
+        "Sync Issue",
+        "A completed exercise couldn't be saved. It will be missing from your log.",
+      );
+    }
+  };
+
+  // All sets checked → complete + advance in one motion (no modal, T5-2).
+  const handleAllSetsCompleted = () => {
+    if (!currentExercise || !currentProgress) return;
+
+    // Final exercise: run the full completion path (marks the day complete,
+    // shows the summary) — immediate commit, no Undo window.
+    if (currentExerciseIndex >= exercises.length - 1) {
+      completeExercise();
+      return;
+    }
+
+    // A previous exercise's commit may still be pending — land it first.
+    flushPendingCommit();
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    const completedSets = (currentProgress.sets || []).filter(
+      (s) => s.isCompleted,
+    );
+    const payload = {
+      planDayExerciseId: currentExercise.id,
+      sets: toApiSets(completedSets),
+      durationCompleted: currentProgress.duration,
+      isComplete: true,
+      timeTaken: exerciseTimer,
+      notes: currentProgress.notes,
+    };
+    const timeout = setTimeout(() => {
+      void flushPendingCommit();
+    }, UNDO_WINDOW_MS);
+    pendingCommitRef.current = {
+      timeout,
+      exerciseIndex: currentExerciseIndex,
+      payload,
+    };
+    setUndoSnackbar({ exerciseName: currentExercise.exercise.name });
+
+    // Advance the UI immediately (mirrors completeExercise's advance block).
+    const nextIndex = currentExerciseIndex + 1;
+    setCurrentExerciseIndex(nextIndex);
+    setExerciseTimer(0);
+    exerciseStartTime.current = Date.now();
+    updateCurrentBlockForAbandonment(nextIndex);
+    setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
+  };
+
+  // Undo: cancel the pending commit, return to the exercise, and uncheck its
+  // last set so re-checking naturally re-triggers the advance.
+  const undoAutoComplete = () => {
+    const pending = pendingCommitRef.current;
+    if (!pending) return;
+    clearTimeout(pending.timeout);
+    pendingCommitRef.current = null;
+    setUndoSnackbar(null);
+
+    const idx = pending.exerciseIndex;
+    setExerciseProgress((prev) => {
+      const updated = [...prev];
+      const prog = updated[idx];
+      if (prog) {
+        const undoneSets = [...prog.sets];
+        for (let i = undoneSets.length - 1; i >= 0; i--) {
+          if (undoneSets[i].isCompleted) {
+            undoneSets[i] = { ...undoneSets[i], isCompleted: false };
+            break;
+          }
+        }
+        updated[idx] = { ...prog, sets: undoneSets };
+      }
+      return updated;
+    });
+    setCurrentExerciseIndex(idx);
+    exerciseStartTime.current = Date.now();
+    setTimeout(() => scrollToExerciseHeading(idx), 150);
+  };
+
   const completeExercise = async () => {
     if (!currentExercise || !currentProgress) return;
+
+    // [T5-2] Land any deferred commit from a prior auto-advance first, so
+    // exercise logs are persisted in order.
+    await flushPendingCommit();
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setIsCompletingExercise(true);
@@ -790,8 +915,6 @@ export function WorkoutScreen() {
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
         }
-
-        setShowCompleteModal(false);
         return;
       }
 
@@ -874,26 +997,32 @@ export function WorkoutScreen() {
           setCurrentExerciseIndex(exercises.length);
           setIsWorkoutCompleted(true);
         }
-
-        setShowCompleteModal(false);
         return;
       }
 
       // Regular exercise completion logic for non-circuits
-      // Check if we have valid progress - either sets or duration
-      const hasSets = currentProgress.sets && currentProgress.sets.length > 0;
-      const hasDuration =
-        currentProgress.duration && currentProgress.duration > 0;
       const isDurationBasedExercise =
         currentExercise.duration &&
         currentExercise.duration > 0 &&
         (!currentExercise.reps || currentExercise.reps === 0);
 
+      // [T5-1] For rep-based exercises, only the sets the user actually
+      // checked off count — pre-materialized-but-unchecked rows are NOT
+      // logged. Duration-based exercises keep their original behavior.
+      let setsToLog = currentProgress.sets;
+      if (!isDurationBasedExercise) {
+        setsToLog = (currentProgress.sets || []).filter((s) => s.isCompleted);
+      }
+
+      const hasSets = setsToLog && setsToLog.length > 0;
+      const hasDuration =
+        currentProgress.duration && currentProgress.duration > 0;
+
       if (!hasSets && !hasDuration && !isDurationBasedExercise) {
         setDialogConfig({
-          title: "No Progress Logged",
+          title: "No Sets Done Yet",
           description:
-            "Please log your exercise progress before completing this exercise.",
+            "Tap the checkmark on each set as you finish it, then the exercise completes on its own. To finish early with fewer sets, check the sets you did first.",
           primaryButton: {
             text: "OK",
             onPress: () => setDialogVisible(false),
@@ -905,7 +1034,6 @@ export function WorkoutScreen() {
       }
 
       // For duration-based exercises, ensure we have proper sets structure
-      let setsToLog = currentProgress.sets;
       if (isDurationBasedExercise && (!setsToLog || setsToLog.length === 0)) {
         // Create a default set for duration-based exercises
         setsToLog = [
@@ -920,7 +1048,7 @@ export function WorkoutScreen() {
 
       await createExerciseLog({
         planDayExerciseId: currentExercise.id,
-        sets: setsToLog,
+        sets: toApiSets(setsToLog),
         durationCompleted: currentProgress.duration,
         isComplete: true,
         timeTaken: exerciseTimer, // This logs the actual time spent on exercise
@@ -986,8 +1114,6 @@ export function WorkoutScreen() {
         });
         setDialogVisible(true);
       }
-
-      setShowCompleteModal(false);
     } catch (err) {
       console.error(
         isCurrentBlockCircuit
@@ -1019,6 +1145,9 @@ export function WorkoutScreen() {
     setIsSkippingExercise(true);
 
     try {
+      // [T5-2] Land any deferred auto-advance commit before skipping onward.
+      await flushPendingCommit();
+
       // Call skip API
       await skipExercise(workout.workoutId, currentExercise.id);
 
@@ -1115,6 +1244,9 @@ export function WorkoutScreen() {
 
     setIsEndingEarly(true);
     try {
+      // [T5-2] Land any deferred auto-advance commit before wrapping up.
+      await flushPendingCommit();
+
       // Flush the current exercise's unsaved progress before marking complete
       const currentEx = exercises[currentExerciseIndex];
       const currentProg = exerciseProgress[currentExerciseIndex];
@@ -1163,16 +1295,24 @@ export function WorkoutScreen() {
             });
             savedCurrentExercise = true;
           } else {
-            const hasSets = currentProg.sets && currentProg.sets.length > 0;
-            const hasDuration =
-              currentProg.duration && currentProg.duration > 0;
             const isDurationBased =
               currentEx.duration &&
               currentEx.duration > 0 &&
               (!currentEx.reps || currentEx.reps === 0);
 
+            // [T5-1] Rep-based: only the sets the user checked off count.
+            let setsToLog = currentProg.sets;
+            if (!isDurationBased) {
+              setsToLog = (currentProg.sets || []).filter(
+                (s) => s.isCompleted,
+              );
+            }
+
+            const hasSets = setsToLog && setsToLog.length > 0;
+            const hasDuration =
+              currentProg.duration && currentProg.duration > 0;
+
             if (hasSets || hasDuration || isDurationBased) {
-              let setsToLog = currentProg.sets;
               if (isDurationBased && (!setsToLog || setsToLog.length === 0)) {
                 setsToLog = [
                   {
@@ -1187,7 +1327,7 @@ export function WorkoutScreen() {
               if (setsToLog && setsToLog.length > 0) {
                 await createExerciseLog({
                   planDayExerciseId: currentEx.id,
-                  sets: setsToLog,
+                  sets: toApiSets(setsToLog),
                   durationCompleted: currentProg.duration,
                   isComplete: false,
                   timeTaken: exerciseTimer,
@@ -1299,6 +1439,9 @@ export function WorkoutScreen() {
         destructive: true,
         onPress: () => {
           setDialogVisible(false);
+          // [T5-2] An auto-advanced exercise WAS completed — land its log
+          // (fire-and-forget) even though the rest of the day is abandoned.
+          void flushPendingCommit();
           abandonWorkout("manual_exit");
           router.replace("/dashboard");
         },
@@ -1885,8 +2028,8 @@ export function WorkoutScreen() {
                               progress.setsCompleted,
                             );
                             updateProgress("duration", progress.duration);
-                            // Note: Removed auto-completion - user now manually completes exercise
                           }}
+                          onAllSetsCompleted={handleAllSetsCompleted}
                           blockType={currentBlock?.blockType}
                         />
                       </View>
@@ -2132,6 +2275,13 @@ export function WorkoutScreen() {
         </View>
       </ScrollView>
 
+      {/* [T5-2] Undo window for an auto-advanced exercise */}
+      <ExerciseCompleteSnackbar
+        visible={!!undoSnackbar}
+        exerciseName={undoSnackbar?.exerciseName}
+        onUndo={undoAutoComplete}
+      />
+
       {/* Bottom Action Bar */}
       <View className="bg-card p-6">
         {!isWorkoutStarted ? (
@@ -2183,22 +2333,36 @@ export function WorkoutScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* [T5-2] Single tap — the confirmation modal is gone. For
+                rep-based exercises this is the partial-completion path (all
+                sets checked auto-advances); circuits/warmups complete here. */}
             <TouchableOpacity
-              className="bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1"
-              onPress={() => setShowCompleteModal(true)}
+              className={`bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1 ${
+                isCompletingExercise ? "opacity-75" : ""
+              }`}
+              onPress={completeExercise}
+              disabled={isCompletingExercise}
               accessibilityRole="button"
               accessibilityLabel="Complete"
+              accessibilityState={{ disabled: isCompletingExercise }}
             >
-              <Ionicons
-                name="checkmark"
-                size={20}
-                color={colors.contentOnPrimary}
-              />
+              {isCompletingExercise ? (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.contentOnPrimary}
+                />
+              ) : (
+                <Ionicons
+                  name="checkmark"
+                  size={20}
+                  color={colors.contentOnPrimary}
+                />
+              )}
               <Text className="text-content-on-primary font-semibold ml-2">
-                {isCurrentBlockCircuit
-                  ? "Complete Circuit"
-                  : isCurrentBlockWarmupCooldown
-                    ? "Complete"
+                {isCompletingExercise
+                  ? "Saving..."
+                  : isCurrentBlockCircuit
+                    ? "Complete Circuit"
                     : "Complete"}
               </Text>
             </TouchableOpacity>
@@ -2230,77 +2394,6 @@ export function WorkoutScreen() {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Complete Exercise Modal */}
-      <Modal visible={showCompleteModal} transparent animationType="fade">
-        <View
-          className={`flex-1 bg-black/50 justify-center items-center px-6 ${isDark ? "dark" : ""}`}
-        >
-          <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl border border-neutral-medium-1">
-            <Text className="text-xl font-bold text-text-primary mb-4 text-center">
-              {isCurrentBlockCircuit
-                ? "Complete Circuit"
-                : isCurrentBlockWarmupCooldown
-                  ? `Complete ${
-                      currentBlock?.blockType === "warmup"
-                        ? "Warmup"
-                        : "Cooldown"
-                    }`
-                  : "Complete Exercise"}
-            </Text>
-            <Text className="text-base text-text-secondary text-center mb-6 leading-6">
-              {isCurrentBlockCircuit
-                ? `Complete "${
-                    currentBlock?.blockName || "Circuit Block"
-                  }"? All rounds and exercises will be logged.`
-                : isCurrentBlockWarmupCooldown
-                  ? `Mark "${
-                      currentExercise?.exercise.name
-                    }" as complete and move to the next ${
-                      currentExerciseIndex < exercises.length - 1
-                        ? "exercise"
-                        : "phase"
-                    }?`
-                  : `Mark "${currentExercise?.exercise.name}" as complete? Your progress will be saved.`}
-            </Text>
-
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                className="bg-neutral-light-2 rounded-xl py-3 px-6 flex-1"
-                onPress={() => setShowCompleteModal(false)}
-              >
-                <Text className="text-text-primary font-semibold text-center">
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className={`bg-primary rounded-xl py-3 px-6 flex-1 ${
-                  isCompletingExercise ? "opacity-75" : ""
-                }`}
-                onPress={completeExercise}
-                disabled={isCompletingExercise}
-              >
-                {isCompletingExercise ? (
-                  <View className="flex-row items-center justify-center">
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.contentOnPrimary}
-                    />
-                    <Text className="text-content-on-primary font-semibold ml-2">
-                      Saving...
-                    </Text>
-                  </View>
-                ) : (
-                  <Text className="text-content-on-primary font-semibold text-center">
-                    Complete
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Skip Exercise Modal */}
       <Modal visible={showSkipModal} transparent animationType="fade">

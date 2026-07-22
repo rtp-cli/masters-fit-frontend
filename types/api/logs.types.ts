@@ -26,6 +26,12 @@ export interface ExerciseSet {
   weight: number;
   reps: number;
   restAfter?: number;
+  /**
+   * [T5-1] Client-side only: the user tapped this set's ✓ during the session.
+   * Only completed sets are logged; the field is STRIPPED before the API call
+   * (see workout-screen's toApiSets).
+   */
+  isCompleted?: boolean;
 }
 
 export interface ExerciseSetLog {
