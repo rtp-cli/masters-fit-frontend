@@ -451,11 +451,14 @@ export default function WorkoutRegenerationModal({
           }
         }
       } else {
-        // Daily regeneration or rest day workout
+        // Daily regeneration or standalone single-day workout
         const user = await getCurrentUser();
         if (user) {
-          // Check if this is a rest day workout request
-          if (isRestDay && selectedDate) {
+          // A single day with no backing plan day -- either a rest day inside
+          // the plan, or a day past the end of the series -- is generated as a
+          // standalone workout for that date. Only an in-plan day (selectedPlanDay
+          // set) goes through the daily-regeneration path below.
+          if (selectedDate && !selectedPlanDay) {
             const result = await generateRestDayWorkoutAsync(user.id, {
               date: selectedDate,
               reason: formatOverridesIntoReason(
@@ -475,9 +478,9 @@ export default function WorkoutRegenerationModal({
             } else if (result !== null) {
               // Only show error dialog for genuine failures, not paywall-intercepted nulls
               setDialogConfig({
-                title: "Rest Day Workout Failed",
+                title: "Workout Generation Failed",
                 description:
-                  "Unable to start rest day workout generation. Please check your connection and try again.",
+                  "Unable to start single-day workout generation. Please check your connection and try again.",
                 primaryButton: {
                   text: "OK",
                   onPress: () => setDialogVisible(false),
@@ -1001,9 +1004,8 @@ export default function WorkoutRegenerationModal({
                       No Workout Generated
                     </Text>
                     <Text className="text-sm text-text-muted mb-4 text-center">
-                      Workouts for this period haven't been generated yet. To
-                      create workouts for this period, complete your current
-                      week and generate the next week's workout plan.
+                      There's no workout for this day yet. Generate a single
+                      workout for this day, or start a fresh 7-day plan.
                     </Text>
                   </View>
                 ) : (
@@ -1023,7 +1025,6 @@ export default function WorkoutRegenerationModal({
                           value: "day",
                           label: "Single Day",
                           sublabel: "Today only",
-                          disabled: noActiveWorkoutDay,
                         },
                         {
                           value: "week",
@@ -1038,13 +1039,6 @@ export default function WorkoutRegenerationModal({
                   </View>
                 )}
 
-                {noActiveWorkoutDay && (
-                  <Text className="text-xs text-text-muted mb-4 text-center">
-                    Day adjustment is not available for days outside your
-                    workout plan
-                  </Text>
-                )}
-
                 {/* Feedback Input */}
                 <View>
                   <Text className="text-sm text-text-muted mb-4">
@@ -1053,7 +1047,9 @@ export default function WorkoutRegenerationModal({
                       : isRestDay
                         ? "Tell us what you'd like to change about your weekly workout plan:"
                         : noActiveWorkoutDay
-                          ? "Tell us what you'd like to include in your next week's workout plan:"
+                          ? selectedType === "day"
+                            ? "Tell us what kind of workout you'd like for this day:"
+                            : "Tell us what you'd like to include in your next week's workout plan:"
                           : `Tell us why you want to adjust this ${
                               selectedType === "day" ? "day's" : "week's"
                             } workout, and what you'd like to change:`}
@@ -1168,7 +1164,9 @@ export default function WorkoutRegenerationModal({
                     >
                       {selectedType === "week"
                         ? "Update Weekly Plan"
-                        : "Update Today's Workout"}
+                        : noActiveWorkoutDay
+                          ? "Generate Workout"
+                          : "Update Today's Workout"}
                     </Text>
                   </>
                 )}

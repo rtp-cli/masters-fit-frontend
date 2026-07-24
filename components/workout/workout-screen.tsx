@@ -1902,8 +1902,8 @@ export function WorkoutScreen() {
                           currentExercise.reps ||
                           currentExercise.sets
                       ) && (
-                        <View className="flex items-center bg-background rounded-xl pt-6">
-                          <View className="flex-row flex-wrap gap-3">
+                        <View className="flex items-center bg-background rounded-xl px-4 py-5">
+                          <View className="flex-row flex-wrap justify-center gap-3">
                             {Boolean(currentExercise.sets) && (
                               <View className="flex-row items-center">
                                 <Text className="text-sm text-text-muted mr-1">
@@ -1935,7 +1935,7 @@ export function WorkoutScreen() {
                               </View>
                             )}
                           </View>
-                          <Text className="text-xs text-text-muted mt-2 leading-4">
+                          <Text className="text-xs text-text-muted text-center mt-3 leading-5">
                             {currentBlock?.blockType === "warmup"
                               ? "Prepare your muscles and joints for the workout ahead."
                               : "Focus on stretching and recovery to wind down."}
