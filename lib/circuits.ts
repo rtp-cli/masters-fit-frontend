@@ -3,6 +3,7 @@ import {
   type CreateExerciseLogParams,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
+import { computeCircuitResult } from "@/utils/circuit-utils";
 
 import { apiRequest } from "./api";
 import { logger } from "./logger";
@@ -48,7 +49,13 @@ function collectRoundExerciseLogs(
 export async function logCircuitCompletion(
   workoutId: number,
   rounds: CircuitRound[],
-  block: WorkoutBlockWithExercises
+  block: WorkoutBlockWithExercises,
+  options?: {
+    /** Manually entered elapsed time (T5-3 removed timers; for_time asks). */
+    actualTimeSeconds?: number;
+    /** Prescribed intervals/rounds — feeds the EMOM "R/T" score. */
+    targetRounds?: number;
+  }
 ): Promise<void> {
   try {
     // Collect all rounds that have any user interaction:
@@ -70,6 +77,18 @@ export async function logCircuitCompletion(
       ...new Set(block.exercises.map((ex) => ex.id)),
     ];
 
+    // Block-level result: rounds + score ("5+12", "12:34", …). Without this
+    // the AMRAP/For-Time score is unrecoverable after the session ends.
+    const result = computeCircuitResult(block.blockType || "circuit", rounds, {
+      targetRounds: options?.targetRounds,
+      actualTimeSeconds: options?.actualTimeSeconds,
+    });
+    const actualTimeMinutes = result.actualTimeSeconds
+      ? Math.round(result.actualTimeSeconds / 60)
+      : block.blockType === "amrap"
+        ? block.timeCapMinutes
+        : undefined;
+
     await Promise.all([
       // 1 batch call for all exercise logs
       allLogs.length > 0
@@ -86,12 +105,27 @@ export async function logCircuitCompletion(
           workoutBlockId: block.id,
         }),
       }),
+      // 1 call to persist the block-level result
+      apiRequest(`/logs/block`, {
+        method: "POST",
+        body: JSON.stringify({
+          workoutBlockId: block.id,
+          roundsCompleted: result.roundsCompleted,
+          totalReps: result.totalReps,
+          score: result.score,
+          timeCapMinutes: block.timeCapMinutes ?? undefined,
+          actualTimeMinutes: actualTimeMinutes ?? undefined,
+          totalDuration: result.actualTimeSeconds,
+          isComplete: true,
+        }),
+      }),
     ]);
 
     logger.businessEvent("Circuit completion logged", {
       roundsCompleted: completedRounds.length,
       exerciseLogs: allLogs.length,
       exercisesMarkedComplete: uniqueExerciseIds.length,
+      score: result.score,
     });
   } catch (error) {
     logger.error("Error logging circuit completion", {

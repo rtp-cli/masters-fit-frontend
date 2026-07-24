@@ -1,29 +1,20 @@
+import {
+  CIRCUIT_BLOCK_TYPES,
+  type CircuitBlockType,
+  TRADITIONAL_BLOCK_TYPES,
+  type TraditionalBlockType,
+} from "@/constants/block-types";
+import { type CircuitRound } from "@/types/api/circuit.types";
 import { type WorkoutBlockWithExercises } from "@/types/api/workout.types";
 
-/**
- * Circuit workout types that require round-based logging
- */
-export const CIRCUIT_BLOCK_TYPES = [
-  'amrap',
-  'emom', 
-  'for_time',
-  'circuit',
-  'tabata'
-] as const;
-
-/**
- * Traditional workout types that use set-based logging
- */
-export const TRADITIONAL_BLOCK_TYPES = [
-  'traditional',
-  'superset',
-  'warmup',
-  'cooldown', 
-  'flow'
-] as const;
-
-export type CircuitBlockType = typeof CIRCUIT_BLOCK_TYPES[number];
-export type TraditionalBlockType = typeof TRADITIONAL_BLOCK_TYPES[number];
+// Re-exported so existing import sites keep working; the source of truth
+// lives in constants/block-types.ts.
+export {
+  CIRCUIT_BLOCK_TYPES,
+  type CircuitBlockType,
+  TRADITIONAL_BLOCK_TYPES,
+  type TraditionalBlockType,
+};
 
 /**
  * Determines if a workout block requires circuit-based logging
@@ -67,100 +58,82 @@ export function getLoggingInterface(block?: WorkoutBlockWithExercises): 'circuit
 }
 
 /**
- * Gets timer configuration for different circuit types
- * @param blockType The circuit block type
- * @returns Timer configuration object
+ * Block-level result for a circuit session — the shape persisted to
+ * block_logs (POST /logs/block) and shown as the score in history.
  */
-export function getCircuitTimerConfig(blockType: string) {
-  const configs = {
-    amrap: {
-      type: 'countUp' as const,
-      hasTimeLimit: true,
-      showRounds: true,
-      autoAdvanceRounds: false,
-      workInterval: 0,
-      restInterval: 0,
-    },
-    emom: {
-      type: 'countDown' as const,
-      hasTimeLimit: false,
-      showRounds: true,
-      autoAdvanceRounds: true,
-      workInterval: 60, // 60 seconds per minute
-      restInterval: 0,
-    },
-    for_time: {
-      type: 'countDown' as const,
-      hasTimeLimit: true,
-      showRounds: true,
-      autoAdvanceRounds: false,
-      workInterval: 0,
-      restInterval: 0,
-    },
-    circuit: {
-      type: 'countUp' as const,
-      hasTimeLimit: false,
-      showRounds: true,
-      autoAdvanceRounds: false,
-      workInterval: 0,
-      restInterval: 0,
-    },
-    tabata: {
-      type: 'intervals' as const,
-      hasTimeLimit: false,
-      showRounds: true,
-      autoAdvanceRounds: true,
-      workInterval: 20, // 20 seconds work
-      restInterval: 10, // 10 seconds rest
-    },
-  };
-
-  return configs[blockType as keyof typeof configs] || configs.circuit;
+export interface CircuitBlockResult {
+  roundsCompleted: number;
+  totalReps: number;
+  score: string;
+  /** Manually entered elapsed time (no timers by design — T5-3). */
+  actualTimeSeconds?: number;
 }
 
-/**
- * Calculates circuit score based on type and performance
- * @param blockType The circuit block type
- * @param data Performance data
- * @returns Formatted score string
- */
-export function calculateCircuitScore(
-  blockType: string,
-  data: {
-    roundsCompleted: number;
-    totalReps: number;
-    timeMinutes: number;
-    targetRounds?: number;
-  }
-): string {
-  const { roundsCompleted, totalReps, timeMinutes, targetRounds } = data;
+const formatMinutesSeconds = (totalSeconds: number): string => {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.round(totalSeconds % 60);
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
 
-  switch (blockType) {
-    case 'amrap':
-      // Score: rounds + reps (e.g., "5+12" means 5 complete rounds plus 12 additional reps)
-      const extraReps = totalReps % (roundsCompleted > 0 ? Math.floor(totalReps / roundsCompleted) : totalReps);
-      return `${roundsCompleted}${extraReps > 0 ? `+${extraReps}` : ''}`;
-    
-    case 'for_time':
-      // Score: time to completion
-      const minutes = Math.floor(timeMinutes);
-      const seconds = Math.round((timeMinutes - minutes) * 60);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
-    case 'emom':
-      // Score: rounds completed / total rounds
-      const totalMinutes = targetRounds || roundsCompleted;
-      return `${roundsCompleted}/${totalMinutes}`;
-    
-    case 'tabata':
-      // Score: total reps across all intervals
-      return `${totalReps} reps`;
-    
-    case 'circuit':
-    default:
-      // Score: rounds completed
-      return `${roundsCompleted} rounds`;
+/**
+ * Computes the block result from the actual round data.
+ *
+ * Scores by block type (structure and scoring are distinct concepts, but
+ * these are the sensible defaults per type):
+ * - amrap:    "R+P" — R complete rounds plus P reps of the partial round
+ * - for_time: "m:ss" when a time was entered, else rounds completed
+ * - emom:     "R/T" — rounds completed of T target intervals
+ * - tabata:   total reps across intervals
+ * - circuit:  rounds completed
+ */
+export function computeCircuitResult(
+  blockType: string,
+  rounds: CircuitRound[],
+  options?: {
+    targetRounds?: number;
+    actualTimeSeconds?: number;
   }
+): CircuitBlockResult {
+  const { targetRounds, actualTimeSeconds } = options || {};
+
+  const completedRounds = rounds.filter((r) => r.isCompleted);
+  const roundsCompleted = completedRounds.length;
+  const repsIn = (round: CircuitRound) =>
+    round.exercises.reduce((sum, ex) => sum + (ex.actualReps || 0), 0);
+  const totalReps = rounds.reduce((sum, round) => sum + repsIn(round), 0);
+  // Reps performed in a trailing partial (uncompleted) round, e.g. the
+  // "+12" in an AMRAP score of "5+12".
+  const partialReps = rounds
+    .filter((r) => !r.isCompleted)
+    .reduce((sum, round) => sum + repsIn(round), 0);
+
+  let score: string;
+  switch (blockType) {
+    case "amrap":
+      score =
+        partialReps > 0
+          ? `${roundsCompleted}+${partialReps}`
+          : `${roundsCompleted}`;
+      break;
+    case "for_time":
+      score =
+        actualTimeSeconds && actualTimeSeconds > 0
+          ? formatMinutesSeconds(actualTimeSeconds)
+          : `${roundsCompleted} rounds`;
+      break;
+    case "emom":
+      score = `${roundsCompleted}/${targetRounds || roundsCompleted}`;
+      break;
+    case "tabata":
+      score = `${totalReps} reps`;
+      break;
+    case "circuit":
+    default:
+      score = `${roundsCompleted} rounds`;
+      break;
+  }
+
+  return { roundsCompleted, totalReps, score, actualTimeSeconds };
 }
 
 /**

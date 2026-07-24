@@ -10,8 +10,16 @@ import {
 
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
-import { fetchExerciseLogsForPlanDay,getPlanDayLog } from "@/lib/workouts";
-import { type ExerciseLog, type PlanDayLog } from "@/types/api/logs.types";
+import {
+  fetchBlockLogsForPlanDay,
+  fetchExerciseLogsForPlanDay,
+  getPlanDayLog,
+} from "@/lib/workouts";
+import {
+  type BlockLog,
+  type ExerciseLog,
+  type PlanDayLog,
+} from "@/types/api/logs.types";
 import {
   getBlockTypeDisplayName,
   type PlanDayWithBlocks,
@@ -121,6 +129,7 @@ export default function WorkoutSummary({
   const [exerciseLogs, setExerciseLogs] = useState<
     Record<number, ExerciseLog[]>
   >({});
+  const [blockLogs, setBlockLogs] = useState<Record<number, BlockLog>>({});
   const [loading, setLoading] = useState(true);
   const [collapsedBlocks, setCollapsedBlocks] = useState<
     Record<number, boolean>
@@ -136,12 +145,14 @@ export default function WorkoutSummary({
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const [log, logs] = await Promise.all([
+      const [log, logs, blockResults] = await Promise.all([
         getPlanDayLog(workout.id),
         fetchExerciseLogsForPlanDay(workout.id),
+        fetchBlockLogsForPlanDay(workout.id),
       ]);
       setPlanDayLog(log);
       setExerciseLogs(logs);
+      setBlockLogs(blockResults);
       setLoading(false);
     };
     loadData();
@@ -313,12 +324,20 @@ export default function WorkoutSummary({
                         {block.blockName ||
                           getBlockTypeDisplayName(block.blockType)}
                       </Text>
-                      {isCircuit && roundCount > 0 && (
+                      {isCircuit && blockLogs[block.id]?.score ? (
+                        <Text className="text-text-secondary text-sm mt-1">
+                          Score: {blockLogs[block.id].score}
+                          {blockLogs[block.id].actualTimeMinutes &&
+                          block.blockType !== "for_time"
+                            ? ` · ${blockLogs[block.id].actualTimeMinutes} min`
+                            : ""}
+                        </Text>
+                      ) : isCircuit && roundCount > 0 ? (
                         <Text className="text-text-secondary text-sm mt-1">
                           {roundCount} round{roundCount !== 1 ? "s" : ""}{" "}
                           completed
                         </Text>
-                      )}
+                      ) : null}
                     </View>
                   </View>
                 </TouchableOpacity>

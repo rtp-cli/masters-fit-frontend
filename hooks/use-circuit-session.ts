@@ -15,7 +15,7 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
-import { calculateCircuitScore } from "@/utils/circuit-utils";
+import { computeCircuitResult } from "@/utils/circuit-utils";
 
 /** Duration in ms for the undo round window — used by both the timeout and the UI animation */
 export const UNDO_DURATION_MS = 3000;
@@ -138,10 +138,7 @@ export function useCircuitSession(
             .length,
         }));
 
-      const score = calculateCircuitScore(data.blockType, {
-        roundsCompleted: completedRounds,
-        totalReps,
-        timeMinutes: totalTimeMinutes,
+      const { score } = computeCircuitResult(data.blockType, data.rounds, {
         targetRounds: data.targetRounds,
       });
 

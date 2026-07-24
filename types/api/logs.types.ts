@@ -45,6 +45,25 @@ export interface ExerciseSetLog {
   createdAt: string;
 }
 
+/** Block-level result (rounds completed, time, score) — block_logs table. */
+export interface BlockLog {
+  id: number;
+  workoutBlockId: number;
+  roundsCompleted: number | null;
+  timeCapMinutes: number | null;
+  actualTimeMinutes: number | null;
+  totalReps: number | null;
+  totalDuration: number | null;
+  score: string | null;
+  isComplete: boolean;
+  isSkipped: boolean;
+  notes: string | null;
+  difficulty: string | null;
+  rating: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PlanDayLog {
   id: number;
   planDayId: number;

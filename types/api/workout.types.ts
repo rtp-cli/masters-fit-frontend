@@ -1,3 +1,5 @@
+import { BLOCK_TYPE_DISPLAY_NAMES } from "@/constants/block-types";
+
 import { type ApiResponse } from "./common.types";
 import { type Exercise } from "./exercise.types";
 
@@ -318,21 +320,8 @@ export function flattenBlocksToExercises(
 export function getBlockTypeDisplayName(blockType?: string): string {
   if (!blockType) return "Workout";
 
-  const displayNames: Record<string, string> = {
-    traditional: "Strength Training",
-    amrap: "AMRAP",
-    emom: "EMOM",
-    for_time: "For Time",
-    circuit: "Circuit",
-    tabata: "Tabata",
-    warmup: "Warm-up",
-    cooldown: "Cool-down",
-    superset: "Superset",
-    flow: "Flow",
-  };
-
   return (
-    displayNames[blockType] ||
+    BLOCK_TYPE_DISPLAY_NAMES[blockType] ||
     blockType.charAt(0).toUpperCase() + blockType.slice(1)
   );
 }

@@ -20,7 +20,10 @@ import {
 } from "@/types/api";
 // The barrel's ExerciseLog differs from the logs.types one (which carries
 // roundNumber); fetchExerciseLogsForPlanDay needs the latter.
-import type { ExerciseLog as PlanDayExerciseLog } from "@/types/api/logs.types";
+import type {
+  BlockLog,
+  ExerciseLog as PlanDayExerciseLog,
+} from "@/types/api/logs.types";
 
 import { formatDateAsString, getCurrentDate,getTodayString } from "../utils";
 import { apiRequest, PaywallError } from "./api";
@@ -465,6 +468,30 @@ export async function fetchExerciseLogsForPlanDay(
     return grouped;
   } catch (error) {
     console.error("Error fetching exercise logs for plan day:", error);
+    return {};
+  }
+}
+
+/**
+ * Fetch block-level results (score, rounds, time) for a plan day.
+ * Returns the latest log per workoutBlockId (API returns newest-first).
+ */
+export async function fetchBlockLogsForPlanDay(
+  planDayId: number
+): Promise<Record<number, BlockLog>> {
+  try {
+    const response = await apiRequest<{ success: boolean; logs: BlockLog[] }>(
+      `/logs/block/plan-day/${planDayId}`
+    );
+    const byBlockId: Record<number, BlockLog> = {};
+    for (const log of response?.logs || []) {
+      if (!byBlockId[log.workoutBlockId]) {
+        byBlockId[log.workoutBlockId] = log;
+      }
+    }
+    return byBlockId;
+  } catch (error) {
+    console.error("Error fetching block logs for plan day:", error);
     return {};
   }
 }

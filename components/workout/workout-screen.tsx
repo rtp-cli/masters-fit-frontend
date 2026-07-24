@@ -29,6 +29,7 @@ import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
 import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
+import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
 import ExerciseCompleteSnackbar from "@/components/workout/exercise-complete-snackbar";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
@@ -198,6 +199,9 @@ export function WorkoutScreen() {
 
   // Modal state
   const [showSkipModal, setShowSkipModal] = useState(false);
+  // for_time manual finish-time entry (null = not asked, 0 = skipped)
+  const [showCircuitTimeModal, setShowCircuitTimeModal] = useState(false);
+  const circuitTimeSecondsRef = useRef<number | null>(null);
   const [isCompletingExercise, setIsCompletingExercise] = useState(false);
   const [isSkippingExercise, setIsSkippingExercise] = useState(false);
   const [isEndingEarly, setIsEndingEarly] = useState(false);
@@ -254,13 +258,7 @@ export function WorkoutScreen() {
     const nextBlock = workout?.blocks?.find((block) =>
       block.exercises.some((ex) => ex.id === nextExercise?.id),
     );
-    const isNextCircuit =
-      nextBlock &&
-      (nextBlock.blockType === "circuit" ||
-        nextBlock.blockType === "amrap" ||
-        nextBlock.blockType === "emom" ||
-        nextBlock.blockType === "tabata" ||
-        nextBlock.blockType === "for_time");
+    const isNextCircuit = nextBlock && isCircuitBlock(nextBlock.blockType);
 
     if (isNextCircuit && circuitHeadingRef.current && scrollViewRef.current) {
       circuitHeadingRef.current.measureLayout(
@@ -941,6 +939,17 @@ export function WorkoutScreen() {
 
       // Handle circuit completion differently
       if (isCurrentBlockCircuit && currentBlock) {
+        // for_time is scored by finish time, but timers were removed (T5-3):
+        // ask for the time manually before completing. The modal re-enters
+        // completeExercise with circuitTimeSecondsRef set (0 = skipped).
+        if (
+          currentBlock.blockType === "for_time" &&
+          circuitTimeSecondsRef.current === null
+        ) {
+          setShowCircuitTimeModal(true);
+          return;
+        }
+
         // Finalize session state
         if (circuitSession?.actions.completeCircuit) {
           await circuitSession.actions.completeCircuit();
@@ -948,11 +957,18 @@ export function WorkoutScreen() {
 
         const session = circuitSession?.sessionData;
         if (workout?.workoutId && session) {
-          // Batch log all rounds + mark exercises complete in minimal API calls
+          // Batch log all rounds + mark exercises complete in minimal API
+          // calls, including the block-level result (rounds + score)
+          const actualTimeSeconds = circuitTimeSecondsRef.current || undefined;
+          circuitTimeSecondsRef.current = null;
           await logCircuitCompletion(
             workout.workoutId,
             session.rounds,
             currentBlock,
+            {
+              actualTimeSeconds,
+              targetRounds: session.targetRounds,
+            },
           );
         }
 
@@ -1289,10 +1305,12 @@ export function WorkoutScreen() {
                   r.exercises?.some((ex) => (ex.actualReps || 0) > 0),
               );
               if (hasProgress) {
+                // End-early: no time prompt (keep the exit frictionless)
                 await logCircuitCompletion(
                   workout.workoutId,
                   session.rounds,
                   block,
+                  { targetRounds: session.targetRounds },
                 );
                 savedCurrentExercise = true;
                 savedCircuitExerciseCount = block.exercises.length;
@@ -2415,6 +2433,25 @@ export function WorkoutScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* for_time finish-time entry */}
+      <CircuitTimeModal
+        visible={showCircuitTimeModal}
+        onSave={(totalSeconds) => {
+          circuitTimeSecondsRef.current = totalSeconds;
+          setShowCircuitTimeModal(false);
+          completeExercise();
+        }}
+        onSkip={() => {
+          circuitTimeSecondsRef.current = 0;
+          setShowCircuitTimeModal(false);
+          completeExercise();
+        }}
+        onCancel={() => {
+          circuitTimeSecondsRef.current = null;
+          setShowCircuitTimeModal(false);
+        }}
+      />
 
       {/* Skip Exercise Modal */}
       <Modal visible={showSkipModal} transparent animationType="fade">
