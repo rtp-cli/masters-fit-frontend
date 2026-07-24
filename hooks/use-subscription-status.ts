@@ -66,11 +66,20 @@ export function useSubscriptionStatus() {
       const activeEntitlements = Object.values(info.entitlements.active);
 
       if (activeEntitlements.length === 0) {
+        // No local RevenueCat entitlement — but a comped / backend-granted
+        // subscription (revenuecatCustomerId null) still means access, and no
+        // "Restore Purchases" will surface it because RevenueCat has nothing
+        // for this user. The backend is the source of truth, so reconcile
+        // against it before concluding the user isn't Pro. [LR-008]
+        const backendStatus = await getSubscriptionStatus();
+        const reconciled = reconcileSubscriptionStatus(
+          { isPro: false, isTrial: false, isBlocked: false, isInGracePeriod: false },
+          backendStatus
+            ? { status: backendStatus.status, accessLevel: backendStatus.accessLevel }
+            : null
+        );
         setSubscriptionStatus({
-          isPro: false,
-          isTrial: false,
-          isBlocked: false,
-          isInGracePeriod: false,
+          ...reconciled,
           activeEntitlement: null,
           productIdentifier: null,
           expirationDate: null,

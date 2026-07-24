@@ -42,6 +42,23 @@ describe("reconcileSubscriptionStatus [LR-008]", () => {
     expect(result.isPro).toBe(true);
   });
 
+  it("grants Pro to a comped / backend-granted account with no local RevenueCat entitlement", () => {
+    // Regression: user has status=active + accessLevel=unlimited on the backend
+    // but revenuecatCustomerId is null, so Purchases.getCustomerInfo() returns
+    // zero active entitlements. The empty-entitlement branch must still consult
+    // the backend rather than defaulting to isPro:false (dashboard banner bug).
+    const result = reconcileSubscriptionStatus(
+      { isPro: false, isTrial: false, isBlocked: false, isInGracePeriod: false },
+      { status: "active", accessLevel: "unlimited" }
+    );
+    expect(result).toEqual({
+      isPro: true,
+      isTrial: false,
+      isBlocked: false,
+      isInGracePeriod: false,
+    });
+  });
+
   it("reflects a trial accessLevel from the backend", () => {
     const result = reconcileSubscriptionStatus(localActive, {
       status: "trial",
