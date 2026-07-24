@@ -19,7 +19,7 @@ import {
 import { Sentry } from "@/lib/sentry";
 
 import { RegenerationType } from "../constants";
-import { setAuthFailureCallback } from "../lib/api";
+import { getAuthToken, setAuthFailureCallback } from "../lib/api";
 import {
   checkEmailExists,
   clearAllData,
@@ -157,6 +157,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }).catch(console.warn);
 
         if (storedUser) {
+          // A stored user with NO access token AND no refresh token is an
+          // unrecoverable session (keychain hiccup, partial clear, OS restore):
+          // the app would boot "logged in" while every authenticated request
+          // 401s with no way out. Clear it cleanly to the login screen instead.
+          const [accessToken, refreshToken] = await Promise.all([
+            getAuthToken(),
+            SecureStore.getItemAsync("refreshToken"),
+          ]);
+          if (!accessToken && !refreshToken) {
+            logger.info("Stored user found but no tokens — clearing session", {
+              userId: storedUser.id,
+            });
+            await clearAllData();
+            return;
+          }
+
           setUser(storedUser);
           // User profile creation/identification now handled by backend
           logger.debug("User authenticated, profile handled by backend", {
