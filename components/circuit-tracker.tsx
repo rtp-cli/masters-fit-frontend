@@ -52,6 +52,9 @@ export default function CircuitTracker({
   const [localRoundNotes, setLocalRoundNotes] = useState(
     currentRoundData?.notes || ""
   );
+  // Notes are collapsed behind an "Add a note" row until used — matches the
+  // strength block (MF-012) so the Complete Round button stays above the fold.
+  const [isRoundNotesExpanded, setIsRoundNotesExpanded] = useState(false);
 
   // Horizontal scroll ref for exercise navigation
   const exerciseScrollRef = useRef<ScrollView>(null);
@@ -65,6 +68,10 @@ export default function CircuitTracker({
   // Undo progress bar animation (1 = empty, 0 = full)
   const undoProgressAnim = useRef(new Animated.Value(1)).current;
   const undoProgressRef = useRef<Animated.CompositeAnimation | null>(null);
+  // Width of the Undo button, so the masked (white) label can be sized to the
+  // full button and stay centered while the fill clips it. Only one Undo button
+  // renders at a time, so a single value is safe to share.
+  const [undoBtnWidth, setUndoBtnWidth] = useState(0);
 
   useEffect(() => {
     if (canUndoRound) {
@@ -524,6 +531,7 @@ export default function CircuitTracker({
                 className="rounded-xl overflow-hidden"
                 style={{ backgroundColor: colors.surface }}
                 onPress={() => circuitActions.undoCompleteRound()}
+                onLayout={(e) => setUndoBtnWidth(e.nativeEvent.layout.width)}
               >
                 <Animated.View
                   style={{
@@ -538,11 +546,36 @@ export default function CircuitTracker({
                     }),
                   }}
                 />
+                {/* Base label — reads on the uncovered (surface) portion */}
                 <View className="py-4 flex-row items-center justify-center">
                   <Text className="text-base font-semibold" style={{ color: colors.text.primary }}>
                     Undo Round
                   </Text>
                 </View>
+                {/* Masked label — white, clipped to the fill so it reads over the black */}
+                <Animated.View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    overflow: "hidden",
+                    width: undoProgressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["100%", "0%"],
+                    }),
+                  }}
+                >
+                  <View
+                    className="py-4 flex-row items-center justify-center"
+                    style={{ width: undoBtnWidth }}
+                  >
+                    <Text className="text-base font-semibold" style={{ color: colors.contentOnPrimary }}>
+                      Undo Round
+                    </Text>
+                  </View>
+                </Animated.View>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -561,25 +594,9 @@ export default function CircuitTracker({
           </View>
         )}
 
-      {/* Round Notes */}
-      {isActive && currentRoundData && !isCurrentRoundCompleted && (
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-text-primary mb-2">
-            Round Notes (Optional)
-          </Text>
-          <TextInput
-            className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
-            placeholder="Add notes about this round..."
-            placeholderTextColor={colors.text.muted}
-            value={localRoundNotes}
-            onChangeText={setLocalRoundNotes}
-            multiline
-            numberOfLines={2}
-          />
-        </View>
-      )}
-
-      {/* Complete Round / Undo — only one shows at a time */}
+      {/* Complete Round / Undo — only one shows at a time.
+          Rendered ABOVE the notes so it stays visible without scrolling —
+          otherwise users reach for the tab-bar "Complete Circuit" by mistake. */}
       {isActive &&
         !sessionData.isCompleted &&
         (canUndoRound || !isCurrentRoundCompleted) && (
@@ -589,6 +606,7 @@ export default function CircuitTracker({
                 className="rounded-xl overflow-hidden"
                 style={{ backgroundColor: colors.surface }}
                 onPress={() => circuitActions.undoCompleteRound()}
+                onLayout={(e) => setUndoBtnWidth(e.nativeEvent.layout.width)}
               >
                 <Animated.View
                   style={{
@@ -603,11 +621,36 @@ export default function CircuitTracker({
                     }),
                   }}
                 />
+                {/* Base label — reads on the uncovered (surface) portion */}
                 <View className="py-3 px-4 flex-row items-center justify-center">
                   <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                     Undo Round
                   </Text>
                 </View>
+                {/* Masked label — white, clipped to the fill so it reads over the black */}
+                <Animated.View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    overflow: "hidden",
+                    width: undoProgressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["100%", "0%"],
+                    }),
+                  }}
+                >
+                  <View
+                    className="py-3 px-4 flex-row items-center justify-center"
+                    style={{ width: undoBtnWidth }}
+                  >
+                    <Text className="text-sm font-semibold" style={{ color: colors.contentOnPrimary }}>
+                      Undo Round
+                    </Text>
+                  </View>
+                </Animated.View>
               </TouchableOpacity>
             ) : !!getRoundCompleteButtonText(
                 block.blockType || "circuit",
@@ -654,6 +697,45 @@ export default function CircuitTracker({
             ) : null}
           </View>
         )}
+
+      {/* Round Notes — collapsed behind an "Add a note" row unless already
+          used, mirroring the strength block so the two block types match. */}
+      {isActive && currentRoundData && !isCurrentRoundCompleted && (
+        <View className="mb-6">
+          {isRoundNotesExpanded || localRoundNotes ? (
+            <>
+              <Text className="text-sm font-semibold text-text-primary mb-2">
+                Round Notes (Optional)
+              </Text>
+              <TextInput
+                className="bg-background border border-neutral-light-2 rounded-xl p-3 text-text-primary text-sm"
+                placeholder="Add notes about this round..."
+                placeholderTextColor={colors.text.muted}
+                value={localRoundNotes}
+                onChangeText={setLocalRoundNotes}
+                multiline
+                numberOfLines={2}
+              />
+            </>
+          ) : (
+            <TouchableOpacity
+              className="flex-row items-center justify-between"
+              onPress={() => setIsRoundNotesExpanded(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Add a note"
+            >
+              <Text className="text-sm font-semibold text-text-secondary">
+                Add a note
+              </Text>
+              <Ionicons
+                name="add-circle-outline"
+                size={20}
+                color={colors.text.muted}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 }
