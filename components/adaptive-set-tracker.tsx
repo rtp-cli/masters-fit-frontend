@@ -36,6 +36,7 @@ export default function AdaptiveSetTracker({
   exercise,
   sets,
   onSetsChange,
+  onProgressUpdate,
   onAllSetsCompleted,
 }: AdaptiveSetTrackerProps) {
   const colors = useThemeColors();
@@ -52,6 +53,12 @@ export default function AdaptiveSetTracker({
   // supported (owner decision). Duration sets are logged manually.
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [durationSets, setDurationSets] = useState<DurationSet[]>([]);
+  // Actual time performed, user-editable. Seeded from the prescription but
+  // no longer silently echoed as if it were performance (gap-analysis
+  // Phase 2): what gets logged is whatever the user confirms here.
+  const [actualDuration, setActualDuration] = useState<string>(
+    String(exercise.duration || 0)
+  );
 
   // [T5-1] Which traditional set row is expanded for editing (steppers).
   // Collapsed rows show just the prescription + the ✓ target.
@@ -84,7 +91,19 @@ export default function AdaptiveSetTracker({
   useEffect(() => {
     setCurrentSetIndex(0);
     setExpandedIndex(null);
+    setActualDuration(String(exercise.duration || 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id]); // Reset when exercise ID changes
+
+  const handleActualDurationChange = (text: string) => {
+    setActualDuration(text);
+    const seconds = parseInt(text, 10) || 0;
+    onProgressUpdate?.({
+      setsCompleted: durationSets.filter((s) => s.isCompleted).length,
+      duration: seconds,
+      isComplete: false,
+    });
+  };
 
   // [T5-1/T5-2] Toggle a set's done state. Checking a set collapses any open
   // editor; checking the FINAL remaining set notifies the parent (which
@@ -484,6 +503,25 @@ export default function AdaptiveSetTracker({
             sets completed
           </Text>
           <View className="h-0.5 mt-2 bg-neutral-medium-1" />
+        </View>
+
+        {/* Actual duration — user-confirmed, not echoed from the plan */}
+        <View className="mb-4 flex-row items-center justify-between">
+          <Text className="text-xs text-text-muted">
+            Actual duration (seconds)
+          </Text>
+          <View className="bg-background rounded-full px-4 py-2 border border-neutral-medium-1 min-w-[80px] items-center">
+            <TextInput
+              className="text-base font-bold text-center text-text-primary"
+              value={actualDuration}
+              onChangeText={handleActualDurationChange}
+              keyboardType="number-pad"
+              maxLength={5}
+              placeholder="0"
+              placeholderTextColor={colors.text.muted}
+              accessibilityLabel="Actual duration in seconds"
+            />
+          </View>
         </View>
 
         {/* Duration Sets Display */}

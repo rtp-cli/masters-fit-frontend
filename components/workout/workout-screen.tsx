@@ -36,6 +36,7 @@ import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutSummary from "@/components/workout-summary";
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
+import { getEffectiveScoringType } from "@/constants/block-types";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
@@ -939,11 +940,11 @@ export function WorkoutScreen() {
 
       // Handle circuit completion differently
       if (isCurrentBlockCircuit && currentBlock) {
-        // for_time is scored by finish time, but timers were removed (T5-3):
-        // ask for the time manually before completing. The modal re-enters
+        // Time-scored blocks (for_time) have no timer (T5-3): ask for the
+        // finish time manually before completing. The modal re-enters
         // completeExercise with circuitTimeSecondsRef set (0 = skipped).
         if (
-          currentBlock.blockType === "for_time" &&
+          getEffectiveScoringType(currentBlock) === "time" &&
           circuitTimeSecondsRef.current === null
         ) {
           setShowCircuitTimeModal(true);

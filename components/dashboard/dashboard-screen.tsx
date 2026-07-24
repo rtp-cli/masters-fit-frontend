@@ -55,6 +55,7 @@ import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
 import HealthMetricsCarousel from "./sections/health-metrics-carousel";
 import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
 import ProgressAnalyticsLocked from "./sections/progress-analytics-locked";
+import RecentScoresSection from "./sections/recent-scores";
 import StrengthProgressSection from "./sections/strength-progress";
 import WeeklyProgressSection from "./sections/weekly-progress";
 import WeightPerformanceSection from "./sections/weight-performance";
@@ -935,6 +936,8 @@ export default function DashboardScreen() {
             (avoids a charts<->locked flash and any premature gated fetch). */}
         {entitlementsLoading ? null : canProgressAnalytics ? (
           <>
+            <RecentScoresSection />
+
             <WeightPerformanceSection
               filteredWeightAccuracy={filteredWeightAccuracy}
               weightPerformanceFilter={weightPerformanceFilter}

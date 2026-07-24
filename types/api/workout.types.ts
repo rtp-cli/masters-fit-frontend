@@ -105,6 +105,9 @@ export interface PlanDay {
 export interface WorkoutBlock {
   id: number;
   blockType?: string;
+  /** How the block is scored (completion|rounds_reps|time|reps|load|...);
+   *  null on blocks created before the column existed. */
+  scoringType?: string | null;
   blockName?: string;
   blockDurationMinutes?: number;
   timeCapMinutes?: number;

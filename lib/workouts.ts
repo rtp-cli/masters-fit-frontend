@@ -22,6 +22,7 @@ import {
 // roundNumber); fetchExerciseLogsForPlanDay needs the latter.
 import type {
   BlockLog,
+  BlockResultHistoryItem,
   ExerciseLog as PlanDayExerciseLog,
 } from "@/types/api/logs.types";
 
@@ -493,6 +494,25 @@ export async function fetchBlockLogsForPlanDay(
   } catch (error) {
     console.error("Error fetching block logs for plan day:", error);
     return {};
+  }
+}
+
+/**
+ * Fetch the user's recent block-level results (score history), newest
+ * first. Rows carry an isBest flag computed server-side.
+ */
+export async function fetchBlockResultHistory(
+  limit: number = 10
+): Promise<BlockResultHistoryItem[]> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      results: BlockResultHistoryItem[];
+    }>(`/logs/block/history?limit=${limit}`);
+    return response?.results || [];
+  } catch (error) {
+    console.error("Error fetching block result history:", error);
+    return [];
   }
 }
 

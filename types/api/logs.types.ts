@@ -64,6 +64,25 @@ export interface BlockLog {
   updatedAt: string;
 }
 
+/** One row of GET /logs/block/history — a past block result with context. */
+export interface BlockResultHistoryItem {
+  id: number;
+  workoutBlockId: number;
+  roundsCompleted: number | null;
+  totalReps: number | null;
+  actualTimeMinutes: number | null;
+  totalDuration: number | null;
+  score: string | null;
+  createdAt: string;
+  blockType: string | null;
+  scoringType: string;
+  blockName: string | null;
+  planDayId: number;
+  planDayDate: string;
+  /** Best result among the user's blocks with the same scoring type. */
+  isBest: boolean;
+}
+
 export interface PlanDayLog {
   id: number;
   planDayId: number;
