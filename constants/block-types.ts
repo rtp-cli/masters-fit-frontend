@@ -74,6 +74,29 @@ export function getEffectiveScoringType(block?: {
   return (block.scoringType as ScoringType) || deriveScoringType(block.blockType);
 }
 
+/**
+ * How the session UI logs a block. Structure picks the tracker (circuit
+ * types always get round tracking); scoring picks completion-only for
+ * non-circuit blocks (warmup, cooldown, flow — no fake set data).
+ */
+export type LoggingMode = "circuit" | "completion_only" | "set_by_set";
+
+export function getLoggingMode(block?: {
+  blockType?: string;
+  scoringType?: string | null;
+}): LoggingMode {
+  if (!block) return "set_by_set";
+  if (
+    CIRCUIT_BLOCK_TYPES.includes(block.blockType as CircuitBlockType)
+  ) {
+    return "circuit";
+  }
+  if (getEffectiveScoringType(block) === "completion") {
+    return "completion_only";
+  }
+  return "set_by_set";
+}
+
 export const BLOCK_TYPE_DISPLAY_NAMES: Record<string, string> = {
   traditional: "Strength Training",
   amrap: "AMRAP",

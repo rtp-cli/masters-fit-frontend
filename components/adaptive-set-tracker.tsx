@@ -78,6 +78,9 @@ export default function AdaptiveSetTracker({
           setNumber: index + 1,
           weight: exercise.weight || 0,
           reps: 0, // Not used for duration exercises
+          // Pre-filled from the prescription like reps/weight (T5-1);
+          // user-adjustable via the "Actual duration" input.
+          durationSeconds: exercise.duration || 0,
           durationCompleted: 0,
           isCompleted: false,
         })
@@ -98,6 +101,15 @@ export default function AdaptiveSetTracker({
   const handleActualDurationChange = (text: string) => {
     setActualDuration(text);
     const seconds = parseInt(text, 10) || 0;
+    // Stamp the actual time on every duration set so it persists per set
+    // (exercise_set_logs.duration_seconds), and surface it to the parent
+    // for the exercise-level durationCompleted.
+    const stamped = durationSets.map((set) => ({
+      ...set,
+      durationSeconds: seconds,
+    }));
+    setDurationSets(stamped);
+    onSetsChange(stamped);
     onProgressUpdate?.({
       setsCompleted: durationSets.filter((s) => s.isCompleted).length,
       duration: seconds,

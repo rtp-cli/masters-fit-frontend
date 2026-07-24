@@ -36,7 +36,10 @@ import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutSummary from "@/components/workout-summary";
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
-import { getEffectiveScoringType } from "@/constants/block-types";
+import {
+  getEffectiveScoringType,
+  getLoggingMode,
+} from "@/constants/block-types";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
@@ -69,10 +72,7 @@ import {
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { formatDateAsString,formatEquipment, getCurrentDate } from "@/utils";
-import {
-  isCircuitBlock,
-  isWarmupCooldownBlock,
-} from "@/utils/circuit-utils";
+import { isCircuitBlock } from "@/utils/circuit-utils";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -875,21 +875,14 @@ export function WorkoutScreen() {
       const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Handle warmup/cooldown completion differently - simplified logging
-      if (isCurrentBlockWarmupCooldown) {
-        // For warmup/cooldown, we don't require detailed logging
-        // Just mark as complete with minimal data
+      // Completion-only blocks (warmup/cooldown/flow): mark done, no set
+      // data. Previously this logged a synthetic {weight:0, reps} set and
+      // echoed the prescribed duration as if performed — both polluted
+      // history and analytics (gap-analysis Phase 3).
+      if (isCurrentBlockCompletionOnly) {
         await createExerciseLog({
           planDayExerciseId: currentExercise.id,
-          sets: [
-            {
-              roundNumber: 1,
-              setNumber: 1,
-              weight: 0,
-              reps: currentExercise.reps || 1, // Use target reps or default to 1
-            },
-          ],
-          durationCompleted: currentExercise.duration || 0,
+          sets: [],
           isComplete: true,
           timeTaken: exerciseTimer,
           notes: currentProgress.notes || "",
@@ -1317,18 +1310,11 @@ export function WorkoutScreen() {
                 savedCircuitExerciseCount = block.exercises.length;
               }
             }
-          } else if (block && isWarmupCooldownBlock(block.blockType)) {
+          } else if (block && getLoggingMode(block) === "completion_only") {
+            // Completion-only: no synthetic set rows, no echoed duration
             await createExerciseLog({
               planDayExerciseId: currentEx.id,
-              sets: [
-                {
-                  roundNumber: 1,
-                  setNumber: 1,
-                  weight: 0,
-                  reps: currentEx.reps || 1,
-                },
-              ],
-              durationCompleted: currentEx.duration || 0,
+              sets: [],
               isComplete: false,
               timeTaken: exerciseTimer,
               notes: currentProg.notes || "",
@@ -1507,8 +1493,10 @@ export function WorkoutScreen() {
   const isCurrentBlockCircuit = currentBlock
     ? isCircuitBlock(currentBlock.blockType)
     : false;
-  const isCurrentBlockWarmupCooldown = currentBlock
-    ? isWarmupCooldownBlock(currentBlock.blockType)
+  // Completion-only blocks (warmup, cooldown, flow — completion-scored):
+  // simplified panel, no set entry, logged without synthetic set rows.
+  const isCurrentBlockCompletionOnly = currentBlock
+    ? getLoggingMode(currentBlock) === "completion_only"
     : false;
 
   // Circuit session management - Always call hook but initialize properly
@@ -1933,8 +1921,9 @@ export function WorkoutScreen() {
 
               {isWorkoutStarted && currentProgress ? (
                 <View className="space-y-4">
-                  {/* Show simplified interface for warmup/cooldown */}
-                  {isCurrentBlockWarmupCooldown ? (
+                  {/* Simplified interface for completion-only blocks
+                      (warmup, cooldown, mobility flows) */}
+                  {isCurrentBlockCompletionOnly ? (
                     <View>
                       {/* Show target parameters in a structured layout matching the main interface */}
                       {Boolean(
@@ -2338,8 +2327,8 @@ export function WorkoutScreen() {
           </TouchableOpacity>
         ) : (
           <View className="flex-row gap-2">
-            {/* Skip button - only show for warmup/cooldown */}
-            {isCurrentBlockWarmupCooldown && (
+            {/* Skip button - only for completion-only blocks */}
+            {isCurrentBlockCompletionOnly && (
               <TouchableOpacity
                 className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
                 onPress={() => setShowSkipModal(true)}

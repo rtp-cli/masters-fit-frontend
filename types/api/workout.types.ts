@@ -45,6 +45,7 @@ export interface CreateExerciseLogParams {
     weight: number;
     reps: number;
     restAfter?: number;
+    durationSeconds?: number;
   }[];
   durationCompleted?: number;
   isComplete: boolean;

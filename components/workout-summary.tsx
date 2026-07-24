@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
+import { getLoggingMode } from "@/constants/block-types";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
   fetchBlockLogsForPlanDay,
@@ -25,7 +26,7 @@ import {
   type PlanDayWithBlocks,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
-import { isCircuitBlock, isWarmupCooldownBlock } from "@/utils/circuit-utils";
+import { isCircuitBlock } from "@/utils/circuit-utils";
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -300,7 +301,8 @@ export default function WorkoutSummary({
             const blockExercises = block.exercises;
             const roundCount = getRoundCount(block);
             const isCircuit = isCircuitBlock(block.blockType);
-            const isWarmupCooldown = isWarmupCooldownBlock(block.blockType);
+            const isCompletionOnly =
+              getLoggingMode(block) === "completion_only";
             const isCollapsed = collapsedBlocks[block.id] ?? false;
 
             return (
@@ -399,7 +401,7 @@ export default function WorkoutSummary({
                             <Text className="text-text-muted text-xs ml-8">
                               Not attempted
                             </Text>
-                          ) : isWarmupCooldown ? (
+                          ) : isCompletionOnly ? (
                             <Text className="text-text-muted text-xs ml-8">
                               Completed
                             </Text>
@@ -423,7 +425,9 @@ export default function WorkoutSummary({
                                   {set.weight && Number(set.weight) > 0
                                     ? `${set.weight} lbs × `
                                     : ""}
-                                  {set.reps} reps
+                                  {set.durationSeconds && set.durationSeconds > 0
+                                    ? `${set.durationSeconds}s`
+                                    : `${set.reps} reps`}
                                 </Text>
                               ))}
                             </View>
