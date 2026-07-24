@@ -28,6 +28,7 @@ import { RegenerationType } from "@/constants/global.enum";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { useWorkout } from "@/contexts/workout-context";
 import { PaywallError } from "@/lib/api";
 import { clearPendingResume, setPendingResume } from "@/lib/paywall-resume";
 import { tabEvents } from "@/lib/tab-events";
@@ -53,6 +54,7 @@ export default function CalendarScreen() {
     (colors as ThemeColorPalette).success ?? colors.brand.primary;
   const { isDark } = useTheme();
   const router = useRouter();
+  const { requestAutoStart } = useWorkout();
   const {
     setIsGeneratingWorkout,
     user,
@@ -591,6 +593,9 @@ export default function CalendarScreen() {
           onToggleBlock={toggleBlockExpansion}
           getTotalExerciseCount={getTotalExerciseCount}
           onStartWorkout={() => {
+            // "Start" should actually start — flag the intent, then navigate to
+            // the Workout tab, which auto-begins the session once it loads.
+            requestAutoStart();
             router.push("/(tabs)/workout");
           }}
           onShowWorkoutChoice={() => setShowWorkoutChoice(true)}

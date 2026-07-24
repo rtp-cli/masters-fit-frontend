@@ -147,6 +147,8 @@ export function WorkoutScreen() {
     setCurrentWorkoutData,
     setEndWorkoutEarlyHandler,
     abandonWorkout,
+    autoStartRequested,
+    clearAutoStart,
   } = useWorkout();
 
   // Get user from auth context
@@ -721,6 +723,25 @@ export function WorkoutScreen() {
       scrollToExerciseHeading(0);
     }, 100);
   };
+
+  // Consume the Calendar "Start" intent: once today's workout has loaded (and
+  // isn't already started, completed, or a rest day), begin the session
+  // automatically. Guarded so it fires exactly once per request.
+  useEffect(() => {
+    if (
+      autoStartRequested &&
+      !loading &&
+      workout &&
+      !isWorkoutStarted &&
+      !isWorkoutCompleted
+    ) {
+      clearAutoStart();
+      startWorkout();
+    }
+    // startWorkout/clearAutoStart are stable enough for this one-shot effect;
+    // re-running only on the state that gates it avoids double-starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartRequested, loading, workout, isWorkoutStarted, isWorkoutCompleted]);
 
   // Toggle pause
   const togglePause = () => {

@@ -27,6 +27,12 @@ interface WorkoutContextType {
   setCurrentWorkoutData: (data: WorkoutAbandonmentData | null) => void;
   endWorkoutEarly: () => Promise<void>;
   setEndWorkoutEarlyHandler: (handler: () => Promise<void>) => void;
+  // One-shot intent: the Calendar "Start" button sets this, then navigates to
+  // the Workout tab. The Workout screen consumes it to auto-begin the session
+  // once today's workout has loaded (so "Start" actually starts, not just navigates).
+  autoStartRequested: boolean;
+  requestAutoStart: () => void;
+  clearAutoStart: () => void;
 }
 
 // Create the context
@@ -47,6 +53,7 @@ export function useWorkout() {
 // Provider component that wraps the app
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [isWorkoutInProgress, setIsWorkoutInProgress] = useState(false);
+  const [autoStartRequested, setAutoStartRequested] = useState(false);
   const [currentWorkoutData, setCurrentWorkoutData] =
     useState<WorkoutAbandonmentData | null>(null);
   const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -112,6 +119,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setCurrentWorkoutData(null);
   };
 
+  const requestAutoStart = () => setAutoStartRequested(true);
+  const clearAutoStart = () => setAutoStartRequested(false);
+
   // Create the context value object
   const value: WorkoutContextType = {
     isWorkoutInProgress,
@@ -120,6 +130,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setCurrentWorkoutData: setCurrentWorkoutDataWithLogging,
     endWorkoutEarly,
     setEndWorkoutEarlyHandler,
+    autoStartRequested,
+    requestAutoStart,
+    clearAutoStart,
   };
 
   // Provide the context to children components
