@@ -619,9 +619,12 @@ export default function CircuitTracker({
 
       {/* Complete Round / Undo — only one shows at a time.
           Rendered ABOVE the notes so it stays visible without scrolling —
-          otherwise users reach for the tab-bar "Complete Circuit" by mistake. */}
+          otherwise users reach for the tab-bar "Complete Circuit" by mistake.
+          EMOM is excluded: the EMOM section above owns its Undo and manual
+          finish, and rendering both produced a doubled Undo button. */}
       {isActive &&
         !sessionData.isCompleted &&
+        block.blockType !== "emom" &&
         (canUndoRound || !isCurrentRoundCompleted) && (
           <View className="mb-6">
             {canUndoRound && circuitActions?.undoCompleteRound ? (
