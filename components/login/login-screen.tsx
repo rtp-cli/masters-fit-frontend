@@ -5,6 +5,8 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Text,
   TextInput,
   TouchableOpacity,
@@ -218,6 +220,10 @@ export const LoginScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style="dark" />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       {/* Header — back chevron + centered brand lockup */}
       <View
         style={{
@@ -327,7 +333,8 @@ export const LoginScreen = () => {
           editable={!showNameField && !isLoading}
           placeholderTextColor={colors.text.muted}
           selectionColor={colors.brand.primary}
-          returnKeyType="done"
+          autoFocus={!showNameField}
+          returnKeyType="next"
           onSubmitEditing={handleContinue}
         />
 
@@ -347,6 +354,7 @@ export const LoginScreen = () => {
             editable={!isLoading}
             placeholderTextColor={colors.text.muted}
             selectionColor={colors.brand.primary}
+            autoFocus
             returnKeyType="done"
             onSubmitEditing={handleSignup}
           />
@@ -402,6 +410,7 @@ export const LoginScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
 
       {/* Custom Dialog */}
       {dialogConfig && (
