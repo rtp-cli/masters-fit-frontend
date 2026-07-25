@@ -50,6 +50,10 @@ export function useCircuitSession(
 
     // Calculate target rounds based on block type
     const getTargetRounds = () => {
+      // A rep scheme (21-15-9) defines the round count outright
+      if (block.protocolConfig?.repScheme?.length) {
+        return block.protocolConfig.repScheme.length;
+      }
       if (block.blockType === "emom" && block.timeCapMinutes) {
         return block.timeCapMinutes;
       } else if (block.blockType === "tabata") {
@@ -85,6 +89,11 @@ export function useCircuitSession(
     exercises: WorkoutBlockWithExercise[],
     previousRound?: CircuitRound
   ): CircuitRound {
+    // Per-round rep target from a rep scheme (21-15-9): round 2 of a
+    // 21-15-9 targets 15 for every movement. When a scheme exists it also
+    // overrides the previous round's carry-over (21 must not leak into
+    // the 15 round).
+    const schemeReps = block.protocolConfig?.repScheme?.[roundNumber - 1];
     return {
       roundNumber,
       exercises: exercises.map(
@@ -92,12 +101,16 @@ export function useCircuitSession(
           // Duration-based exercises (cardio) may have reps=null.
           // Default to 1 so they show as "participated" and don't get
           // filtered out during logging.
-          const defaultReps = exercise.reps || (exercise.duration ? 1 : 0);
+          const defaultReps =
+            schemeReps ?? (exercise.reps || (exercise.duration ? 1 : 0));
           return {
             exerciseId: exercise.exerciseId || exercise.id,
             planDayExerciseId: exercise.id,
-            targetReps: exercise.reps || 0,
-            actualReps: previousRound?.exercises[index]?.actualReps ?? defaultReps,
+            targetReps: schemeReps ?? exercise.reps ?? 0,
+            actualReps:
+              schemeReps ??
+              previousRound?.exercises[index]?.actualReps ??
+              defaultReps,
             weight:
               previousRound?.exercises[index]?.weight ?? exercise.weight ?? 0,
             completed: false,

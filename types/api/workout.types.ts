@@ -109,6 +109,14 @@ export interface WorkoutBlock {
   /** How the block is scored (completion|rounds_reps|time|reps|load|...);
    *  null on blocks created before the column existed. */
   scoringType?: string | null;
+  /** Typed protocol details (rep schemes, work/rest intervals); null on
+   *  blocks created before the column existed. */
+  protocolConfig?: {
+    repScheme?: number[];
+    workSeconds?: number;
+    restSeconds?: number;
+    intervalSeconds?: number;
+  } | null;
   blockName?: string;
   blockDurationMinutes?: number;
   timeCapMinutes?: number;
@@ -125,9 +133,14 @@ export interface WorkoutBlockExercise {
   exerciseId: number;
   sets?: number;
   reps?: number;
+  /** Optional rep range around `reps` (e.g. 8–12); display only for now */
+  repsMin?: number | null;
+  repsMax?: number | null;
   weight?: number;
   duration?: number;
   restTime?: number;
+  /** Prescribed target effort, RPE 1-10 */
+  rpe?: number | null;
   completed: boolean;
   isSkipped?: boolean;
   notes?: string;

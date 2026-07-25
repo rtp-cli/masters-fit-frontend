@@ -29,20 +29,27 @@ export function getExerciseLoggingType(exercise: WorkoutBlockWithExercise): Exer
 export function getExerciseRequirementsText(exercise: WorkoutBlockWithExercise): string {
   const loggingType = getExerciseLoggingType(exercise);
   const sets = exercise.sets || 1;
-  
+  // Rep range ("8–12 reps") when prescribed; reps stays the prefill target
+  const repsText =
+    exercise.repsMin && exercise.repsMax
+      ? `${exercise.repsMin}–${exercise.repsMax} reps`
+      : `${exercise.reps} reps`;
+  // Prescribed target effort, previously prose-only in notes
+  const rpeSuffix = exercise.rpe ? ` @ RPE ${exercise.rpe}` : "";
+
   switch (loggingType) {
     case "duration_only":
-      return `${exercise.duration}s`;
-    
+      return `${exercise.duration}s${rpeSuffix}`;
+
     case "sets_duration":
-      return `${sets} sets × ${exercise.duration}s`;
-    
+      return `${sets} sets × ${exercise.duration}s${rpeSuffix}`;
+
     case "sets_reps":
-      return `${sets} sets × ${exercise.reps} reps`;
-    
+      return `${sets} sets × ${repsText}${rpeSuffix}`;
+
     case "hybrid":
-      return `${sets} sets × ${exercise.reps} reps (${exercise.duration}s each)`;
-    
+      return `${sets} sets × ${repsText} (${exercise.duration}s each)${rpeSuffix}`;
+
     default:
       return `${sets} sets`;
   }
