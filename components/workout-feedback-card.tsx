@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
@@ -141,8 +142,24 @@ export default function WorkoutFeedbackCard({
   const [changingTime, setChangingTime] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [lastSavedNote, setLastSavedNote] = useState("");
   const noteSourceRef = useRef<FeedbackNoteSource>("text");
   const cadenceRef = useRef<FeedbackCadenceState | null>(null);
+
+  // Tab screens stay mounted, so local "just answered" state survives
+  // tabbing away and back. Once the answer is complete, leaving the screen
+  // is the natural end of the confirmation moment — hide on blur so the
+  // card doesn't greet the user again on return.
+  const answeredCompletelyRef = useRef(false);
+  answeredCompletelyRef.current =
+    (effort !== null && timeFit !== null) || endedEarlyReason !== null;
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (answeredCompletelyRef.current) setVariant("hidden");
+      };
+    }, [])
+  );
 
   // Resolve which variant to show, advance the cadence counters, persist.
   useEffect(() => {
@@ -231,9 +248,10 @@ export default function WorkoutFeedbackCard({
 
   const saveNote = (text: string, source: FeedbackNoteSource) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || trimmed === lastSavedNote) return;
     noteSourceRef.current = source;
     void savePlanDayFeedback({ planDayId, note: trimmed, noteSource: source });
+    setLastSavedNote(trimmed);
     trackAnswered(effort, timeFit, true, source);
   };
 
@@ -415,6 +433,8 @@ export default function WorkoutFeedbackCard({
       {anyAnswered &&
         (noteOpen ? (
           <View className="mt-3">
+            {/* Saves on keyboard-done/blur — no submit button by design, so
+                the "Note saved" line below is the confirmation. */}
             <TextInput
               className="bg-surface border border-neutral-medium-1 rounded-xl text-sm text-text-primary p-3"
               style={{ minHeight: 72, textAlignVertical: "top" }}
@@ -422,9 +442,20 @@ export default function WorkoutFeedbackCard({
               placeholderTextColor={colors.text.muted}
               value={note}
               onChangeText={setNote}
-              onEndEditing={() => saveNote(note, "text")}
+              onEndEditing={() => saveNote(note, noteSourceRef.current)}
+              onBlur={() => saveNote(note, noteSourceRef.current)}
               multiline
+              returnKeyType="done"
+              blurOnSubmit
             />
+            {note.trim().length > 0 && note.trim() === lastSavedNote && (
+              <View className="flex-row items-center mt-1.5">
+                <Ionicons name="checkmark" size={13} color={successColor} />
+                <Text className="text-xs text-text-muted ml-1">
+                  Note saved
+                </Text>
+              </View>
+            )}
           </View>
         ) : (
           <View className="flex-row items-center mt-3">
