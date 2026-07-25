@@ -220,9 +220,12 @@ export const LoginScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style="dark" />
 
+      {/* Android needs an explicit behavior too: with SDK 54 edge-to-edge the
+          window no longer resizes for the keyboard, so `undefined` left the
+          centered name field hidden under it. Same pattern as the Adjust modal. */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
       {/* Header — back chevron + centered brand lockup */}
       <View
