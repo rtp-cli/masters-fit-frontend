@@ -4,8 +4,12 @@ import {
   searchExerciseAPI,
   searchExercisesAPI,
 } from "@lib/search";
-import { fetchActiveWorkout, fetchWorkoutHistory } from "@lib/workouts";
-import { useCallback, useMemo,useState } from "react";
+import {
+  fetchActiveWorkout,
+  fetchWorkoutHistory,
+  subscribeToWorkoutUpdates,
+} from "@lib/workouts";
+import { useCallback, useEffect, useMemo,useState } from "react";
 
 import { useAuth } from "@/contexts/auth-context";
 import { apiRequest } from "@/lib/api";
@@ -760,6 +764,22 @@ export const useAppData = () => {
     },
     [refreshDashboard, refreshWorkout, refreshProfile, refreshHistory]
   );
+
+  // Keep the shared store fresh after any workout mutation (completion,
+  // regeneration, repeat, edit). Those all call invalidateActiveWorkoutCache
+  // -> notifyWorkoutUpdated. Because this provider is always mounted at the
+  // app root, it never misses the event — so Calendar/Dashboard read fresh
+  // data on their next render without a manual pull-to-refresh. The refetch
+  // runs in the background (the mutating screen owns its own state), so it
+  // doesn't flash a skeleton on the visible tab.
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkoutUpdates(() => {
+      refreshWorkout();
+      refreshHistory();
+      refreshDashboard();
+    });
+    return unsubscribe;
+  }, [refreshWorkout, refreshHistory, refreshDashboard]);
 
   // Memoized refresh functions object to prevent infinite loops
   const refresh: RefreshFunctions = useMemo(

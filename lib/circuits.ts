@@ -33,6 +33,9 @@ function collectRoundExerciseLogs(
           setNumber: 1,
           weight: exercise.weight || 0,
           reps: exercise.actualReps,
+          // Prescribed distance rides into the set log (honor-system —
+          // decision §16.1c); Health import can overwrite later
+          distanceM: exercise.distanceM || undefined,
         },
       ],
       durationCompleted: exercise.timeSeconds,

@@ -25,6 +25,14 @@ export function getExerciseLoggingType(exercise: WorkoutBlockWithExercise): Exer
   return "sets_reps";
 }
 
+// Meters -> display ("400 m", "1.0 mi") — U.S. audience runs think in miles
+export function formatDistance(meters: number): string {
+  if (meters >= 1200) {
+    return `${(meters / 1609.34).toFixed(1)} mi`;
+  }
+  return `${meters} m`;
+}
+
 // Helper to get display text for exercise requirements
 export function getExerciseRequirementsText(exercise: WorkoutBlockWithExercise): string {
   const loggingType = getExerciseLoggingType(exercise);
@@ -36,6 +44,12 @@ export function getExerciseRequirementsText(exercise: WorkoutBlockWithExercise):
       : `${exercise.reps} reps`;
   // Prescribed target effort, previously prose-only in notes
   const rpeSuffix = exercise.rpe ? ` @ RPE ${exercise.rpe}` : "";
+
+  // Distance-prescribed movements (runs, rows, carries — Phase 5)
+  if (exercise.distanceM && exercise.distanceM > 0) {
+    const setsPrefix = sets > 1 ? `${sets} sets × ` : "";
+    return `${setsPrefix}${formatDistance(exercise.distanceM)}${rpeSuffix}`;
+  }
 
   switch (loggingType) {
     case "duration_only":

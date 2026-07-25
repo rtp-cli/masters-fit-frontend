@@ -28,6 +28,8 @@ export interface ExerciseSet {
   restAfter?: number;
   /** Actual time performed for duration-based sets (persisted). */
   durationSeconds?: number;
+  /** Actual distance performed in meters (persisted). */
+  distanceM?: number;
   /**
    * [T5-1] Client-side only: the user tapped this set's ✓ during the session.
    * Only completed sets are logged; the field is STRIPPED before the API call
@@ -45,6 +47,7 @@ export interface ExerciseSetLog {
   reps: number | null;
   restAfter: number | null;
   durationSeconds: number | null;
+  distanceM: number | null;
   createdAt: string;
 }
 

@@ -10,19 +10,22 @@
  * back gracefully (traditional set-by-set rendering).
  */
 
-/** Block types that use round-based circuit logging (CircuitTracker). */
+/** Block types that use round-based circuit logging (CircuitTracker).
+ *  Supersets log round-by-round too: each "round" is one pass through the
+ *  pair (gap-analysis Phase 5) — they were never generatable before, so no
+ *  historical set-by-set superset data exists. */
 export const CIRCUIT_BLOCK_TYPES = [
   "amrap",
   "emom",
   "for_time",
   "circuit",
   "tabata",
+  "superset",
 ] as const;
 
 /** Block types that use traditional set-by-set logging. */
 export const TRADITIONAL_BLOCK_TYPES = [
   "traditional",
-  "superset",
   "warmup",
   "cooldown",
   "flow",

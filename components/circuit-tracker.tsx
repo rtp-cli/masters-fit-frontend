@@ -20,7 +20,10 @@ import {
   type UseCircuitSessionReturn,
 } from "@/types/api/circuit.types";
 import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
-import { getRoundCompleteButtonText } from "@/utils/circuit-utils";
+import {
+  getRoundCompleteButtonText,
+  getRoundUndoButtonText,
+} from "@/utils/circuit-utils";
 
 
 // Type alias for circuit actions
@@ -44,6 +47,13 @@ export default function CircuitTracker({
   // entirely — timers are not supported (owner decision).
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];
   const isCurrentRoundCompleted = currentRoundData?.isCompleted || false;
+
+  // The Undo button reverts the most recently completed round. On the final
+  // round of a bounded block the session doesn't advance currentRound, so read
+  // the last completed round directly rather than assuming currentRound - 1.
+  const lastCompletedRoundNumber =
+    [...sessionData.rounds].reverse().find((r) => r.isCompleted)?.roundNumber ??
+    sessionData.currentRound;
 
   // Navigation state
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -304,6 +314,13 @@ export default function CircuitTracker({
                 block.blockType !== "amrap" &&
                 `/${sessionData.targetRounds}`}
             </Text>
+            {/* Rep scheme (21-15-9): show the full ladder so the user
+                knows what's coming; the current round's target prefills */}
+            {block.protocolConfig?.repScheme && (
+              <Text className="text-sm text-text-muted mt-1">
+                Rep scheme: {block.protocolConfig.repScheme.join("-")}
+              </Text>
+            )}
           </View>
         </View>
       )}
@@ -549,7 +566,10 @@ export default function CircuitTracker({
                 {/* Base label — reads on the uncovered (surface) portion */}
                 <View className="py-4 flex-row items-center justify-center">
                   <Text className="text-base font-semibold" style={{ color: colors.text.primary }}>
-                    Undo Round
+                    {getRoundUndoButtonText(
+                      block.blockType || "circuit",
+                      lastCompletedRoundNumber
+                    )}
                   </Text>
                 </View>
                 {/* Masked label — white, clipped to the fill so it reads over the black */}
@@ -572,7 +592,10 @@ export default function CircuitTracker({
                     style={{ width: undoBtnWidth }}
                   >
                     <Text className="text-base font-semibold" style={{ color: colors.contentOnPrimary }}>
-                      Undo Round
+                      {getRoundUndoButtonText(
+                      block.blockType || "circuit",
+                      lastCompletedRoundNumber
+                    )}
                     </Text>
                   </View>
                 </Animated.View>
@@ -624,7 +647,10 @@ export default function CircuitTracker({
                 {/* Base label — reads on the uncovered (surface) portion */}
                 <View className="py-3 px-4 flex-row items-center justify-center">
                   <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                    Undo Round
+                    {getRoundUndoButtonText(
+                      block.blockType || "circuit",
+                      lastCompletedRoundNumber
+                    )}
                   </Text>
                 </View>
                 {/* Masked label — white, clipped to the fill so it reads over the black */}
@@ -647,7 +673,10 @@ export default function CircuitTracker({
                     style={{ width: undoBtnWidth }}
                   >
                     <Text className="text-sm font-semibold" style={{ color: colors.contentOnPrimary }}>
-                      Undo Round
+                      {getRoundUndoButtonText(
+                      block.blockType || "circuit",
+                      lastCompletedRoundNumber
+                    )}
                     </Text>
                   </View>
                 </Animated.View>

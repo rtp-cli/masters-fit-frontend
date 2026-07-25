@@ -1,6 +1,7 @@
 import { type Ionicons } from "@expo/vector-icons";
 import { fetchActiveWorkout } from "@lib/workouts";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
+import { subscribeToWorkoutUpdates } from "@lib/workouts";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   connectHealth as connectHealthAPI,
@@ -221,6 +222,13 @@ export default function DashboardScreen() {
       fetchTodaysWorkout().then(() => setHasLoadedInitialData(true));
     }
   }, [user?.id, hasLoadedInitialData]);
+
+  // Today's workout is local state (not in the shared store), so refresh it
+  // directly whenever a workout mutation fires (e.g. completing on the Workout
+  // tab). Runs in the background while another tab is visible, so the Active
+  // Workout card shows "Completed" the moment the user returns here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => subscribeToWorkoutUpdates(() => fetchTodaysWorkout()), []);
 
   useEffect(() => {
     if (user?.id && !hasLoadedInitialData && weeklySummary !== null) {

@@ -98,14 +98,17 @@ export function useCircuitSession(
       roundNumber,
       exercises: exercises.map(
         (exercise, index): CircuitExerciseLog => {
-          // Duration-based exercises (cardio) may have reps=null.
-          // Default to 1 so they show as "participated" and don't get
-          // filtered out during logging.
+          // Duration- or distance-based exercises (cardio, runs) may have
+          // reps=null. Default to 1 so they show as "participated" and
+          // don't get filtered out during logging.
           const defaultReps =
-            schemeReps ?? (exercise.reps || (exercise.duration ? 1 : 0));
+            schemeReps ??
+            (exercise.reps ||
+              (exercise.duration || exercise.distanceM ? 1 : 0));
           return {
             exerciseId: exercise.exerciseId || exercise.id,
             planDayExerciseId: exercise.id,
+            distanceM: exercise.distanceM ?? undefined,
             targetReps: schemeReps ?? exercise.reps ?? 0,
             actualReps:
               schemeReps ??

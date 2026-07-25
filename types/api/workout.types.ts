@@ -46,6 +46,7 @@ export interface CreateExerciseLogParams {
     reps: number;
     restAfter?: number;
     durationSeconds?: number;
+    distanceM?: number;
   }[];
   durationCompleted?: number;
   isComplete: boolean;
@@ -139,6 +140,8 @@ export interface WorkoutBlockExercise {
   weight?: number;
   duration?: number;
   restTime?: number;
+  /** Prescribed distance in meters (runs, rows, carries) */
+  distanceM?: number | null;
   /** Prescribed target effort, RPE 1-10 */
   rpe?: number | null;
   completed: boolean;

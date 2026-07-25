@@ -27,6 +27,7 @@ import {
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { isCircuitBlock } from "@/utils/circuit-utils";
+import { formatDistance } from "@/utils/exercise-helpers";
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -425,9 +426,12 @@ export default function WorkoutSummary({
                                   {set.weight && Number(set.weight) > 0
                                     ? `${set.weight} lbs × `
                                     : ""}
-                                  {set.durationSeconds && set.durationSeconds > 0
-                                    ? `${set.durationSeconds}s`
-                                    : `${set.reps} reps`}
+                                  {set.distanceM && set.distanceM > 0
+                                    ? formatDistance(set.distanceM)
+                                    : set.durationSeconds &&
+                                        set.durationSeconds > 0
+                                      ? `${set.durationSeconds}s`
+                                      : `${set.reps} reps`}
                                 </Text>
                               ))}
                             </View>

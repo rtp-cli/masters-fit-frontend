@@ -150,7 +150,7 @@ export function getRoundCompleteButtonText(
 ): string | null {
   switch (blockType) {
     case 'amrap':
-      return 'Complete Round'; // AMRAP allows unlimited rounds
+      return `Complete Round ${currentRound}`; // AMRAP allows unlimited rounds
     case 'emom':
       // Hide button if reached prescribed minutes
       if (totalRounds && currentRound >= totalRounds) {
@@ -162,21 +162,35 @@ export function getRoundCompleteButtonText(
       if (totalRounds && currentRound > totalRounds) {
         return null;
       }
-      return 'Complete Round';
+      return `Complete Round ${currentRound}`;
     case 'tabata':
       // Hide button after 8 intervals
       if (currentRound >= 8) {
         return null;
       }
-      return 'Complete Interval';
+      return `Complete Interval ${currentRound}`;
     case 'circuit':
     default:
       // Hide button after completing all prescribed rounds
       if (totalRounds && currentRound > totalRounds) {
         return null;
       }
-      return 'Complete Round';
+      return `Complete Round ${currentRound}`;
   }
+}
+
+/**
+ * Label for the Undo button, which reverts the most recently completed round.
+ * @param blockType The circuit block type (tabata undoes an "Interval")
+ * @param roundNumber The round/interval number being undone
+ * @returns Button label, e.g. "Undo Round 6"
+ */
+export function getRoundUndoButtonText(
+  blockType: string,
+  roundNumber: number
+): string {
+  const noun = blockType === 'tabata' ? 'Interval' : 'Round';
+  return `Undo ${noun} ${roundNumber}`;
 }
 
 /**

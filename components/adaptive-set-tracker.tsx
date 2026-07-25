@@ -59,6 +59,10 @@ export default function AdaptiveSetTracker({
   const [actualDuration, setActualDuration] = useState<string>(
     String(exercise.duration || 0)
   );
+  // Actual distance in meters (runs/rows/carries — Phase 5), same pattern
+  const [actualDistance, setActualDistance] = useState<string>(
+    String(exercise.distanceM || 0)
+  );
 
   // [T5-1] Which traditional set row is expanded for editing (steppers).
   // Collapsed rows show just the prescription + the ✓ target.
@@ -95,6 +99,7 @@ export default function AdaptiveSetTracker({
     setCurrentSetIndex(0);
     setExpandedIndex(null);
     setActualDuration(String(exercise.duration || 0));
+    setActualDistance(String(exercise.distanceM || 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id]); // Reset when exercise ID changes
 
@@ -115,6 +120,15 @@ export default function AdaptiveSetTracker({
       duration: seconds,
       isComplete: false,
     });
+  };
+
+  // Same stamp-on-every-set pattern for distance (rep-based sets included:
+  // a loaded carry can prescribe reps=0 + distance, or sets of carries)
+  const handleActualDistanceChange = (text: string) => {
+    setActualDistance(text);
+    const meters = parseInt(text, 10) || 0;
+    const stamped = sets.map((set) => ({ ...set, distanceM: meters }));
+    onSetsChange(stamped);
   };
 
   // [T5-1/T5-2] Toggle a set's done state. Checking a set collapses any open
@@ -683,14 +697,49 @@ export default function AdaptiveSetTracker({
   };
 
   // Return appropriate interface based on exercise type
+  // Distance-prescribed movements (runs, rows, carries — Phase 5) get an
+  // actual-distance entry above whichever interface renders. Same honor-
+  // system pattern as actual duration: seeded from the prescription,
+  // user-confirmed, stamped on every set as distanceM.
+  const distanceInput =
+    exercise.distanceM && exercise.distanceM > 0 ? (
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="text-xs text-text-muted">
+          Actual distance (meters)
+        </Text>
+        <View className="bg-background rounded-full px-4 py-2 border border-neutral-medium-1 min-w-[80px] items-center">
+          <TextInput
+            className="text-base font-bold text-center text-text-primary"
+            value={actualDistance}
+            onChangeText={handleActualDistanceChange}
+            keyboardType="number-pad"
+            maxLength={6}
+            placeholder="0"
+            placeholderTextColor={colors.text.muted}
+            accessibilityLabel="Actual distance in meters"
+          />
+        </View>
+      </View>
+    ) : null;
+
   switch (loggingType) {
     case "duration_only":
     case "sets_duration":
-      return renderDurationInterface();
+      return (
+        <View>
+          {distanceInput}
+          {renderDurationInterface()}
+        </View>
+      );
 
     case "sets_reps":
     case "hybrid":
     default:
-      return renderTraditionalSets();
+      return (
+        <View>
+          {distanceInput}
+          {renderTraditionalSets()}
+        </View>
+      );
   }
 }

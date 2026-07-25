@@ -12,6 +12,8 @@ export interface CircuitExerciseLog {
   planDayExerciseId: number;
   /** Target reps for this exercise */
   targetReps: number;
+  /** Prescribed distance in meters (Phase 5) — logged per round */
+  distanceM?: number | null;
   /** Actual reps completed */
   actualReps: number;
   /** Weight used (optional) */

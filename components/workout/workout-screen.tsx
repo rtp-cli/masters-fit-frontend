@@ -440,7 +440,10 @@ export function WorkoutScreen() {
       // Only materialize if no sets exist for this exercise yet
       if (currentProgress.sets.length === 0) {
         const targetSets = currentExercise.sets || 1;
-        const targetReps = currentExercise.reps || 10;
+        // Distance movements (a run) aren't 10 reps — prefill 1 "rep" so
+        // the set row is completable without fabricating rep volume
+        const targetReps =
+          currentExercise.reps || (currentExercise.distanceM ? 1 : 10);
         const targetWeight = currentExercise.weight || 0;
 
         const prescribedSets = Array.from({ length: targetSets }, (_, i) => ({
@@ -448,6 +451,7 @@ export function WorkoutScreen() {
           setNumber: i + 1,
           weight: targetWeight,
           reps: targetReps,
+          distanceM: currentExercise.distanceM || undefined,
           isCompleted: false,
         }));
         updateProgress("sets", prescribedSets);
