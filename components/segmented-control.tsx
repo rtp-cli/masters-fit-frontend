@@ -43,9 +43,10 @@ export function SegmentedControl<T extends string>({
         return (
           <TouchableOpacity
             key={option.value}
-            className={`flex-1 px-3 py-1 rounded-md items-center ${
+            className={`flex-1 px-3 py-1 rounded-md items-center justify-center ${
               selected ? "bg-primary" : "bg-transparent"
             } ${option.disabled ? "opacity-50" : ""}`}
+            style={{ minHeight: 44 }}
             onPress={() => !option.disabled && onChange(option.value)}
             disabled={option.disabled}
             accessibilityRole="button"

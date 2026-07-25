@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
+import WorkoutFeedbackCard from "@/components/workout-feedback-card";
 import { getLoggingMode } from "@/constants/block-types";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
@@ -136,6 +137,10 @@ export default function WorkoutSummary({
   const [collapsedBlocks, setCollapsedBlocks] = useState<
     Record<number, boolean>
   >({});
+  // Ended-early feedback: "Skip for now" hides the card; an answer hides the
+  // skip link. Completed-workout feedback has neither (zero-tap to ignore).
+  const [feedbackSkipped, setFeedbackSkipped] = useState(false);
+  const [feedbackAnswered, setFeedbackAnswered] = useState(false);
 
   const toggleBlock = (blockId: number) => {
     setCollapsedBlocks((prev) => ({
@@ -189,6 +194,25 @@ export default function WorkoutSummary({
     if (!firstExercise) return 0;
     return (exerciseLogs[firstExercise.id] || []).length;
   };
+
+  // Prescribed session length for the feedback card's duration trigger and
+  // confirmation copy; null when blocks carry no duration estimates.
+  const prescribedMinutes = workout.blocks.reduce(
+    (sum: number, b) => sum + (b.blockDurationMinutes || 0),
+    0
+  );
+
+  const feedbackCard = !compact && (
+    <WorkoutFeedbackCard
+      planDayId={workout.id}
+      workoutId={workout.workoutId}
+      wasEndedEarly={wasEndedEarly}
+      durationSeconds={duration}
+      prescribedMinutes={prescribedMinutes > 0 ? prescribedMinutes : null}
+      skipped={feedbackSkipped}
+      onAnswered={() => setFeedbackAnswered(true)}
+    />
+  );
 
   return (
     <View className="flex-1 bg-background">
@@ -272,6 +296,9 @@ export default function WorkoutSummary({
           </View>
         )}
 
+        {/* Post-workout feedback — inline between the header and the rest */}
+        {feedbackCard}
+
         {/* Resume button for ended-early workouts */}
         {wasEndedEarly && onResume && !compact && (
           <View className="px-4 mb-4">
@@ -293,6 +320,21 @@ export default function WorkoutSummary({
                 </Text>
               )}
             </TouchableOpacity>
+            {/* Skip belongs to the ended-early ask; Resume stays first in tap
+                order. hitSlop keeps the 44px target without inflating the row. */}
+            {!feedbackSkipped && !feedbackAnswered && (
+              <TouchableOpacity
+                className="items-center mt-4"
+                onPress={() => setFeedbackSkipped(true)}
+                hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Skip feedback for now"
+              >
+                <Text className="text-sm font-medium text-text-muted">
+                  Skip for now
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 

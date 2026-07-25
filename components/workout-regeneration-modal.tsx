@@ -37,22 +37,27 @@ import {
   INTENSITY_LEVELS,
   type PHYSICAL_LIMITATIONS,
   type PREFERRED_DAYS,
-  PREFERRED_STYLES,
+  type PREFERRED_STYLES,
   WORKOUT_ENVIRONMENTS,
 } from "@/types/enums";
 import { formatWorkoutPlanEndDate,formatWorkoutPlanStartDate } from "@/utils";
 import { computeFreeAdjustmentNote } from "@/utils/entitlements";
+import {
+  describeOverrides,
+  formatOverridesIntoReason,
+  formatOverrideSummary,
+} from "@/utils/override-summary";
 import { resolveDefaultRegenerationTab } from "@/utils/regeneration-tab";
 
 import { useThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/theme-context";
-import { formatEnumValue } from "./onboarding/utils/formatters";
 import OnboardingForm, { type FormData } from "./onboarding-form";
 import ProfileOverrideForm, {
   type TemporaryOverrides,
 } from "./profile-override-form";
 import { SegmentedControl } from "./segmented-control";
 import { CustomDialog, type DialogButton } from "./ui";
+import VoiceInputButton from "./voice-input-button";
 
 interface WorkoutRegenerationModalProps {
   visible: boolean;
@@ -143,6 +148,13 @@ export default function WorkoutRegenerationModal({
       includeWarmup: true,
       includeCooldown: true,
     });
+
+  // Summary line for the Customize row: what currently differs from the
+  // profile ("45 min · Moderate intensity +1 more"), or "Using your profile
+  // settings". Same describeOverrides entries feed the AI reason string.
+  const overrideSummary = formatOverrideSummary(
+    describeOverrides(temporaryOverrides, currentProfile)
+  );
 
   const { setIsGeneratingWorkout } = useAuth();
 
@@ -547,192 +559,6 @@ export default function WorkoutRegenerationModal({
     }
   };
 
-  const formatOverridesIntoReason = (
-    customFeedback: string,
-    overrides: TemporaryOverrides,
-    currentProfile: UserProfile | null
-  ): string => {
-    if (!currentProfile) {
-      return customFeedback.trim() || "User requested regeneration";
-    }
-
-    // Build array of override descriptions
-    const overrideDescriptions: string[] = [];
-
-    // Check duration override
-    if (
-      overrides.duration !== undefined &&
-      overrides.duration !== (currentProfile.workoutDuration || 30)
-    ) {
-      overrideDescriptions.push(`Duration: ${overrides.duration} minutes`);
-    }
-
-    // Check intensity override
-    let currentIntensity = INTENSITY_LEVELS.MODERATE;
-    if (currentProfile.intensityLevel) {
-      if (typeof currentProfile.intensityLevel === "number") {
-        currentIntensity =
-          currentProfile.intensityLevel === 1
-            ? INTENSITY_LEVELS.LOW
-            : currentProfile.intensityLevel === 2
-              ? INTENSITY_LEVELS.MODERATE
-              : INTENSITY_LEVELS.HIGH;
-      } else {
-        currentIntensity = currentProfile.intensityLevel as INTENSITY_LEVELS;
-      }
-    }
-
-    if (
-      overrides.intensity !== undefined &&
-      overrides.intensity !== currentIntensity
-    ) {
-      const intensityLabel =
-        overrides.intensity === INTENSITY_LEVELS.LOW
-          ? "Low"
-          : overrides.intensity === INTENSITY_LEVELS.MODERATE
-            ? "Moderate"
-            : "High";
-      overrideDescriptions.push(`Intensity: ${intensityLabel}`);
-    }
-
-    // Check styles override
-    const currentStyles =
-      (currentProfile.preferredStyles as PREFERRED_STYLES[]) || [];
-    const newStyles = overrides.styles || [];
-
-    // Compare arrays to see if they're different
-    const stylesChanged =
-      newStyles.length !== currentStyles.length ||
-      !newStyles.every((style) => currentStyles.includes(style)) ||
-      !currentStyles.every((style) => newStyles.includes(style));
-
-    if (stylesChanged && newStyles.length > 0) {
-      const styleLabels = newStyles.map((style) => {
-        return style === PREFERRED_STYLES.HIIT
-          ? "HIIT"
-          : style === PREFERRED_STYLES.STRENGTH
-            ? "Strength"
-            : style === PREFERRED_STYLES.CARDIO
-              ? "Cardio"
-              : style === PREFERRED_STYLES.REHAB
-                ? "Rehab"
-                : style === PREFERRED_STYLES.CROSSFIT
-                  ? "CrossFit"
-                  : style === PREFERRED_STYLES.FUNCTIONAL
-                    ? "Functional"
-                    : style === PREFERRED_STYLES.PILATES
-                      ? "Pilates"
-                      : style === PREFERRED_STYLES.YOGA
-                        ? "Yoga"
-                        : style === PREFERRED_STYLES.BALANCE
-                          ? "Balance"
-                          : style === PREFERRED_STYLES.MOBILITY
-                            ? "Mobility"
-                            : style;
-      });
-      overrideDescriptions.push(`Styles: ${styleLabels.join(", ")}`);
-    }
-
-    // Check environment override
-    let currentEnvironment = WORKOUT_ENVIRONMENTS.HOME_GYM;
-    if (currentProfile.environment) {
-      if (Array.isArray(currentProfile.environment)) {
-        currentEnvironment = currentProfile
-          .environment[0] as WORKOUT_ENVIRONMENTS;
-      } else {
-        currentEnvironment = currentProfile.environment as WORKOUT_ENVIRONMENTS;
-      }
-    }
-
-    if (
-      overrides.environment !== undefined &&
-      overrides.environment !== currentEnvironment
-    ) {
-      const environmentLabel =
-        overrides.environment === WORKOUT_ENVIRONMENTS.HOME_GYM
-          ? "Home Gym"
-          : overrides.environment === WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM
-            ? "Commercial Gym"
-            : "Bodyweight Only";
-      overrideDescriptions.push(`Environment: ${environmentLabel}`);
-    }
-
-    // Check equipment overrides (only for HOME_GYM)
-    if (overrides.environment === WORKOUT_ENVIRONMENTS.HOME_GYM) {
-      const currentEquipment =
-        (currentProfile.equipment as AVAILABLE_EQUIPMENT[]) || [];
-      const newEquipment = overrides.equipment || [];
-
-      // Compare arrays to see if they're different
-      const equipmentChanged =
-        newEquipment.length !== currentEquipment.length ||
-        !newEquipment.every((eq) => currentEquipment.includes(eq)) ||
-        !currentEquipment.every((eq) => newEquipment.includes(eq));
-
-      if (equipmentChanged) {
-        const equipmentLabels = newEquipment.map((equipment) => {
-          return formatEnumValue(equipment.toUpperCase());
-        });
-        if (equipmentLabels.length > 0) {
-          overrideDescriptions.push(`Equipment: ${equipmentLabels.join(", ")}`);
-        }
-      }
-
-      // Check other equipment override
-      const currentOtherEquipment = currentProfile.otherEquipment || "";
-      if (
-        overrides.otherEquipment !== undefined &&
-        overrides.otherEquipment.trim() !== currentOtherEquipment.trim()
-      ) {
-        if (overrides.otherEquipment.trim()) {
-          overrideDescriptions.push(
-            `Other Equipment: ${overrides.otherEquipment.trim()}`
-          );
-        }
-      }
-    }
-
-    // Check warmup/cooldown overrides
-    const currentWarmup = currentProfile.includeWarmup ?? true;
-    const currentCooldown = currentProfile.includeCooldown ?? true;
-
-    if (
-      overrides.includeWarmup !== undefined &&
-      overrides.includeWarmup !== currentWarmup
-    ) {
-      overrideDescriptions.push(
-        `${overrides.includeWarmup ? "Include" : "Skip"} warmup`
-      );
-    }
-
-    if (
-      overrides.includeCooldown !== undefined &&
-      overrides.includeCooldown !== currentCooldown
-    ) {
-      overrideDescriptions.push(
-        `${overrides.includeCooldown ? "Include" : "Skip"} cooldown`
-      );
-    }
-
-    // Build final reason string
-    let finalReason = customFeedback.trim();
-
-    if (overrideDescriptions.length > 0) {
-      const overrideText = `Profile overrides for this workout: ${overrideDescriptions.join(
-        ", "
-      )}`;
-      if (finalReason) {
-        finalReason += `\n\n${overrideText}`;
-      } else {
-        finalReason = `User requested regeneration with the following changes: ${overrideDescriptions.join(
-          ", "
-        )}`;
-      }
-    }
-
-    return finalReason || "User requested regeneration";
-  };
-
   const handleOpenDailyOverrideForm = () => {
     // Backup current overrides so we can restore them if user cancels
     setTempOverridesBackup({ ...temporaryOverrides });
@@ -1054,24 +880,41 @@ export default function WorkoutRegenerationModal({
                               selectedType === "day" ? "day's" : "week's"
                             } workout, and what you'd like to change:`}
                   </Text>
-                  <TextInput
-                    className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-text-primary px-4 py-6"
-                    style={{
-                      minHeight: 120,
-                      maxHeight: 200,
-                      textAlignVertical: "top",
-                    }}
-                    placeholder={
-                      isRestDay && selectedType === "day"
-                        ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
-                        : "Add notes about your workout here..."
-                    }
-                    placeholderTextColor={colors.text.muted}
-                    value={customFeedback}
-                    onChangeText={setCustomFeedback}
-                    multiline
-                    scrollEnabled={true}
-                  />
+                  <View>
+                    <TextInput
+                      className="bg-surface border border-neutral-medium-1 rounded-md text-sm text-text-primary px-4 py-6"
+                      style={{
+                        minHeight: 120,
+                        maxHeight: 200,
+                        textAlignVertical: "top",
+                        paddingBottom: 60, // keep typed text clear of the mic button
+                      }}
+                      placeholder={
+                        isRestDay && selectedType === "day"
+                          ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
+                          : "Add notes about your workout here..."
+                      }
+                      placeholderTextColor={colors.text.muted}
+                      value={customFeedback}
+                      onChangeText={setCustomFeedback}
+                      multiline
+                      scrollEnabled={true}
+                    />
+                    {/* Dictation appends to the note — never replaces or submits. */}
+                    <View className="absolute bottom-2 right-2">
+                      <VoiceInputButton
+                        surface="adjust"
+                        onTranscript={(text) =>
+                          setCustomFeedback((prev) =>
+                            prev.trim() ? `${prev.trimEnd()} ${text}` : text
+                          )
+                        }
+                      />
+                    </View>
+                  </View>
+                  <Text className="text-xs text-text-muted mt-2">
+                    Type it, or tap the mic to say it.
+                  </Text>
                   {selectedType === "day" &&
                     !isRestDay &&
                     !noActiveWorkoutDay && (
@@ -1109,15 +952,33 @@ export default function WorkoutRegenerationModal({
                     </View>
                   )}
 
-                  {/* Daily Override Button */}
+                  {/* Daily Override Row — title + what currently differs from
+                      the profile, so the duration/intensity knobs are
+                      discoverable without opening the panel. */}
                   {selectedType === "day" && !noActiveWorkoutDay && (
                     <TouchableOpacity
-                      className="mt-4 py-2"
+                      className="mt-4 flex-row items-center bg-surface border border-neutral-medium-1 rounded-xl px-4 py-3"
+                      style={{ minHeight: 44 }}
                       onPress={handleOpenDailyOverrideForm}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Customize settings for this workout. ${overrideSummary}`}
                     >
-                      <Text className="text-sm text-primary font-medium text-center">
-                        Customize settings for this workout
-                      </Text>
+                      <View className="flex-1 mr-2">
+                        <Text className="text-base font-semibold text-text-primary">
+                          Customize settings for this workout
+                        </Text>
+                        <Text
+                          className="text-sm text-text-muted mt-0.5"
+                          numberOfLines={2}
+                        >
+                          {overrideSummary}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color={colors.text.muted}
+                      />
                     </TouchableOpacity>
                   )}
 

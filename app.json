@@ -2,11 +2,13 @@
   "expo": {
     "name": "MastersFit",
     "slug": "mastersfit",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mastersfit.ai",
@@ -59,6 +61,13 @@
       "expo-health-connect",
       "expo-notifications",
       "expo-tracking-transparency",
+      [
+        "@jamsch/expo-speech-recognition",
+        {
+          "microphonePermission": "MastersFit uses the microphone so you can dictate workout notes and feedback instead of typing.",
+          "speechRecognitionPermission": "MastersFit uses speech recognition to turn what you say into text for your workout notes and feedback."
+        }
+      ],
       [
         "react-native-health",
         {

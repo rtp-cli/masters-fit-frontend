@@ -41,6 +41,12 @@ export const AnalyticsEvent = {
   WORKOUT_COMPLETED: "workout_completed",
   EXERCISE_LOGGED: "exercise_logged",
 
+  // ── Post-workout feedback + voice input ──
+  WORKOUT_FEEDBACK_SHOWN: "workout_feedback_shown",
+  WORKOUT_FEEDBACK_ANSWERED: "workout_feedback_answered",
+  WORKOUT_ENDED_EARLY_REASON: "workout_ended_early_reason",
+  VOICE_INPUT_USED: "voice_input_used",
+
   // ── Navigation ──
   SCREEN_VIEWED: "screen_viewed",
 } as const;
@@ -124,6 +130,22 @@ export interface AnalyticsEventProps {
   [AnalyticsEvent.EXERCISE_LOGGED]: {
     workout_id?: number;
     exercise_id?: number;
+  };
+
+  [AnalyticsEvent.WORKOUT_FEEDBACK_SHOWN]: {
+    variant: "expanded" | "collapsed";
+    reason: string;
+  };
+  [AnalyticsEvent.WORKOUT_FEEDBACK_ANSWERED]: {
+    effort?: string;
+    time_fit?: string;
+    has_note: boolean;
+    note_source?: string;
+  };
+  [AnalyticsEvent.WORKOUT_ENDED_EARLY_REASON]: { reason: string };
+  [AnalyticsEvent.VOICE_INPUT_USED]: {
+    surface: "feedback" | "adjust";
+    duration_ms: number;
   };
 
   [AnalyticsEvent.SCREEN_VIEWED]: { screen: string };
