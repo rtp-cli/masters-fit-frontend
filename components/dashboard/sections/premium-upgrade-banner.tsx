@@ -28,9 +28,11 @@ const PremiumUpgradeBanner: React.FC<PremiumUpgradeBannerProps> = ({
       activeOpacity={0.9}
       // [MF-006] Solid ink is reserved for the one primary CTA per screen
       // (e.g. Dashboard's "View Workout") — this banner is informational/
-      // marketing, so it steps down to the accent-subtle tint rather than
-      // competing with the real action for attention.
-      className="mx-5 mb-4 rounded-2xl overflow-hidden bg-accent-subtle border border-accent-subtle"
+      // marketing, so it steps down to a quiet card tint rather than
+      // competing with the real action for attention. (bg-accent-subtle was
+      // never defined in tailwind.config.js — transparent bg + Android
+      // elevation rendered as a gray artifact box.)
+      className="mx-5 mb-4 rounded-2xl overflow-hidden bg-card border border-neutral-light-2"
       style={shadows.card}
     >
       <View className="flex-row items-center px-5 py-4">

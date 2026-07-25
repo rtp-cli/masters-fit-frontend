@@ -933,7 +933,7 @@ export default function WorkoutRegenerationModal({
                   )}
 
                   {freeAdjustmentNote && (
-                    <View className="flex-row items-center bg-accent-subtle rounded-xl px-3.5 py-3 mt-4">
+                    <View className="flex-row items-center bg-card rounded-xl px-3.5 py-3 mt-4">
                       <Ionicons
                         name={
                           freeAdjustmentNote.exhausted

@@ -12,7 +12,7 @@ type Props = {
 /**
  * Shown in place of the progress-analytics dashboard sections when the user
  * lacks VIEW_PROGRESS_ANALYTICS (FREE tier). Tapping opens the paywall. Uses
- * the accent-subtle tint (not solid ink) per [MF-006] — it's an upsell, not
+ * a quiet card tint (not solid ink) per [MF-006] — it's an upsell, not
  * the screen's primary CTA.
  */
 const ProgressAnalyticsLocked: React.FC<Props> = ({ onUpgrade }) => {
@@ -22,7 +22,7 @@ const ProgressAnalyticsLocked: React.FC<Props> = ({ onUpgrade }) => {
     <TouchableOpacity
       onPress={onUpgrade}
       activeOpacity={0.9}
-      className="mx-5 mb-4 rounded-2xl overflow-hidden bg-accent-subtle border border-accent-subtle"
+      className="mx-5 mb-4 rounded-2xl overflow-hidden bg-card border border-neutral-light-2"
       style={shadows.card}
       accessibilityRole="button"
       accessibilityLabel="Unlock progress analytics with MastersFit+"

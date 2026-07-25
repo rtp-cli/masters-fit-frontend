@@ -1911,7 +1911,7 @@ export function WorkoutScreen() {
                             key={index}
                             // [MF-006] Informational tag, not the screen's
                             // primary action — steps down from solid ink.
-                            className="bg-accent-subtle border border-accent-subtle rounded-full px-3 py-1 mr-2"
+                            className="bg-card border border-neutral-light-2 rounded-full px-3 py-1 mr-2"
                           >
                             <Text className="text-xs text-text-primary font-semibold">
                               {formatEquipment(equipment.trim())}
@@ -2344,14 +2344,19 @@ export function WorkoutScreen() {
                   size={20}
                   color={colors.contentOnPrimary}
                 />
-                <Text className="text-content-on-primary font-semibold ml-2">
+                <Text
+                  className="text-content-on-primary font-semibold ml-2"
+                  maxFontSizeMultiplier={1.3}
+                >
                   Skip
                 </Text>
               </TouchableOpacity>
             )}
 
+            {/* Surface + border, not neutral-light-2 — that gray vanished
+                against the bg-card action bar and Pause read as bare text. */}
             <TouchableOpacity
-              className="bg-neutral-light-2 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+              className="bg-surface border border-neutral-medium-1 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
               onPress={togglePause}
               accessibilityRole="button"
               accessibilityLabel={isPaused ? "Resume" : "Pause"}
@@ -2361,7 +2366,10 @@ export function WorkoutScreen() {
                 size={20}
                 color={colors.text.primary}
               />
-              <Text className="text-text-primary font-semibold ml-2">
+              <Text
+                className="text-text-primary font-semibold ml-2"
+                maxFontSizeMultiplier={1.3}
+              >
                 {isPaused ? "Resume" : "Pause"}
               </Text>
             </TouchableOpacity>
@@ -2391,7 +2399,10 @@ export function WorkoutScreen() {
                   color={colors.contentOnPrimary}
                 />
               )}
-              <Text className="text-content-on-primary font-semibold ml-2">
+              <Text
+                className="text-content-on-primary font-semibold ml-2"
+                maxFontSizeMultiplier={1.3}
+              >
                 {isCompletingExercise
                   ? "Saving..."
                   : isCurrentBlockCircuit
