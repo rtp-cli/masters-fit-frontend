@@ -468,6 +468,24 @@ export function useCircuitSession(
     ]
   );
 
+  // Persist notes for the current round. Flushed on blur rather than every
+  // keystroke so the tracker's exercise cards don't re-render mid-type. This
+  // lets the Complete Round button live in the fixed footer (outside the
+  // tracker) and still preserve notes typed in the round-notes field.
+  const updateRoundNotes = useCallback((notes: string) => {
+    setSessionData((prev) => {
+      const updatedRounds = [...prev.rounds];
+      const currentRoundIndex = prev.currentRound - 1;
+      if (updatedRounds[currentRoundIndex]) {
+        updatedRounds[currentRoundIndex] = {
+          ...updatedRounds[currentRoundIndex],
+          notes,
+        };
+      }
+      return { ...prev, rounds: updatedRounds };
+    });
+  }, []);
+
   // Undo the last round completion
   const undoCompleteRound = useCallback(() => {
     if (!undoSnapshotRef.current) return;
@@ -707,6 +725,7 @@ export function useCircuitSession(
       updateExerciseReps,
       updateExerciseWeight,
       completeRound,
+      updateRoundNotes,
       skipRound,
       completeCircuit,
       toggleTimer,

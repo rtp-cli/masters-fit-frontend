@@ -180,6 +180,41 @@ export function getRoundCompleteButtonText(
 }
 
 /**
+ * Whether a circuit block currently has a per-round action to show (Complete
+ * Round / Complete Interval / Undo, or the EMOM manual finish). Used to decide
+ * whether the fixed footer shows the round-action pill as the primary button
+ * and demotes "Complete Circuit" to a link, or falls back to Complete Circuit
+ * as the primary button. Mirrors the render conditions in CircuitRoundAction so
+ * the two never disagree.
+ */
+export function isRoundActionVisible(
+  block: WorkoutBlockWithExercises,
+  sessionData: { rounds: CircuitRound[]; currentRound: number; targetRounds?: number; isCompleted: boolean },
+  canUndoRound: boolean
+): boolean {
+  if (sessionData.isCompleted) return false;
+
+  const currentRound = sessionData.rounds[sessionData.currentRound - 1];
+  const isCurrentRoundCompleted = currentRound?.isCompleted ?? false;
+  if (!(canUndoRound || !isCurrentRoundCompleted)) return false;
+
+  // EMOM always shows its manual finish / Undo while the round is open.
+  if (block.blockType === "emom") return true;
+
+  // Undo is available regardless of the (possibly null) complete-round label.
+  if (canUndoRound) return true;
+
+  // Otherwise the button only shows when there's a non-null label to display.
+  return (
+    getRoundCompleteButtonText(
+      block.blockType || "circuit",
+      sessionData.currentRound,
+      sessionData.targetRounds
+    ) !== null
+  );
+}
+
+/**
  * Label for the Undo button, which reverts the most recently completed round.
  * @param blockType The circuit block type (tabata undoes an "Interval")
  * @param roundNumber The round/interval number being undone

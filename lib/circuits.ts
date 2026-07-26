@@ -92,6 +92,11 @@ export async function logCircuitCompletion(
         ? block.timeCapMinutes
         : undefined;
 
+    // Critical writes: the actual rep/round logs and marking the exercises +
+    // block complete. These MUST land — if they fail, throw so the caller keeps
+    // the user in the session with their data intact and can retry. Both are
+    // idempotent server-side (logs delete-then-insert per round; complete is a
+    // set-union), so a retry after a partial failure is safe.
     await Promise.all([
       // 1 batch call for all exercise logs
       allLogs.length > 0
@@ -108,8 +113,14 @@ export async function logCircuitCompletion(
           workoutBlockId: block.id,
         }),
       }),
-      // 1 call to persist the block-level result
-      apiRequest(`/logs/block`, {
+    ]);
+
+    // Non-critical: the block-level result (rounds + derived score) is a
+    // convenience for history/PRs, not the user's logged work. Persist it
+    // best-effort so a hiccup on this endpoint can never strand a circuit whose
+    // reps already saved above. It can be recomputed/backfilled from the logs.
+    try {
+      await apiRequest(`/logs/block`, {
         method: "POST",
         body: JSON.stringify({
           workoutBlockId: block.id,
@@ -121,8 +132,15 @@ export async function logCircuitCompletion(
           totalDuration: result.actualTimeSeconds,
           isComplete: true,
         }),
-      }),
-    ]);
+      });
+    } catch (blockError) {
+      logger.error("Circuit block-level result failed to persist (non-fatal)", {
+        error:
+          blockError instanceof Error ? blockError.message : "Unknown error",
+        workoutId,
+        workoutBlockId: block.id,
+      });
+    }
 
     logger.businessEvent("Circuit completion logged", {
       roundsCompleted: completedRounds.length,

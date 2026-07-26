@@ -221,6 +221,8 @@ export interface UseCircuitSessionReturn {
     updateExerciseWeight: (exerciseId: number, weight: number) => void;
     /** Complete current round */
     completeRound: (notes?: string) => Promise<void>;
+    /** Persist notes for the current round (flushed on blur) */
+    updateRoundNotes: (notes: string) => void;
     /** Skip current round */
     skipRound: (reason?: string) => void;
     /** Complete entire circuit */

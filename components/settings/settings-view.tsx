@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -20,6 +21,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useSecretActivationContext } from "@/contexts/secret-activation-context";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import { tabEvents } from "@/lib/tab-events";
+import { CADENCE_STORAGE_KEY } from "@/utils/feedback-cadence";
 
 import { useThemeColors } from "../../lib/theme";
 import ComingSoonModal from "../coming-soon-modal";
@@ -298,6 +300,24 @@ export default function SettingsView({
     }
   };
 
+  // Dev-only: wipe the local post-workout feedback cadence so already-answered
+  // plan days prompt for feedback again (a workout reset alone won't, since the
+  // dedup guard is keyed on plan-day id in AsyncStorage).
+  const handleResetFeedbackCadence = async () => {
+    await AsyncStorage.removeItem(CADENCE_STORAGE_KEY);
+    setDialogConfig({
+      title: "Feedback Cadence Reset",
+      description:
+        "Cleared local feedback state. Completing a workout will prompt for feedback again, even ones you already rated.",
+      primaryButton: {
+        text: "OK",
+        onPress: () => setDialogVisible(false),
+      },
+      icon: "checkmark-circle",
+    });
+    setDialogVisible(true);
+  };
+
   // Force-clear all auth data (bypasses confirmation dialog — for stuck sessions)
   const handleForceLogout = async () => {
     await logout();
@@ -522,6 +542,7 @@ export default function SettingsView({
           isSecretActivated={isSecretActivated}
           onDeactivateDebugMode={handleDeactivateDebugMode}
           onShowPaywallTest={() => setShowPaywallTest(true)}
+          onResetFeedbackCadence={handleResetFeedbackCadence}
           onForceLogout={handleForceLogout}
           onClose={onClose}
         />

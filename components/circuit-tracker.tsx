@@ -1,8 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import React, { useEffect,useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Animated,
   Dimensions,
   ScrollView,
   Text,
@@ -11,19 +9,11 @@ import {
   View,
 } from "react-native";
 
-import { UNDO_DURATION_MS } from "@/hooks/use-circuit-session";
 import { useThemeColors } from "@/lib/theme";
 import {
-  type CircuitExerciseLog,
-  type CircuitRound,
   type CircuitTrackerProps,
   type UseCircuitSessionReturn,
 } from "@/types/api/circuit.types";
-import { type WorkoutBlockWithExercise } from "@/types/api/workout.types";
-import {
-  getRoundCompleteButtonText,
-  getRoundUndoButtonText,
-} from "@/utils/circuit-utils";
 
 
 // Type alias for circuit actions
@@ -33,13 +23,12 @@ export default function CircuitTracker({
   block,
   sessionData,
   onSessionUpdate,
-  onRoundComplete,
-  onCircuitComplete,
   isActive,
   circuitActions,
-  canUndoRound = false,
 }: CircuitTrackerProps & {
   circuitActions?: CircuitActions;
+  // Still passed by the caller but the round-action UI (and its Undo) now lives
+  // in the workout screen's fixed footer via CircuitRoundAction.
   canUndoRound?: boolean;
 }) {
   const colors = useThemeColors();
@@ -47,13 +36,6 @@ export default function CircuitTracker({
   // entirely — timers are not supported (owner decision).
   const currentRoundData = sessionData.rounds[sessionData.currentRound - 1];
   const isCurrentRoundCompleted = currentRoundData?.isCompleted || false;
-
-  // The Undo button reverts the most recently completed round. On the final
-  // round of a bounded block the session doesn't advance currentRound, so read
-  // the last completed round directly rather than assuming currentRound - 1.
-  const lastCompletedRoundNumber =
-    [...sessionData.rounds].reverse().find((r) => r.isCompleted)?.roundNumber ??
-    sessionData.currentRound;
 
   // Navigation state
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -74,31 +56,6 @@ export default function CircuitTracker({
   const cardSpacing = 16;
   const cardWidth = Math.min(containerWidth * 0.88, containerWidth);
   const sideInset = (containerWidth - cardWidth) / 2;
-
-  // Undo progress bar animation (1 = empty, 0 = full)
-  const undoProgressAnim = useRef(new Animated.Value(1)).current;
-  const undoProgressRef = useRef<Animated.CompositeAnimation | null>(null);
-  // Width of the Undo button, so the masked (white) label can be sized to the
-  // full button and stay centered while the fill clips it. Only one Undo button
-  // renders at a time, so a single value is safe to share.
-  const [undoBtnWidth, setUndoBtnWidth] = useState(0);
-
-  useEffect(() => {
-    if (canUndoRound) {
-      // Start empty, fill to full over UNDO_DURATION_MS
-      undoProgressAnim.setValue(1);
-      undoProgressRef.current = Animated.timing(undoProgressAnim, {
-        toValue: 0,
-        duration: UNDO_DURATION_MS,
-        useNativeDriver: false,
-      });
-      // Small delay to avoid flicker on mount
-      requestAnimationFrame(() => undoProgressRef.current?.start());
-    } else {
-      undoProgressRef.current?.stop();
-      undoProgressAnim.setValue(1);
-    }
-  }, [canUndoRound]);
 
   // [T5-3/MF-003] The Tabata work timer (state + countdown + "Start Work"
   // button) was removed entirely — the countdown interval had long been
@@ -197,110 +154,9 @@ export default function CircuitTracker({
     }
   };
 
-  // Handle round completion
-  const handleCompleteRound = async () => {
-    if (isCurrentRoundCompleted) return;
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    try {
-      if (circuitActions?.completeRound) {
-        await circuitActions.completeRound(localRoundNotes);
-      } else {
-        // Fallback manual completion
-        const updatedRounds = [...sessionData.rounds];
-        const currentRoundIndex = sessionData.currentRound - 1;
-
-        if (updatedRounds[currentRoundIndex]) {
-          updatedRounds[currentRoundIndex] = {
-            ...updatedRounds[currentRoundIndex],
-            isCompleted: true,
-            completedAt: new Date(),
-            roundTimeSeconds: sessionData.timer.currentTime,
-            notes: localRoundNotes,
-          };
-
-          onRoundComplete(updatedRounds[currentRoundIndex]);
-
-          // Check if we should advance to next round or complete circuit
-          const nextRound = sessionData.currentRound + 1;
-          const hasMoreRounds =
-            !sessionData.targetRounds || nextRound <= sessionData.targetRounds;
-
-          if (hasMoreRounds && block.blockType !== "for_time") {
-            // Advance to next round for AMRAP, circuit, etc.
-            const updatedSessionData = {
-              ...sessionData,
-              rounds: updatedRounds,
-              currentRound: nextRound,
-            };
-
-            // Create next round if it doesn't exist
-            if (!updatedSessionData.rounds[nextRound - 1]) {
-              const completedRound =
-                updatedRounds[sessionData.currentRound - 1];
-              updatedSessionData.rounds.push(
-                createNewRound(nextRound, block.exercises, completedRound)
-              );
-            }
-
-            onSessionUpdate(updatedSessionData);
-          } else {
-            // Don't complete circuit here - let the "Complete Circuit" button handle it
-            // Just update the session with the completed round
-            onSessionUpdate({
-              ...sessionData,
-              rounds: updatedRounds,
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error completing round:", error);
-    }
-  };
-
-  // Handle circuit completion — complete the current round first so its data is saved,
-  // then mark the whole circuit as done.
-  const handleCompleteCircuit = async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    try {
-      // Complete the current round if it hasn't been completed yet
-      if (!isCurrentRoundCompleted && circuitActions?.completeRound) {
-        await circuitActions.completeRound(localRoundNotes);
-      }
-
-      if (circuitActions?.completeCircuit) {
-        await circuitActions.completeCircuit();
-        onCircuitComplete(sessionData);
-      }
-    } catch (error) {
-      console.error("Error completing circuit:", error);
-    }
-  };
-
-  // Create a new round with all exercises
-  const createNewRound = (
-    roundNumber: number,
-    exercises: WorkoutBlockWithExercise[],
-    previousRound?: CircuitRound
-  ): CircuitRound => ({
-    roundNumber,
-    exercises: exercises.map(
-      (exercise, index): CircuitExerciseLog => ({
-        exerciseId: exercise.exerciseId,
-        planDayExerciseId: exercise.id,
-        targetReps: exercise.reps || 0,
-        actualReps: exercise.reps || 0,
-        weight: previousRound?.exercises[index]?.weight ?? exercise.weight ?? 0,
-        completed: false,
-        notes: "",
-      })
-    ),
-    isCompleted: false,
-    notes: "",
-  });
+  // Round/circuit completion moved to CircuitRoundAction in the fixed footer
+  // (see workout-screen.tsx). Notes typed here are flushed to the session via
+  // updateRoundNotes on blur so that footer button preserves them.
 
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -538,198 +394,6 @@ export default function CircuitTracker({
         </View>
       )}
 
-      {/* EMOM manual finish button / Undo */}
-      {isActive &&
-        block.blockType === "emom" &&
-        (canUndoRound || !isCurrentRoundCompleted) && (
-          <View className="mb-6">
-            {canUndoRound && circuitActions?.undoCompleteRound ? (
-              <TouchableOpacity
-                className="rounded-xl overflow-hidden"
-                style={{ backgroundColor: colors.surface }}
-                onPress={() => circuitActions.undoCompleteRound()}
-                onLayout={(e) => setUndoBtnWidth(e.nativeEvent.layout.width)}
-              >
-                <Animated.View
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    backgroundColor: colors.brand.primary,
-                    width: undoProgressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["100%", "0%"],
-                    }),
-                  }}
-                />
-                {/* Base label — reads on the uncovered (surface) portion */}
-                <View className="py-4 flex-row items-center justify-center">
-                  <Text className="text-base font-semibold" style={{ color: colors.text.primary }}>
-                    {getRoundUndoButtonText(
-                      block.blockType || "circuit",
-                      lastCompletedRoundNumber
-                    )}
-                  </Text>
-                </View>
-                {/* Masked label — white, clipped to the fill so it reads over the black */}
-                <Animated.View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    overflow: "hidden",
-                    width: undoProgressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["100%", "0%"],
-                    }),
-                  }}
-                >
-                  <View
-                    className="py-4 flex-row items-center justify-center"
-                    style={{ width: undoBtnWidth }}
-                  >
-                    <Text className="text-base font-semibold" style={{ color: colors.contentOnPrimary }}>
-                      {getRoundUndoButtonText(
-                      block.blockType || "circuit",
-                      lastCompletedRoundNumber
-                    )}
-                    </Text>
-                  </View>
-                </Animated.View>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                className="py-4 rounded-xl items-center bg-brand-primary"
-                onPress={handleCompleteRound}
-              >
-                <Text className="text-lg font-semibold text-neutral-white">
-                  {getRoundCompleteButtonText(
-                    "for_time",
-                    sessionData.currentRound,
-                    sessionData.targetRounds
-                  )}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-      {/* Complete Round / Undo — only one shows at a time.
-          Rendered ABOVE the notes so it stays visible without scrolling —
-          otherwise users reach for the tab-bar "Complete Circuit" by mistake.
-          EMOM is excluded: the EMOM section above owns its Undo and manual
-          finish, and rendering both produced a doubled Undo button. */}
-      {isActive &&
-        !sessionData.isCompleted &&
-        block.blockType !== "emom" &&
-        (canUndoRound || !isCurrentRoundCompleted) && (
-          <View className="mb-6">
-            {canUndoRound && circuitActions?.undoCompleteRound ? (
-              <TouchableOpacity
-                className="rounded-xl overflow-hidden"
-                style={{ backgroundColor: colors.surface }}
-                onPress={() => circuitActions.undoCompleteRound()}
-                onLayout={(e) => setUndoBtnWidth(e.nativeEvent.layout.width)}
-              >
-                <Animated.View
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    backgroundColor: colors.brand.primary,
-                    width: undoProgressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["100%", "0%"],
-                    }),
-                  }}
-                />
-                {/* Base label — reads on the uncovered (surface) portion */}
-                <View className="py-3 px-4 flex-row items-center justify-center">
-                  <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                    {getRoundUndoButtonText(
-                      block.blockType || "circuit",
-                      lastCompletedRoundNumber
-                    )}
-                  </Text>
-                </View>
-                {/* Masked label — white, clipped to the fill so it reads over the black */}
-                <Animated.View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    overflow: "hidden",
-                    width: undoProgressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["100%", "0%"],
-                    }),
-                  }}
-                >
-                  <View
-                    className="py-3 px-4 flex-row items-center justify-center"
-                    style={{ width: undoBtnWidth }}
-                  >
-                    <Text className="text-sm font-semibold" style={{ color: colors.contentOnPrimary }}>
-                      {getRoundUndoButtonText(
-                      block.blockType || "circuit",
-                      lastCompletedRoundNumber
-                    )}
-                    </Text>
-                  </View>
-                </Animated.View>
-              </TouchableOpacity>
-            ) : !!getRoundCompleteButtonText(
-                block.blockType || "circuit",
-                sessionData.currentRound,
-                sessionData.targetRounds
-              ) ? (
-              (block.blockType === "amrap" && sessionData.currentRound >= 1) ||
-              (sessionData.targetRounds &&
-                sessionData.currentRound > sessionData.targetRounds &&
-                block.blockType === "circuit") ? (
-                <TouchableOpacity
-                  className="py-3 px-4 rounded-xl items-center bg-brand-primary"
-                  onPress={handleCompleteRound}
-                >
-                  <Text className="text-sm font-semibold text-neutral-white">
-                    {getRoundCompleteButtonText(
-                      block.blockType || "circuit",
-                      sessionData.currentRound,
-                      sessionData.targetRounds
-                    )}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  className="py-3 px-4 rounded-xl items-center bg-brand-primary"
-                  onPress={
-                    block.blockType === "amrap"
-                      ? handleCompleteRound
-                      : !sessionData.targetRounds ||
-                          sessionData.currentRound >= sessionData.targetRounds
-                        ? handleCompleteCircuit
-                        : handleCompleteRound
-                  }
-                >
-                  <Text className="text-sm font-semibold text-neutral-white">
-                    {getRoundCompleteButtonText(
-                      block.blockType || "circuit",
-                      sessionData.currentRound,
-                      sessionData.targetRounds
-                    )}
-                  </Text>
-                </TouchableOpacity>
-              )
-            ) : null}
-          </View>
-        )}
-
       {/* Round Notes — collapsed behind an "Add a note" row unless already
           used, mirroring the strength block so the two block types match. */}
       {isActive && currentRoundData && !isCurrentRoundCompleted && (
@@ -745,6 +409,11 @@ export default function CircuitTracker({
                 placeholderTextColor={colors.text.muted}
                 value={localRoundNotes}
                 onChangeText={setLocalRoundNotes}
+                // Flush to the session on blur so the Complete Round button in
+                // the footer (CircuitRoundAction) records the note.
+                onEndEditing={() =>
+                  circuitActions?.updateRoundNotes?.(localRoundNotes)
+                }
                 multiline
                 numberOfLines={2}
               />
