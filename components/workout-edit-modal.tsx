@@ -97,6 +97,8 @@ export default function WorkoutEditModal({
 
   // Track whether modal has been initialized (prevents re-init on planDay prop changes)
   const initializedRef = useRef(false);
+  // Focus the replace/add search field when the user opens that view.
+  const searchInputRef = useRef<TextInput>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchExercise[]>([]);
   const [searching, setSearching] = useState(false);
@@ -248,6 +250,27 @@ export default function WorkoutEditModal({
     selectedEquipment,
     selectedDifficulty,
   ]);
+
+  // Live-filter as the user types, matching the calendar search tab's 300ms
+  // debounce (previously this view only searched on Return / onSubmitEditing).
+  useEffect(() => {
+    if (currentView !== "replace" && currentView !== "add") return;
+    const timeoutId = setTimeout(() => {
+      searchExercises();
+    }, 300);
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  // Auto-focus the search field when the replace/add view opens so the user can
+  // type immediately. The short delay lets the view finish mounting first.
+  useEffect(() => {
+    if (currentView !== "replace" && currentView !== "add") return;
+    const timeoutId = setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 350);
+    return () => clearTimeout(timeoutId);
+  }, [currentView]);
 
   const toggleBlockExpansion = (blockId: number) => {
     setExpandedBlocks((prev) => ({
@@ -697,7 +720,7 @@ export default function WorkoutEditModal({
 
                   {/* Edit Instructions */}
                   <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                    Tap to replace, swipe to delete, or add new exercises
+                    Tap an exercise to replace it, tap the trash to delete, or add new exercises
                   </Text>
 
                   {/* Workout Details with Icons */}
@@ -871,6 +894,7 @@ export default function WorkoutEditModal({
                           color={colors.text.muted}
                         />
                         <TextInput
+                          ref={searchInputRef}
                           className="flex-1 ml-3 text-base text-text-primary"
                           placeholder="Search exercises..."
                           placeholderTextColor={colors.text.muted}
@@ -1119,6 +1143,7 @@ export default function WorkoutEditModal({
                           color={colors.text.muted}
                         />
                         <TextInput
+                          ref={searchInputRef}
                           className="flex-1 ml-3 text-base text-text-primary"
                           placeholder="Search exercises..."
                           placeholderTextColor={colors.text.muted}
