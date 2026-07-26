@@ -30,6 +30,7 @@ import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
 import AnimatedSplashScreen from "@/components/ui/splash-screen";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
+import { getRevenueCatApiKey, USE_REVENUECAT_TEST_STORE } from "@/config";
 import {
   AppDataProvider,
   useAppDataContext,
@@ -169,16 +170,16 @@ function AppContent() {
   useEffect(() => {
     Purchases.setLogLevel(LOG_LEVEL.ERROR);
 
-    const apiKey = Platform.OS === "ios"
-      ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
-      : process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY;
+    const apiKey = getRevenueCatApiKey();
 
     if (!apiKey) {
       Sentry.captureMessage("RevenueCat: API key is missing", {
         level: "error",
         extra: {
           platform: Platform.OS,
+          usingTestStore: USE_REVENUECAT_TEST_STORE,
           iosKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+          iosTestStoreKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_IOS_TEST_STORE_KEY,
           androidKeyExists: !!process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
         },
       });
