@@ -20,6 +20,7 @@ import {
 import { AppState } from "react-native";
 
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
+import CircuitRoundAction from "@/components/circuit-round-action";
 import CircuitTracker from "@/components/circuit-tracker";
 import ExerciseLink from "@/components/exercise-link";
 import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
@@ -72,7 +73,7 @@ import {
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { formatDateAsString,formatEquipment, getCurrentDate } from "@/utils";
-import { isCircuitBlock } from "@/utils/circuit-utils";
+import { isCircuitBlock, isRoundActionVisible } from "@/utils/circuit-utils";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -1156,13 +1157,26 @@ export function WorkoutScreen() {
           : "Error completing exercise:",
         err,
       );
+      // The completion path throws BEFORE advancing or marking anything
+      // complete, and every write it makes is idempotent, so retrying is safe
+      // and lossless. Offer a real Retry instead of a dead-end "OK" — a save
+      // failure mid-workout is almost always a transient network blip.
       setDialogConfig({
-        title: "Error",
+        title: isCurrentBlockCircuit
+          ? "Couldn't Save Circuit"
+          : "Couldn't Save Exercise",
         description: isCurrentBlockCircuit
-          ? "Failed to complete circuit. Please try again."
-          : "Failed to complete exercise. Please try again.",
+          ? "We couldn't save this circuit just now — check your connection. Your reps are still here and nothing was lost."
+          : "We couldn't save this exercise just now — check your connection. Your sets are still here and nothing was lost.",
         primaryButton: {
-          text: "OK",
+          text: "Retry",
+          onPress: () => {
+            setDialogVisible(false);
+            completeExercise();
+          },
+        },
+        secondaryButton: {
+          text: "Not Now",
           onPress: () => setDialogVisible(false),
         },
         icon: "alert-circle",
@@ -1287,6 +1301,10 @@ export function WorkoutScreen() {
       const currentProg = exerciseProgress[currentExerciseIndex];
       let savedCurrentExercise = false;
       let savedCircuitExerciseCount = 0;
+      // Distinguishes "nothing to save" (fine, complete the day) from "the save
+      // threw" (do NOT complete — that would mark today done with this block's
+      // data dropped, and resuming would restart from zero). See below.
+      let saveFailed = false;
 
       if (currentEx && currentProg) {
         const block = workout.blocks.find((b) =>
@@ -1369,7 +1387,21 @@ export function WorkoutScreen() {
           }
         } catch (saveErr) {
           console.error("Error saving current exercise on early end:", saveErr);
+          saveFailed = true;
         }
+      }
+
+      // Robustness: never mark the day complete on a failed save. Doing so
+      // would strand the current block's reps (they live only in memory /
+      // circuit session) and, because the day is now "complete" with no logs,
+      // resuming would restart from the first exercise. Keep the user in the
+      // workout with their progress intact so they can retry or truly abandon.
+      if (saveFailed) {
+        showErrorDialog(
+          "Couldn't Save Your Progress",
+          "We couldn't save this block just now — check your connection and try again. Your workout is still here and nothing was lost.",
+        );
+        return;
       }
 
       const extraExercises = savedCurrentExercise
@@ -1522,6 +1554,20 @@ export function WorkoutScreen() {
   };
 
   const circuitSession = useCircuitSession(circuitConfig);
+
+  // Whether the fixed footer should surface the per-round action (Complete
+  // Round / Interval / EMOM finish / Undo) as its primary button. Pinning it
+  // here keeps it on-screen on short devices (S22) where it used to scroll
+  // out of view inside the tracker; "Complete Circuit" then becomes a link.
+  const showCircuitRoundAction = Boolean(
+    isCurrentBlockCircuit &&
+      currentBlock &&
+      isRoundActionVisible(
+        currentBlock,
+        circuitSession.sessionData,
+        circuitSession.canUndoRound
+      )
+  );
 
   // Render loading state
   if (loading) {
@@ -2330,87 +2376,121 @@ export function WorkoutScreen() {
             </Text>
           </TouchableOpacity>
         ) : (
-          <View className="flex-row gap-2">
-            {/* Skip button - only for completion-only blocks */}
-            {isCurrentBlockCompletionOnly && (
+          <>
+            <View className="flex-row gap-2">
+              {/* Skip button - only for completion-only blocks */}
+              {isCurrentBlockCompletionOnly && (
+                <TouchableOpacity
+                  className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+                  onPress={() => setShowSkipModal(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip"
+                >
+                  <Ionicons
+                    name="play-skip-forward-outline"
+                    size={20}
+                    color={colors.contentOnPrimary}
+                  />
+                  <Text
+                    className="text-content-on-primary font-semibold ml-2"
+                    maxFontSizeMultiplier={1.3}
+                  >
+                    Skip
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Surface + border, not neutral-light-2 — that gray vanished
+                  against the bg-card action bar and Pause read as bare text. */}
               <TouchableOpacity
-                className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
-                onPress={() => setShowSkipModal(true)}
+                className="bg-surface border border-neutral-medium-1 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+                onPress={togglePause}
                 accessibilityRole="button"
-                accessibilityLabel="Skip"
+                accessibilityLabel={isPaused ? "Resume" : "Pause"}
               >
                 <Ionicons
-                  name="play-skip-forward-outline"
+                  name={isPaused ? "play-outline" : "pause-outline"}
                   size={20}
-                  color={colors.contentOnPrimary}
+                  color={colors.text.primary}
                 />
                 <Text
-                  className="text-content-on-primary font-semibold ml-2"
+                  className="text-text-primary font-semibold ml-2"
                   maxFontSizeMultiplier={1.3}
                 >
-                  Skip
+                  {isPaused ? "Resume" : "Pause"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Circuit blocks pin the per-round action here so it stays
+                  visible on short screens (S22); "Complete Circuit" drops to
+                  the link below. All other blocks keep the single Complete
+                  button. [T5-2] Single tap — no confirmation modal. */}
+              {showCircuitRoundAction && currentBlock ? (
+                <CircuitRoundAction
+                  isActive={!isWorkoutCompleted}
+                  block={currentBlock}
+                  sessionData={circuitSession.sessionData}
+                  canUndoRound={circuitSession.canUndoRound}
+                  circuitActions={circuitSession.actions}
+                />
+              ) : (
+                <TouchableOpacity
+                  className={`bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1 ${
+                    isCompletingExercise ? "opacity-75" : ""
+                  }`}
+                  onPress={completeExercise}
+                  disabled={isCompletingExercise}
+                  accessibilityRole="button"
+                  accessibilityLabel="Complete"
+                  accessibilityState={{ disabled: isCompletingExercise }}
+                >
+                  {isCompletingExercise ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.contentOnPrimary}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.contentOnPrimary}
+                    />
+                  )}
+                  <Text
+                    className="text-content-on-primary font-semibold ml-2"
+                    maxFontSizeMultiplier={1.3}
+                  >
+                    {isCompletingExercise
+                      ? "Saving..."
+                      : isCurrentBlockCircuit
+                        ? "Complete Circuit"
+                        : "Complete"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* When the round action owns the primary slot, finishing the
+                whole circuit becomes a secondary link. */}
+            {showCircuitRoundAction && (
+              <TouchableOpacity
+                onPress={completeExercise}
+                disabled={isCompletingExercise}
+                className="items-center mt-3"
+                accessibilityRole="button"
+                accessibilityLabel="Complete Circuit"
+                accessibilityState={{ disabled: isCompletingExercise }}
+              >
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: colors.brand.primary }}
+                  maxFontSizeMultiplier={1.3}
+                >
+                  {isCompletingExercise ? "Saving..." : "Complete Circuit"}
                 </Text>
               </TouchableOpacity>
             )}
-
-            {/* Surface + border, not neutral-light-2 — that gray vanished
-                against the bg-card action bar and Pause read as bare text. */}
-            <TouchableOpacity
-              className="bg-surface border border-neutral-medium-1 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
-              onPress={togglePause}
-              accessibilityRole="button"
-              accessibilityLabel={isPaused ? "Resume" : "Pause"}
-            >
-              <Ionicons
-                name={isPaused ? "play-outline" : "pause-outline"}
-                size={20}
-                color={colors.text.primary}
-              />
-              <Text
-                className="text-text-primary font-semibold ml-2"
-                maxFontSizeMultiplier={1.3}
-              >
-                {isPaused ? "Resume" : "Pause"}
-              </Text>
-            </TouchableOpacity>
-
-            {/* [T5-2] Single tap — the confirmation modal is gone. For
-                rep-based exercises this is the partial-completion path (all
-                sets checked auto-advances); circuits/warmups complete here. */}
-            <TouchableOpacity
-              className={`bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1 ${
-                isCompletingExercise ? "opacity-75" : ""
-              }`}
-              onPress={completeExercise}
-              disabled={isCompletingExercise}
-              accessibilityRole="button"
-              accessibilityLabel="Complete"
-              accessibilityState={{ disabled: isCompletingExercise }}
-            >
-              {isCompletingExercise ? (
-                <ActivityIndicator
-                  size="small"
-                  color={colors.contentOnPrimary}
-                />
-              ) : (
-                <Ionicons
-                  name="checkmark"
-                  size={20}
-                  color={colors.contentOnPrimary}
-                />
-              )}
-              <Text
-                className="text-content-on-primary font-semibold ml-2"
-                maxFontSizeMultiplier={1.3}
-              >
-                {isCompletingExercise
-                  ? "Saving..."
-                  : isCurrentBlockCircuit
-                    ? "Complete Circuit"
-                    : "Complete"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </>
         )}
 
         {/* End Early link */}

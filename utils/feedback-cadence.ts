@@ -1,3 +1,6 @@
+/** AsyncStorage key the feedback card persists cadence state under. */
+export const CADENCE_STORAGE_KEY = "@workout_feedback_cadence";
+
 export type FeedbackPromptVariant = "expanded" | "collapsed" | "hidden";
 
 /** Why a variant was chosen — carried on workout_feedback_shown. */

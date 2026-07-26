@@ -14,6 +14,7 @@ import {
 } from "@/lib/feedback";
 import { type ThemeColorPalette, useThemeColors } from "@/lib/theme";
 import {
+  CADENCE_STORAGE_KEY,
   type FeedbackCadenceState,
   type FeedbackPromptVariant,
   registerAnswer,
@@ -22,7 +23,7 @@ import {
 
 import VoiceInputButton from "./voice-input-button";
 
-const CADENCE_KEY = "@workout_feedback_cadence";
+const CADENCE_KEY = CADENCE_STORAGE_KEY;
 
 const EFFORT_OPTIONS: { value: FeedbackEffort; label: string }[] = [
   { value: "too_easy", label: "Too easy" },
