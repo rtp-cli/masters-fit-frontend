@@ -14,21 +14,13 @@ import {
 import { type PurchasesPackage } from "react-native-purchases";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { MASTERSFIT_PLUS_BENEFITS } from "@/constants/subscription";
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { useThemeColors } from "@/lib/theme";
 import { type PaywallLimits } from "@/types/api";
 
 import SubscriptionPlansList from "./subscription-plans-list";
-
-// Shared benefit list for the MastersFit+ tier. Product-level (not per-package)
-// to match the paywall design — both plans unlock the same features.
-const MASTERSFIT_PLUS_BENEFITS = [
-  "AI-powered workout plans",
-  "Priority workout adjustments",
-  "Advanced analytics & insights",
-  "Syncs workouts with Apple Health and Android Health Connect",
-];
 
 interface ResultState {
   type: "success" | "info" | "error";

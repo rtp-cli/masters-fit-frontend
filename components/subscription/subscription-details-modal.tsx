@@ -3,6 +3,7 @@ import React from "react";
 import { Modal, ScrollView,Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { MASTERSFIT_PLUS_BENEFITS } from "@/constants/subscription";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import { useThemeColors } from "@/lib/theme";
@@ -167,36 +168,18 @@ export default function SubscriptionDetailsModal({
               MastersFit+ Benefits
             </Text>
             <View className="gap-3">
-              <View className="flex-row items-center gap-3">
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-sm text-text-secondary flex-1">
-                  New plans & workout adjustments
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-3">
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-sm text-text-secondary flex-1">
-                  Advanced analytics
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-3">
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={colors.brand.primary}
-                />
-                <Text className="text-sm text-text-secondary flex-1">
-                  Customizable themes
-                </Text>
-              </View>
+              {MASTERSFIT_PLUS_BENEFITS.map((benefit) => (
+                <View key={benefit} className="flex-row items-center gap-3">
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={colors.brand.primary}
+                  />
+                  <Text className="text-sm text-text-secondary flex-1">
+                    {benefit}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
 
