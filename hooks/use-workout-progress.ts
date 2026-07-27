@@ -160,16 +160,26 @@ export function useWorkoutProgress(
       let changed = false;
       const updated = displayDaysRef.current.map(existing => {
         const backend = sortedBackend.find(b => b.dayNumber === existing.dayNumber);
-        if (!backend || existing.status === 'done' || existing.status === 'failed') return existing;
-        if (backend.status === 'generating' && existing.status === 'pending') {
+        if (!backend) return existing;
+        // Adopt a corrected label whenever the backend sends a different one.
+        // Single-day regen emits a placeholder while generating, then the real
+        // generated title once it's known; without this the stale placeholder
+        // (or old title) would stick. Labels are stable for weekly generation,
+        // so this is a no-op there.
+        let next = existing;
+        if (backend.label && backend.label !== next.label) {
+          next = { ...next, label: backend.label };
           changed = true;
-          return { ...existing, status: 'generating' as const };
         }
-        if (backend.status === 'failed') {
+        if (next.status === 'done' || next.status === 'failed') return next;
+        if (backend.status === 'generating' && next.status === 'pending') {
+          next = { ...next, status: 'generating' as const };
           changed = true;
-          return { ...existing, status: 'failed' as const };
+        } else if (backend.status === 'failed') {
+          next = { ...next, status: 'failed' as const };
+          changed = true;
         }
-        return existing;
+        return next;
       });
       if (changed) {
         displayDaysRef.current = updated;
@@ -425,16 +435,24 @@ export function useJobProgress(jobId: number | null): UseWorkoutProgressReturn {
             let changed = false;
             const updated = displayDaysRef.current.map(existing => {
               const backend = sortedBackend.find(b => b.dayNumber === existing.dayNumber);
-              if (!backend || existing.status === 'done' || existing.status === 'failed') return existing;
-              if (backend.status === 'generating' && existing.status === 'pending') {
+              if (!backend) return existing;
+              // Adopt a corrected label whenever the backend sends a different
+              // one (single-day regen sends a placeholder first, then the real
+              // generated title). No-op for weekly generation (stable labels).
+              let next = existing;
+              if (backend.label && backend.label !== next.label) {
+                next = { ...next, label: backend.label };
                 changed = true;
-                return { ...existing, status: 'generating' as const };
               }
-              if (backend.status === 'failed') {
+              if (next.status === 'done' || next.status === 'failed') return next;
+              if (backend.status === 'generating' && next.status === 'pending') {
+                next = { ...next, status: 'generating' as const };
                 changed = true;
-                return { ...existing, status: 'failed' as const };
+              } else if (backend.status === 'failed') {
+                next = { ...next, status: 'failed' as const };
+                changed = true;
               }
-              return existing;
+              return next;
             });
             if (changed) {
               displayDaysRef.current = updated;
