@@ -256,6 +256,13 @@ export function WorkoutScreen() {
     index: number;
   } | null>(null);
 
+  // Pre-start plan overview: which blocks are expanded (default true). Makes
+  // the shared WorkoutBlock headers collapsible here too, so the disclosure
+  // chevron appears on this surface as it does on Calendar.
+  const [expandedBlocks, setExpandedBlocks] = useState<Record<number, boolean>>(
+    {}
+  );
+
   // Open the demo sheet anchored on `exerciseId` (or the block's first demo),
   // with prev/next stepping through the block's other demos.
   const openDemoSheet = useCallback(
@@ -2305,6 +2312,13 @@ export function WorkoutScreen() {
                   key={block.id}
                   block={block}
                   blockIndex={blockIndex}
+                  isExpanded={expandedBlocks[block.id] !== false}
+                  onToggleExpanded={() =>
+                    setExpandedBlocks((prev) => ({
+                      ...prev,
+                      [block.id]: prev[block.id] === false,
+                    }))
+                  }
                   onExerciseDemoPress={(exercise) =>
                     openDemoSheet(block, exercise.exercise.id)
                   }
@@ -2721,6 +2735,7 @@ export function WorkoutScreen() {
         visible={!!demoSheet}
         entries={demoSheet?.entries ?? []}
         initialIndex={demoSheet?.index ?? 0}
+        surface="workout"
         onClose={() => setDemoSheet(null)}
       />
 

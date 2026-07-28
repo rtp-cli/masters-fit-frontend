@@ -10,7 +10,7 @@ import {
 import { WebView } from "react-native-webview";
 
 import IconButton from "@/components/icon-button";
-import { trackVideoEngagement } from "@/lib/analytics";
+import { type DemoSurface, trackVideoEngagement } from "@/lib/analytics";
 import {
   checkYouTubeVideo,
   processExerciseLink,
@@ -33,6 +33,8 @@ interface DemoSheetProps {
   entries: DemoSheetEntry[];
   /** Which entry to open on. */
   initialIndex: number;
+  /** Where the sheet was opened from — rides the demo-open analytics event. */
+  surface?: DemoSurface;
   onClose: () => void;
 }
 
@@ -47,6 +49,7 @@ export default function DemoSheet({
   visible,
   entries,
   initialIndex,
+  surface,
   onClose,
 }: DemoSheetProps) {
   const colors = useThemeColors();
@@ -83,6 +86,7 @@ export default function DemoSheet({
       exercise_id: entry.exerciseId,
       exercise_name: entry.exerciseName,
       video_url: entry.link,
+      surface,
     }).catch(() => {});
 
     let cancelled = false;

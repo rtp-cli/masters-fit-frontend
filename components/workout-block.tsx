@@ -28,6 +28,11 @@ interface WorkoutBlockProps {
    *  repeated "Demo" label is noise) and the block header gets a labelled
    *  "Demos" chip. Rows without a demo get nothing — never a disabled chip. */
   onExerciseDemoPress?: (exercise: WorkoutBlockWithExercise) => void;
+  /** The labelled "Demos" chip in the header. False on Calendar, where the
+   *  header is a collapse toggle — a chip nested inside it makes a near-miss
+   *  collapse the block instead of playing a video. Default true (Workout tab,
+   *  where you're about to run the whole block). */
+  showBlockDemoChip?: boolean;
 }
 
 export default function WorkoutBlock({
@@ -41,6 +46,7 @@ export default function WorkoutBlock({
   onAddExercise,
   deletingExerciseId,
   onExerciseDemoPress,
+  showBlockDemoChip = true,
 }: WorkoutBlockProps) {
   const colors = useThemeColors();
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
@@ -147,6 +153,10 @@ export default function WorkoutBlock({
         className={`bg-brand-light-1 p-4 ${isCompactVariant ? "p-3" : "p-4"}`}
         onPress={onToggleExpanded}
         disabled={!onToggleExpanded}
+        accessibilityRole={onToggleExpanded ? "button" : undefined}
+        accessibilityState={
+          onToggleExpanded ? { expanded: !!isExpanded } : undefined
+        }
       >
         <View className="flex-row items-center">
           <View className="size-8 rounded-full items-center justify-center mr-3">
@@ -174,12 +184,24 @@ export default function WorkoutBlock({
               {getBlockDescription(block)}
             </Text>
           </View>
-          {firstDemoExercise && onExerciseDemoPress ? (
+          {showBlockDemoChip && firstDemoExercise && onExerciseDemoPress ? (
             <DemoChip
               label="Demos"
               accessibilityLabel={`Demos: ${block.blockName || blockTypeName}`}
               onPress={() => onExerciseDemoPress(firstDemoExercise)}
               className="ml-2"
+            />
+          ) : null}
+          {/* Disclosure chevron — shown only when the header actually toggles.
+              Reports state (muted), part of the header's own tap target; sits
+              outboard of the Demos chip. chevron-up = expanded (points at the
+              content it will hide), chevron-down = collapsed. */}
+          {onToggleExpanded ? (
+            <Ionicons
+              name={isExpanded ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={colors.text.muted}
+              style={{ marginLeft: 8 }}
             />
           ) : null}
         </View>

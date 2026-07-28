@@ -5,10 +5,15 @@ import { logger } from "./logger";
 
 // ==================== Analytics API Types ====================
 
+/** Where the demo was opened from — carried on the "Video Link Opened" event
+ *  so we can tell which surface drives demo usage. */
+export type DemoSurface = "workout" | "calendar_scheduled" | "calendar_complete";
+
 export interface VideoEngagementData {
   exercise_id: number;
   exercise_name: string;
   video_url: string;
+  surface?: DemoSurface;
 }
 
 export interface AppOpenedData {

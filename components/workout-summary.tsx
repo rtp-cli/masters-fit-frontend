@@ -8,9 +8,11 @@ import {
   View,
 } from "react-native";
 
+import DemoChip from "@/components/demo-chip";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import WorkoutFeedbackCard from "@/components/workout-feedback-card";
 import { getLoggingMode } from "@/constants/block-types";
+import { exerciseHasDemo } from "@/lib/exercise-video";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
   fetchBlockLogsForPlanDay,
@@ -25,6 +27,7 @@ import {
 import {
   getBlockTypeDisplayName,
   type PlanDayWithBlocks,
+  type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { isCircuitBlock } from "@/utils/circuit-utils";
@@ -115,6 +118,15 @@ interface WorkoutSummaryProps {
   onResume?: () => void;
   /** Whether resume is in progress */
   isResuming?: boolean;
+  /** When provided, exercise rows whose exercise has a demo get an icon-only
+   *  play chip (right-aligned). Optional so the post-workout summary is
+   *  unaffected until a host opts in — currently only the Calendar completed
+   *  day does. Passes the exercise's block so the caller can build the
+   *  block-scoped prev/next entries. */
+  onExerciseDemoPress?: (
+    block: WorkoutBlockWithExercises,
+    exercise: WorkoutBlockWithExercise
+  ) => void;
 }
 
 export default function WorkoutSummary({
@@ -123,6 +135,7 @@ export default function WorkoutSummary({
   compact = false,
   onResume,
   isResuming = false,
+  onExerciseDemoPress,
 }: WorkoutSummaryProps) {
   const colors = useThemeColors();
   // Reserved completion accent (MF-004/005); falls back to ink for themes without it.
@@ -433,6 +446,18 @@ export default function WorkoutSummary({
                             <Text className="font-semibold text-text-primary text-sm flex-1">
                               {exercise.exercise.name}
                             </Text>
+                            {/* Icon-only demo chip — the row already names the
+                                exercise. Rows without a demo get nothing. */}
+                            {onExerciseDemoPress &&
+                            exerciseHasDemo(exercise.exercise) ? (
+                              <DemoChip
+                                accessibilityLabel={`Demo: ${exercise.exercise.name}`}
+                                onPress={() =>
+                                  onExerciseDemoPress(block, exercise)
+                                }
+                                className="ml-2"
+                              />
+                            ) : null}
                           </View>
 
                           {/* Logged Data */}

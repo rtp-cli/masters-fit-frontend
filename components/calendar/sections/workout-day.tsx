@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { Text, TouchableOpacity,View } from "react-native";
 
+import DemoSheet, { type DemoSheetEntry } from "@/components/demo-sheet";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import WorkoutBlock from "@/components/workout-block";
 import WorkoutSummary from "@/components/workout-summary";
+import { exerciseHasDemo } from "@/lib/exercise-video";
 import {
   type PlanDayWithBlocks,
   type WorkoutBlockWithExercises,
@@ -42,6 +44,34 @@ export default function WorkoutDaySection({
   onStartWorkout,
   onShowWorkoutChoice,
 }: WorkoutDaySectionProps) {
+  // One demo sheet for the whole day detail (scheduled or completed). It
+  // overlays the caller, so dismissing preserves scroll position and the
+  // selected day — the day detail is never remounted.
+  const [demoSheet, setDemoSheet] = useState<{
+    entries: DemoSheetEntry[];
+    index: number;
+  } | null>(null);
+
+  const openDemoSheet = useCallback(
+    (block: WorkoutBlockWithExercises, exerciseId: number) => {
+      const entries: DemoSheetEntry[] = block.exercises
+        .filter((ex) => exerciseHasDemo(ex.exercise))
+        .map((ex) => ({
+          exerciseId: ex.exercise.id,
+          exerciseName: ex.exercise.name,
+          link: ex.exercise.link!,
+          description: ex.exercise.description,
+        }));
+      if (entries.length === 0) return;
+      const index = Math.max(
+        0,
+        entries.findIndex((entry) => entry.exerciseId === exerciseId)
+      );
+      setDemoSheet({ entries, index });
+    },
+    []
+  );
+
   if (!selectedDate) {
     return null;
   }
@@ -78,7 +108,24 @@ export default function WorkoutDaySection({
 
   // Show summary view for completed plan days
   if (currentSelectedPlanDay.isComplete) {
-    return <WorkoutSummary workout={currentSelectedPlanDay} compact />;
+    return (
+      <>
+        <WorkoutSummary
+          workout={currentSelectedPlanDay}
+          compact
+          onExerciseDemoPress={(block, exercise) =>
+            openDemoSheet(block, exercise.exercise.id)
+          }
+        />
+        <DemoSheet
+          visible={!!demoSheet}
+          entries={demoSheet?.entries ?? []}
+          initialIndex={demoSheet?.index ?? 0}
+          surface="calendar_complete"
+          onClose={() => setDemoSheet(null)}
+        />
+      </>
+    );
   }
 
   return (
@@ -134,6 +181,13 @@ export default function WorkoutDaySection({
                   onToggleExpanded={() => onToggleBlock(block.id)}
                   showDetails={true}
                   variant="calendar"
+                  onExerciseDemoPress={(exercise) =>
+                    openDemoSheet(block, exercise.exercise.id)
+                  }
+                  // No labelled "Demos" chip in the header: on Calendar the
+                  // header is a collapse toggle, so a chip nested in it invites
+                  // a near-miss collapse. Per-row icon chips only.
+                  showBlockDemoChip={false}
                 />
               ))
           ) : (
@@ -148,6 +202,14 @@ export default function WorkoutDaySection({
           )}
         </View>
       </View>
+
+      <DemoSheet
+        visible={!!demoSheet}
+        entries={demoSheet?.entries ?? []}
+        initialIndex={demoSheet?.index ?? 0}
+        surface="calendar_scheduled"
+        onClose={() => setDemoSheet(null)}
+      />
     </View>
   );
 }
