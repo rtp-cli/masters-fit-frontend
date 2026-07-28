@@ -7,6 +7,9 @@ export interface Exercise {
   equipment?: string;
   instructions?: string;
   link?: string;
+  /** Backend's stored oEmbed verdict on `link`. null/undefined = not yet
+   *  validated (render the demo affordance optimistically). */
+  hasDemo?: boolean | null;
   muscles_targeted?: string[];
   created_at: Date;
   updated_at: Date;
@@ -21,6 +24,7 @@ export interface ExerciseFromLib {
   instructions?: string;
   imageUrl?: string;
   link?: string;
+  hasDemo?: boolean | null;
   difficulty: string;
   category?: string;
 }

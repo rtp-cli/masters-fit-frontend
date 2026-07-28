@@ -27,7 +27,9 @@ import {
   View,
 } from "react-native";
 
-import ExerciseLink from "@/components/exercise-link";
+import DemoChip from "@/components/demo-chip";
+import DemoSheet from "@/components/demo-sheet";
+import { exerciseHasDemo } from "@/lib/exercise-video";
 import ExerciseLinkModal from "@/components/exercise-link-modal";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import type { DialogButton } from "@/components/ui";
@@ -90,6 +92,9 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
     userStats: ExerciseUserStats | null;
   } | null>(null);
   const [generalResults, setGeneralResults] = useState<Exercise[]>([]);
+  // Demo sheet for the exercise-detail view — same single playback surface
+  // as the Workout tab (replaced the inline hero player).
+  const [demoSheetVisible, setDemoSheetVisible] = useState(false);
   // [LR-023] Pagination for exercise search — the backend has supported
   // limit/offset/hasMore for a while, but nothing here ever used it, so
   // results were silently capped at the default page with no way to see more.
@@ -874,22 +879,22 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
         {!isLoading && exerciseResult ? (
           <View className="px-4 pb-4">
             <View className="bg-surface rounded-2xl p-5 shadow-rn-sm border border-neutral-medium-1">
-              {/* Exercise Link at the top inside card */}
-              <View className="mb-4 -mx-5 -mt-5">
-                <ExerciseLink
-                  link={exerciseResult.exercise.link}
-                  exerciseName={exerciseResult.exercise.name}
-                  exerciseId={exerciseResult.exercise.id}
-                  variant="hero"
-                />
-              </View>
-
               {/* Exercise Title with Edit Link */}
               <View className="flex-row items-start justify-between mb-2">
                 <View className="flex-1">
                   <Text className="text-xl font-bold text-text-primary mr-2">
                     {formatName(exerciseResult.exercise.name)}
                   </Text>
+                  {/* Demo opens in the shared sheet — same surface as the
+                      Workout tab (replaced the inline hero player). */}
+                  {exerciseHasDemo(exerciseResult.exercise) && (
+                    <DemoChip
+                      label="Demo"
+                      accessibilityLabel={`Demo: ${exerciseResult.exercise.name}`}
+                      onPress={() => setDemoSheetVisible(true)}
+                      className="mt-2"
+                    />
+                  )}
                 </View>
                 <TouchableOpacity
                   className="flex-row items-center bg-brand-light-2 px-3 py-2 rounded-lg ml-2"
@@ -1809,6 +1814,23 @@ const SearchView = forwardRef<SearchViewHandle>(function SearchView(_props, ref)
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Demo video sheet for the exercise-detail view */}
+      {exerciseResult && exerciseResult.exercise.link ? (
+        <DemoSheet
+          visible={demoSheetVisible}
+          entries={[
+            {
+              exerciseId: exerciseResult.exercise.id,
+              exerciseName: exerciseResult.exercise.name,
+              link: exerciseResult.exercise.link,
+              description: exerciseResult.exercise.description,
+            },
+          ]}
+          initialIndex={0}
+          onClose={() => setDemoSheetVisible(false)}
+        />
+      ) : null}
 
       {/* Exercise Link Modal */}
       <ExerciseLinkModal

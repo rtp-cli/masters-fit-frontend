@@ -22,8 +22,9 @@ import { AppState } from "react-native";
 import AdaptiveSetTracker from "@/components/adaptive-set-tracker";
 import CircuitRoundAction from "@/components/circuit-round-action";
 import CircuitTracker from "@/components/circuit-tracker";
-import ExerciseLink from "@/components/exercise-link";
-import ExerciseVideoCarousel from "@/components/exercise-video-carousel";
+import DemoChip from "@/components/demo-chip";
+import DemoSheet, { type DemoSheetEntry } from "@/components/demo-sheet";
+import WorkoutBlock from "@/components/workout-block";
 import JustGeneratedBadge from "@/components/just-generated-badge";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
@@ -49,6 +50,7 @@ import { useCircuitSession } from "@/hooks/use-circuit-session";
 import { trackWorkoutStarted } from "@/lib/analytics";
 import { getCurrentUser } from "@/lib/auth";
 import { logCircuitCompletion } from "@/lib/circuits";
+import { exerciseHasDemo } from "@/lib/exercise-video";
 import { tabEvents } from "@/lib/tab-events";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -239,6 +241,38 @@ export function WorkoutScreen() {
     });
     setDialogVisible(true);
   }, []);
+
+  // Demo sheet state: the demos in the tapped exercise's block plus which one
+  // to open on. null = closed. The sheet overlays this screen, so the list
+  // never unmounts and dismissing lands the user exactly where they were.
+  const [demoSheet, setDemoSheet] = useState<{
+    entries: DemoSheetEntry[];
+    index: number;
+  } | null>(null);
+
+  // Open the demo sheet anchored on `exerciseId` (or the block's first demo),
+  // with prev/next stepping through the block's other demos.
+  const openDemoSheet = useCallback(
+    (block: WorkoutBlockWithExercises, exerciseId?: number) => {
+      const entries: DemoSheetEntry[] = block.exercises
+        .filter((ex) => exerciseHasDemo(ex.exercise))
+        .map((ex) => ({
+          exerciseId: ex.exercise.id,
+          exerciseName: ex.exercise.name,
+          link: ex.exercise.link!,
+          description: ex.exercise.description,
+        }));
+      if (entries.length === 0) return;
+      const index = exerciseId
+        ? Math.max(
+            0,
+            entries.findIndex((entry) => entry.exerciseId === exerciseId),
+          )
+        : 0;
+      setDemoSheet({ entries, index });
+    },
+    [],
+  );
 
   // [T5-3/MF-003] Rest-timer state, countdown, UI, and the Rest Complete modal
   // were removed entirely (owner decision: no timers). The workout/exercise
@@ -1835,31 +1869,14 @@ export function WorkoutScreen() {
           />
         }
       >
-        {/* Hero Exercise Media - Contextual based on workout type */}
-        <View className="relative">
-          {currentExercise && !isCurrentBlockCircuit ? (
-            <ExerciseLink
-              link={currentExercise.exercise.link}
-              exerciseName={currentExercise.exercise.name}
-              exerciseId={currentExercise.exercise.id}
-              variant="hero"
-            />
-          ) : isCurrentBlockCircuit && currentBlock ? (
-            <ExerciseVideoCarousel
-              exercises={currentBlock.exercises}
-              blockName=""
-            />
-          ) : null}
-
-          {/* "Just generated" badge after a single-day generation */}
+        <View className="px-6 pt-6">
+          {/* "Just generated" badge after a single-day generation. Used to
+              float over the deleted hero media; now sits in flow. */}
           {justGenerated === "day" && (
-            <View style={{ position: "absolute", top: 16, left: 16 }}>
+            <View className="mb-4 self-start">
               <JustGeneratedBadge />
             </View>
           )}
-        </View>
-
-        <View className="px-6 pt-6">
           {/* Workout Header */}
           {/* Pre-computed progressPercent used for the progress bar */}
           <View className="mb-6">
@@ -1924,25 +1941,15 @@ export function WorkoutScreen() {
                 {currentExercise.exercise.name}
               </Text>
 
-              {currentExercise.exercise.link && (
-                <TouchableOpacity
+              {exerciseHasDemo(currentExercise.exercise) && currentBlock && (
+                <DemoChip
+                  label="Demo"
+                  accessibilityLabel={`Demo: ${currentExercise.exercise.name}`}
                   onPress={() =>
-                    scrollViewRef.current?.scrollTo({
-                      y: 0,
-                      animated: true,
-                    })
+                    openDemoSheet(currentBlock, currentExercise.exercise.id)
                   }
-                  className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full self-start mb-3"
-                >
-                  <Ionicons
-                    name="play-circle-outline"
-                    size={14}
-                    color={colors.brand.primary}
-                  />
-                  <Text className="text-xs text-brand-primary">
-                    Video Available
-                  </Text>
-                </TouchableOpacity>
+                  className="mb-3"
+                />
               )}
 
               <Text className="text-sm text-text-primary leading-6 mb-3">
@@ -2181,25 +2188,15 @@ export function WorkoutScreen() {
                 <Text className="text-lg font-bold text-text-primary">
                   {currentBlock.blockName}
                 </Text>
-                {currentBlock.exercises.some((ex) => ex.exercise.link) && (
-                  <TouchableOpacity
-                    onPress={() =>
-                      scrollViewRef.current?.scrollTo({
-                        y: 0,
-                        animated: true,
-                      })
-                    }
-                    className="flex-row items-center gap-1 px-2 py-1 bg-brand-primary/10 rounded-full self-start mt-2"
-                  >
-                    <Ionicons
-                      name="play-circle-outline"
-                      size={14}
-                      color={colors.brand.primary}
-                    />
-                    <Text className="text-xs text-brand-primary">
-                      Videos Available
-                    </Text>
-                  </TouchableOpacity>
+                {currentBlock.exercises.some((ex) =>
+                  exerciseHasDemo(ex.exercise),
+                ) && (
+                  <DemoChip
+                    label="Demos"
+                    accessibilityLabel={`Demos: ${currentBlock.blockName}`}
+                    onPress={() => openDemoSheet(currentBlock)}
+                    className="mt-2"
+                  />
                 )}
               </View>
               <CircuitLoggingInterface
@@ -2212,7 +2209,23 @@ export function WorkoutScreen() {
             </View>
           ) : null}
 
-          {/* Workout Overview */}
+          {/* Workout Overview. Pre-start it IS the screen — the shared
+              WorkoutBlock cards with demo chips (screens/02). Once started it
+              collapses into the [MF-012] progress-rail card below. */}
+          {!isWorkoutStarted ? (
+            <View>
+              {workout.blocks.map((block, blockIndex) => (
+                <WorkoutBlock
+                  key={block.id}
+                  block={block}
+                  blockIndex={blockIndex}
+                  onExerciseDemoPress={(exercise) =>
+                    openDemoSheet(block, exercise.exercise.id)
+                  }
+                />
+              ))}
+            </View>
+          ) : (
           <View className="bg-card rounded-2xl p-6 border border-neutral-light-2">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-lg font-bold text-text-primary">
@@ -2357,6 +2370,18 @@ export function WorkoutScreen() {
                           ) : null}
                         </View>
                       </View>
+
+                      {/* Icon-only demo chip — the row already names the
+                          exercise, so a repeated "Demo" label is noise. */}
+                      {exerciseHasDemo(exercise.exercise) ? (
+                        <DemoChip
+                          accessibilityLabel={`Demo: ${exercise.exercise.name}`}
+                          onPress={() =>
+                            openDemoSheet(block, exercise.exercise.id)
+                          }
+                          className="ml-2"
+                        />
+                      ) : null}
                     </View>
                   );
                 })}
@@ -2365,6 +2390,7 @@ export function WorkoutScreen() {
               </>
             )}
           </View>
+          )}
         </View>
       </ScrollView>
 
@@ -2603,6 +2629,14 @@ export function WorkoutScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Demo video sheet — the single playback surface for every Demo chip */}
+      <DemoSheet
+        visible={!!demoSheet}
+        entries={demoSheet?.entries ?? []}
+        initialIndex={demoSheet?.index ?? 0}
+        onClose={() => setDemoSheet(null)}
+      />
 
       {/* Custom Dialog */}
       {dialogConfig && (

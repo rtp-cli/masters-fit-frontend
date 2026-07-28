@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
+import { exerciseHasDemo } from "../lib/exercise-video";
 import { useThemeColors } from "../lib/theme";
 import {
   getBlockTypeDisplayName,
@@ -9,6 +10,7 @@ import {
   type WorkoutBlockWithExercises,
 } from "../types/api/workout.types";
 import { formatEquipment, formatWorkoutDuration } from "../utils";
+import DemoChip from "./demo-chip";
 
 interface WorkoutBlockProps {
   block: WorkoutBlockWithExercises;
@@ -21,6 +23,11 @@ interface WorkoutBlockProps {
   onExerciseDelete?: (exercise: WorkoutBlockWithExercise) => void;
   onAddExercise?: (blockId: number) => void;
   deletingExerciseId?: number | null;
+  /** When provided, exercises with a demo video get a play chip in the row's
+   *  right-hand slot (icon-only — the exercise name is right there, so a
+   *  repeated "Demo" label is noise) and the block header gets a labelled
+   *  "Demos" chip. Rows without a demo get nothing — never a disabled chip. */
+  onExerciseDemoPress?: (exercise: WorkoutBlockWithExercise) => void;
 }
 
 export default function WorkoutBlock({
@@ -33,9 +40,14 @@ export default function WorkoutBlock({
   onExerciseDelete,
   onAddExercise,
   deletingExerciseId,
+  onExerciseDemoPress,
 }: WorkoutBlockProps) {
   const colors = useThemeColors();
   const blockTypeName = getBlockTypeDisplayName(block.blockType);
+  // First exercise with a live demo — the header "Demos" chip anchors there.
+  const firstDemoExercise = onExerciseDemoPress
+    ? block.exercises.find((ex) => exerciseHasDemo(ex.exercise))
+    : undefined;
 
   const getBlockIcon = (blockType?: string) => {
     const icons: Record<string, string> = {
@@ -162,6 +174,14 @@ export default function WorkoutBlock({
               {getBlockDescription(block)}
             </Text>
           </View>
+          {firstDemoExercise && onExerciseDemoPress ? (
+            <DemoChip
+              label="Demos"
+              accessibilityLabel={`Demos: ${block.blockName || blockTypeName}`}
+              onPress={() => onExerciseDemoPress(firstDemoExercise)}
+              className="ml-2"
+            />
+          ) : null}
         </View>
 
         {/* Block Instructions */}
@@ -249,6 +269,15 @@ export default function WorkoutBlock({
                         )}
                       </View>
                     </View>
+
+                    {/* Demo chip (icon-only in rows) */}
+                    {onExerciseDemoPress && exerciseHasDemo(exercise.exercise) && (
+                      <DemoChip
+                        accessibilityLabel={`Demo: ${exercise.exercise.name}`}
+                        onPress={() => onExerciseDemoPress(exercise)}
+                        className="ml-2"
+                      />
+                    )}
 
                     {/* Delete button (edit mode) */}
                     {onExerciseDelete && (
@@ -360,6 +389,15 @@ export default function WorkoutBlock({
                         )}
                       </View>
                     </View>
+
+                    {/* Demo chip (icon-only in rows) */}
+                    {onExerciseDemoPress && exerciseHasDemo(exercise.exercise) && (
+                      <DemoChip
+                        accessibilityLabel={`Demo: ${exercise.exercise.name}`}
+                        onPress={() => onExerciseDemoPress(exercise)}
+                        className="ml-2"
+                      />
+                    )}
 
                     {/* Exercise Status (for workout variant) */}
                     {isWorkoutVariant && (
