@@ -55,8 +55,10 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
     <View className="px-4 mb-6">
       <View className="bg-surface rounded-2xl p-5 border border-neutral-medium-1">
         <View className="flex-row items-center justify-between mb-6">
+          {/* "Plan" is the codebase's noun for this object (workoutPlan.name);
+              the card shows the plan, not a single workout. */}
           <Text className="text-base font-semibold text-text-primary mb-1">
-            Active Workout
+            Active Plan
           </Text>
           {todaysWorkout && totalDurationMinutes > 0 ? (
             <Text className="text-base font-semibold text-text-primary">

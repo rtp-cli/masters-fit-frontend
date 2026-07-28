@@ -24,7 +24,7 @@ import CircuitRoundAction from "@/components/circuit-round-action";
 import CircuitTracker from "@/components/circuit-tracker";
 import DemoChip from "@/components/demo-chip";
 import DemoSheet, { type DemoSheetEntry } from "@/components/demo-sheet";
-import WorkoutBlock from "@/components/workout-block";
+import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
@@ -33,6 +33,7 @@ import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
 import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
 import ExerciseCompleteSnackbar from "@/components/workout/exercise-complete-snackbar";
+import WorkoutBlock from "@/components/workout-block";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
@@ -74,7 +75,12 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
-import { formatDateAsString,formatEquipment, getCurrentDate } from "@/utils";
+import {
+  formatDateAsString,
+  formatDateForDisplay,
+  formatEquipment,
+  getCurrentDate,
+} from "@/utils";
 import { isCircuitBlock, isRoundActionVisible } from "@/utils/circuit-utils";
 
 // Local types for this component
@@ -336,6 +342,22 @@ export function WorkoutScreen() {
     exercises.length > 0
       ? (completedAndSkippedCount / exercises.length) * 100
       : 0;
+
+  // Header vitals: estimated session length (sum of per-block estimates) and
+  // the elapsed clock shown in the active-workout header.
+  const totalDurationMinutes =
+    workout?.blocks?.reduce(
+      (sum, block) => sum + (block.blockDurationMinutes || 0),
+      0,
+    ) || 0;
+  const formatElapsed = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return hours > 0
+      ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      : `${minutes}:${String(seconds).padStart(2, "0")}`;
+  };
 
   // Timer management with timestamp-based calculation
   useEffect(() => {
@@ -1869,7 +1891,59 @@ export function WorkoutScreen() {
           />
         }
       >
-        <View className="px-6 pt-6">
+        {/* Unified header (same shell as Dashboard/Calendar). Pre-start it
+            carries the day's vitals; mid-workout the actions give way to the
+            elapsed clock and the progress bar moves into the bottom slot. */}
+        {!isWorkoutStarted ? (
+          <Header
+            title={workout.name}
+            subtitle={[
+              formatDateForDisplay(workout.date, {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              }),
+              totalDurationMinutes ? `${totalDurationMinutes} min` : null,
+              `${exercises.length} exercise${exercises.length === 1 ? "" : "s"}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        ) : (
+          <Header
+            title={workout.name}
+            subtitle={
+              currentBlock
+                ? `${
+                    currentBlock.blockName ||
+                    getBlockTypeDisplayName(currentBlock.blockType)
+                  } · exercise ${Math.min(
+                    currentExerciseIndex + 1,
+                    exercises.length,
+                  )} of ${exercises.length}`
+                : undefined
+            }
+            showActions={false}
+            rightAccessory={
+              <Text className="text-lg font-bold text-text-primary">
+                {formatElapsed(workoutTimer)}
+              </Text>
+            }
+          >
+            <View className="px-5 pb-4">
+              <View className="w-full h-2 bg-neutral-light-2 rounded-full overflow-hidden">
+                <View
+                  className="h-full bg-primary rounded-full"
+                  style={
+                    { width: `${progressPercent.toFixed(0)}%` } as ViewStyle
+                  }
+                />
+              </View>
+            </View>
+          </Header>
+        )}
+
+        <View className="px-6 pt-2">
           {/* "Just generated" badge after a single-day generation. Used to
               float over the deleted hero media; now sits in flow. */}
           {justGenerated === "day" && (
@@ -1877,26 +1951,12 @@ export function WorkoutScreen() {
               <JustGeneratedBadge />
             </View>
           )}
-          {/* Workout Header */}
-          {/* Pre-computed progressPercent used for the progress bar */}
-          <View className="mb-6">
-            <View className="w-full h-2 mb-4 bg-neutral-light-2 rounded-full overflow-hidden">
-              <View
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${progressPercent.toFixed(0)}%` } as ViewStyle}
-              />
-            </View>
-            <View className="flex-row items-start mb-2">
-              <Text className="text-2xl font-bold text-text-primary flex-1 mr-3">
-                {workout.name}
-              </Text>
-            </View>
-            {workout.instructions ? (
-              <Text className="text-base text-text-secondary leading-6">
-                {workout.instructions}
-              </Text>
-            ) : null}
-          </View>
+          {/* Day-level coach instructions, shown before the workout starts */}
+          {!isWorkoutStarted && workout.instructions ? (
+            <Text className="text-base text-text-secondary leading-6 mb-6">
+              {workout.instructions}
+            </Text>
+          ) : null}
 
           {/* Current Block Info */}
           {currentBlock ? (

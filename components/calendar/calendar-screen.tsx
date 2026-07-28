@@ -516,7 +516,10 @@ export default function CalendarScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        <Header workoutTitle={workoutPlan?.name} />
+        {/* Fixed label as the title — plan names are user-generated and
+            unbounded, so the meaning-carrying text lives in the wider
+            subtitle slot instead of truncating at 17px. */}
+        <Header title="Your Plan" subtitle={workoutPlan?.name} />
 
         <CalendarViewSection
           calendarKey={`${calendarKey}-${isDark ? "dark" : "light"}`}

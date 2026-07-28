@@ -29,7 +29,6 @@ import {
 
 import DemoChip from "@/components/demo-chip";
 import DemoSheet from "@/components/demo-sheet";
-import { exerciseHasDemo } from "@/lib/exercise-video";
 import ExerciseLinkModal from "@/components/exercise-link-modal";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import type { DialogButton } from "@/components/ui";
@@ -38,6 +37,7 @@ import { HIT_SLOP_10 } from "@/constants";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
+import { exerciseHasDemo } from "@/lib/exercise-video";
 import { tabEvents } from "@/lib/tab-events";
 import { useThemeColors } from "@/lib/theme";
 import {

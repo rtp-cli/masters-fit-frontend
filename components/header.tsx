@@ -10,18 +10,31 @@ import SearchModal from "./search/search-modal";
 import SettingsModal from "./settings/settings-modal";
 
 interface HeaderProps {
-  workoutTitle?: string;
+  /** Screen title. When omitted on the dashboard, renders "Hey {name}!". */
+  title?: string;
+  /** One-line context under the title (date, plan name, workout meta). */
+  subtitle?: string;
   currentDate?: string;
   /** Current workout streak; the chip is shown on the dashboard when >= 1. */
   streak?: number;
+  /** Hide the search/settings actions (active workout). Default shown. */
+  showActions?: boolean;
+  /** Rendered on the right instead of icons (e.g. the elapsed-time clock). */
+  rightAccessory?: React.ReactNode;
+  /** Rendered full-width below the title row (e.g. the progress bar). */
+  children?: React.ReactNode;
   onSearchPress?: () => void;
   onSettingsPress?: () => void;
 }
 
 export default function Header({
-  workoutTitle,
+  title,
+  subtitle,
   currentDate,
   streak,
+  showActions = true,
+  rightAccessory,
+  children,
   onSearchPress,
   onSettingsPress,
 }: HeaderProps) {
@@ -55,15 +68,11 @@ export default function Header({
     }
   };
 
-  // Determine which header to show based on current route
-  const isDashboard = pathname === "/" || pathname.includes("dashboard");
-  const isCalendar = pathname.includes("calendar");
-  const isWorkout = pathname.includes("workout");
-
-  // Don't show header on workout tab
-  if (isWorkout) {
-    return null;
-  }
+  // The dashboard keeps its personalised greeting + streak chip; every other
+  // screen passes an explicit title. (The old `if (isWorkout) return null`
+  // is gone — the Workout tab renders this header now that the hero is dead.)
+  const isDashboard =
+    !title && (pathname === "/" || pathname.includes("dashboard"));
 
   // Handle search icon press
   const handleSearchPress = () => {
@@ -86,54 +95,58 @@ export default function Header({
   return (
     <View className="p-1">
       <View className="flex-row items-center justify-between px-5 pt-3 pb-4">
-        {/* Left side - Title */}
-        <View className="flex-1">
-          {isDashboard && (
-            <View className="flex-row items-center gap-2">
-              <View className="flex-1">
-                <Text className="text-lg font-bold text-text-primary">
-                  Hey {user?.name || "User"}!
-                </Text>
-                {currentDate && (
-                  <Text className="text-sm text-text-muted mt-1">
-                    {currentDate}
-                  </Text>
-                )}
-              </View>
-            </View>
-          )}
-          {isCalendar && (
-            <Text className="text-lg font-bold text-text-primary">
-              {workoutTitle || "Workout Calendar"}
+        {/* Left side - Title + subtitle */}
+        <View className="flex-1 mr-3">
+          <Text
+            className="text-lg font-bold text-text-primary"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {title ?? `Hey ${user?.name || "User"}!`}
+          </Text>
+          {(subtitle ?? (isDashboard ? currentDate : undefined)) && (
+            <Text
+              className="text-sm text-text-muted mt-1"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {subtitle ?? currentDate}
             </Text>
           )}
         </View>
 
-        {/* Right side - Icons */}
-        <View className="flex-row items-center space-x-4">
-          {isDashboard && typeof streak === "number" && streak >= 1 && (
-            <View className="mr-1">
-              <StreakChip
-                count={streak}
-                onPress={() => setStreakPopoverVisible(true)}
+        {/* Right side - accessory or icons */}
+        {rightAccessory ?? (
+          showActions ? (
+            <View className="flex-row items-center space-x-4">
+              {isDashboard && typeof streak === "number" && streak >= 1 && (
+                <View className="mr-1">
+                  <StreakChip
+                    count={streak}
+                    onPress={() => setStreakPopoverVisible(true)}
+                  />
+                </View>
+              )}
+
+              <IconButton
+                icon="search"
+                accessibilityLabel="Search"
+                onPress={handleSearchPress}
+                className="mr-1"
+              />
+
+              <IconButton
+                icon="person"
+                accessibilityLabel="Settings"
+                onPress={handleSettingsPress}
               />
             </View>
-          )}
-
-          <IconButton
-            icon="search"
-            accessibilityLabel="Search"
-            onPress={handleSearchPress}
-            className="mr-1"
-          />
-
-          <IconButton
-            icon="person"
-            accessibilityLabel="Settings"
-            onPress={handleSettingsPress}
-          />
-        </View>
+          ) : null
+        )}
       </View>
+
+      {/* Below-row slot (e.g. the active workout's progress bar) */}
+      {children}
 
       {/* Modals */}
       <StreakPopover
