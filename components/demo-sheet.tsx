@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import YoutubePlayer from "react-native-youtube-iframe";
+import { WebView } from "react-native-webview";
 
 import IconButton from "@/components/icon-button";
 import { trackVideoEngagement } from "@/lib/analytics";
@@ -56,6 +56,7 @@ export default function DemoSheet({
   const [channel, setChannel] = useState<string | undefined>(undefined);
   const [unavailable, setUnavailable] = useState(false);
   const [muted, setMuted] = useState(true);
+  const webViewRef = useRef<WebView>(null);
 
   // Re-anchor to the tapped exercise each time the sheet opens.
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function DemoSheet({
   useEffect(() => {
     setUnavailable(false);
     setChannel(undefined);
+    setMuted(true);
     if (!visible || !entry || !videoId) return;
 
     trackVideoEngagement({
@@ -164,22 +166,52 @@ export default function DemoSheet({
             </View>
           ) : (
             <View style={{ height: playerHeight }} className="bg-black">
-              <YoutubePlayer
+              {/* Muted autoplay via an embed iframe in a wrapper page —
+                  YouTube's officially supported path. Loading the embed URL
+                  as the top document fails (error 153: no referrer), and the
+                  iframe-API playVideo() route is ignored by the embed player
+                  in this WebView — which is exactly why the old inline player
+                  always needed a second tap on YouTube's own play button. */}
+              <WebView
                 key={videoId}
-                height={playerHeight}
-                videoId={videoId}
-                play={visible}
-                mute={muted}
-                onError={() => setUnavailable(true)}
-                webViewProps={{
-                  allowsInlineMediaPlayback: true,
-                  mediaPlaybackRequiresUserAction: false,
+                ref={webViewRef}
+                originWhitelist={["*"]}
+                source={{
+                  baseUrl: "https://mastersfit.ai",
+                  html: `<!DOCTYPE html><html><head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style>
+                    </head><body>
+                    <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1"
+                      allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                    </body></html>`,
                 }}
-                initialPlayerParams={{ controls: true, modestbranding: true }}
+                style={{ backgroundColor: "#000" }}
+                allowsInlineMediaPlayback
+                mediaPlaybackRequiresUserAction={false}
+                allowsFullscreenVideo
+                onError={() => setUnavailable(true)}
+                // Keep the sheet on the demo: block top-frame navigations away
+                // from the wrapper (e.g. the "Watch on YouTube" overlay link).
+                onShouldStartLoadWithRequest={(request) =>
+                  !request.isTopFrame ||
+                  request.url.startsWith("https://mastersfit.ai") ||
+                  request.url.startsWith("about:")
+                }
               />
               {muted ? (
                 <TouchableOpacity
-                  onPress={() => setMuted(false)}
+                  onPress={() => {
+                    // The video element lives in the cross-origin embed
+                    // iframe, so unmute goes through YouTube's widget-API
+                    // postMessage protocol (enablejsapi=1 on the embed URL).
+                    webViewRef.current?.injectJavaScript(
+                      `(function(){var f=document.querySelector('iframe');if(f&&f.contentWindow){` +
+                        `f.contentWindow.postMessage(JSON.stringify({event:'command',func:'unMute',args:[]}),'*');` +
+                        `f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'*');}})();true;`,
+                    );
+                    setMuted(false);
+                  }}
                   accessibilityRole="button"
                   accessibilityLabel="Unmute demo video"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

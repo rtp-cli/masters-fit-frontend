@@ -1878,6 +1878,40 @@ export function WorkoutScreen() {
   // Main workout interface
   return (
     <View className="flex-1 bg-background">
+      {/* Active-workout header: pinned OUTSIDE the ScrollView so the elapsed
+          clock and progress bar stay visible while the user works down the
+          set list (the pre-start variant scrolls with the content below). */}
+      {isWorkoutStarted ? (
+        <Header
+          title={workout.name}
+          subtitle={
+            currentBlock
+              ? `${
+                  currentBlock.blockName ||
+                  getBlockTypeDisplayName(currentBlock.blockType)
+                } · exercise ${Math.min(
+                  currentExerciseIndex + 1,
+                  exercises.length,
+                )} of ${exercises.length}`
+              : undefined
+          }
+          showActions={false}
+          rightAccessory={
+            <Text className="text-lg font-bold text-text-primary">
+              {formatElapsed(workoutTimer)}
+            </Text>
+          }
+        >
+          <View className="px-5 pb-4">
+            <View className="w-full h-2 bg-neutral-light-2 rounded-full overflow-hidden">
+              <View
+                className="h-full bg-primary rounded-full"
+                style={{ width: `${progressPercent.toFixed(0)}%` } as ViewStyle}
+              />
+            </View>
+          </View>
+        </Header>
+      ) : null}
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"
@@ -1891,9 +1925,9 @@ export function WorkoutScreen() {
           />
         }
       >
-        {/* Unified header (same shell as Dashboard/Calendar). Pre-start it
-            carries the day's vitals; mid-workout the actions give way to the
-            elapsed clock and the progress bar moves into the bottom slot. */}
+        {/* Unified header (same shell as Dashboard/Calendar), pre-start
+            variant: scrolls with the content like the other tabs. The
+            active-workout variant is pinned above this ScrollView. */}
         {!isWorkoutStarted ? (
           <Header
             title={workout.name}
@@ -1909,39 +1943,7 @@ export function WorkoutScreen() {
               .filter(Boolean)
               .join(" · ")}
           />
-        ) : (
-          <Header
-            title={workout.name}
-            subtitle={
-              currentBlock
-                ? `${
-                    currentBlock.blockName ||
-                    getBlockTypeDisplayName(currentBlock.blockType)
-                  } · exercise ${Math.min(
-                    currentExerciseIndex + 1,
-                    exercises.length,
-                  )} of ${exercises.length}`
-                : undefined
-            }
-            showActions={false}
-            rightAccessory={
-              <Text className="text-lg font-bold text-text-primary">
-                {formatElapsed(workoutTimer)}
-              </Text>
-            }
-          >
-            <View className="px-5 pb-4">
-              <View className="w-full h-2 bg-neutral-light-2 rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-primary rounded-full"
-                  style={
-                    { width: `${progressPercent.toFixed(0)}%` } as ViewStyle
-                  }
-                />
-              </View>
-            </View>
-          </Header>
-        )}
+        ) : null}
 
         <View className="px-6 pt-2">
           {/* "Just generated" badge after a single-day generation. Used to
@@ -1958,8 +1960,9 @@ export function WorkoutScreen() {
             </Text>
           ) : null}
 
-          {/* Current Block Info */}
-          {currentBlock ? (
+          {/* Current Block Info — a mid-workout surface. Pre-start, the
+              WorkoutBlock cards below carry the same info (screens/02). */}
+          {isWorkoutStarted && currentBlock ? (
             <View className="bg-brand-light-1 rounded-2xl p-4 mb-6">
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
@@ -1991,8 +1994,9 @@ export function WorkoutScreen() {
             </View>
           ) : null}
 
-          {/* Current Exercise - Only show for traditional workouts */}
-          {currentExercise && !isCurrentBlockCircuit ? (
+          {/* Current Exercise - Only show for traditional workouts, once the
+              workout is underway (pre-start shows the plan list instead) */}
+          {isWorkoutStarted && currentExercise && !isCurrentBlockCircuit ? (
             <View
               ref={exerciseHeadingRef}
               className="bg-card rounded-2xl mb-6 p-6 border font-bold border-neutral-light-2"
