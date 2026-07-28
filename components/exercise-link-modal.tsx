@@ -9,8 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { processExerciseLink } from "../lib/exercise-video";
 import { useThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/theme-context";
+import DemoSheet from "./demo-sheet";
 import Text from "./text";
 import { CustomDialog, type DialogButton } from "./ui";
 
@@ -38,6 +40,7 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
   const [link, setLink] = useState("");
   const [linkType, setLinkType] = useState<"youtube" | "unknown">("unknown");
   const [isLoading, setIsLoading] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -274,17 +277,41 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
 
           {/* Link Type Info */}
           {link && linkType !== "unknown" && (
-            <View className="flex-row items-center mb-md">
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color={colors.brand.primary}
-              />
-              <Text variant="bodySmall" color={colors.brand.primary}>
-                {linkType === "youtube"
-                  ? "YouTube video detected"
-                  : "Link detected"}
-              </Text>
+            <View className="flex-row items-center justify-between mb-md">
+              <View className="flex-row items-center flex-1">
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={colors.brand.primary}
+                />
+                <Text variant="bodySmall" color={colors.brand.primary}>
+                  {linkType === "youtube"
+                    ? "YouTube video detected"
+                    : "Link detected"}
+                </Text>
+              </View>
+              {/* Preview the entered link in the shared demo sheet so the
+                  video can be confirmed playable before saving. */}
+              {processExerciseLink(link).videoId ? (
+                <TouchableOpacity
+                  onPress={() => setPreviewVisible(true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="flex-row items-center"
+                >
+                  <Ionicons
+                    name="play-circle-outline"
+                    size={16}
+                    color={colors.text.primary}
+                  />
+                  <Text
+                    variant="bodySmall"
+                    color={colors.text.primary}
+                    className="ml-1 font-semibold"
+                  >
+                    Preview
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           )}
 
@@ -384,6 +411,20 @@ const ExerciseLinkModal: React.FC<ExerciseLinkModalProps> = ({
           icon={dialogConfig.icon}
         />
       )}
+      {exercise && link ? (
+        <DemoSheet
+          visible={previewVisible}
+          entries={[
+            {
+              exerciseId: exercise.id,
+              exerciseName: exercise.name,
+              link,
+            },
+          ]}
+          initialIndex={0}
+          onClose={() => setPreviewVisible(false)}
+        />
+      ) : null}
     </Modal>
   );
 };

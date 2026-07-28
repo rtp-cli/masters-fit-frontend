@@ -11,10 +11,20 @@ export interface ExerciseLinkInfo {
   isValid: boolean;
 }
 
+// Keep in lockstep with the backend copy in
+// src/utils/video-validation.ts — client and server must agree on which links
+// count as a playable demo (hasDemo).
 export function extractYouTubeVideoId(url: string): string | null {
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    // Standard watch URL: watch?v=ID (also matches ...&v=ID).
+    /[?&]v=([^&\n?#]+)/,
+    // Short share links: youtu.be/ID (?si=… trackers stripped by the class).
+    /youtu\.be\/([^&\n?#/]+)/,
+    // Path-style IDs — the canonical embed plus the non-standard shapes the
+    // seed data actually contains (watch/ID, shorts/ID, video/ID, v/ID). These
+    // carry a valid 11-char ID; only the URL wrapper is off, so recover it
+    // rather than dropping the demo.
+    /youtube\.com\/(?:embed|shorts|video|watch|v)\/([^&\n?#/]+)/,
   ];
 
   for (const pattern of patterns) {
