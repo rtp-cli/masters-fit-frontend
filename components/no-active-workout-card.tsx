@@ -12,6 +12,10 @@ interface NoActiveWorkoutCardProps {
   variant?: "dashboard" | "workout" | "calendar";
   showActionsOnlyForToday?: boolean;
   isToday?: boolean;
+  /** Hide the in-card title when the screen's header already names the
+   *  state (e.g. the Workout tab's "No Active Plan" header) — the card then
+   *  carries only the supporting copy + CTA. */
+  showTitle?: boolean;
 }
 
 export default function NoActiveWorkoutCard({
@@ -22,6 +26,7 @@ export default function NoActiveWorkoutCard({
   variant = "dashboard",
   showActionsOnlyForToday = false,
   isToday = true,
+  showTitle = true,
 }: NoActiveWorkoutCardProps) {
   const colors = useThemeColors();
   // Variant-specific styling and icons
@@ -62,9 +67,11 @@ export default function NoActiveWorkoutCard({
           color={variantStyles.iconColor}
         />
       </View>
-      <Text className="text-base font-semibold text-text-primary mb-2">
-        {title || variantStyles.title}
-      </Text>
+      {showTitle && (
+        <Text className="text-base font-semibold text-text-primary mb-2">
+          {title || variantStyles.title}
+        </Text>
+      )}
       <Text className="text-sm text-text-muted text-center mb-6 leading-5">
         {subtitle || variantStyles.subtitle}
       </Text>

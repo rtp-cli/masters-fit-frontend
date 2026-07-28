@@ -1648,8 +1648,9 @@ export function WorkoutScreen() {
   if (error) {
     return (
       <View className="flex-1 bg-background">
+        {/* The header names the state; the body explains it (no repeats). */}
         <Header
-          title="Workout"
+          title="Error"
           subtitle={formatDateForDisplay(getCurrentDate(), {
             weekday: "short",
             month: "short",
@@ -1662,10 +1663,10 @@ export function WorkoutScreen() {
           size={64}
           color={colors.text.secondary}
         />
-        <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
-          Error Loading Workout
+        <Text className="text-text-muted text-center mt-4 mb-2 leading-6">
+          We couldn't load your workout.
         </Text>
-        <Text className="text-text-muted text-center mb-6 leading-6">
+        <Text className="text-sm text-text-muted text-center mb-6 leading-5">
           {error}
         </Text>
         <TouchableOpacity
@@ -1685,11 +1686,11 @@ export function WorkoutScreen() {
   if (!workout) {
     return (
       <View className="flex-1 bg-background">
-        {/* Same unified header as the rest of the tab — a rest day is still
-            the Workout tab. No workout to name, so the fixed tab label +
-            today's date stand in. */}
+        {/* Same unified header shell as the rest of the tab. The header owns
+            the page identity ("Rest Day" / "No Active Plan") so the body
+            below never repeats it — it only carries the supporting copy. */}
         <Header
-          title="Workout"
+          title={hasActiveWorkoutPlan ? "Rest Day" : "No Active Plan"}
           subtitle={formatDateForDisplay(getCurrentDate(), {
             weekday: "short",
             month: "short",
@@ -1720,10 +1721,7 @@ export function WorkoutScreen() {
                   size={64}
                   color={colors.brand.primary}
                 />
-                <Text className="text-lg font-bold text-text-primary text-center mt-4 mb-2">
-                  Rest Day
-                </Text>
-                <Text className="text-text-muted text-center mb-8 leading-6">
+                <Text className="text-text-muted text-center mt-4 mb-8 leading-6">
                   No workout scheduled for today. Take time to rest and recover!
                 </Text>
                 <TouchableOpacity
@@ -1761,11 +1759,14 @@ export function WorkoutScreen() {
                 </TouchableOpacity>
               </>
             ) : (
-              // No active workout plan at all
+              // No active workout plan at all — the header already says
+              // "No Active Plan", so the card carries only the copy + CTA
               <NoActiveWorkoutCard
                 isGenerating={isGenerating}
                 onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
                 variant="workout"
+                showTitle={false}
+                subtitle="You don't have an active workout plan for this week."
               />
             )}
           </View>
