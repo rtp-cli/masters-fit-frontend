@@ -68,6 +68,9 @@ export default function FeedbackScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  // A rate-limit failure — retrying won't help until the window passes, so the
+  // button shouldn't invite an instant "Try again".
+  const [rateLimited, setRateLimited] = useState(false);
   const [sent, setSent] = useState<{
     category: AppFeedbackCategory;
     message: string;
@@ -153,6 +156,7 @@ export default function FeedbackScreen() {
     const trimmed = message.trim();
     setSending(true);
     setSendError(null);
+    setRateLimited(false);
     try {
       const diag = diagnosticsOn
         ? buildDiagnostics({
@@ -178,9 +182,17 @@ export default function FeedbackScreen() {
       }
       await AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
       setSent({ category: effectiveCategory, message: trimmed });
-    } catch {
-      // Keep every word; surface retry inline (never a draft-dismissing dialog).
-      setSendError("Couldn't send. Check your connection and try again.");
+    } catch (error) {
+      // Keep every word; surface the reason inline (never a draft-dropping
+      // dialog). A 429 is a rate limit, not a connection problem — say so, and
+      // don't imply an instant retry will work.
+      const status = (error as { status?: number })?.status;
+      setRateLimited(status === 429);
+      setSendError(
+        status === 429
+          ? "You've sent a lot of feedback in a short time. Please try again in a little while."
+          : "Couldn't send. Check your connection and try again."
+      );
     } finally {
       setSending(false);
     }
@@ -449,7 +461,7 @@ export default function FeedbackScreen() {
             disabled={!canSend}
             onPress={handleSend}
             accessibilityRole="button"
-            accessibilityLabel={sendError ? "Try again" : "Send"}
+            accessibilityLabel={sendError && !rateLimited ? "Try again" : "Send"}
             className="w-full rounded-xl items-center justify-center"
             style={{
               paddingVertical: 16,
@@ -465,7 +477,7 @@ export default function FeedbackScreen() {
                 className="text-base font-semibold"
                 style={{ color: canSend ? colors.contentOnPrimary : "#9E9E9E" }}
               >
-                {sendError ? "Try again" : "Send"}
+                {sendError && !rateLimited ? "Try again" : "Send"}
               </Text>
             )}
           </TouchableOpacity>

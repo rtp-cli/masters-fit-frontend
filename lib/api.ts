@@ -480,7 +480,17 @@ export async function apiRequest<T>(
         },
         method
       );
-      throw new Error(errorData.message || `HTTP error ${response.status}`);
+      // Prefer the server's own message; some endpoints send `error`, others
+      // `message`. Attach the status so callers can branch (e.g. 429) without
+      // string-matching. Additive — existing callers reading `.message` are
+      // unaffected.
+      const httpError = new Error(
+        errorData.message ||
+          errorData.error ||
+          `HTTP error ${response.status}`
+      ) as Error & { status?: number };
+      httpError.status = response.status;
+      throw httpError;
     }
 
     // Parse JSON response
