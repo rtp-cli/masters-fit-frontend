@@ -256,7 +256,7 @@ export default function FeedbackScreen() {
           <Text className="text-xl font-bold text-text-primary text-center">
             {HEADLINES[sent.category]}
           </Text>
-          <Text className="text-sm text-text-muted text-center mt-2 leading-5">
+          <Text className="text-sm text-text-muted text-left w-full mt-2 leading-5">
             {support}
           </Text>
 
