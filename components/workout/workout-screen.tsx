@@ -306,9 +306,6 @@ export function WorkoutScreen() {
   // Timer management with timestamp-based calculation
   useEffect(() => {
     if (isWorkoutStarted && !isPaused && !isWorkoutCompleted) {
-      // Activate keep awake to prevent screen sleep
-      activateKeepAwake("workout-timer");
-
       // Initialize start times if not set
       if (!workoutStartTime.current) {
         workoutStartTime.current = Date.now() - workoutTimer * 1000;
@@ -330,9 +327,6 @@ export function WorkoutScreen() {
         }
       }, 1000);
     } else {
-      // Deactivate keep awake when timer stops
-      deactivateKeepAwake("workout-timer");
-
       // Clean up display timer when workout stops
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -341,13 +335,34 @@ export function WorkoutScreen() {
     }
 
     return () => {
-      deactivateKeepAwake("workout-timer");
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
     };
   }, [isWorkoutStarted, isPaused, isWorkoutCompleted]);
+
+  // Keep the screen awake for the entire active workout session. This is
+  // deliberately SEPARATE from the analytics stopwatch above and is NOT gated
+  // on isPaused -- a user reading/logging on a paused-but-open workout should
+  // not have the screen sleep. Re-assert on foreground because iOS can clear
+  // the idle-timer flag across a background cycle (e.g. an incoming call).
+  useEffect(() => {
+    if (!isWorkoutStarted || isWorkoutCompleted) return;
+
+    activateKeepAwake("workout-session");
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        activateKeepAwake("workout-session");
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      deactivateKeepAwake("workout-session");
+    };
+  }, [isWorkoutStarted, isWorkoutCompleted]);
 
   // Handle app state changes to manage timers during background/foreground transitions
   useEffect(() => {
@@ -416,8 +431,8 @@ export function WorkoutScreen() {
       workoutStartTime.current = null;
       exerciseStartTime.current = null;
 
-      // Deactivate keep awake
-      deactivateKeepAwake("workout-timer");
+      // Keep-awake is released by the dedicated session effect when
+      // isWorkoutStarted flips to false below.
 
       // Clear any active timers
       if (timerRef.current) {
@@ -474,8 +489,7 @@ export function WorkoutScreen() {
       // stale closure is safe); fire-and-forget on teardown.
       void flushPendingCommit();
       setWorkoutInProgress(false);
-      // Cleanup keep awake on unmount
-      deactivateKeepAwake("workout-timer");
+      // Keep-awake is released by the dedicated session effect's cleanup.
       // Clear timers
       if (timerRef.current) {
         clearInterval(timerRef.current);
