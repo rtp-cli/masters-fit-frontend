@@ -48,10 +48,10 @@ const CATEGORIES: {
 ];
 
 const HEADLINES: Record<AppFeedbackCategory, string> = {
-  bug: "Got it — that's logged as a bug.",
-  idea: "Thank you — we'll consider this as we plan what's next.",
+  bug: "Got it — we've logged the bug.",
+  idea: "Thanks — we've added your idea for review.",
   praise: "Thank you — that means a lot.",
-  other: "Got it — a person reads every one of these.",
+  other: "Got it — your message has been sent.",
 };
 
 export default function FeedbackScreen() {
@@ -225,12 +225,12 @@ export default function FeedbackScreen() {
   if (sent) {
     const support =
       sent.category === "bug"
-        ? "It reached the team with your app version and device. If we need more detail to reproduce it, we'll email you."
+        ? "Your report includes your app version and device details. If we need more information to reproduce the issue, we'll contact you by email."
         : sent.category === "praise"
-          ? "Knowing which parts are working tells us what not to break."
+          ? "Knowing what's working helps us make MastersFit better without changing the things you already value."
           : sent.category === "idea"
-            ? "Every idea is read by a person and weighed against what's next."
-            : "A person reads every one of these.";
+            ? "We read every suggestion and consider it alongside other user feedback and our product roadmap."
+            : "A member of the MastersFit team will review it. If your message needs a response, we'll follow up by email.";
 
     return (
       <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
@@ -262,7 +262,7 @@ export default function FeedbackScreen() {
 
           <View className="w-full bg-surface rounded-xl p-4 mt-6">
             <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">
-              You sent
+              Your message
             </Text>
             <Text className="text-sm text-text-primary leading-5">
               {sent.message}
