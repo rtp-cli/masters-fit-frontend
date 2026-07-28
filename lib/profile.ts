@@ -54,6 +54,32 @@ export async function updateUserProfile(
 }
 
 /**
+ * Update the current user's display name (Account "fix a typo" affordance).
+ * Returns the saved name (trimmed by the backend) or throws with the
+ * backend's message so the editor can stay open and show it.
+ */
+export async function updateUserName(name: string): Promise<string> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const response = await apiRequest<{
+    success: boolean;
+    name?: string;
+    error?: string;
+  }>(`/profile/user/${user.id}/name`, {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+
+  if (!response.success || !response.name) {
+    throw new Error(response.error || "Failed to update name");
+  }
+  return response.name;
+}
+
+/**
  * Get workout recommendation based on profile
  */
 export function getWorkoutRecommendation(profile: Profile): {
