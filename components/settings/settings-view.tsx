@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { useCallback,useEffect, useRef, useState } from "react";
 import {
   Platform,
@@ -24,7 +24,6 @@ import { tabEvents } from "@/lib/tab-events";
 import { CADENCE_STORAGE_KEY } from "@/utils/feedback-cadence";
 
 import { useThemeColors } from "../../lib/theme";
-import ComingSoonModal from "../coming-soon-modal";
 import { SettingsSkeleton } from "../skeletons/skeleton-screens";
 import { CustomDialog, type DialogButton } from "../ui";
 import AppSettingsSection from "./sections/app-settings-section";
@@ -54,6 +53,7 @@ export default function SettingsView({
   const { mode: themeMode, setThemeMode, colorTheme, setColorTheme } = useTheme();
   const { user, logout, deleteAccount } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const {
     data: { profileData },
     refresh: { refreshProfile },
@@ -64,14 +64,6 @@ export default function SettingsView({
   const scrollViewRef = useRef<ScrollView>(null);
 
 
-  // Coming Soon modals state
-  const [comingSoonModal, setComingSoonModal] = useState<{
-    visible: boolean;
-    icon: keyof typeof Ionicons.glyphMap;
-  }>({
-    visible: false,
-    icon: "information-circle-outline",
-  });
 
   // Secret activation state
   const [tapCount, setTapCount] = useState(0);
@@ -248,22 +240,6 @@ export default function SettingsView({
       loadUserData();
     }
   }, [user?.id, profileData]);
-
-  // Show coming soon modal
-  const showComingSoonModal = (icon: keyof typeof Ionicons.glyphMap) => {
-    setComingSoonModal({
-      visible: true,
-      icon,
-    });
-  };
-
-  // Hide coming soon modal
-  const hideComingSoonModal = () => {
-    setComingSoonModal({
-      ...comingSoonModal,
-      visible: false,
-    });
-  };
 
   // Secret trigger handler
   const handleVersionTap = async () => {
@@ -447,7 +423,13 @@ export default function SettingsView({
 
             <TouchableOpacity
               className="items-center"
-              onPress={() => showComingSoonModal("chatbubble-ellipses-outline")}
+              onPress={() => {
+                // Pushed route, not a stacked modal — stacking on the settings
+                // pageSheet orphans it (same reason handleLogout defers). The
+                // current route rides along for feedback diagnostics.
+                if (onClose) onClose();
+                router.push(`/feedback?from=${encodeURIComponent(pathname)}`);
+              }}
             >
               <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
                 <Ionicons
@@ -569,13 +551,6 @@ export default function SettingsView({
 
         <AppVersionSection tapCount={tapCount} onTap={handleVersionTap} />
       </ScrollView>
-
-      {/* Coming Soon Modal */}
-      <ComingSoonModal
-        visible={comingSoonModal.visible}
-        onClose={hideComingSoonModal}
-        icon={comingSoonModal.icon}
-      />
 
       {/* RevenueCat Paywall Test Modal */}
       <PaymentWallModal

@@ -47,6 +47,11 @@ export const AnalyticsEvent = {
   WORKOUT_ENDED_EARLY_REASON: "workout_ended_early_reason",
   VOICE_INPUT_USED: "voice_input_used",
 
+  // ── App feedback (Settings → Feedback screen; message text never logged) ──
+  APP_FEEDBACK_OPENED: "app_feedback_opened",
+  APP_FEEDBACK_SENT: "app_feedback_sent",
+  APP_FEEDBACK_ABANDONED: "app_feedback_abandoned",
+
   // ── Navigation ──
   SCREEN_VIEWED: "screen_viewed",
 } as const;
@@ -147,6 +152,16 @@ export interface AnalyticsEventProps {
     surface: "feedback" | "adjust";
     duration_ms: number;
   };
+
+  // Never carries the message text — only its shape. See §9.
+  [AnalyticsEvent.APP_FEEDBACK_OPENED]: Record<string, never>;
+  [AnalyticsEvent.APP_FEEDBACK_SENT]: {
+    category: "bug" | "idea" | "praise" | "other";
+    note_source: "text" | "voice";
+    length: number;
+    diagnostics_included: boolean;
+  };
+  [AnalyticsEvent.APP_FEEDBACK_ABANDONED]: Record<string, never>;
 
   [AnalyticsEvent.SCREEN_VIEWED]: { screen: string };
 }

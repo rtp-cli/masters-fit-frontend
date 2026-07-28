@@ -15,6 +15,10 @@ interface VoiceInputButtonProps {
   /** Final transcript when the user stops recording. Callers append; never replace. */
   onTranscript: (text: string) => void;
   disabled?: boolean;
+  /** Optional: fires true when recording starts, false when it ends. Lets a
+   *  host swap its own copy (e.g. a "Listening…" prompt). Purely additive —
+   *  existing callers that omit it are unaffected. */
+  onRecordingChange?: (recording: boolean) => void;
 }
 
 const METER_BARS = 7;
@@ -31,9 +35,18 @@ export default function VoiceInputButton({
   surface,
   onTranscript,
   disabled = false,
+  onRecordingChange,
 }: VoiceInputButtonProps) {
   const colors = useThemeColors();
   const [recording, setRecording] = useState(false);
+
+  // Notify the host on every recording-state edge (start/stop/error/abort).
+  useEffect(() => {
+    onRecordingChange?.(recording);
+    // Intentionally keyed only on `recording`; the callback is a stable-enough
+    // host handler and re-notifying on its identity change would be noise.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recording]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [meterHeights, setMeterHeights] = useState<number[]>(
     Array(METER_BARS).fill(6)
