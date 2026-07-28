@@ -507,7 +507,9 @@ export default function CalendarScreen() {
       formatDateAsString(new Date()).substring(0, 7);
 
   return (
-    <View className="flex-1 pt-4 bg-background">
+    // No pt on the root — Dashboard/Workout roots have none, and the extra
+    // 16px pushed this tab's header visibly lower than the other two.
+    <View className="flex-1 bg-background">
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"
