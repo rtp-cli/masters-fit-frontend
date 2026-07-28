@@ -1647,7 +1647,16 @@ export function WorkoutScreen() {
   // Render error state
   if (error) {
     return (
-      <View className="flex-1 bg-background justify-center items-center px-6">
+      <View className="flex-1 bg-background">
+        <Header
+          title="Workout"
+          subtitle={formatDateForDisplay(getCurrentDate(), {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })}
+        />
+        <View className="flex-1 justify-center items-center px-6">
         <Ionicons
           name="alert-circle-outline"
           size={64}
@@ -1667,6 +1676,7 @@ export function WorkoutScreen() {
             Try Again
           </Text>
         </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -1675,6 +1685,17 @@ export function WorkoutScreen() {
   if (!workout) {
     return (
       <View className="flex-1 bg-background">
+        {/* Same unified header as the rest of the tab — a rest day is still
+            the Workout tab. No workout to name, so the fixed tab label +
+            today's date stand in. */}
+        <Header
+          title="Workout"
+          subtitle={formatDateForDisplay(getCurrentDate(), {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })}
+        />
         <ScrollView
           className="flex-1"
           refreshControl={
