@@ -25,10 +25,17 @@ import type {
   BlockResultHistoryItem,
   ExerciseLog as PlanDayExerciseLog,
 } from "@/types/api/logs.types";
+import { resolveCapability } from "@/utils/entitlements";
+import {
+  fetchHeartRateForWindow,
+  getHealthConnection,
+  writeWorkoutToHealth,
+} from "@/utils/health";
 
 import { formatDateAsString, getCurrentDate,getTodayString } from "../utils";
 import { apiRequest, PaywallError } from "./api";
 import { getCurrentUser } from "./auth";
+import { getEntitlements } from "./subscriptions";
 
 // Simple cache for active workout
 let activeWorkoutCache: {
@@ -247,7 +254,26 @@ export async function getPlanDayLog(
 }
 
 /**
- * Mark a plan day as complete
+ * Session window for health enrichment: totalTimeSeconds back from now. The
+ * screen calls markPlanDayAsComplete at the moment the session ends, so this
+ * reconstructs start/end without threading timestamps through every call site.
+ */
+function sessionWindowFromDuration(
+  totalTimeSeconds?: number
+): { startDate: Date; endDate: Date } | null {
+  if (!totalTimeSeconds || totalTimeSeconds <= 0) return null;
+  const endDate = new Date();
+  return {
+    startDate: new Date(endDate.getTime() - totalTimeSeconds * 1000),
+    endDate,
+  };
+}
+
+/**
+ * Mark a plan day as complete. When health is connected, best-effort enriches
+ * the log with heart-rate stats read from Apple Health / Health Connect over
+ * the session window, and (MastersFit+, SYNC_HEALTH) writes the session back
+ * to the platform health store. Health failures never block completion.
  */
 export async function markPlanDayAsComplete(
   planDayId: number,
@@ -256,8 +282,26 @@ export async function markPlanDayAsComplete(
     exercisesCompleted?: number;
     blocksCompleted?: number;
     notes?: string;
+    averageHeartRate?: number;
+    maxHeartRate?: number;
   }
 ): Promise<ApiResponse | null> {
+  const session = sessionWindowFromDuration(completionData?.totalTimeSeconds);
+  let healthConnected = false;
+  try {
+    healthConnected = await getHealthConnection();
+    if (healthConnected && session && completionData) {
+      const { avg, max } = await fetchHeartRateForWindow(
+        session.startDate,
+        session.endDate
+      );
+      if (avg !== null) completionData.averageHeartRate = Math.round(avg);
+      if (max !== null) completionData.maxHeartRate = Math.round(max);
+    }
+  } catch (error) {
+    console.warn("Skipping heart-rate enrichment:", error);
+  }
+
   try {
     const response = await apiRequest<ApiResponse>(
       `/logs/workout/day/${planDayId}/complete`,
@@ -269,11 +313,31 @@ export async function markPlanDayAsComplete(
     // When a plan day is completed, the active workout cache should be invalidated
     // to reflect this change on next load.
     invalidateActiveWorkoutCache();
+
+    if (healthConnected && session) {
+      // Fire-and-forget: the user is already looking at the completion dialog.
+      syncWorkoutToHealthStore(session).catch(() => {});
+    }
     return response;
   } catch (error) {
     console.error(`Error marking plan day ${planDayId} as complete:`, error);
     return null;
   }
+}
+
+/**
+ * MastersFit+ workout sync (SYNC_HEALTH). Gating mirrors useEntitlements:
+ * client-side check is UX-only and fails open when entitlements can't be
+ * resolved, rather than dropping a paying user's sync on a transient fetch
+ * failure.
+ */
+async function syncWorkoutToHealthStore(session: {
+  startDate: Date;
+  endDate: Date;
+}): Promise<void> {
+  const entitlements = await getEntitlements();
+  if (!resolveCapability(entitlements, "SYNC_HEALTH")) return;
+  await writeWorkoutToHealth(session);
 }
 
 /**

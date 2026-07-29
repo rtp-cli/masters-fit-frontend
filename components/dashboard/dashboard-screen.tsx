@@ -86,12 +86,12 @@ export default function DashboardScreen() {
   const [loadingToday, setLoadingToday] = useState(false);
   const [stepsCount, setStepsCount] = useState<number | null>(null);
   const [maxHeartRate, setMaxHeartRate] = useState<number | null>(null);
-  const [, setAvgHeartRate] = useState<number | null>(null);
+  const [avgHeartRate, setAvgHeartRate] = useState<number | null>(null);
   const [caloriesBurned, setCaloriesBurned] = useState<number | null>(null);
   const [nutritionCaloriesConsumed, setNutritionCaloriesConsumed] = useState<
     number | null
   >(null);
-  const [, setWorkoutDuration] = useState<number | null>(null);
+  const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
   const [healthReady, setHealthReady] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
   const [, setHealthError] = useState<string | null>(null);
@@ -933,6 +933,8 @@ export default function DashboardScreen() {
             nutritionCaloriesConsumed={nutritionCaloriesConsumed}
             caloriesBurned={caloriesBurned}
             maxHeartRate={maxHeartRate}
+            avgHeartRate={avgHeartRate}
+            workoutDuration={workoutDuration}
             healthReady={healthReady}
             healthLoading={healthLoading}
             onConnect={handleConnectHealth}

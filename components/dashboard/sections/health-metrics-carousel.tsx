@@ -1,6 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { useThemeColors } from "../../../lib/theme";
 
@@ -9,6 +15,8 @@ type HealthMetricsProps = {
   nutritionCaloriesConsumed: number | null;
   caloriesBurned: number | null;
   maxHeartRate: number | null;
+  avgHeartRate: number | null;
+  workoutDuration: number | null;
   healthReady: boolean;
   healthLoading: boolean;
   onConnect: () => void;
@@ -46,13 +54,16 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
   nutritionCaloriesConsumed,
   caloriesBurned,
   maxHeartRate,
+  avgHeartRate,
+  workoutDuration,
   healthReady,
   healthLoading,
   onConnect,
 }) => {
   const colors = useThemeColors();
 
-  const allMetrics: (HealthMetricItemProps & { key: string })[] = [
+  // colors is injected at render time, not carried by the metric definitions
+  const allMetrics: (Omit<HealthMetricItemProps, "colors"> & { key: string })[] = [
     {
       key: "steps",
       value: stepsCount,
@@ -64,6 +75,18 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
       value: maxHeartRate,
       iconName: "heart",
       unit: "bpm",
+    },
+    {
+      key: "avg-heart-rate",
+      value: avgHeartRate,
+      iconName: "pulse",
+      unit: "avg bpm",
+    },
+    {
+      key: "workout-duration",
+      value: workoutDuration,
+      iconName: "stopwatch",
+      unit: "min",
     },
     {
       key: "calories-consumed",
@@ -111,8 +134,20 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
   }
 
   return (
-    <View className="px-4 mb-8">
-      <View className="flex-row justify-around items-center">
+    <View className="mb-8">
+      {/* Horizontal scroll: up to 6 metrics can be visible now; flexGrow keeps
+          a short list spread across the full width like the old static row. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "space-around",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          gap: 20,
+        }}
+      >
         {visibleMetrics.map((metric) => (
           <HealthMetricItem
             key={metric.key}
@@ -122,7 +157,7 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
             colors={colors}
           />
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 };

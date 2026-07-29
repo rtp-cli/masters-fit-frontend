@@ -25,6 +25,9 @@ export default function CalendarActionButtons({
   const colors = useThemeColors();
 
   // No actions on past dates, historical views, or when there's no plan at all.
+  // A completed day's share affordance now lives inline under the compact
+  // summary header (WorkoutSummary), not in this slot — so it reads after the
+  // workout it shares, not before it.
   if (!workoutPlan || isHistoricalWorkout || isPastDate) {
     return null;
   }
@@ -60,7 +63,8 @@ export default function CalendarActionButtons({
     );
   }
 
-  // Completed scheduled day: no actions (you already did it).
+  // Completed scheduled day: no action buttons here. The share affordance is
+  // rendered inline under the compact summary header (WorkoutSummary).
   if (currentSelectedPlanDay.isComplete) {
     return null;
   }

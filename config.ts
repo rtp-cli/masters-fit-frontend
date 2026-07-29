@@ -1,9 +1,14 @@
 import { Platform } from "react-native";
 
+// TEMP (share-feature prod test): when true, the dev app talks to the PRODUCTION
+// backend instead of your local one, so you can exercise the deployed share flow
+// from the simulator. Set back to false to return to local dev.
+const DEV_USE_PROD_API = false;
+
 // Get the API URL based on the environment
 const getApiUrl = (): string => {
   // If running in a development environment
-  if (__DEV__) {
+  if (__DEV__ && !DEV_USE_PROD_API) {
     if (Platform.OS === "android") {
       // For Android, we need to use the special IP address
       return `http://192.168.1.118:5001/api`;

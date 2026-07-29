@@ -27,12 +27,14 @@ import DemoSheet, { type DemoSheetEntry } from "@/components/demo-sheet";
 import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
+import { ShareWorkoutButton } from "@/components/share";
 import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
 import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
 import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
 import ExerciseCompleteSnackbar from "@/components/workout/exercise-complete-snackbar";
+import WatchNudgeBanner from "@/components/workout/watch-nudge-banner";
 import WorkoutBlock from "@/components/workout-block";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
@@ -82,6 +84,10 @@ import {
   getCurrentDate,
 } from "@/utils";
 import { isCircuitBlock, isRoundActionVisible } from "@/utils/circuit-utils";
+import {
+  getHealthConnection,
+  hasRecentHeartRateSample,
+} from "@/utils/health";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -183,6 +189,9 @@ export function WorkoutScreen() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
+  // Tracks whether this session was ended early — used to suppress the share
+  // affordance on the ended-early summary (that screen offers Resume/feedback).
+  const [endedEarly, setEndedEarly] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   // [MF-012] Full plan overview collapses to a compact progress rail once
@@ -294,6 +303,10 @@ export function WorkoutScreen() {
   const workoutStartTime = useRef<number | null>(null);
   const exerciseStartTime = useRef<number | null>(null);
   const appStateRef = useRef(AppState.currentState);
+
+  // Watch nudge: shown once per session start when health is connected but no
+  // recent heart-rate samples exist (user likely has a watch that isn't recording)
+  const [showWatchNudge, setShowWatchNudge] = useState(false);
 
   // UI state
   const scrollViewRef = useRef<ScrollView>(null);
@@ -785,6 +798,22 @@ export function WorkoutScreen() {
     }
 
     setWorkoutInProgress(true); // Notify context that workout started
+
+    // Watch nudge (best-effort, off the critical path): if health is
+    // connected but no heart rate has landed recently, the user's watch
+    // probably isn't recording — remind them so this session gets HR data.
+    (async () => {
+      try {
+        if (
+          (await getHealthConnection()) &&
+          !(await hasRecentHeartRateSample())
+        ) {
+          setShowWatchNudge(true);
+        }
+      } catch {
+        // never block or noise the start flow over a nudge
+      }
+    })();
 
     // Track workout started
     if (workout?.id) {
@@ -1532,6 +1561,7 @@ export function WorkoutScreen() {
       ]);
 
       setCurrentExerciseIndex(exercises.length);
+      setEndedEarly(true);
       setIsWorkoutCompleted(true);
     } catch (err) {
       console.error("Error ending workout early:", err);
@@ -1823,6 +1853,7 @@ export function WorkoutScreen() {
   // Resume handler: start from first unfinished exercise (plan day stays complete)
   const handleResume = async () => {
     setIsResuming(true);
+    setEndedEarly(false);
 
     // Fetch existing logs to find where to resume
     const existingLogs = await fetchExerciseLogsForPlanDay(workout.id);
@@ -1896,9 +1927,22 @@ export function WorkoutScreen() {
         onResume={isToday ? handleResume : undefined}
         isResuming={isResuming}
         footer={
-          <Text className="text-text-muted text-center text-sm px-6 mt-4">
-            Check back tomorrow for your next workout.
-          </Text>
+          <>
+            {/* Share slots into the existing footer prop (nothing else moves).
+                Suppressed on an ended-early summary — that screen is asking for
+                feedback and offering Resume, so a share prompt is tone-deaf. */}
+            {!endedEarly && workout?.id ? (
+              <ShareWorkoutButton
+                planDayId={workout.id}
+                kind="completed"
+                workoutName={workout.name ?? undefined}
+                variant="completion"
+              />
+            ) : null}
+            <Text className="text-text-muted text-center text-sm px-6 mt-4">
+              Check back tomorrow for your next workout.
+            </Text>
+          </>
         }
       />
     );
@@ -2499,6 +2543,11 @@ export function WorkoutScreen() {
         visible={!!undoSnackbar}
         exerciseName={undoSnackbar?.exerciseName}
         onUndo={undoAutoComplete}
+      />
+
+      <WatchNudgeBanner
+        visible={showWatchNudge}
+        onDismiss={() => setShowWatchNudge(false)}
       />
 
       {/* Bottom Action Bar */}

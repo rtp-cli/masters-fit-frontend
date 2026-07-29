@@ -14,6 +14,7 @@ import {
 } from "react-native";
 
 import { useTheme } from "@/app/_layout";
+import { SharedWorkoutsSection } from "@/components/share";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import SubscriptionDetailsModal from "@/components/subscription/subscription-details-modal";
 import { useAppDataContext } from "@/contexts/app-data-context";
@@ -459,6 +460,12 @@ export default function SettingsView({
           Account
         </Text>
         {profile && <PersonalInformationSection profile={profile} />}
+
+        {/* Privacy — revoke shared workout links */}
+        <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
+          Privacy
+        </Text>
+        <SharedWorkoutsSection />
 
         {/* [MF-020] Training Profile */}
         <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">

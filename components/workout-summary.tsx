@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import DemoChip from "@/components/demo-chip";
+import { ShareWorkoutButton } from "@/components/share";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import WorkoutFeedbackCard from "@/components/workout-feedback-card";
 import { getLoggingMode } from "@/constants/block-types";
@@ -270,6 +271,18 @@ export default function WorkoutSummary({
                   </Text>
                 )}
               </View>
+              {/* Quiet share affordance under the metadata row — left-aligned
+                  with the name above it, so you read the workout before the
+                  offer to share it. Only on a genuinely completed day; an
+                  ended-early summary is asking for feedback, not a share. */}
+              {!wasEndedEarly && (
+                <ShareWorkoutButton
+                  planDayId={workout.id}
+                  kind="completed"
+                  workoutName={workout.name ?? undefined}
+                  variant="calendar"
+                />
+              )}
             </View>
           </View>
         ) : (

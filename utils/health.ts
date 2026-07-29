@@ -3,8 +3,10 @@ import { AppState, Linking,Platform } from "react-native";
 import { NativeModules } from "react-native";
 import BrokenHealthKit, { type HealthKitPermissions } from "react-native-health";
 import {
+  ExerciseType,
   getSdkStatus,
   initialize,
+  insertRecords,
   readRecords,
   requestPermission,
   SdkAvailabilityStatus,
@@ -111,7 +113,10 @@ export async function connectHealth(): Promise<boolean> {
           perms.Workout,
           perms.EnergyConsumed,
         ],
-        write: [],
+        // Write access powers MastersFit+ workout sync (saveWorkout on
+        // completion). Requested up front so "Update Permissions" in settings
+        // heals users who connected before writes existed.
+        write: [perms.Workout, perms.ActiveEnergyBurned],
       },
     };
 
@@ -138,6 +143,7 @@ export async function connectHealth(): Promise<boolean> {
     { recordType: "ActiveCaloriesBurned", accessType: "read" },
     { recordType: "TotalCaloriesBurned", accessType: "read" },
     { recordType: "Nutrition", accessType: "read" },
+    { recordType: "ExerciseSession", accessType: "write" },
   ]);
   if (granted) {
     await setHealthConnection(true);
@@ -248,6 +254,23 @@ export async function fetchHeartRateSamples(): Promise<{
   max: number | null;
   avg: number | null;
 }> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return fetchHeartRateForWindow(start, new Date());
+}
+
+/**
+ * Heart-rate stats for an arbitrary time window (e.g. a workout session).
+ * Returns nulls when there are no samples or the native module is missing —
+ * callers treat health data as best-effort.
+ */
+export async function fetchHeartRateForWindow(
+  start: Date,
+  end: Date
+): Promise<{
+  max: number | null;
+  avg: number | null;
+}> {
   if (Platform.OS === "ios") {
     if (
       !AppleHealthKit ||
@@ -255,9 +278,6 @@ export async function fetchHeartRateSamples(): Promise<{
     ) {
       return { max: null, avg: null };
     }
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
     const options = {
       startDate: start.toISOString(),
       endDate: end.toISOString(),
@@ -275,9 +295,6 @@ export async function fetchHeartRateSamples(): Promise<{
     return { max, avg };
   }
   await ensureHealthConnectInitialized();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
   const resp = await readRecords("HeartRate", {
     timeRangeFilter: {
       operator: "between",
@@ -443,4 +460,75 @@ export async function fetchNutritionCaloriesToday(): Promise<number | null> {
     return sum + kcal;
   }, 0);
   return total;
+}
+
+/**
+ * Whether any heart-rate sample landed in the health store recently. Used as
+ * a proxy for "a watch workout is (or was just) recording" — during an active
+ * watch workout samples stream near-continuously, otherwise they arrive every
+ * several minutes at best. Best-effort: any failure reads as "has samples" so
+ * callers never nag when we simply can't tell.
+ */
+export async function hasRecentHeartRateSample(
+  windowMinutes: number = 5
+): Promise<boolean> {
+  try {
+    const end = new Date();
+    const start = new Date(end.getTime() - windowMinutes * 60_000);
+    const { max } = await fetchHeartRateForWindow(start, end);
+    return max !== null;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Save a completed MastersFit session to the platform health store as a
+ * strength-training workout (MastersFit+ sync). Returns false instead of
+ * throwing — a denied write permission or missing native module must never
+ * disturb the completion flow. Requires the write grants requested by
+ * connectHealth(); users connected before writes existed heal via
+ * "Update Permissions" in settings.
+ */
+export async function writeWorkoutToHealth(session: {
+  startDate: Date;
+  endDate: Date;
+  caloriesBurned?: number;
+}): Promise<boolean> {
+  try {
+    if (Platform.OS === "ios") {
+      if (!AppleHealthKit || typeof AppleHealthKit.saveWorkout !== "function") {
+        return false;
+      }
+      const options = {
+        type:
+          AppleHealthKit.Constants?.Activities?.FunctionalStrengthTraining ||
+          "FunctionalStrengthTraining",
+        startDate: session.startDate.toISOString(),
+        endDate: session.endDate.toISOString(),
+        ...(session.caloriesBurned
+          ? {
+              energyBurned: session.caloriesBurned,
+              energyBurnedUnit: "calorie",
+            }
+          : {}),
+      } as any;
+      return await new Promise<boolean>((resolve) => {
+        AppleHealthKit.saveWorkout(options, (err: any) => resolve(!err));
+      });
+    }
+    await ensureHealthConnectInitialized();
+    await insertRecords([
+      {
+        recordType: "ExerciseSession",
+        exerciseType: ExerciseType.STRENGTH_TRAINING,
+        title: "MastersFit Workout",
+        startTime: session.startDate.toISOString(),
+        endTime: session.endDate.toISOString(),
+      },
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
 }

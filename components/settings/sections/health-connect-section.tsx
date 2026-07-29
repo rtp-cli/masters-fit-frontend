@@ -2,7 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCallback,useEffect, useState } from "react";
 import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
 
-import { connectHealth, getHealthConnection } from "@/utils/health";
+import {
+  clearHealthConnection,
+  connectHealth,
+  getHealthConnection,
+} from "@/utils/health";
 
 import { useThemeColors } from "../../../lib/theme";
 
@@ -85,6 +89,12 @@ export default function HealthConnectSection() {
     );
   }
 
+  const handleDisconnectHealth = async () => {
+    await clearHealthConnection();
+    setHealthConnected(false);
+    setHealthError(null);
+  };
+
   return (
     <View className="px-4 py-3 border-t border-neutral-light-2">
       <View className="flex-row items-center justify-between">
@@ -98,22 +108,38 @@ export default function HealthConnectSection() {
             Health Connected
           </Text>
         </View>
-        <TouchableOpacity
-          // [Bug fix] bg-secondary/20 + text-secondary both key off the same
-          // top-level "secondary" token as the fill -- text was invisible.
-          className="bg-neutral-light-2 px-3 py-1.5 rounded-lg"
-          onPress={handleConnectHealth}
-          disabled={healthLoading}
-        >
-          {healthLoading ? (
-            <ActivityIndicator size="small" color={colors.text.primary} />
-          ) : (
-            <Text className="text-xs font-semibold text-text-primary">
-              Update Permissions
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            // [Bug fix] bg-secondary/20 + text-secondary both key off the same
+            // top-level "secondary" token as the fill -- text was invisible.
+            className="bg-neutral-light-2 px-3 py-1.5 rounded-lg"
+            onPress={handleConnectHealth}
+            disabled={healthLoading}
+          >
+            {healthLoading ? (
+              <ActivityIndicator size="small" color={colors.text.primary} />
+            ) : (
+              <Text className="text-xs font-semibold text-text-primary">
+                Update Permissions
+              </Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="bg-neutral-light-2 px-3 py-1.5 rounded-lg ml-2"
+            onPress={handleDisconnectHealth}
+            disabled={healthLoading}
+          >
+            <Text className="text-xs font-semibold text-danger">
+              Disconnect
             </Text>
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </View>
+      <Text className="text-xs text-text-secondary mt-2">
+        Disconnecting stops MastersFit from reading or saving health data. To
+        revoke permissions entirely, use the Health app (iOS) or Health
+        Connect settings (Android).
+      </Text>
     </View>
   );
 }

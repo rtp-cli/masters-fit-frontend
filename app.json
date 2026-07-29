@@ -20,9 +20,10 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSHealthShareUsageDescription": "MastersFit needs access to your health data including steps, heart rate, workout sessions, calories burned, and nutrition to provide personalized fitness insights and track your progress.",
-        "NSHealthUpdateUsageDescription": "MastersFit may write step count and workout data to HealthKit to help track your fitness progress and maintain accurate health records.",
+        "NSHealthUpdateUsageDescription": "MastersFit saves your completed workouts to Apple Health so they appear in the Fitness app and count toward your activity.",
         "NSUserTrackingUsageDescription": "MastersFit uses tracking to provide personalized fitness insights and improve your workout experience. Your data helps us deliver better recommendations and track your progress.",
-        "NSPhotoLibraryUsageDescription": "MastersFit accesses only the photos you explicitly select, such as when adding a picture to your profile."
+        "NSPhotoLibraryUsageDescription": "MastersFit accesses only the photos you explicitly select, such as when adding a picture to your profile.",
+        "NSPhotoLibraryAddUsageDescription": "MastersFit saves the workout card you choose to share to your photo library."
       }
     },
     "notification": {
@@ -43,10 +44,12 @@
       "package": "com.mastersfit.ai",
       "permissions": [
         "android.permission.health.READ_STEPS",
-        "android.permission.health.WRITE_STEPS",
         "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_EXERCISE_SESSION"
+        "android.permission.health.READ_EXERCISE_SESSION",
+        "android.permission.health.READ_NUTRITION",
+        "android.permission.health.WRITE_EXERCISE_SESSION"
       ],
       "googleServicesFile": "./google-services.json"
     },
@@ -73,7 +76,7 @@
         "react-native-health",
         {
           "healthSharePermission": "MastersFit reads your health data including steps, heart rate, workouts, calories, and nutrition to provide personalized fitness insights.",
-          "healthUpdatePermission": "MastersFit may write step counts and workout data to HealthKit to help track your fitness progress.",
+          "healthUpdatePermission": "MastersFit saves your completed workouts to Apple Health so they appear in the Fitness app and count toward your activity.",
           "isClinicalDataEnabled": false
         }
       ],
