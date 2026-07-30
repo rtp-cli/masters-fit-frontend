@@ -133,22 +133,33 @@ async function getRefreshToken(): Promise<string | null> {
 }
 
 /**
- * Refresh the access token using the stored refresh token
- * Returns true if successful, false if refresh failed
+ * Refresh the access token using the stored refresh token.
+ *
+ * Outcomes are deliberately three-way — only "invalid" may end the session:
+ * - "refreshed": new tokens stored, retry the original request
+ * - "invalid":   the server rejected the refresh token (401/403) or we have
+ *                none stored — the session is genuinely dead
+ * - "transient": network error, timeout, or a 5xx from /auth/refresh — the
+ *                session is fine; fail THIS request and leave the user
+ *                logged in. Treating these as fatal logged users out on a
+ *                single network blip mid-flow.
  */
-async function refreshAccessToken(): Promise<boolean> {
+type RefreshOutcome = "refreshed" | "invalid" | "transient";
+
+let lastRefreshOutcome: RefreshOutcome = "transient";
+
+async function refreshAccessToken(): Promise<RefreshOutcome> {
   const startTime = Date.now();
 
   // Prevent concurrent refresh attempts
   if (refreshInProgress) {
-    // Wait for the current refresh to complete
+    // Wait for the current refresh to complete and share its outcome —
+    // checking "does a token exist" here was wrong: the OLD token still
+    // exists after a failed refresh, so waiters retried with a dead token.
     while (refreshInProgress) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    // Check if a token exists after the other refresh completed
-    const token = await getAuthToken();
-    const success = !!token;
-    return success;
+    return lastRefreshOutcome;
   }
 
   refreshInProgress = true;
@@ -157,7 +168,8 @@ async function refreshAccessToken(): Promise<boolean> {
     const refreshToken = await getRefreshToken();
 
     if (!refreshToken) {
-      return false;
+      lastRefreshOutcome = "invalid";
+      return lastRefreshOutcome;
     }
 
     // Make refresh request directly (avoid recursion by not using apiRequest)
@@ -177,7 +189,13 @@ async function refreshAccessToken(): Promise<boolean> {
         response.status,
         errorData
       );
-      return false;
+      // Only an explicit auth rejection kills the session; a 5xx/429 from
+      // the refresh endpoint is the server's problem, not the session's.
+      lastRefreshOutcome =
+        response.status === 401 || response.status === 403
+          ? "invalid"
+          : "transient";
+      return lastRefreshOutcome;
     }
 
     const data = await response.json();
@@ -187,18 +205,21 @@ async function refreshAccessToken(): Promise<boolean> {
         "[TOKEN_REFRESH] Refresh response missing required fields:",
         data
       );
-      return false;
+      lastRefreshOutcome = "transient";
+      return lastRefreshOutcome;
     }
 
     await Promise.all([
       SecureStore.setItemAsync("token", data.token),
       SecureStore.setItemAsync("refreshToken", data.refreshToken),
     ]);
-    return true;
+    lastRefreshOutcome = "refreshed";
+    return lastRefreshOutcome;
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[TOKEN_REFRESH] Refresh failed after ${duration}ms:`, error);
-    return false;
+    lastRefreshOutcome = "transient";
+    return lastRefreshOutcome;
   } finally {
     refreshInProgress = false;
   }
@@ -407,17 +428,23 @@ export async function apiRequest<T>(
 
       // Handle unauthorized (HTTP 401) - try refresh before logout
       // Skip auto-refresh for /auth/verify endpoint - 401 here means invalid auth code, not expired token
-      if (response.status === 401 && !token && endpoint !== "/auth/verify") {
-        await handleAuthFailure();
-        throw new Error("Session expired - please log in again");
-      }
-      if (response.status === 401 && token && endpoint !== "/auth/verify") {
+      // A 401 on a request we already retried after a refresh gets no second
+      // refresh (prevents a refresh loop) and no logout (the fresh token was
+      // just accepted by /auth/refresh — this 401 is the endpoint's problem).
+      if (
+        response.status === 401 &&
+        endpoint !== "/auth/verify" &&
+        !(options as { __isRetryAfterRefresh?: boolean }).__isRetryAfterRefresh
+      ) {
+        // Even with no readable access token, a stored refresh token can
+        // rescue the session — instant logout here killed sessions whose
+        // token read failed (e.g. keychain unavailable for a background poll).
         console.log(
-          `[API] 401 Unauthorized for ${endpoint}, attempting token refresh...`
+          `[API] 401 Unauthorized for ${endpoint} (token present: ${!!token}), attempting token refresh...`
         );
-        const refreshSuccess = await refreshAccessToken();
+        const refreshOutcome = await refreshAccessToken();
 
-        if (refreshSuccess) {
+        if (refreshOutcome === "refreshed") {
           // Get the new token after refresh
           const newToken = await getAuthToken();
           console.log(
@@ -425,11 +452,12 @@ export async function apiRequest<T>(
           );
 
           if (!newToken) {
+            // Tokens were just written; an unreadable store here is a device
+            // storage hiccup, not a dead session. Fail the request only.
             console.error(
               `[API] Token refresh reported success but no token found!`
             );
-            await handleAuthFailure();
-            throw new Error("Session expired - token refresh failed");
+            throw new Error("Temporary authentication problem - please retry");
           }
 
           // Retry the original request with the new token
@@ -440,7 +468,9 @@ export async function apiRequest<T>(
             Authorization: `Bearer ${newToken}`,
           };
 
-          const retryOptions: RequestInit = {
+          const retryOptions: RequestInit & {
+            __isRetryAfterRefresh?: boolean;
+          } = {
             ...options,
             headers: {
               ...retryBaseHeaders,
@@ -448,6 +478,7 @@ export async function apiRequest<T>(
               ...(options.headers || {}),
               Authorization: `Bearer ${newToken}`, // Ensure new token is used
             },
+            __isRetryAfterRefresh: true,
           };
 
           const retryStartTime = Date.now();
@@ -458,10 +489,18 @@ export async function apiRequest<T>(
           );
 
           return retryResponse;
-        } else {
-          console.error(`[API] Token refresh failed for ${endpoint}`);
+        } else if (refreshOutcome === "invalid") {
+          // The server explicitly rejected the refresh token — session over.
+          console.error(`[API] Refresh token rejected for ${endpoint}`);
           await handleAuthFailure();
           throw new Error("Session expired - user logged out");
+        } else {
+          // Transient refresh failure (network blip, refresh endpoint 5xx):
+          // fail this request, keep the session. The next request retries.
+          console.warn(
+            `[API] Token refresh temporarily unavailable for ${endpoint}, keeping session`
+          );
+          throw new Error("Temporary authentication problem - please retry");
         }
       }
 
