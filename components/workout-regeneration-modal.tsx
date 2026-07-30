@@ -59,6 +59,33 @@ import { SegmentedControl } from "./segmented-control";
 import { CustomDialog, type DialogButton } from "./ui";
 import VoiceInputButton from "./voice-input-button";
 
+// Overrides from the last submitted daily adjustment, so a retry a few
+// minutes later starts from what the user chose (e.g. "20 min"), not a
+// silent reset to profile defaults. Module-scoped: survives the modal
+// unmounting but not an app restart. Expires so a stale choice doesn't
+// leak into a different session days later — the Customize row always
+// shows the active values either way.
+const OVERRIDE_REUSE_WINDOW_MS = 30 * 60 * 1000;
+let lastSubmittedOverrides: {
+  overrides: TemporaryOverrides;
+  savedAt: number;
+} | null = null;
+
+function rememberSubmittedOverrides(overrides: TemporaryOverrides): void {
+  lastSubmittedOverrides = { overrides: { ...overrides }, savedAt: Date.now() };
+}
+
+function recallSubmittedOverrides(): TemporaryOverrides | null {
+  if (
+    lastSubmittedOverrides &&
+    Date.now() - lastSubmittedOverrides.savedAt < OVERRIDE_REUSE_WINDOW_MS
+  ) {
+    return { ...lastSubmittedOverrides.overrides };
+  }
+  lastSubmittedOverrides = null;
+  return null;
+}
+
 interface WorkoutRegenerationModalProps {
   visible: boolean;
   onClose: () => void;
@@ -217,16 +244,21 @@ export default function WorkoutRegenerationModal({
         }
       }
 
-      setTemporaryOverrides({
-        duration: currentProfile.workoutDuration || 30,
-        intensity: profileIntensity,
-        styles: (currentProfile.preferredStyles as PREFERRED_STYLES[]) || [],
-        environment: profileEnvironment,
-        equipment: (currentProfile.equipment as AVAILABLE_EQUIPMENT[]) || [],
-        otherEquipment: currentProfile.otherEquipment || "",
-        includeWarmup: currentProfile.includeWarmup ?? true,
-        includeCooldown: currentProfile.includeCooldown ?? true,
-      });
+      // A recently submitted adjustment's overrides win over profile
+      // defaults, so retrying doesn't silently drop e.g. a "20 min" choice.
+      const recalled = recallSubmittedOverrides();
+      setTemporaryOverrides(
+        recalled ?? {
+          duration: currentProfile.workoutDuration || 30,
+          intensity: profileIntensity,
+          styles: (currentProfile.preferredStyles as PREFERRED_STYLES[]) || [],
+          environment: profileEnvironment,
+          equipment: (currentProfile.equipment as AVAILABLE_EQUIPMENT[]) || [],
+          otherEquipment: currentProfile.otherEquipment || "",
+          includeWarmup: currentProfile.includeWarmup ?? true,
+          includeCooldown: currentProfile.includeCooldown ?? true,
+        }
+      );
     }
   }, [currentProfile, visible]);
 
@@ -352,10 +384,12 @@ export default function WorkoutRegenerationModal({
                   temporaryOverrides,
                   currentProfile
                 ),
+                durationOverride: temporaryOverrides.duration,
               }
             );
 
             if (result?.success && result.jobId) {
+              rememberSubmittedOverrides(temporaryOverrides);
               clearPendingResume();
               // Add job to background tracking
               await addJob(result.jobId, "daily-regeneration");
@@ -478,9 +512,11 @@ export default function WorkoutRegenerationModal({
                 temporaryOverrides,
                 currentProfile
               ),
+              durationOverride: temporaryOverrides.duration,
             });
 
             if (result?.success && result.jobId) {
+              rememberSubmittedOverrides(temporaryOverrides);
               clearPendingResume();
               // Add job to background tracking
               await addJob(result.jobId, "daily-regeneration");
@@ -512,10 +548,12 @@ export default function WorkoutRegenerationModal({
                   temporaryOverrides,
                   currentProfile
                 ),
+                durationOverride: temporaryOverrides.duration,
               }
             );
 
             if (result?.success && result.jobId) {
+              rememberSubmittedOverrides(temporaryOverrides);
               clearPendingResume();
               // Add job to background tracking
               await addJob(result.jobId, "daily-regeneration");

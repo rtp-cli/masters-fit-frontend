@@ -1148,6 +1148,9 @@ export async function regenerateDailyWorkoutAsync(
     reason: string;
     styles?: string[];
     limitations?: string[];
+    /** Session minutes for THIS generation only — drives the backend's hard
+     * duration constraint; as prose in `reason` it was never enforced. */
+    durationOverride?: number;
   }
 ): Promise<{ success: boolean; jobId: number; message: string } | null> {
   try {
@@ -1183,6 +1186,7 @@ export async function generateRestDayWorkoutAsync(
   params: {
     date: string;
     reason: string;
+    durationOverride?: number;
   }
 ): Promise<{ success: boolean; jobId: number; message: string } | null> {
   try {
