@@ -7,14 +7,18 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import {
+  Directions,
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
 import IconButton from "@/components/icon-button";
 import { type DemoSurface, trackVideoEngagement } from "@/lib/analytics";
-import {
-  checkYouTubeVideo,
-  processExerciseLink,
-} from "@/lib/exercise-video";
+import { checkYouTubeVideo, processExerciseLink } from "@/lib/exercise-video";
 import { useThemeColors } from "@/lib/theme";
 
 import Text from "./text";
@@ -53,6 +57,7 @@ export default function DemoSheet({
   onClose,
 }: DemoSheetProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
   const [index, setIndex] = useState(initialIndex);
@@ -102,6 +107,27 @@ export default function DemoSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, videoId]);
 
+  // Horizontal fling steps the series, mirroring the prev/next arrows. Bound to
+  // the sheet body — flings over the WebView player are swallowed by the WebView
+  // (both platforms), so this only fires off the header/description/footer zones.
+  const canPrev = index > 0;
+  const canNext = index < entries.length - 1;
+  const swipeGesture = useMemo(() => {
+    const flingNext = Gesture.Fling()
+      .direction(Directions.LEFT)
+      .runOnJS(true)
+      .onEnd(() => {
+        if (canNext) setIndex((i) => i + 1);
+      });
+    const flingPrev = Gesture.Fling()
+      .direction(Directions.RIGHT)
+      .runOnJS(true)
+      .onEnd(() => {
+        if (canPrev) setIndex((i) => i - 1);
+      });
+    return Gesture.Race(flingNext, flingPrev);
+  }, [canPrev, canNext]);
+
   if (!entry) return null;
 
   const playerHeight = Math.round((width * 9) / 16);
@@ -115,7 +141,9 @@ export default function DemoSheet({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View
+      {/* A RN Modal renders in its own native hierarchy, outside any app-level
+          GestureHandlerRootView — so the sheet needs its own to detect flings. */}
+      <GestureHandlerRootView
         className="flex-1 justify-end"
         style={{ backgroundColor: "rgba(10,10,10,0.45)" }}
       >
@@ -125,191 +153,199 @@ export default function DemoSheet({
           onPress={onClose}
           accessibilityLabel="Close demo"
         />
-        <View className="bg-background rounded-t-3xl pb-8 overflow-hidden">
-          {/* Grabber */}
-          <View className="items-center pt-2 pb-1">
-            <View className="w-10 h-1 rounded-full bg-neutral-medium-1" />
-          </View>
-
-          {/* Header row */}
-          <View className="flex-row items-center px-5 pb-3">
-            <View className="flex-1 mr-3">
-              <Text
-                className="text-lg font-bold text-text-primary"
-                numberOfLines={1}
-              >
-                {entry.exerciseName}
-              </Text>
-              <Text className="text-xs text-text-muted mt-1" numberOfLines={1}>
-                {unavailable
-                  ? "Demo unavailable"
-                  : `Demo${channel ? ` · ${channel}` : ""}`}
-              </Text>
+        <GestureDetector gesture={swipeGesture}>
+          <View
+            className="bg-background rounded-t-3xl overflow-hidden"
+            style={{ paddingBottom: insets.bottom + 16 }}
+          >
+            {/* Grabber */}
+            <View className="items-center pt-2 pb-1">
+              <View className="w-10 h-1 rounded-full bg-neutral-medium-1" />
             </View>
-            <IconButton
-              icon="close"
-              accessibilityLabel="Close demo"
-              onPress={onClose}
-            />
-          </View>
 
-          {/* Player, full-bleed 16:9 — or the unavailable panel. Never empty. */}
-          {unavailable || !videoId ? (
-            <View
-              className="bg-brand-light-1 items-center justify-center"
-              style={{ height: 160 }}
-            >
-              <Ionicons
-                name="videocam-off-outline"
-                size={30}
-                color={colors.text.muted}
+            {/* Header row */}
+            <View className="flex-row items-center px-5 pb-3">
+              <View className="flex-1 mr-3">
+                <Text
+                  className="text-lg font-bold text-text-primary"
+                  numberOfLines={1}
+                >
+                  {entry.exerciseName}
+                </Text>
+                <Text
+                  className="text-xs text-text-muted mt-1"
+                  numberOfLines={1}
+                >
+                  {unavailable
+                    ? "Demo unavailable"
+                    : `Demo${channel ? ` · ${channel}` : ""}`}
+                </Text>
+              </View>
+              <IconButton
+                icon="close"
+                accessibilityLabel="Close demo"
+                onPress={onClose}
               />
-              <Text className="text-sm text-text-muted mt-2">
-                This demo is not available right now
-              </Text>
             </View>
-          ) : (
-            <View style={{ height: playerHeight }} className="bg-black">
-              {/* Muted autoplay via an embed iframe in a wrapper page —
+
+            {/* Player, full-bleed 16:9 — or the unavailable panel. Never empty. */}
+            {unavailable || !videoId ? (
+              <View
+                className="bg-brand-light-1 items-center justify-center"
+                style={{ height: 160 }}
+              >
+                <Ionicons
+                  name="videocam-off-outline"
+                  size={30}
+                  color={colors.text.muted}
+                />
+                <Text className="text-sm text-text-muted mt-2">
+                  This demo is not available right now
+                </Text>
+              </View>
+            ) : (
+              <View style={{ height: playerHeight }} className="bg-black">
+                {/* Muted autoplay via an embed iframe in a wrapper page —
                   YouTube's officially supported path. Loading the embed URL
                   as the top document fails (error 153: no referrer), and the
                   iframe-API playVideo() route is ignored by the embed player
                   in this WebView — which is exactly why the old inline player
                   always needed a second tap on YouTube's own play button. */}
-              <WebView
-                key={videoId}
-                ref={webViewRef}
-                originWhitelist={["*"]}
-                source={{
-                  baseUrl: "https://mastersfit.ai",
-                  html: `<!DOCTYPE html><html><head>
+                <WebView
+                  key={videoId}
+                  ref={webViewRef}
+                  originWhitelist={["*"]}
+                  source={{
+                    baseUrl: "https://mastersfit.ai",
+                    html: `<!DOCTYPE html><html><head>
                     <meta name="viewport" content="width=device-width, initial-scale=1">
                     <style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style>
                     </head><body>
                     <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1"
                       allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
                     </body></html>`,
-                }}
-                style={{ backgroundColor: "#000" }}
-                allowsInlineMediaPlayback
-                mediaPlaybackRequiresUserAction={false}
-                allowsFullscreenVideo
-                onError={() => setUnavailable(true)}
-                // Keep the sheet on the demo: block top-frame navigations away
-                // from the wrapper (e.g. the "Watch on YouTube" overlay link).
-                onShouldStartLoadWithRequest={(request) =>
-                  !request.isTopFrame ||
-                  request.url.startsWith("https://mastersfit.ai") ||
-                  request.url.startsWith("about:")
-                }
-              />
-              {muted ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    // The video element lives in the cross-origin embed
-                    // iframe, so unmute goes through YouTube's widget-API
-                    // postMessage protocol (enablejsapi=1 on the embed URL).
-                    webViewRef.current?.injectJavaScript(
-                      `(function(){var f=document.querySelector('iframe');if(f&&f.contentWindow){` +
-                        `f.contentWindow.postMessage(JSON.stringify({event:'command',func:'unMute',args:[]}),'*');` +
-                        `f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'*');}})();true;`,
-                    );
-                    setMuted(false);
                   }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Unmute demo video"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  className="absolute top-3 left-3 flex-row items-center rounded-full px-4 py-2.5"
-                  style={{ backgroundColor: "rgba(10,10,10,0.75)" }}
-                >
-                  <Ionicons name="volume-mute" size={16} color="#FFFFFF" />
-                  <Text
-                    className="text-sm font-semibold"
-                    color="#FFFFFF"
-                    style={{ marginLeft: 6 }}
+                  style={{ backgroundColor: "#000" }}
+                  allowsInlineMediaPlayback
+                  mediaPlaybackRequiresUserAction={false}
+                  allowsFullscreenVideo
+                  onError={() => setUnavailable(true)}
+                  // Keep the sheet on the demo: block top-frame navigations away
+                  // from the wrapper (e.g. the "Watch on YouTube" overlay link).
+                  onShouldStartLoadWithRequest={(request) =>
+                    !request.isTopFrame ||
+                    request.url.startsWith("https://mastersfit.ai") ||
+                    request.url.startsWith("about:")
+                  }
+                />
+                {muted ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      // The video element lives in the cross-origin embed
+                      // iframe, so unmute goes through YouTube's widget-API
+                      // postMessage protocol (enablejsapi=1 on the embed URL).
+                      webViewRef.current?.injectJavaScript(
+                        `(function(){var f=document.querySelector('iframe');if(f&&f.contentWindow){` +
+                          `f.contentWindow.postMessage(JSON.stringify({event:'command',func:'unMute',args:[]}),'*');` +
+                          `f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'*');}})();true;`,
+                      );
+                      setMuted(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Unmute demo video"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className="absolute top-3 left-3 flex-row items-center rounded-full px-4 py-2.5"
+                    style={{ backgroundColor: "rgba(10,10,10,0.75)" }}
                   >
-                    Tap for sound
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          )}
+                    <Ionicons name="volume-mute" size={16} color="#FFFFFF" />
+                    <Text
+                      className="text-sm font-semibold"
+                      color="#FFFFFF"
+                      style={{ marginLeft: 6 }}
+                    >
+                      Tap for sound
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            )}
 
-          {/* Form cue / description */}
-          {entry.description ? (
-            <Text className="text-sm text-text-secondary leading-5 px-5 pt-4">
-              {entry.description}
-            </Text>
-          ) : null}
-
-          {/* Close button in the unavailable state — the sheet must always
-              offer an obvious way out even with no player to interact with. */}
-          {unavailable || !videoId ? (
-            <TouchableOpacity
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              className="mx-5 mt-4 py-3 rounded-xl border border-neutral-medium-1 items-center"
-            >
-              <Text className="text-base font-semibold text-text-primary">
-                Close
+            {/* Form cue / description */}
+            {entry.description ? (
+              <Text className="text-sm text-text-secondary leading-5 px-5 pt-4">
+                {entry.description}
               </Text>
-            </TouchableOpacity>
-          ) : null}
+            ) : null}
 
-          {/* Prev / next through the block's other demos */}
-          {prev || next ? (
-            <View className="flex-row items-center justify-between px-5 pt-4">
-              {prev ? (
-                <TouchableOpacity
-                  onPress={() => setIndex(index - 1)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Previous demo: ${prev.exerciseName}`}
-                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                  className="flex-row items-center flex-1 mr-2"
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={16}
-                    color={colors.text.muted}
-                  />
-                  <Text
-                    className="text-sm text-text-muted ml-1"
-                    numberOfLines={1}
+            {/* Close button in the unavailable state — the sheet must always
+              offer an obvious way out even with no player to interact with. */}
+            {unavailable || !videoId ? (
+              <TouchableOpacity
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                className="mx-5 mt-4 py-3 rounded-xl border border-neutral-medium-1 items-center"
+              >
+                <Text className="text-base font-semibold text-text-primary">
+                  Close
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {/* Prev / next through the block's other demos */}
+            {prev || next ? (
+              <View className="flex-row items-center justify-between px-5 pt-4">
+                {prev ? (
+                  <TouchableOpacity
+                    onPress={() => setIndex(index - 1)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Previous demo: ${prev.exerciseName}`}
+                    hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                    className="flex-row items-center flex-1 mr-2"
                   >
-                    {prev.exerciseName}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <View className="flex-1 mr-2" />
-              )}
-              {next ? (
-                <TouchableOpacity
-                  onPress={() => setIndex(index + 1)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Next demo: ${next.exerciseName}`}
-                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                  className="flex-row items-center justify-end flex-1 ml-2"
-                >
-                  <Text
-                    className="text-sm text-text-muted mr-1"
-                    numberOfLines={1}
+                    <Ionicons
+                      name="chevron-back"
+                      size={16}
+                      color={colors.text.muted}
+                    />
+                    <Text
+                      className="text-sm text-text-muted ml-1"
+                      numberOfLines={1}
+                    >
+                      {prev.exerciseName}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View className="flex-1 mr-2" />
+                )}
+                {next ? (
+                  <TouchableOpacity
+                    onPress={() => setIndex(index + 1)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Next demo: ${next.exerciseName}`}
+                    hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                    className="flex-row items-center justify-end flex-1 ml-2"
                   >
-                    {next.exerciseName}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.text.muted}
-                  />
-                </TouchableOpacity>
-              ) : (
-                <View className="flex-1 ml-2" />
-              )}
-            </View>
-          ) : null}
-        </View>
-      </View>
+                    <Text
+                      className="text-sm text-text-muted mr-1"
+                      numberOfLines={1}
+                    >
+                      {next.exerciseName}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={colors.text.muted}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <View className="flex-1 ml-2" />
+                )}
+              </View>
+            ) : null}
+          </View>
+        </GestureDetector>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
