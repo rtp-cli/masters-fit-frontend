@@ -40,6 +40,12 @@ export interface OnboardingFormProps {
   title?: string;
   submitButtonText?: string;
   excludePersonalInfo?: boolean;
+  /**
+   * Emit `onboarding_step_viewed` analytics on each step change. Only the real
+   * onboarding flow sets this — profile-edit and regeneration reuse this form but
+   * are NOT part of the signup funnel, so they leave it off.
+   */
+  trackStepViews?: boolean;
 }
 
 export type ArrayFields = Extract<

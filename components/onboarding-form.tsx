@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRef,useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { useThemeColors } from "@/lib/theme";
 import {
   type ArrayFields,
@@ -51,6 +52,7 @@ export default function OnboardingForm({
   isLoading = false,
   submitButtonText = "Generate Weekly Plan",
   excludePersonalInfo = false,
+  trackStepViews = false,
 }: OnboardingFormProps) {
   const colors = useThemeColors();
   const scrollRef = useRef<ScrollView | null>(null);
@@ -75,6 +77,21 @@ export default function OnboardingForm({
   const availableSteps = getAvailableSteps();
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const currentStep = availableSteps[currentStepIndex];
+
+  // [AN-04] Onboarding funnel step views. Gated on trackStepViews so the reused
+  // profile-edit / regeneration mounts of this form don't pollute the signup
+  // funnel. Fires on mount (step 0) and on each forward/back navigation.
+  // step_name is the reverse-mapped enum name (numeric enum → readable label).
+  useEffect(() => {
+    if (!trackStepViews) return;
+    trackEvent(AnalyticsEvent.ONBOARDING_STEP_VIEWED, {
+      step_index: currentStepIndex,
+      step_name: ONBOARDING_STEP[currentStep],
+      total_steps: availableSteps.length,
+    });
+    // availableSteps.length is stable for a given mount; key the effect on the index.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepIndex, trackStepViews]);
 
   // Initialize form data with default values
   const [formData, setFormData] = useState<FormData>({

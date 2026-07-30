@@ -38,7 +38,10 @@ export const AnalyticsEvent = {
   ONBOARDING_COMPLETED: "onboarding_completed",
 
   // ── Workout lifecycle (client) ──
-  WORKOUT_COMPLETED: "workout_completed",
+  // NOTE: workout completion is a server-authoritative fact (completion % is
+  // computed backend-side) and is owned by the backend, which emits the
+  // "Workout Completed" event from logs.service. Per the single-owner rule it is
+  // deliberately NOT a client event — don't re-add it here.
   EXERCISE_LOGGED: "exercise_logged",
 
   // ── Post-workout feedback + voice input ──
@@ -127,11 +130,6 @@ export interface AnalyticsEventProps {
   };
   [AnalyticsEvent.ONBOARDING_COMPLETED]: { total_steps?: number };
 
-  [AnalyticsEvent.WORKOUT_COMPLETED]: {
-    workout_id?: number;
-    plan_day_id?: number;
-    completion_percentage?: number;
-  };
   [AnalyticsEvent.EXERCISE_LOGGED]: {
     workout_id?: number;
     exercise_id?: number;

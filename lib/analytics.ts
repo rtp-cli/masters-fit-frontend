@@ -111,9 +111,11 @@ export async function trackWorkoutStarted(
 }
 
 // Note: workout-completed and onboarding-started previously had wrapper functions
-// here that were never called (dead code). Removed 2026-07-11 (AN-03). These moments
-// are now client-owned Mixpanel events — see lib/analytics-events.ts (WORKOUT_COMPLETED,
-// ONBOARDING_COMPLETED) — rather than backend /analytics wrappers.
+// here that were never called (dead code). Removed 2026-07-11 (AN-03).
+// Ownership today: onboarding completion is a client event (ONBOARDING_COMPLETED in
+// lib/analytics-events.ts). Workout completion is server-authoritative and owned by
+// the backend, which emits "Workout Completed" from logs.service — it is intentionally
+// NOT a client event (see the note in lib/analytics-events.ts).
 
 // ==================== Analytics Utilities ====================
 

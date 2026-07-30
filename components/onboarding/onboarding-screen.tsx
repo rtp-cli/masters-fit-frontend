@@ -25,6 +25,7 @@ export const OnboardingScreen = () => {
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
         isLoading={isLoading}
+        trackStepViews
         submitButtonText={
           isLoading ? "Creating Profile..." : "Generate Weekly Plan"
         }

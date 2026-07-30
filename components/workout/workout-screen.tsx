@@ -51,6 +51,7 @@ import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkout } from "@/contexts/workout-context";
 import { useCircuitSession } from "@/hooks/use-circuit-session";
 import { trackWorkoutStarted } from "@/lib/analytics";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { getCurrentUser } from "@/lib/auth";
 import { logCircuitCompletion } from "@/lib/circuits";
 import { exerciseHasDemo } from "@/lib/exercise-video";
@@ -878,6 +879,18 @@ export function WorkoutScreen() {
   const toApiSets = (setsToStrip: ExerciseSet[]) =>
     setsToStrip.map(({ isCompleted: _isCompleted, ...rest }) => rest);
 
+  // [AN-04b] One `exercise_logged` per real (performance-data) exercise log.
+  // Fired only after a successful persist and only from the standard/circuit
+  // paths — completion-only blocks (warmup/cooldown) are intentionally excluded,
+  // matching how the persistence path already treats them for analytics.
+  // workout_id uses workout.workoutId to join with the "Workout Started" event.
+  const fireExerciseLogged = (exerciseId?: number) => {
+    trackEvent(AnalyticsEvent.EXERCISE_LOGGED, {
+      workout_id: workout?.workoutId,
+      exercise_id: exerciseId,
+    });
+  };
+
   const flushPendingCommit = async () => {
     const pending = pendingCommitRef.current;
     if (!pending) return;
@@ -886,6 +899,8 @@ export function WorkoutScreen() {
     setUndoSnackbar(null);
     try {
       await createExerciseLog(pending.payload);
+      // Auto-advance path: exercise id resolved from the captured index.
+      fireExerciseLogged(exercises[pending.exerciseIndex]?.exercise?.id);
     } catch (err) {
       // The user has already moved on — surface without blocking the session.
       console.error("Error committing auto-completed exercise log:", err);
@@ -1096,6 +1111,9 @@ export function WorkoutScreen() {
             repsCompleted: 0,
             roundsCompleted: roundsCompleted,
           };
+          // Circuit completion logs every exercise in the block at once — emit
+          // one exercise_logged per exercise for parity with the standard path.
+          fireExerciseLogged(exercises[index]?.exercise?.id);
         });
         setExerciseProgress(updatedProgress);
 
@@ -1196,6 +1214,8 @@ export function WorkoutScreen() {
         timeTaken: exerciseTimer, // This logs the actual time spent on exercise
         notes: currentProgress.notes,
       });
+      // Standard (manual/final/duration) exercise completion.
+      fireExerciseLogged(currentExercise.exercise?.id);
 
       // Move to next exercise or complete workout
       if (currentExerciseIndex < exercises.length - 1) {
@@ -1436,6 +1456,10 @@ export function WorkoutScreen() {
                 );
                 savedCurrentExercise = true;
                 savedCircuitExerciseCount = block.exercises.length;
+                // End-early circuit save: one exercise_logged per block exercise.
+                block.exercises.forEach((ex) =>
+                  fireExerciseLogged(ex.exercise?.id),
+                );
               }
             }
           } else if (block && getLoggingMode(block) === "completion_only") {
@@ -1488,6 +1512,8 @@ export function WorkoutScreen() {
                   notes: currentProg.notes,
                 });
                 savedCurrentExercise = true;
+                // End-early standard save.
+                fireExerciseLogged(currentEx.exercise?.id);
               }
             }
           }
