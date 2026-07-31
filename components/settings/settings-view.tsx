@@ -493,6 +493,36 @@ export default function SettingsView({
           medicalNotes={profile?.medicalNotes}
         />
 
+        {/* Excluded exercises — same class of fact as equipment/limitations, so
+            it lives here and is one hop from Training profile (MF-020). */}
+        <TouchableOpacity
+          className="mx-6 mb-6 flex-row items-center justify-between rounded-xl px-4 py-4 bg-surface"
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Excluded exercises"
+          onPress={() => {
+            if (onClose) onClose();
+            router.push("/excluded-exercises");
+          }}
+        >
+          <View className="flex-row items-center">
+            <Ionicons
+              name="ban-outline"
+              size={20}
+              color={colors.text.muted}
+              style={{ marginRight: 12 }}
+            />
+            <Text className="text-base font-semibold text-text-primary">
+              Excluded exercises
+            </Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.text.muted}
+          />
+        </TouchableOpacity>
+
         {/* [MF-020] Subscription */}
         <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
           Subscription

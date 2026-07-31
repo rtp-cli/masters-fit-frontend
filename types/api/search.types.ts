@@ -125,6 +125,9 @@ export interface SearchExercise {
   secondaryMuscles?: string[];
   muscleGroups?: string[];
   difficulty?: string;
+  // oEmbed verdict on the demo link, mirrored from the catalog. Used by the
+  // replacement ranking (hasDemo-first tiebreak) and the demo affordance.
+  hasDemo?: boolean | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
