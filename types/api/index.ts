@@ -3,6 +3,7 @@ export * from "./auth.types";
 export * from "./circuit.types";
 export * from "./common.types";
 export * from "./dashboard.types";
+export * from "./exclusion.types";
 export * from "./exercise.types";
 export { CompletedExercisesResponse, PlanDayLog } from "./logs.types";
 export * from "./profile.types";

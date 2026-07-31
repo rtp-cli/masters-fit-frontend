@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef,useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -17,6 +16,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ExerciseActionSheet from "@/components/exercise-action-sheet";
+import { ExclusionFlow } from "@/components/exercise-exclusion";
+import { OutlineChip } from "@/components/ui";
 import WorkoutBlock from "@/components/workout-block";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -38,6 +40,7 @@ import {
 } from "@/types/api/workout.types";
 import {
   calculatePlanDayDuration,
+  formatEnumValue,
   formatEquipment,
   formatWorkoutDuration,
 } from "@/utils";
@@ -90,10 +93,13 @@ export default function WorkoutEditModal({
   });
   const [addingExercise, setAddingExercise] = useState(false);
 
-  // Delete exercise state — tracks the exercise ID being deleted (null = not deleting)
-  const [deletingExerciseId, setDeletingExerciseId] = useState<number | null>(
-    null
-  );
+  // 1a action sheet + exclusion flow. Tapping a row opens the three-door sheet
+  // (Replace / Remove today / Never prescribe again); door three mounts the
+  // self-contained ExclusionFlow.
+  const [actionSheetExercise, setActionSheetExercise] =
+    useState<WorkoutBlockWithExercise | null>(null);
+  const [exclusionExercise, setExclusionExercise] =
+    useState<WorkoutBlockWithExercise | null>(null);
 
   // Track whether modal has been initialized (prevents re-init on planDay prop changes)
   const initializedRef = useRef(false);
@@ -215,7 +221,6 @@ export default function WorkoutEditModal({
         restTime: "",
       });
       setAddingExercise(false);
-      setDeletingExerciseId(null);
     }
     if (!visible) {
       initializedRef.current = false;
@@ -279,15 +284,49 @@ export default function WorkoutEditModal({
     }));
   };
 
-  // Exercise replacement functions
+  // Tapping a row now opens the 1a action sheet instead of jumping straight to
+  // Replace (and the row no longer carries a trash icon — that's door two).
   const handleExercisePress = (exercise: WorkoutBlockWithExercise) => {
+    setActionSheetExercise(exercise);
+  };
+
+  // Door 1 — the existing replace/search view, seeded from the exercise's own
+  // muscle groups.
+  const startReplace = (exercise: WorkoutBlockWithExercise) => {
     setCurrentExercise(exercise);
     setCurrentView("replace");
-    // Auto-populate muscle groups for better suggestions
     if (exercise.exercise.muscles_targeted) {
       setSelectedMuscleGroups(exercise.exercise.muscles_targeted);
     }
     searchExercises();
+  };
+
+  // Door 2 — remove from today only. No reason, no confirmation dialog (its
+  // scope is stated in the sheet subtitle, and it can come back).
+  const removeFromToday = async (exercise: WorkoutBlockWithExercise) => {
+    try {
+      const result = await deleteExerciseFromBlock(exercise.id);
+      if (result?.success) {
+        refreshWorkout();
+      } else {
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to remove exercise. Please try again.",
+          primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
+      }
+    } catch (error) {
+      console.error("Error removing exercise:", error);
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to remove exercise. Please try again.",
+        primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
+    }
   };
 
   const searchExercises = async () => {
@@ -413,55 +452,6 @@ export default function WorkoutEditModal({
     }
   };
 
-  const handleExerciseDelete = (exercise: WorkoutBlockWithExercise) => {
-    Alert.alert(
-      "Remove Exercise",
-      `Remove "${exercise.exercise.name}" from this workout?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            setDeletingExerciseId(exercise.id);
-            try {
-              const result = await deleteExerciseFromBlock(exercise.id);
-              if (result?.success) {
-                // Refresh data in background — exercise disappears when data updates
-                refreshWorkout();
-              } else {
-                setDialogConfig({
-                  title: "Error",
-                  description: "Failed to remove exercise. Please try again.",
-                  primaryButton: {
-                    text: "OK",
-                    onPress: () => setDialogVisible(false),
-                  },
-                  icon: "alert-circle",
-                });
-                setDialogVisible(true);
-              }
-            } catch (error) {
-              console.error("Error deleting exercise:", error);
-              setDialogConfig({
-                title: "Error",
-                description: "Failed to remove exercise. Please try again.",
-                primaryButton: {
-                  text: "OK",
-                  onPress: () => setDialogVisible(false),
-                },
-                icon: "alert-circle",
-              });
-              setDialogVisible(true);
-            } finally {
-              setDeletingExerciseId(null);
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const handleAddExercise = (blockId: number) => {
     if (!planDay) return;
     setAddingToBlock({ blockId, planDayId: planDay.id });
@@ -573,24 +563,12 @@ export default function WorkoutEditModal({
     return details.length > 0 ? details.join(" • ") : "Follow instructions";
   };
 
-  // Get individual muscle groups for display (matching search tab)
-  const getIndividualMuscleGroups = (muscleGroups: string[] | undefined) => {
+  // Muscle groups are one-per-array-element and clean (verified in prod), so
+  // display them directly — the old comma-split defensive code was dead and
+  // would have masked a future regression (per handoff cleanup).
+  const displayMuscleGroups = (muscleGroups: string[] | undefined) => {
     if (!muscleGroups || !Array.isArray(muscleGroups)) return [];
-
-    // Split comma-separated muscle groups and clean them
-    const individual = muscleGroups
-      .flatMap((group) =>
-        group.split(",").map((m) =>
-          m
-            .trim()
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase())
-        )
-      )
-      .filter((m) => m.length > 0);
-
-    // Remove duplicates
-    return [...new Set(individual)];
+    return [...new Set(muscleGroups.map((m) => formatEnumValue(m)))];
   };
 
   const handleCancel = () => {
@@ -720,44 +698,19 @@ export default function WorkoutEditModal({
 
                   {/* Edit Instructions */}
                   <Text className="text-sm mb-4 italic leading-5 text-text-secondary">
-                    Tap an exercise to replace it, tap the trash to delete, or add new exercises
+                    Tap an exercise to replace it, remove it, or stop it coming
+                    back.
                   </Text>
 
-                  {/* Workout Details with Icons */}
-                  <View className="flex-row flex-wrap items-center gap-4">
-                    {/* Exercise Count */}
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name="fitness"
-                        size={16}
-                        color={colors.text.muted}
-                      />
-                      <View className="ml-2">
-                        <View className="rounded-full px-2 py-1 bg-primary">
-                          <Text className="text-xs font-semibold text-neutral-white">
-                            {totalExercises} exercises
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-
-                    {/* Duration */}
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name="time"
-                        size={16}
-                        color={colors.text.muted}
-                      />
-                      <View className="ml-2">
-                        <View className="rounded-full px-2 py-1 bg-primary">
-                          <Text className="text-xs font-semibold text-neutral-white">
-                            {formatWorkoutDuration(
-                              calculatePlanDayDuration(planDay)
-                            )}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
+                  {/* Workout Details — outline chips (MF-006: data reads as
+                      outline, ink is reserved for the primary action). */}
+                  <View className="flex-row flex-wrap items-center">
+                    <OutlineChip label={`${totalExercises} exercises`} />
+                    <OutlineChip
+                      label={formatWorkoutDuration(
+                        calculatePlanDayDuration(planDay)
+                      )}
+                    />
                   </View>
                 </View>
 
@@ -778,9 +731,7 @@ export default function WorkoutEditModal({
                             showDetails={true}
                             variant="calendar"
                             onExercisePress={handleExercisePress}
-                            onExerciseDelete={handleExerciseDelete}
                             onAddExercise={handleAddExercise}
-                            deletingExerciseId={deletingExerciseId}
                           />
                         </View>
                       ))
@@ -826,51 +777,19 @@ export default function WorkoutEditModal({
                         {formatExerciseDetails(currentExercise)}
                       </Text>
 
-                      {/* Exercise Details with Icons */}
-                      <View className="flex-row flex-wrap items-center gap-4">
-                        {/* Muscle Groups */}
-                        {currentExercise.exercise.muscles_targeted && (
-                          <View className="flex-row items-center">
-                            <Ionicons
-                              name="body"
-                              size={16}
-                              color={colors.text.muted}
-                            />
-                            <View className="flex-row flex-wrap ml-2">
-                              {getIndividualMuscleGroups(
-                                currentExercise.exercise.muscles_targeted
-                              ).map((muscle, index) => (
-                                <View
-                                  key={index}
-                                  className="rounded-full px-2 py-1 mr-1 mb-1 bg-primary"
-                                >
-                                  <Text className="text-xs font-semibold text-neutral-white">
-                                    {muscle}
-                                  </Text>
-                                </View>
-                              ))}
-                            </View>
-                          </View>
-                        )}
-
-                        {/* Equipment */}
+                      {/* Exercise details — outline chips (MF-006). */}
+                      <View className="flex-row flex-wrap items-center">
+                        {displayMuscleGroups(
+                          currentExercise.exercise.muscles_targeted
+                        ).map((muscle) => (
+                          <OutlineChip key={muscle} label={muscle} />
+                        ))}
                         {currentExercise.exercise.equipment && (
-                          <View className="flex-row items-center">
-                            <Ionicons
-                              name="fitness"
-                              size={16}
-                              color={colors.text.muted}
-                            />
-                            <View className="ml-2">
-                              <View className="rounded-full px-2 py-1 bg-primary">
-                                <Text className="text-xs font-semibold text-neutral-white">
-                                  {formatEquipment(
-                                    currentExercise.exercise.equipment
-                                  )}
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
+                          <OutlineChip
+                            label={formatEquipment(
+                              currentExercise.exercise.equipment
+                            )}
+                          />
                         )}
                       </View>
                     </>
@@ -998,64 +917,26 @@ export default function WorkoutEditModal({
                                   </Text>
                                 )}
 
-                                {/* Exercise Details with Icons */}
-                                <View className="flex-row flex-wrap gap-3 mb-2">
-                                  {/* Muscle Groups */}
-                                  {item.muscleGroups &&
-                                    item.muscleGroups.length > 0 && (
-                                      <View className="flex-row items-center">
-                                        <Ionicons
-                                          name="body"
-                                          size={14}
-                                          color={colors.text.muted}
-                                        />
-                                        <View className="flex-row flex-wrap ml-1">
-                                          {getIndividualMuscleGroups(
-                                            item.muscleGroups
-                                          )
-                                            .slice(0, 2)
-                                            .map((muscle, muscleIndex) => (
-                                              <View
-                                                key={muscleIndex}
-                                                className="rounded-full px-2 py-1 mr-1 bg-primary"
-                                              >
-                                                <Text className="text-xs font-semibold text-neutral-white">
-                                                  {muscle}
-                                                </Text>
-                                              </View>
-                                            ))}
-                                          {getIndividualMuscleGroups(
-                                            item.muscleGroups
-                                          ).length > 2 && (
-                                            <View className="rounded-full px-2 py-1 bg-primary">
-                                              <Text className="text-xs font-semibold text-neutral-white">
-                                                +
-                                                {getIndividualMuscleGroups(
-                                                  item.muscleGroups
-                                                ).length - 2}
-                                              </Text>
-                                            </View>
-                                          )}
-                                        </View>
-                                      </View>
-                                    )}
-
-                                  {/* Equipment */}
+                                {/* Exercise details — outline chips (MF-006). */}
+                                <View className="flex-row flex-wrap items-center mb-1">
+                                  {displayMuscleGroups(item.muscleGroups)
+                                    .slice(0, 2)
+                                    .map((muscle) => (
+                                      <OutlineChip key={muscle} label={muscle} />
+                                    ))}
+                                  {displayMuscleGroups(item.muscleGroups).length >
+                                    2 && (
+                                    <OutlineChip
+                                      label={`+${
+                                        displayMuscleGroups(item.muscleGroups)
+                                          .length - 2
+                                      }`}
+                                    />
+                                  )}
                                   {item.equipment && (
-                                    <View className="flex-row items-center">
-                                      <Ionicons
-                                        name="fitness"
-                                        size={14}
-                                        color={colors.text.muted}
-                                      />
-                                      <View className="ml-1">
-                                        <View className="rounded-full px-2 py-1 bg-primary">
-                                          <Text className="text-xs font-semibold text-neutral-white">
-                                            {formatEquipment(item.equipment)}
-                                          </Text>
-                                        </View>
-                                      </View>
-                                    </View>
+                                    <OutlineChip
+                                      label={formatEquipment(item.equipment)}
+                                    />
                                   )}
                                 </View>
                               </View>
@@ -1371,60 +1252,25 @@ export default function WorkoutEditModal({
                                     {item.description}
                                   </Text>
                                 )}
-                                <View className="flex-row flex-wrap gap-3 mb-2">
-                                  {item.muscleGroups &&
-                                    item.muscleGroups.length > 0 && (
-                                      <View className="flex-row items-center">
-                                        <Ionicons
-                                          name="body"
-                                          size={14}
-                                          color={colors.text.muted}
-                                        />
-                                        <View className="flex-row flex-wrap ml-1">
-                                          {getIndividualMuscleGroups(
-                                            item.muscleGroups
-                                          )
-                                            .slice(0, 2)
-                                            .map((muscle, muscleIndex) => (
-                                              <View
-                                                key={muscleIndex}
-                                                className="rounded-full px-2 py-1 mr-1 bg-primary"
-                                              >
-                                                <Text className="text-xs font-semibold text-neutral-white">
-                                                  {muscle}
-                                                </Text>
-                                              </View>
-                                            ))}
-                                          {getIndividualMuscleGroups(
-                                            item.muscleGroups
-                                          ).length > 2 && (
-                                            <View className="rounded-full px-2 py-1 bg-primary">
-                                              <Text className="text-xs font-semibold text-neutral-white">
-                                                +
-                                                {getIndividualMuscleGroups(
-                                                  item.muscleGroups
-                                                ).length - 2}
-                                              </Text>
-                                            </View>
-                                          )}
-                                        </View>
-                                      </View>
-                                    )}
+                                <View className="flex-row flex-wrap items-center mb-1">
+                                  {displayMuscleGroups(item.muscleGroups)
+                                    .slice(0, 2)
+                                    .map((muscle) => (
+                                      <OutlineChip key={muscle} label={muscle} />
+                                    ))}
+                                  {displayMuscleGroups(item.muscleGroups).length >
+                                    2 && (
+                                    <OutlineChip
+                                      label={`+${
+                                        displayMuscleGroups(item.muscleGroups)
+                                          .length - 2
+                                      }`}
+                                    />
+                                  )}
                                   {item.equipment && (
-                                    <View className="flex-row items-center">
-                                      <Ionicons
-                                        name="fitness"
-                                        size={14}
-                                        color={colors.text.muted}
-                                      />
-                                      <View className="ml-1">
-                                        <View className="rounded-full px-2 py-1 bg-primary">
-                                          <Text className="text-xs font-semibold text-neutral-white">
-                                            {formatEquipment(item.equipment)}
-                                          </Text>
-                                        </View>
-                                      </View>
-                                    </View>
+                                    <OutlineChip
+                                      label={formatEquipment(item.equipment)}
+                                    />
                                   )}
                                 </View>
                               </View>
@@ -1746,6 +1592,56 @@ export default function WorkoutEditModal({
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* 1a — three-door action sheet */}
+      <ExerciseActionSheet
+        visible={!!actionSheetExercise}
+        exerciseName={actionSheetExercise?.exercise.name ?? ""}
+        contextLine={
+          actionSheetExercise
+            ? formatExerciseDetails(actionSheetExercise)
+            : undefined
+        }
+        onReplace={() => {
+          const ex = actionSheetExercise;
+          setActionSheetExercise(null);
+          if (ex) startReplace(ex);
+        }}
+        onRemoveToday={() => {
+          const ex = actionSheetExercise;
+          setActionSheetExercise(null);
+          if (ex) removeFromToday(ex);
+        }}
+        onNeverPrescribe={() => {
+          const ex = actionSheetExercise;
+          setActionSheetExercise(null);
+          // Defer opening the flow modal until the sheet has dismissed —
+          // presenting a new modal in the same tick orphans the iOS pageSheet.
+          setTimeout(() => setExclusionExercise(ex), 300);
+        }}
+        onClose={() => setActionSheetExercise(null)}
+      />
+
+      {/* 1c–1f — self-contained exclusion flow (door three) */}
+      <ExclusionFlow
+        visible={!!exclusionExercise}
+        exercise={exclusionExercise}
+        source="workout-edit"
+        onClose={() => setExclusionExercise(null)}
+        onDone={() => {
+          setExclusionExercise(null);
+          setCurrentView("main");
+          setCurrentExercise(null);
+          refreshWorkout();
+        }}
+        onSearchInstead={() => {
+          const ex = exclusionExercise;
+          setExclusionExercise(null);
+          // The exclusion is already committed and its slot still holds the
+          // original today; drop the user into the normal replace search for it.
+          setTimeout(() => ex && startReplace(ex), 300);
+        }}
+      />
 
       {/* Custom Dialog */}
       {dialogConfig && (
