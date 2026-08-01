@@ -176,7 +176,7 @@ describe("apiRequest — paywall vs. waiver classification [LR-045]", () => {
     expect(waiverSpy).not.toHaveBeenCalled();
   });
 
-  it("triggers the waiver redirect on a plain 403 with no paywall shape", async () => {
+  it("does NOT trigger the waiver redirect on a plain 403 (needs an explicit waiver signal)", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 403,
@@ -185,7 +185,11 @@ describe("apiRequest — paywall vs. waiver classification [LR-045]", () => {
 
     await expect(apiRequest("/some-endpoint")).rejects.toThrow();
     jest.advanceTimersByTime(200);
-    expect(waiverSpy).toHaveBeenCalledTimes(1);
+    // A bare 403 is a genuine authorization error (e.g. a cross-user request
+    // during impersonation), not a waiver requirement. The backend signals a
+    // real waiver with a dedicated 426 or an explicit message/code — treating
+    // any 403 as waiver caused spurious bounces to the waiver screen.
+    expect(waiverSpy).not.toHaveBeenCalled();
     expect(paywallSpy).not.toHaveBeenCalled();
   });
 
