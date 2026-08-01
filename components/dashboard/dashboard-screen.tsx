@@ -61,6 +61,7 @@ import PremiumUpgradeBanner from "./sections/premium-upgrade-banner";
 import ProgressAnalyticsLocked from "./sections/progress-analytics-locked";
 import RecentScoresSection from "./sections/recent-scores";
 import StrengthProgressSection from "./sections/strength-progress";
+import { getTrainingDays } from "./sections/training-day-strip";
 import WeeklyProgressSection from "./sections/weekly-progress";
 import WeightPerformanceSection from "./sections/weight-performance";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
@@ -800,75 +801,34 @@ export default function DashboardScreen() {
 
   const isWorkoutCompleted = todayCompletionRate >= 100;
 
+  // One column per scheduled training day, in plan order — NOT a fixed Mon–Sun
+  // row. A plan cycle is anchored to the user's training days, so days off get
+  // no column (matching the rest-day strip's model via the shared
+  // getTrainingDays). Per-day completion still comes from dailyWorkoutProgress.
   const weeklyProgressData = (() => {
-    if (!dailyWorkoutProgress) return [] as any[];
-    let weekStartDate = new Date();
-    if (workoutInfo?.startDate) {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(workoutInfo.startDate)) {
-        const [year, month, day] = workoutInfo.startDate.split("-").map(Number);
-        weekStartDate = new Date(year, month - 1, day);
-      } else {
-        weekStartDate = new Date(workoutInfo.startDate);
-      }
-    } else {
-      const today = new Date();
-      const dayOfWeek = today.getDay();
-      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      weekStartDate.setDate(today.getDate() - daysFromMonday);
-    }
-    const workout7Days: any[] = [];
-    const today = new Date();
-    const todayStr = formatDateAsString(today);
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStartDate);
-      date.setDate(weekStartDate.getDate() + i);
-      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const dateStr =
-        date.getFullYear() +
-        "-" +
-        String(date.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(date.getDate()).padStart(2, "0");
-      let dayName = dayNames[date.getDay()];
-      const plannedWorkoutDay = dailyWorkoutProgress.find(
-        (day) => day.date === dateStr
-      );
-      if (plannedWorkoutDay && plannedWorkoutDay.date === dateStr) {
-        const safeDayCheck = new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate()
-        );
-        dayName = dayNames[safeDayCheck.getDay()];
-      }
-      const dayData = dailyWorkoutProgress.find((day) => day.date === dateStr);
-      const hasPlannedWorkout = dayData?.hasPlannedWorkout || false;
+    const planDays = workoutInfo?.planDays;
+    if (!planDays) return [] as any[];
+    const todayStr = formatDateAsString(new Date());
+    return getTrainingDays(planDays).map((planDay) => {
+      const dateStr = formatDateAsString(planDay.date);
+      const dayData = dailyWorkoutProgress?.find((d) => d.date === dateStr);
       const isToday = dateStr === todayStr;
-      const isFuture = date > today;
-      let completionRate = 0;
-      let status: any = "incomplete";
-      if (!hasPlannedWorkout) {
-        status = "rest";
-        completionRate = 0;
-      } else if (dayData) {
-        completionRate = dayData.completionRate;
-        if (completionRate === 100) status = "complete";
-        else if (completionRate > 0) status = "partial";
-        else if (isFuture) status = "upcoming";
-        else status = "incomplete";
-      } else if (isFuture) {
-        status = "upcoming";
-      }
-      workout7Days.push({
-        dayName,
+      const isFuture = dateStr > todayStr;
+      const completionRate = dayData?.completionRate ?? 0;
+      let status: "upcoming" | "incomplete" | "partial" | "complete";
+      if (completionRate >= 100) status = "complete";
+      else if (completionRate > 0) status = "partial";
+      else if (isFuture) status = "upcoming";
+      else status = "incomplete";
+      return {
+        dayName: getDayOfWeek(planDay.date).slice(0, 3),
         dateStr,
         completionRate,
         status,
         isToday,
         isFuture,
-      });
-    }
-    return workout7Days;
+      };
+    });
   })();
 
   if (loading.dashboardLoading || loadingToday) {
@@ -1000,7 +960,10 @@ export default function DashboardScreen() {
           onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
         />
 
-        {weeklySummary && (
+        {/* Hidden with no active plan: the fixed Mon–Sun row would read
+            "Rest Rest Rest…" and just restate the plan-ended card above it.
+            Gated on the same plan signal (workoutInfo) as the label fix. */}
+        {weeklySummary && workoutInfo && (
           <WeeklyProgressSection weeklyProgressData={weeklyProgressData as any} />
         )}
 

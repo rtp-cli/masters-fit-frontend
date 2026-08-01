@@ -5,7 +5,8 @@ type WeeklyProgressItem = {
   dayName: string;
   dateStr: string;
   completionRate: number;
-  status: "rest" | "upcoming" | "incomplete" | "partial" | "complete";
+  // One column per training day now (no rest columns), so "rest" is gone.
+  status: "upcoming" | "incomplete" | "partial" | "complete";
   isToday: boolean;
   isFuture: boolean;
 };
@@ -24,7 +25,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
           Weekly Progress
         </Text>
         <Text className="text-xs text-text-muted mt-1">
-          Your workout completion for this week
+          Your workout completion for this plan
         </Text>
       </View>
       <View className="bg-surface rounded-2xl px-4 pt-5 border border-neutral-medium-1">
@@ -34,15 +35,13 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
               const FULL_HEIGHT = 100;
               const BASE_HEIGHT = 20;
               const height =
-                day.status === "rest"
-                  ? FULL_HEIGHT
-                  : day.status === "upcoming" || day.status === "incomplete"
-                    ? BASE_HEIGHT
-                    : Math.max(
-                        (day.completionRate / 100) * FULL_HEIGHT,
-                        BASE_HEIGHT
-                      );
-              // Non-color cue lives in the label below (Rest / - / ✓% / % / 0%);
+                day.status === "upcoming" || day.status === "incomplete"
+                  ? BASE_HEIGHT
+                  : Math.max(
+                      (day.completionRate / 100) * FULL_HEIGHT,
+                      BASE_HEIGHT
+                    );
+              // Non-color cue lives in the label below (- / ✓% / % / 0%);
               // complete uses the reserved success green (MF-004/005). Classes, not
               // inline colors, so `bg-success` resolves through the theme var.
               const barColorClass =
@@ -50,9 +49,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
                   ? "bg-success"
                   : day.status === "partial"
                     ? "bg-brand-medium-2"
-                    : day.status === "rest"
-                      ? "bg-neutral-medium-1"
-                      : "bg-neutral-medium-2";
+                    : "bg-neutral-medium-2";
               return (
                 <View key={index} className="items-center flex-1 mx-1">
                   <View className="flex-1 justify-end mb-2">
@@ -66,11 +63,7 @@ const WeeklyProgressSection: React.FC<WeeklyProgressSectionProps> = ({
                   >
                     {day.dayName}
                   </Text>
-                  {day.status === "rest" ? (
-                    <Text className="text-xs text-primary font-medium">
-                      Rest
-                    </Text>
-                  ) : day.status === "upcoming" ? (
+                  {day.status === "upcoming" ? (
                     <Text className="text-xs text-text-muted">-</Text>
                   ) : day.status === "complete" ? (
                     <Text className="text-xs text-success font-semibold">
