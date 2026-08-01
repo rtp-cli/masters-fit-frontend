@@ -28,6 +28,24 @@ export function setPaywallCallback(
 // Race condition protection for refresh token
 let refreshInProgress = false;
 
+// Admin impersonation state. While an admin is viewing the app as another user,
+// the stored token is a short-lived, refresh-token-less impersonation token.
+// When it expires we must NOT run the normal refresh/logout funnel (that would
+// dump the admin out of their own account); instead we exit impersonation and
+// drop back to the admin session. AuthContext registers the exit handler.
+let impersonating = false;
+let impersonationExpiredCallback: (() => void | Promise<void>) | null = null;
+
+export function setImpersonating(value: boolean) {
+  impersonating = value;
+}
+
+export function setImpersonationExpiredCallback(
+  callback: (() => void | Promise<void>) | null
+) {
+  impersonationExpiredCallback = callback;
+}
+
 // Custom error class for paywall errors
 export class PaywallError extends Error {
   public paywallData: {
@@ -395,11 +413,32 @@ export async function apiRequest<T>(
       // message happens to mention "waiver" (a very likely message for that
       // exact status) matched this OR-condition too, firing
       // waiverRedirectCallback a second time for the same response.
+      // A read-only impersonation 403 (a write attempted while "viewing as"
+      // another user) is NOT a waiver problem — but it's a non-paywall 403, so
+      // the heuristic below (which treats any 403 as possibly-waiver) would
+      // otherwise bounce us to the waiver screen. Exclude it via both the
+      // session flag AND a message sentinel: the flag covers the live session,
+      // the sentinel covers the exit-window race where a stale impersonation-
+      // token request lands just after the flag flips off. (The backend skips
+      // waiver validation entirely while impersonating, so no real waiver 403s
+      // occur in this state — excluding them is safe.)
+      const isImpersonationReadOnly =
+        response.status === 403 &&
+        (impersonating ||
+          /read-only session|impersonation/i.test(errorData.error || "") ||
+          /read-only session|impersonation/i.test(errorData.message || ""));
+
+      // The backend signals a real waiver requirement with a dedicated 426
+      // (handled above) — never a bare 403. A 403 is either a paywall (handled
+      // above) or a genuine authorization "Forbidden" (e.g. a cross-user request
+      // during an identity switch). Treating any 403 as possibly-waiver caused
+      // spurious bounces to the waiver screen, so we now require an explicit
+      // waiver signal (message/code) rather than the raw status.
       const isWaiverError =
         !isPaywallError &&
+        !isImpersonationReadOnly &&
         response.status !== 426 &&
-        (response.status === 403 || // Forbidden - might be waiver-related
-          response.status === 428 || // Precondition Required
+        (response.status === 428 || // Precondition Required
           (errorData.message &&
             /waiver|liability|acceptance required/i.test(errorData.message)) ||
           (errorData.error &&
@@ -436,6 +475,21 @@ export async function apiRequest<T>(
         endpoint !== "/auth/verify" &&
         !(options as { __isRetryAfterRefresh?: boolean }).__isRetryAfterRefresh
       ) {
+        // Impersonating: a 401 means the read-only impersonation token expired.
+        // Do NOT refresh or log out (that would end the ADMIN's own session).
+        // Exit impersonation, restoring the admin, and fail just this request.
+        if (impersonating) {
+          console.log(
+            `[API] 401 while impersonating on ${endpoint} — token expired, exiting impersonation`
+          );
+          try {
+            await impersonationExpiredCallback?.();
+          } catch (e) {
+            console.error("[API] Error exiting impersonation on 401:", e);
+          }
+          throw new Error("Impersonation session expired");
+        }
+
         // Even with no readable access token, a stored refresh token can
         // rescue the session — instant logout here killed sessions whose
         // token read failed (e.g. keychain unavailable for a background poll).
