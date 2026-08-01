@@ -1794,7 +1794,11 @@ export function WorkoutScreen() {
                   onPress={
                     isGenerating
                       ? undefined
-                      : () => setShowWorkoutChoice(true)
+                      : // On a rest day, skip the "Create New vs Repeat Past"
+                        // chooser — creating a fresh workout is the dominant
+                        // intent, so go straight to the generate form. Repeat
+                        // Past stays reachable via the secondary link below.
+                        () => setShowRegenerationModal(true)
                   }
                   disabled={isGenerating}
                 >
@@ -1818,6 +1822,19 @@ export function WorkoutScreen() {
                     {isGenerating
                       ? "Creating Workout..."
                       : "Create a New Workout"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="mt-4"
+                  onPress={
+                    isGenerating ? undefined : () => setShowRepeatPicker(true)
+                  }
+                  disabled={isGenerating}
+                  accessibilityRole="button"
+                  accessibilityLabel="Repeat a past workout"
+                >
+                  <Text className="text-sm font-medium text-text-secondary">
+                    Repeat a past workout
                   </Text>
                 </TouchableOpacity>
               </>
