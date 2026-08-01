@@ -188,6 +188,10 @@ export default function DashboardScreen() {
 
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [showSingleDayRegenModal, setShowSingleDayRegenModal] = useState(false);
+  // Rest-day "Train anyway" opens the same modal but locked to single-day mode,
+  // so it generates an optional workout for TODAY rather than defaulting to the
+  // full-week regeneration the rest-day modal otherwise shows.
+  const [restDayQuickGenerate, setRestDayQuickGenerate] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
   const [showPaymentWall, setShowPaymentWall] = useState(false);
@@ -958,6 +962,10 @@ export default function DashboardScreen() {
           endedPlanRecapLoading={endedPlanRecapLoading}
           onViewWorkout={() => router.push("/workout")}
           onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
+          onGenerateRestDayWorkout={() => {
+            setRestDayQuickGenerate(true);
+            setShowSingleDayRegenModal(true);
+          }}
         />
 
         {/* Hidden with no active plan: the fixed Mon–Sun row would read
@@ -1051,15 +1059,20 @@ export default function DashboardScreen() {
 
       <WorkoutRegenerationModal
         visible={showSingleDayRegenModal}
-        onClose={() => setShowSingleDayRegenModal(false)}
+        onClose={() => {
+          setShowSingleDayRegenModal(false);
+          setRestDayQuickGenerate(false);
+        }}
         onRegenerate={() => {}}
         regenerationType="day"
         isRestDay={!!workoutInfo && !todaysWorkout}
         noActiveWorkoutDay={!workoutInfo}
+        singleTabOnly={restDayQuickGenerate}
         selectedDate={getCurrentDate()}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
           setShowSingleDayRegenModal(false);
+          setRestDayQuickGenerate(false);
           handleRefresh();
         }}
       />

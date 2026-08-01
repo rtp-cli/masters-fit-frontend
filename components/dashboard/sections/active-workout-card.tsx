@@ -32,6 +32,9 @@ type ActiveWorkoutCardProps = {
   endedPlanRecapLoading?: boolean;
   onViewWorkout: () => void;
   onShowWorkoutChoice: () => void;
+  /** Rest-day escape hatch: open the "generate an optional workout" form
+      directly, skipping the Workout tab + choice modal (saves two taps). */
+  onGenerateRestDayWorkout: () => void;
 };
 
 const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
@@ -47,6 +50,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   endedPlanRecapLoading,
   onViewWorkout,
   onShowWorkoutChoice,
+  onGenerateRestDayWorkout,
 }) => {
   const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
@@ -173,11 +177,15 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
             )}
 
             {/* Secondary on purpose: on a scheduled rest day the app shouldn't
-                shout down its own advice with a solid ink button. */}
+                shout down its own advice with a solid ink button. Goes straight
+                to the "generate an optional workout" form rather than the
+                Workout tab, so training on a rest day is one tap, not three. */}
             <TouchableOpacity
               className="border border-neutral-medium-2 rounded-md items-center justify-center mt-md"
               style={{ minHeight: 48 }}
-              onPress={onViewWorkout}
+              onPress={onGenerateRestDayWorkout}
+              accessibilityRole="button"
+              accessibilityLabel="Train anyway — generate an optional workout for today"
             >
               <Text className="text-sm font-semibold text-text-primary">
                 Train anyway
