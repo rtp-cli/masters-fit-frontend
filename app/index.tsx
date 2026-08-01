@@ -193,7 +193,7 @@ export default function GetStarted() {
         }}
       >
         <Image
-          source={images.home}
+          source={images.welcomeHero}
           style={{
             width: 240,
             height: 240,
@@ -212,20 +212,20 @@ export default function GetStarted() {
             textAlign: "center",
           }}
         >
-          Welcome to MastersFit!
+          Training that adapts to you.
         </Text>
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 24,
-            color: colors.text.muted,
+            color: colors.text.secondary,
             textAlign: "center",
             maxWidth: 300,
             marginTop: 12,
           }}
         >
-          AI-personalized fitness plans designed specifically for adults 40+ to
-          help you achieve your fitness goals safely and effectively.
+          Built around your equipment, your days, and the joints that
+          don&apos;t cooperate.
         </Text>
       </View>
 
@@ -256,10 +256,21 @@ export default function GetStarted() {
               fontWeight: "600",
             }}
           >
-            Get Started
+            Continue with email
           </Text>
           <Ionicons name="arrow-forward" size={18} color={colors.contentOnPrimary} />
         </TouchableOpacity>
+        <Text
+          style={{
+            fontSize: 13,
+            lineHeight: 20,
+            color: colors.text.muted,
+            textAlign: "center",
+            marginTop: 12,
+          }}
+        >
+          We&apos;ll email you a code. No password to remember.
+        </Text>
       </View>
     </SafeAreaView>
   );

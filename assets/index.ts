@@ -8,6 +8,7 @@ export const images = {
   splash: require("./splash.png"),
   // UI images
   home: require("./home.png"),
+  welcomeHero: require("./welcome-hero.png"),
   gymGeneric: require("./gym-generic.jpg"),
 } as const;
 
