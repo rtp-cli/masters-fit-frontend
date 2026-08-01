@@ -28,6 +28,7 @@ import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { AnalyticsScreenTracker } from "@/components/analytics-screen-tracker";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import { FloatingNetworkLoggerButton } from "@/components/ui/floating-network-logger-button";
+import ImpersonationBanner from "@/components/ui/impersonation-banner";
 import AnimatedSplashScreen from "@/components/ui/splash-screen";
 import WarmingUpScreen from "@/components/ui/warming-up-screen";
 import { getRevenueCatApiKey, USE_REVENUECAT_TEST_STORE } from "@/config";
@@ -112,6 +113,7 @@ function AppContent() {
     isLoading,
     user,
     setUserData,
+    isImpersonating,
   } = useAuth();
   const {
     refresh: { reset, refreshAll },
@@ -134,6 +136,18 @@ function AppContent() {
       prevUserIdRef.current = currentUserId;
       return;
     }
+
+    // While impersonating, the "current user" identity switches between two real
+    // users (admin ↔ target). This effect's applyTheme* calls write the theme
+    // back onto the user via setUserData (userThemeUpdaterRef), and because this
+    // effect runs before the ref-updating effect below, it would write the new
+    // theme onto the STALE identity — flipping user back and forth in an infinite
+    // loop. Keep the admin's theme for the read-only session and skip the sync.
+    if (isImpersonating) {
+      prevUserIdRef.current = currentUserId;
+      return;
+    }
+
     // Only act when user identity actually changes
     if (currentUserId === prevUserIdRef.current) return;
     prevUserIdRef.current = currentUserId;
@@ -148,7 +162,12 @@ function AppContent() {
       applyThemeMode("auto");
       applyColorTheme("original");
     } else {
-      // Logged in — apply theme from backend user object
+      // Logged in — apply theme from backend user object. Point the theme→user
+      // sync target at the CURRENT user first: applyTheme* writes back via
+      // setUserData(userThemeUpdaterRef.user), and this effect runs before the
+      // ref-updating effect below, so without this the write-back would hit the
+      // PREVIOUS identity on any user→user switch (e.g. exiting impersonation).
+      _setUserThemeUpdater?.({ setUserData, user });
       if (user?.themeMode && ["light", "dark", "auto"].includes(user.themeMode)) {
         applyThemeMode(user.themeMode as ThemeMode);
       }
@@ -156,7 +175,27 @@ function AppContent() {
         applyColorTheme(user.colorTheme as ColorTheme);
       }
     }
-  }, [user?.id]);
+  }, [user?.id, isImpersonating]);
+
+  // Refresh all app data when entering OR leaving impersonation. A normal login
+  // runs the full data-load path; impersonation swaps identity directly (token +
+  // setUser), so the cached dashboard/streak/workout data would otherwise stay on
+  // the previous identity until a manual pull-to-refresh. The token is already
+  // swapped by the time isImpersonating flips, so refreshAll() fetches as the
+  // now-current user. Guarded to fire only on the actual transition.
+  const prevImpersonatingRef = useRef(isImpersonating);
+  useEffect(() => {
+    if (prevImpersonatingRef.current === isImpersonating) return;
+    prevImpersonatingRef.current = isImpersonating;
+    // reset() clears the previous identity's cached data; refreshAll() refetches
+    // as the now-current user. Both come from useAppDataContext and are bound to
+    // the current userId (this effect runs after the identity re-render). Do NOT
+    // use invalidateActiveWorkoutCache() here — its subscription callback can
+    // still be bound to the previous userId at this point, causing a cross-user
+    // 403 (see auth-context exitImpersonation).
+    reset();
+    refreshAll();
+  }, [isImpersonating, reset, refreshAll]);
 
   // Provide setUserData and user to RootLayout theme setters
   useEffect(() => {
@@ -400,6 +439,7 @@ function AppContent() {
   return (
     <>
       <View className="flex-1 bg-background">
+        <ImpersonationBanner />
         <Stack
           screenOptions={{
             headerShown: false,

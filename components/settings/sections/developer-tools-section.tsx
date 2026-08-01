@@ -1,7 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
+import { useAuth } from "@/contexts/auth-context";
 import { useThemeColors } from "@/lib/theme";
 
 interface DeveloperToolsSectionProps {
@@ -25,6 +34,34 @@ export default function DeveloperToolsSection({
 }: DeveloperToolsSectionProps) {
   const router = useRouter();
   const colors = useThemeColors();
+  const { enterImpersonation } = useAuth();
+
+  const [showImpersonate, setShowImpersonate] = useState(false);
+  const [impEmail, setImpEmail] = useState("");
+  const [impReason, setImpReason] = useState("");
+  const [impBusy, setImpBusy] = useState(false);
+
+  const handleImpersonate = async () => {
+    const email = impEmail.trim();
+    if (!email) {
+      Alert.alert("Email required", "Enter the user's email to view as them.");
+      return;
+    }
+    setImpBusy(true);
+    try {
+      const result = await enterImpersonation(email, impReason.trim());
+      if (result.success) {
+        setShowImpersonate(false);
+        setImpEmail("");
+        setImpReason("");
+        if (onClose) onClose();
+      } else {
+        Alert.alert("Couldn't impersonate", result.error || "Unknown error");
+      }
+    } finally {
+      setImpBusy(false);
+    }
+  };
 
   if (!isDebugModeActivated && !__DEV__) {
     return null;
@@ -103,6 +140,77 @@ export default function DeveloperToolsSection({
         </View>
         <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
       </TouchableOpacity>
+
+      {/* Impersonate User — admin "view as user" for troubleshooting. Opens a
+          READ-ONLY session as the target (backend blocks any write); a red
+          banner stays up app-wide until you exit. Admin-gated server-side. */}
+      <TouchableOpacity
+        className="flex-row items-center justify-between px-4 py-3 border-t"
+        style={{ borderColor: colors.brand.primary }}
+        onPress={() => setShowImpersonate((v) => !v)}
+      >
+        <View className="flex-row items-center flex-1">
+          <Ionicons name="eye-outline" size={20} color={colors.brand.primary} />
+          <Text className="text-sm ml-3" style={{ color: colors.brand.primary }}>
+            Impersonate User (read-only)
+          </Text>
+        </View>
+        <Ionicons
+          name={showImpersonate ? "chevron-down" : "chevron-forward"}
+          size={16}
+          color={colors.brand.primary}
+        />
+      </TouchableOpacity>
+
+      {showImpersonate && (
+        <View
+          className="px-4 py-3 border-t"
+          style={{ borderColor: colors.brand.primary }}
+        >
+          <TextInput
+            value={impEmail}
+            onChangeText={setImpEmail}
+            placeholder="user@email.com"
+            placeholderTextColor={colors.text.muted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            className="rounded-lg border px-3 py-2 text-sm mb-2"
+            style={{
+              borderColor: colors.brand.primary,
+              color: colors.text.primary,
+            }}
+          />
+          <TextInput
+            value={impReason}
+            onChangeText={setImpReason}
+            placeholder="Reason (optional, audited)"
+            placeholderTextColor={colors.text.muted}
+            className="rounded-lg border px-3 py-2 text-sm mb-3"
+            style={{
+              borderColor: colors.brand.primary,
+              color: colors.text.primary,
+            }}
+          />
+          <TouchableOpacity
+            onPress={handleImpersonate}
+            disabled={impBusy}
+            className="rounded-lg py-2.5 items-center"
+            style={{ backgroundColor: colors.brand.primary }}
+          >
+            {impBusy ? (
+              <ActivityIndicator size="small" color={colors.contentOnPrimary} />
+            ) : (
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: colors.contentOnPrimary }}
+              >
+                View as this user
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Reset Feedback Cadence — clears @workout_feedback_cadence so the
           post-workout feedback prompt shows again for already-answered days. */}

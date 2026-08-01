@@ -19,7 +19,11 @@ import {
 import { Sentry } from "@/lib/sentry";
 
 import { RegenerationType } from "../constants";
-import { getAuthToken, setAuthFailureCallback } from "../lib/api";
+import {
+  getAuthToken,
+  setAuthFailureCallback,
+  setImpersonationExpiredCallback,
+} from "../lib/api";
 import {
   checkEmailExists,
   clearAllData,
@@ -31,6 +35,10 @@ import {
   saveUserToSecureStorage,
   signup as apiSignup,
 } from "../lib/auth";
+import {
+  endImpersonationSession,
+  startImpersonationSession,
+} from "../lib/impersonation";
 import { logger } from "../lib/logger";
 import { invalidateActiveWorkoutCache } from "../lib/workouts";
 
@@ -68,6 +76,13 @@ interface AuthContextType {
     message?: string;
     error?: string;
   }>;
+  // Admin impersonation ("view as user"). Read-only, dev/admin surface only.
+  isImpersonating: boolean;
+  enterImpersonation: (
+    email: string,
+    reason?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  exitImpersonation: () => Promise<void>;
 }
 
 // Create the context
@@ -143,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [needsFullAppRefresh, setNeedsFullAppRefresh] = useState(false);
   const [currentRegenerationType, setCurrentRegenerationType] =
     useState<RegenerationType>(RegenerationType.Initial);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   // Initialize user from secure storage on app start
   useEffect(() => {
@@ -197,11 +213,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // distinct_id — so client- and server-emitted events resolve to one person.
   // Runs whenever the user becomes known (restore, verify, login); identifying
   // with the same id is idempotent.
+  // While impersonating, deliberately DON'T re-identify Mixpanel as the target
+  // user — that would attribute the admin's troubleshooting session to the
+  // customer and pollute their analytics. Identity is restored on exit.
   useEffect(() => {
-    if (user?.uuid) {
+    if (user?.uuid && !isImpersonating) {
       mixpanelIdentify(user.uuid);
     }
-  }, [user]);
+  }, [user, isImpersonating]);
 
   // Check if the email exists in the system
   const checkEmail = async (email: string) => {
@@ -437,6 +456,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Enter an admin "view as user" session. Uses raw setUser (NOT setUserData) on
+  // purpose: setUserData re-identifies RevenueCat as the target, which we must
+  // not do while impersonating. Mixpanel identify is skipped via isImpersonating.
+  const enterImpersonation = async (
+    email: string,
+    reason?: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const targetUser = await startImpersonationSession(email, reason);
+      await saveUserToSecureStorage(targetUser);
+      setIsImpersonating(true);
+      setUser(targetUser);
+      logger.info("Entered impersonation", { targetUserId: targetUser.id });
+      return { success: true };
+    } catch (error) {
+      logger.error("Failed to enter impersonation", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to impersonate user",
+      };
+    }
+  };
+
+  // Exit impersonation and restore the admin session. Also invoked automatically
+  // by lib/api's 401 handler when the impersonation token expires.
+  const exitImpersonation = async (): Promise<void> => {
+    try {
+      const adminUser = await endImpersonationSession();
+      setIsImpersonating(false);
+      if (adminUser) {
+        setUser(adminUser);
+        // NOTE: do NOT call invalidateActiveWorkoutCache() here. It synchronously
+        // fires the workout-update subscription, whose callback is still bound to
+        // the TARGET's userId (React hasn't re-rendered to the admin yet) while
+        // the token is already the admin's → a cross-user /dashboard/<target>
+        // request → 403. The data refresh is handled by the isImpersonating
+        // effect in _layout (AppContent), which runs after re-render with the
+        // admin identity in place.
+        router.replace("/dashboard");
+      } else {
+        // No admin backup to restore — safest is a clean logout to login.
+        await logout();
+        router.replace("/");
+      }
+    } catch (error) {
+      logger.error("Failed to exit impersonation", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Let lib/api's 401 handler drop us back to the admin when the impersonation
+  // token expires (instead of running the refresh/logout funnel on the admin).
+  useEffect(() => {
+    setImpersonationExpiredCallback(exitImpersonation);
+    return () => setImpersonationExpiredCallback(null);
+  }, [exitImpersonation]);
+
   // Update generating workout state with regeneration type
   const handleSetIsGeneratingWorkout = (
     value: boolean,
@@ -482,6 +562,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     completeOnboarding,
     logout,
     deleteAccount,
+    isImpersonating,
+    enterImpersonation,
+    exitImpersonation,
   };
 
   // Provide the context to children components
