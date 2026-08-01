@@ -1,5 +1,5 @@
 import { type Ionicons } from "@expo/vector-icons";
-import { fetchActiveWorkout } from "@lib/workouts";
+import { fetchActiveWorkout, fetchWorkoutHistory } from "@lib/workouts";
 import { invalidateActiveWorkoutCache } from "@lib/workouts";
 import { subscribeToWorkoutUpdates } from "@lib/workouts";
 import { useFocusEffect } from "@react-navigation/native";
@@ -18,6 +18,7 @@ import { RefreshControl,ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Header from "@/components/header";
+import { type PlanEndedRecap } from "@/components/no-active-workout-card";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
 import type { DialogButton } from "@/components/ui";
@@ -40,6 +41,7 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
   type WorkoutTypeMetrics,
+  type WorkoutWithDetails,
 } from "@/types/api";
 
 import { useAuth } from "../../contexts/auth-context";
@@ -50,6 +52,7 @@ import {
   formatDate,
   formatDateAsString,
   getCurrentDate,
+  getDayOfWeek,
 } from "../../utils";
 import ActiveWorkoutCard from "./sections/active-workout-card";
 import DashboardEmptyStateSection from "./sections/dashboard-empty-state";
@@ -61,6 +64,45 @@ import StrengthProgressSection from "./sections/strength-progress";
 import WeeklyProgressSection from "./sections/weekly-progress";
 import WeightPerformanceSection from "./sections/weight-performance";
 import WorkoutTypeDistributionSection from "./sections/workout-type-distribution";
+
+/** Parse a "YYYY-MM-DD" string (or Date) without a timezone shift. */
+function toSafeDate(date: Date | string): Date {
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return typeof date === "string" ? new Date(date) : date;
+}
+
+/** "14 July" — day-of-month + full month name. */
+function formatDayMonth(date: Date | string): string {
+  const d = toSafeDate(date);
+  return `${d.getDate()} ${new Intl.DateTimeFormat("en-US", {
+    month: "long",
+  }).format(d)}`;
+}
+
+/**
+ * Build the plan-ended recap from a finished plan. Training days = plan days
+ * with blocks (rest days have none); "days done" counts the completed ones.
+ * The feedback "felt too easy" line is deferred, so the date span always fills
+ * that slot — the recap never has a hole.
+ */
+function deriveEndedPlanRecap(workout: WorkoutWithDetails): PlanEndedRecap {
+  const trainingDays = (workout.planDays ?? []).filter(
+    (day) => (day.blocks?.length ?? 0) > 0
+  );
+  const lastDay = trainingDays[trainingDays.length - 1];
+  return {
+    planName: workout.name,
+    lastDayWeekday: getDayOfWeek(lastDay?.date ?? workout.endDate),
+    daysDone: trainingDays.filter((day) => day.isComplete).length,
+    totalDays: trainingDays.length,
+    dateSpan: `${formatDayMonth(workout.startDate)} – ${formatDayMonth(
+      workout.endDate
+    )}`,
+  };
+}
 
 export default function DashboardScreen() {
   const colors = useThemeColors();
@@ -83,6 +125,10 @@ export default function DashboardScreen() {
     endDate?: string;
     planDays?: PlanDayWithBlocks[];
   } | null>(null);
+  const [endedPlanRecap, setEndedPlanRecap] = useState<PlanEndedRecap | null>(
+    null
+  );
+  const [endedPlanRecapLoading, setEndedPlanRecapLoading] = useState(false);
   const [loadingToday, setLoadingToday] = useState(false);
   const [stepsCount, setStepsCount] = useState<number | null>(null);
   const [maxHeartRate, setMaxHeartRate] = useState<number | null>(null);
@@ -193,15 +239,43 @@ export default function DashboardScreen() {
           (day: PlanDayWithBlocks) => formatDateAsString(day.date) === today
         );
         setTodaysWorkout(todaysPlanDay || null);
+        // Active plan present -> the ended-plan recap isn't shown; drop it so a
+        // stale recap can't flash if the user later lapses again.
+        setEndedPlanRecap(null);
+        setEndedPlanRecapLoading(false);
       } else {
         setWorkoutInfo(null);
         setTodaysWorkout(null);
+        // No active plan: this is always a lapsed state, so fill the card from
+        // the most-recent finished plan's record (best-effort — the CTA still
+        // works without it). Flag it loading first so the card shows a skeleton
+        // rather than the generic empty card in the gap before history lands.
+        setEndedPlanRecapLoading(true);
+        void loadEndedPlanRecap();
       }
     } catch (err) {
       setWorkoutInfo(null);
       setTodaysWorkout(null);
     } finally {
       setLoadingToday(false);
+    }
+  };
+
+  // Fetch the most-recent finished plan and derive its recap. History is
+  // ordered newest-first by end date, so [0] is the plan that just ended.
+  const loadEndedPlanRecap = async () => {
+    if (!user?.id) {
+      setEndedPlanRecapLoading(false);
+      return;
+    }
+    try {
+      const history = await fetchWorkoutHistory(user.id);
+      const mostRecent = history?.[0];
+      setEndedPlanRecap(mostRecent ? deriveEndedPlanRecap(mostRecent) : null);
+    } catch {
+      setEndedPlanRecap(null);
+    } finally {
+      setEndedPlanRecapLoading(false);
     }
   };
 
@@ -913,12 +987,15 @@ export default function DashboardScreen() {
               ? { name: workoutInfo.name, description: workoutInfo.description }
               : null
           }
+          planDays={workoutInfo?.planDays ?? []}
           todaysWorkout={todaysWorkout}
           totalDurationMinutes={totalDurationMinutes}
           loadingToday={loadingToday}
           isWorkoutCompleted={isWorkoutCompleted}
           todayCompletionRate={todayCompletionRate}
           isGenerating={isGenerating}
+          endedPlanRecap={endedPlanRecap}
+          endedPlanRecapLoading={endedPlanRecapLoading}
           onViewWorkout={() => router.push("/workout")}
           onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
         />
