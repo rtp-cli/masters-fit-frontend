@@ -1,38 +1,27 @@
-import { Text,View } from "react-native";
+import { Text, View } from "react-native";
 
-import ProgressIndicator from "@/components/progressive-indicator";
 import { type ONBOARDING_STEP } from "@/types/enums";
 
 import { getStepConfig } from "../utils/step-config";
 
 interface OnboardingHeaderProps {
   currentStep: ONBOARDING_STEP;
-  totalSteps: number;
-  currentStepIndex?: number;
 }
 
 export default function OnboardingHeader({
   currentStep,
-  totalSteps,
-  currentStepIndex,
 }: OnboardingHeaderProps) {
   const stepConfig = getStepConfig(currentStep);
 
+  // The progress bar moved out to the fixed header row (§3); this component now
+  // owns only the step title + description + disclaimer.
   return (
     <View className="px-6 pt-6 pb-4">
-      {/* Progress Indicator */}
-      <ProgressIndicator
-        currentStep={
-          currentStepIndex !== undefined ? currentStepIndex : currentStep
-        }
-        totalSteps={totalSteps}
-        className="mb-6"
-      />
-
       <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
         {stepConfig.title}
       </Text>
-      <Text className="text-sm text-neutral-medium-4 mb-2 leading-5">
+      {/* §8.1: 14px → 16px, colour matches app/index.tsx subhead (text-secondary) */}
+      <Text className="text-base text-text-secondary mb-2">
         {stepConfig.description}
       </Text>
       {stepConfig.disclaimer && (

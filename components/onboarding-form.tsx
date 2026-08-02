@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -37,6 +36,7 @@ import NavigationButtons from "./onboarding/ui/navigation-buttons";
 import OnboardingHeader from "./onboarding/ui/onboarding-header";
 import { getEquipmentForEnvironment } from "./onboarding/utils/equipment-logic";
 import { validateStep } from "./onboarding/utils/validation";
+import ProgressIndicator from "./progressive-indicator";
 
 // Re-export types for backward compatibility
 export type {
@@ -257,11 +257,15 @@ export default function OnboardingForm({
       className="flex-1 bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Header — back chevron (steps > 0) + centered brand lockup */}
+      {/* Header — back chevron (steps > 0), then the fixed progress bar + step
+          counter (§3). The brand lockup was deleted; the row it vacated is where
+          the progress chrome now lives. Progress + counter are onboarding-only
+          (gated on trackStepViews, which becomes mode==="onboarding" in §10). */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
+          gap: 12,
           paddingTop: 14,
           paddingHorizontal: 20,
         }}
@@ -287,35 +291,37 @@ export default function OnboardingForm({
         ) : (
           <View style={{ width: 40, height: 40 }} />
         )}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 14,
-            alignItems: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Image
-              source={require("../assets/logo-dark.png")}
-              style={{ width: 24, height: 22 }}
-              resizeMode="contain"
-            />
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "600",
-                letterSpacing: -0.17,
-                color: colors.text.primary,
+
+        {trackStepViews && (
+          <>
+            <View
+              style={{ flex: 1 }}
+              accessibilityRole="progressbar"
+              accessibilityValue={{
+                min: 1,
+                max: availableSteps.length,
+                now: currentStepIndex + 1,
               }}
             >
-              MastersFit
+              <ProgressIndicator
+                currentStep={currentStepIndex}
+                totalSteps={availableSteps.length}
+              />
+            </View>
+            <Text
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+              style={{
+                fontSize: 14,
+                fontWeight: "600",
+                color: colors.text.muted,
+                flexShrink: 0,
+              }}
+            >
+              Step {currentStepIndex + 1} of {availableSteps.length}
             </Text>
-          </View>
-        </View>
-        <View style={{ width: 40, marginLeft: "auto" }} />
+          </>
+        )}
       </View>
 
       <ScrollView
@@ -325,12 +331,8 @@ export default function OnboardingForm({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Progress indicator + step title */}
-        <OnboardingHeader
-          currentStep={currentStep}
-          totalSteps={availableSteps.length}
-          currentStepIndex={currentStepIndex}
-        />
+        {/* Step title + description (progress bar moved to the fixed row) */}
+        <OnboardingHeader currentStep={currentStep} />
 
         {/* Step Content */}
         {renderStepContent()}
