@@ -222,13 +222,13 @@ export default function ProfileEditScreen() {
         age: formData.age,
         height: formData.height,
         weight: formData.weight,
-        gender: formData.gender.toString(),
+        gender: formData.gender!.toString(),
         goals: formData.goals.map((g: FITNESS_GOALS) => g.toString()),
         limitations:
           formData.limitations?.map((l: PHYSICAL_LIMITATIONS) =>
             l.toString()
           ) || [],
-        fitnessLevel: formData.fitnessLevel.toString(),
+        fitnessLevel: formData.fitnessLevel!.toString(),
         environment: formData.environment!.toString(),
         equipment:
           formData.equipment?.map((e: AVAILABLE_EQUIPMENT) => e.toString()) ||

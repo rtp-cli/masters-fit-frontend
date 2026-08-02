@@ -15,10 +15,13 @@ export interface FormData {
   age: number;
   height: number;
   weight: number;
-  gender: GENDER;
+  // §4: optional so onboarding can start with nothing selected (a filled card
+  // is a claim the user never made). handleSubmit assumes both present because
+  // validateStep gates it. A saved profile always has real values in edit mode.
+  gender?: GENDER;
   goals: FITNESS_GOALS[];
   limitations?: PHYSICAL_LIMITATIONS[];
-  fitnessLevel: FITNESS_LEVELS;
+  fitnessLevel?: FITNESS_LEVELS;
   environment?: WORKOUT_ENVIRONMENTS;
   equipment?: AVAILABLE_EQUIPMENT[];
   otherEquipment?: string;

@@ -18,8 +18,6 @@ import {
   type OnboardingFormProps,
 } from "@/types/components";
 import {
-  FITNESS_LEVELS,
-  GENDER,
   INTENSITY_LEVELS,
   ONBOARDING_STEP,
   type WORKOUT_ENVIRONMENTS,
@@ -99,10 +97,13 @@ export default function OnboardingForm({
     age: 40,
     height: 170,
     weight: 150,
-    gender: GENDER.MALE,
+    // §4: nothing pre-answered. Onboarding starts with no gender/fitness level
+    // selected; edit mode fills them from initialData below. Sliders keep their
+    // defaults (age/height/weight) — a slider position is a value, not a claim.
+    gender: undefined,
     goals: [],
     limitations: [],
-    fitnessLevel: FITNESS_LEVELS.BEGINNER,
+    fitnessLevel: undefined,
     equipment: [],
     otherEquipment: "",
     preferredStyles: [],
