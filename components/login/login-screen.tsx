@@ -194,12 +194,12 @@ export const LoginScreen = () => {
     focused: boolean,
     hasError = false,
   ) => ({
-    height: 58,
+    height: 54,
     paddingHorizontal: 18,
     fontSize: 17,
     fontWeight: "500" as const,
-    textAlign: "center" as const,
-    borderWidth: 1.5,
+    textAlign: "left" as const,
+    borderWidth: 1,
     borderRadius: 16,
     borderColor: hasError
       ? colors.danger
@@ -211,8 +211,8 @@ export const LoginScreen = () => {
     ...(focused && {
       shadowColor: colors.brand.primary,
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.12,
-      shadowRadius: 8,
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
     }),
   });
 
@@ -262,14 +262,14 @@ export const LoginScreen = () => {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Image
               source={require("../../assets/logo-dark.png")}
-              style={{ width: 24, height: 22 }}
+              style={{ width: 27, height: 25 }}
               resizeMode="contain"
             />
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 19,
                 fontWeight: "600",
-                letterSpacing: -0.17,
+                letterSpacing: -0.19,
                 color: colors.text.primary,
               }}
             >
@@ -279,14 +279,15 @@ export const LoginScreen = () => {
         </View>
       </View>
 
-      {/* Body — centered vertically */}
+      {/* Body — form group biased above center (0.45 : 1 spacers), so the
+          heading sits in the upper third instead of dead-center */}
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
           paddingHorizontal: 24,
         }}
       >
+        <View style={{ flex: 0.45 }} />
         <Text
           style={{
             fontSize: 28,
@@ -297,7 +298,7 @@ export const LoginScreen = () => {
             textAlign: "center",
           }}
         >
-          {showNameField ? "Create Account" : "Welcome back"}
+          {showNameField ? "Create Account" : "Enter your email"}
         </Text>
         <Text
           style={{
@@ -312,7 +313,7 @@ export const LoginScreen = () => {
         >
           {showNameField
             ? "Please enter your name to continue"
-            : "Enter your email and we'll send you a sign-in code"}
+            : "We’ll send you a secure code to sign in or get started."}
         </Text>
 
         {/* Email input */}
@@ -362,6 +363,7 @@ export const LoginScreen = () => {
             onSubmitEditing={handleSignup}
           />
         )}
+        <View style={{ flex: 1 }} />
       </View>
 
       {/* Footer */}
@@ -370,21 +372,8 @@ export const LoginScreen = () => {
           paddingHorizontal: 24,
           paddingBottom: 24,
           alignItems: "center",
-          gap: 16,
         }}
       >
-        {!showNameField && (
-          <Text
-            style={{
-              fontSize: 13,
-              color: colors.text.muted,
-              textAlign: "center",
-              maxWidth: 300,
-            }}
-          >
-            Passwordless sign-in — no password to remember.
-          </Text>
-        )}
         <TouchableOpacity
           style={{
             width: "100%",
@@ -408,7 +397,7 @@ export const LoginScreen = () => {
                 fontWeight: "600",
               }}
             >
-              {showNameField ? "Sign Up" : "Continue"}
+              {showNameField ? "Sign Up" : "Send code"}
             </Text>
           )}
         </TouchableOpacity>

@@ -11,8 +11,12 @@ export function FloatingNetworkLoggerButton() {
   const { isDebugModeActivated } = useSecretActivationContext();
   const colors = useThemeColors();
 
+  // TEMP: hidden while redesigning the auth/welcome flow — the floating bug icon
+  // is distracting during layout work. Set back to false to restore it.
+  const TEMPORARILY_HIDDEN = true;
+
   // Show in development mode OR when debug mode is activated via secret tap
-  if (!__DEV__ && !isDebugModeActivated) {
+  if (TEMPORARILY_HIDDEN || (!__DEV__ && !isDebugModeActivated)) {
     return null;
   }
 

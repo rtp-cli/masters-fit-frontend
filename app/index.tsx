@@ -166,14 +166,14 @@ export default function GetStarted() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Image
               source={require("../assets/logo-dark.png")}
-              style={{ width: 24, height: 22 }}
+              style={{ width: 27, height: 25 }}
               resizeMode="contain"
             />
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 19,
                 fontWeight: "600",
-                letterSpacing: -0.17,
+                letterSpacing: -0.19,
                 color: colors.text.primary,
               }}
             >
@@ -183,20 +183,21 @@ export default function GetStarted() {
         </View>
       </View>
 
-      {/* Body — centered vertically and horizontally */}
+      {/* Body — anchored to the optical center (upper-middle), not dead-center */}
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 24,
         }}
       >
+        {/* Fractional spacers pull the block above true center: 0.7 : 1 → sits at ~41% height */}
+        <View style={{ flex: 0.7 }} />
         <Image
           source={images.welcomeHero}
           style={{
-            width: 240,
-            height: 240,
+            width: 264,
+            height: 264,
             borderRadius: 9999,
             marginBottom: 32,
           }}
@@ -224,9 +225,11 @@ export default function GetStarted() {
             marginTop: 12,
           }}
         >
-          Built around your equipment, your days, and the joints that
-          don&apos;t cooperate.
+          Built around your goals, your schedule, your equipment—and how your
+          body moves today.
         </Text>
+        {/* Larger bottom spacer balances the 0.7 top spacer, anchoring content above center */}
+        <View style={{ flex: 1 }} />
       </View>
 
       {/* Footer */}
@@ -256,7 +259,7 @@ export default function GetStarted() {
               fontWeight: "600",
             }}
           >
-            Continue with email
+            Get started with email
           </Text>
           <Ionicons name="arrow-forward" size={18} color={colors.contentOnPrimary} />
         </TouchableOpacity>
@@ -269,7 +272,7 @@ export default function GetStarted() {
             marginTop: 12,
           }}
         >
-          We&apos;ll email you a code. No password to remember.
+          We’ll email you a secure code. No password needed.
         </Text>
       </View>
     </SafeAreaView>

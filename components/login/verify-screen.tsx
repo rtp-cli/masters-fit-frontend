@@ -355,14 +355,14 @@ export const VerifyScreen = () => {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Image
               source={require("../../assets/logo-dark.png")}
-              style={{ width: 24, height: 22 }}
+              style={{ width: 27, height: 25 }}
               resizeMode="contain"
             />
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 19,
                 fontWeight: "600",
-                letterSpacing: -0.17,
+                letterSpacing: -0.19,
                 color: colors.text.primary,
               }}
             >
