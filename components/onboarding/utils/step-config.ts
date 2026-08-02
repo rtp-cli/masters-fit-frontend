@@ -9,7 +9,6 @@ export interface StepConfig {
 // §8: short, second-person, sentence-case copy. Only PERSONAL_INFO reads
 // opts.name (trimmed — empty/whitespace/undefined falls back to the no-name
 // variant; the name is inserted verbatim, no title-casing or truncation).
-// SCHEDULE's copy is added with the §5 split; HEALTH_CONNECT leaves in §6.
 export const getStepConfig = (
   currentStep: ONBOARDING_STEP,
   opts?: { name?: string }
@@ -35,6 +34,11 @@ export const getStepConfig = (
         title: "Where you're starting",
         description: "Your training now, and how hard you want to push.",
       };
+    case ONBOARDING_STEP.SCHEDULE:
+      return {
+        title: "Your week",
+        description: "The days you can train, and how long you have.",
+      };
     case ONBOARDING_STEP.PHYSICAL_LIMITATIONS:
       return {
         title: "What to work around",
@@ -53,13 +57,6 @@ export const getStepConfig = (
         title: "How you like to train",
         description:
           "The styles you enjoy, so your plan feels like something you'd choose.",
-      };
-    // Leaves the flow in §6; copy kept until then.
-    case ONBOARDING_STEP.HEALTH_CONNECT:
-      return {
-        title: "Connect Health",
-        description:
-          "Connect Apple Health or Health Connect to sync steps, calories, heart rate, and workouts.",
       };
     default:
       return { title: "", description: "" };

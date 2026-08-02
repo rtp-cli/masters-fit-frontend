@@ -11,6 +11,10 @@ interface NavigationButtonsProps {
   onSubmit: () => void;
   currentStepIndex?: number;
   totalSteps?: number;
+  // §7: when provided (WORKOUT_ENVIRONMENT step, onboarding mode), renders the
+  // single skip control below the primary button. Same submit path as the final
+  // step — it generates the plan rather than advancing.
+  onSkip?: () => void;
 }
 
 export default function NavigationButtons({
@@ -21,6 +25,7 @@ export default function NavigationButtons({
   onSubmit,
   currentStepIndex,
   totalSteps,
+  onSkip,
 }: NavigationButtonsProps) {
   const colors = useThemeColors();
   const isLastStep =
@@ -29,7 +34,14 @@ export default function NavigationButtons({
       : currentStep === ONBOARDING_STEP.WORKOUT_STYLE;
 
   return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 }}>
+    <View
+      style={{
+        paddingHorizontal: 24,
+        paddingTop: onSkip ? 12 : 16,
+        paddingBottom: onSkip ? 24 : 32,
+        gap: onSkip ? 14 : 0,
+      }}
+    >
       <TouchableOpacity
         onPress={isLastStep ? onSubmit : onNext}
         disabled={isLoading}
@@ -56,6 +68,21 @@ export default function NavigationButtons({
           </Text>
         )}
       </TouchableOpacity>
+
+      {onSkip && !isLoading && (
+        <TouchableOpacity onPress={onSkip}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: colors.text.muted,
+              textAlign: "center",
+            }}
+          >
+            Skip the rest and generate my plan
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

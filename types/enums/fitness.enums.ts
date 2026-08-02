@@ -96,12 +96,16 @@ export enum PREFERRED_STYLES {
   MOBILITY = "mobility",
 }
 
+// §5: renumbered for the reordered flow (deliberate — see §11, the analytics
+// cutover flushes the funnel). FITNESS_LEVEL is now level + intensity; SCHEDULE
+// is new (days + duration); PHYSICAL_LIMITATIONS moved to 5th; HEALTH_CONNECT
+// left the flow (§6 — the step component survives, it just isn't mounted here).
 export enum ONBOARDING_STEP {
   PERSONAL_INFO = 0,
   FITNESS_GOALS = 1,
-  PHYSICAL_LIMITATIONS = 2,
-  FITNESS_LEVEL = 3,
-  WORKOUT_ENVIRONMENT = 4,
-  HEALTH_CONNECT = 5,
+  FITNESS_LEVEL = 2,
+  SCHEDULE = 3,
+  PHYSICAL_LIMITATIONS = 4,
+  WORKOUT_ENVIRONMENT = 5,
   WORKOUT_STYLE = 6,
 }

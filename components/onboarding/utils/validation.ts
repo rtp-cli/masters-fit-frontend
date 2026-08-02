@@ -61,18 +61,23 @@ export const validateStep = (
       // Physical limitations are optional, no validation required
       break;
 
+    // §5: FITNESS_LEVEL is now level + intensity only.
     case ONBOARDING_STEP.FITNESS_LEVEL:
       if (!formData.fitnessLevel) {
         newErrors.fitnessLevel = "Please select your fitness level";
       }
+      if (!formData.intensityLevel) {
+        newErrors.intensityLevel = "Please select intensity level";
+      }
+      break;
+
+    // §5: new step — days + duration (split out of the old FITNESS_LEVEL).
+    case ONBOARDING_STEP.SCHEDULE:
       if (formData.availableDays.length === 0) {
         newErrors.availableDays = "Please select at least one available day";
       }
       if (!formData.workoutDuration) {
         newErrors.workoutDuration = "Please select workout duration";
-      }
-      if (!formData.intensityLevel) {
-        newErrors.intensityLevel = "Please select intensity level";
       }
       break;
 
@@ -91,9 +96,6 @@ export const validateStep = (
       }
       break;
 
-    case ONBOARDING_STEP.HEALTH_CONNECT:
-      // Health connection is optional; no validation needed.
-      break;
 
     case ONBOARDING_STEP.WORKOUT_STYLE:
       if (formData.preferredStyles.length === 0) {

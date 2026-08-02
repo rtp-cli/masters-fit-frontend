@@ -25,9 +25,9 @@ import {
 
 import FitnessGoalsStep from "./onboarding/steps/fitness-goals-step";
 import FitnessLevelStep from "./onboarding/steps/fitness-level-step";
-import HealthConnectStep from "./onboarding/steps/health-connect-step";
 import PersonalInfoStep from "./onboarding/steps/personal-info-step";
 import PhysicalLimitationsStep from "./onboarding/steps/physical-limitations-step";
+import ScheduleStep from "./onboarding/steps/schedule-step";
 import WorkoutEnvironmentStep from "./onboarding/steps/workout-environment-step";
 import WorkoutStyleStep from "./onboarding/steps/workout-style-step";
 import NavigationButtons from "./onboarding/ui/navigation-buttons";
@@ -60,10 +60,10 @@ export default function OnboardingForm({
     const allSteps = [
       ONBOARDING_STEP.PERSONAL_INFO,
       ONBOARDING_STEP.FITNESS_GOALS,
-      ONBOARDING_STEP.PHYSICAL_LIMITATIONS,
       ONBOARDING_STEP.FITNESS_LEVEL,
+      ONBOARDING_STEP.SCHEDULE,
+      ONBOARDING_STEP.PHYSICAL_LIMITATIONS,
       ONBOARDING_STEP.WORKOUT_ENVIRONMENT,
-      ONBOARDING_STEP.HEALTH_CONNECT,
       ONBOARDING_STEP.WORKOUT_STYLE,
     ];
 
@@ -226,6 +226,14 @@ export default function OnboardingForm({
             formData={formData}
             errors={errors}
             onFieldChange={handleChange}
+          />
+        );
+      case ONBOARDING_STEP.SCHEDULE:
+        return (
+          <ScheduleStep
+            formData={formData}
+            errors={errors}
+            onFieldChange={handleChange}
             onToggle={handleMultiSelectToggle}
           />
         );
@@ -238,8 +246,6 @@ export default function OnboardingForm({
             onToggle={handleMultiSelectToggle}
           />
         );
-      case ONBOARDING_STEP.HEALTH_CONNECT:
-        return <HealthConnectStep />;
       case ONBOARDING_STEP.WORKOUT_STYLE:
         return (
           <WorkoutStyleStep
@@ -348,6 +354,15 @@ export default function OnboardingForm({
         onSubmit={handleSubmit}
         currentStepIndex={currentStepIndex}
         totalSteps={availableSteps.length}
+        // §7: one skip, on WORKOUT_ENVIRONMENT, onboarding mode only. Uses the
+        // submit path (validates this step, then generates — skipping step 7).
+        // Gated on trackStepViews for now; becomes mode==="onboarding" in §10.
+        onSkip={
+          trackStepViews &&
+          currentStep === ONBOARDING_STEP.WORKOUT_ENVIRONMENT
+            ? handleSubmit
+            : undefined
+        }
       />
     </KeyboardAvoidingView>
   );
