@@ -17,6 +17,10 @@ interface ScheduleStepProps {
     value: FormData[keyof FormData]
   ) => void;
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
+  // §A3: on the edit screen the sessions line is a readout of the current
+  // selection, so it moves below the chips and drops to one muted line — and the
+  // "first plan" framing is wrong when you already have one.
+  editScreen?: boolean;
 }
 
 // §5: new step split out of the old FITNESS_LEVEL — available days, the plan
@@ -25,8 +29,10 @@ export default function ScheduleStep({
   formData,
   onFieldChange,
   onToggle,
+  editScreen = false,
 }: ScheduleStepProps) {
   const dayCount = formData.availableDays.length;
+  const sessionWord = dayCount === 1 ? "session" : "sessions";
 
   return (
     <View className="flex-1 px-6 pb-6">
@@ -35,16 +41,16 @@ export default function ScheduleStep({
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
           Available days
         </Text>
-        {/* §5.4: count sessions, not calendar dates — calculateWorkoutPlanDates()
-            is a naive today+6 window, not the real anchored cycle. */}
-        {dayCount >= 1 && (
+        {/* Onboarding: a filled preamble card above the chips. §5.4: count
+            sessions, not calendar dates — calculateWorkoutPlanDates() is a naive
+            today+6 window, not the real anchored cycle. */}
+        {!editScreen && dayCount >= 1 && (
           <View className="mb-4 p-4 bg-brand-light-1 rounded-xl">
             <Text className="text-sm font-semibold text-text-primary mb-1">
               Your first plan
             </Text>
             <Text className="text-sm text-text-primary">
-              {dayCount} {dayCount === 1 ? "session" : "sessions"} a week. Change
-              your days any time.
+              {dayCount} {sessionWord} a week. Change your days any time.
             </Text>
           </View>
         )}
@@ -71,6 +77,12 @@ export default function ScheduleStep({
             </TouchableOpacity>
           ))}
         </View>
+        {/* Edit screen: one muted readout below the chips (§A3). */}
+        {editScreen && dayCount >= 1 && (
+          <Text className="mt-3 text-sm text-text-muted">
+            {dayCount} {sessionWord} a week. Changes apply from your next plan.
+          </Text>
+        )}
       </View>
 
       {/* How long per session */}

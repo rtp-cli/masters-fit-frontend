@@ -1,11 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, type Profile,updateUserProfile } from "@lib/profile";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
   Text,
   TouchableOpacity,
   View,
@@ -59,8 +57,9 @@ export default function ProfileEditScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const savedToastOpacity = useRef(new Animated.Value(0)).current;
-  const savedTranslateY = useRef(new Animated.Value(10)).current;
+  // §A2.2: the form reports when its values diverge from what it mounted with, so
+  // the back arrow only raises the discard dialog when there is something to lose.
+  const [isDirty, setIsDirty] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -275,26 +274,10 @@ export default function ProfileEditScreen() {
       const updatedProfile = await updateUserProfile(profileData as any);
 
       if (updatedProfile) {
-        // §9: lightweight "Saved" toast, then return. The updated value on the
-        // Settings card is the lasting confirmation.
+        // §A2.3: return to Settings silently — no success dialog, no toast. The
+        // new value on the card you came from is the confirmation.
         await refreshProfile();
-        savedTranslateY.setValue(10);
-        savedToastOpacity.setValue(0);
-        Animated.parallel([
-          Animated.timing(savedToastOpacity, {
-            toValue: 1,
-            duration: 200,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.spring(savedTranslateY, {
-            toValue: 0,
-            damping: 14,
-            stiffness: 220,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        setTimeout(() => router.back(), 850);
+        router.back();
       } else {
         throw new Error("Failed to update profile");
       }
@@ -316,9 +299,29 @@ export default function ProfileEditScreen() {
   };
 
   const handleCancel = () => {
-    // §9: single-step edit — back just returns (Save is explicit). Dropped the
-    // "Discard Changes?" confirmation, which fired even when nothing was edited.
-    router.back();
+    // §A2.2: a clean editor pops immediately; a dirty one confirms first. (Dirty
+    // tracking is what fixes the old bug where this fired with nothing edited.)
+    if (!isDirty) {
+      router.back();
+      return;
+    }
+    setDialogConfig({
+      title: "Discard changes?",
+      description: "Your edits won't be saved.",
+      icon: "warning",
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      primaryButton: {
+        text: "Discard",
+        onPress: () => {
+          setDialogVisible(false);
+          router.back();
+        },
+      },
+    });
+    setDialogVisible(true);
   };
 
   if (loading) {
@@ -365,6 +368,7 @@ export default function ProfileEditScreen() {
         onSubmit={handleUpdateProfile}
         isLoading={saving}
         submitButtonText="Save"
+        onDirtyChange={setIsDirty}
       />
 
       {/* Custom Dialog */}
@@ -379,37 +383,6 @@ export default function ProfileEditScreen() {
           icon={dialogConfig.icon}
         />
       )}
-
-      {/* Lightweight "Saved" toast — shown on save just before returning */}
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          bottom: 120,
-          left: 0,
-          right: 0,
-          alignItems: "center",
-          opacity: savedToastOpacity,
-          transform: [{ translateY: savedTranslateY }],
-        }}
-      >
-        <View
-          className="flex-row items-center rounded-full px-4 py-2"
-          style={{ backgroundColor: colors.brand.primary }}
-        >
-          <Ionicons
-            name="checkmark"
-            size={16}
-            color={colors.contentOnPrimary}
-          />
-          <Text
-            className="ml-1.5 text-sm font-semibold"
-            style={{ color: colors.contentOnPrimary }}
-          >
-            Saved
-          </Text>
-        </View>
-      </Animated.View>
     </SafeAreaView>
   );
 }

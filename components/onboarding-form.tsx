@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -65,6 +65,20 @@ export const ONBOARDING_STEPS_ALL: ONBOARDING_STEP[] = [
   ONBOARDING_STEP.WORKOUT_STYLE,
 ];
 
+// §A2.1: a stable fingerprint of the form's values for dirty tracking. Multi-select
+// fields are order-insensitive (toggling a day off then on must read as clean), so
+// their arrays are sorted before serialising.
+function fingerprintFormData(data: FormData): string {
+  const normalised: Record<string, unknown> = {};
+  (Object.keys(data) as (keyof FormData)[]).forEach((key) => {
+    const value = data[key];
+    normalised[key as string] = Array.isArray(value)
+      ? [...value].map(String).sort()
+      : value;
+  });
+  return JSON.stringify(normalised);
+}
+
 export default function OnboardingForm({
   initialData,
   onSubmit,
@@ -73,12 +87,17 @@ export default function OnboardingForm({
   mode = "edit",
   steps,
   userName,
+  onDirtyChange,
 }: OnboardingFormProps) {
   const colors = useThemeColors();
   const scrollRef = useRef<ScrollView | null>(null);
 
   // §10: render the requested steps, or all seven by default.
   const availableSteps = steps ?? ONBOARDING_STEPS_ALL;
+  // §A: the single-step Settings editor. The multi-step regeneration modal is also
+  // mode="edit" but must behave exactly as before, so the §A chrome (no H1, footer
+  // hairline, dirty-gated Save, moved sessions readout) is scoped to length === 1.
+  const isEditScreen = mode === "edit" && availableSteps.length === 1;
   const submitLabel =
     submitButtonText ?? (mode === "edit" ? "Save" : "Generate Weekly Plan");
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -125,6 +144,20 @@ export default function OnboardingForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // §A2.1: dirty is measured against the values the form was mounted with (edit
+  // mode always mounts with a fully-loaded profile), not against the blank
+  // defaults — and a revert to the original value reads as clean again.
+  const initialFingerprintRef = useRef(fingerprintFormData(formData));
+  const isDirty = useMemo(
+    () =>
+      isEditScreen &&
+      fingerprintFormData(formData) !== initialFingerprintRef.current,
+    [formData, isEditScreen]
+  );
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   // Helper function for type-safe form updates
   const handleChange = (
@@ -264,6 +297,7 @@ export default function OnboardingForm({
             formData={formData}
             onFieldChange={handleChange}
             onToggle={handleMultiSelectToggle}
+            editScreen={isEditScreen}
           />
         );
       case ONBOARDING_STEP.WORKOUT_ENVIRONMENT:
@@ -372,6 +406,7 @@ export default function OnboardingForm({
         <OnboardingHeader
           currentStep={currentStep}
           name={mode === "onboarding" ? userName : undefined}
+          editScreen={isEditScreen}
         />
 
         {/* Top-of-step error banner: a blocked Continue is otherwise invisible —
@@ -410,6 +445,8 @@ export default function OnboardingForm({
             ? handleSkip
             : undefined
         }
+        editScreen={isEditScreen}
+        isDirty={isDirty}
       />
     </KeyboardAvoidingView>
   );

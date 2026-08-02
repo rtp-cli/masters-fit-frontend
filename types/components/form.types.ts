@@ -54,6 +54,12 @@ export interface OnboardingFormProps {
   steps?: ONBOARDING_STEP[];
   /** §10: passed in, not read from useAuth — the form is presentational. */
   userName?: string;
+  /**
+   * §A2.1: fired when the single-step edit editor's values diverge from (or return
+   * to) the values it was mounted with. The host screen (profile-edit) uses it to
+   * gate the discard-changes dialog and is otherwise a no-op.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export type ArrayFields = Extract<

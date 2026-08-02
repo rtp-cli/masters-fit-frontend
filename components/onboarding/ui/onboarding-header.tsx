@@ -7,11 +7,19 @@ import { getStepConfig } from "../utils/step-config";
 interface OnboardingHeaderProps {
   currentStep: ONBOARDING_STEP;
   name?: string;
+  /**
+   * §A1.2: the single-step Settings editor already carries the step title in its
+   * nav bar, so the header renders the description only — no duplicated H1, and no
+   * disclaimer (it belongs at first collection, §A3). Padding is unchanged so the
+   * description sits where it always did.
+   */
+  editScreen?: boolean;
 }
 
 export default function OnboardingHeader({
   currentStep,
   name,
+  editScreen = false,
 }: OnboardingHeaderProps) {
   const stepConfig = getStepConfig(currentStep, { name });
 
@@ -19,14 +27,16 @@ export default function OnboardingHeader({
   // owns only the step title + description + disclaimer.
   return (
     <View className="px-6 pt-6 pb-4">
-      <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
-        {stepConfig.title}
-      </Text>
+      {!editScreen && (
+        <Text className="text-2xl font-bold text-neutral-dark-1 mb-2">
+          {stepConfig.title}
+        </Text>
+      )}
       {/* §8.1: 14px → 16px, colour matches app/index.tsx subhead (text-secondary) */}
       <Text className="text-base text-text-secondary mb-2">
         {stepConfig.description}
       </Text>
-      {stepConfig.disclaimer && (
+      {!editScreen && stepConfig.disclaimer && (
         <Text className="text-sm italic text-neutral-medium-4">
           {stepConfig.disclaimer}
         </Text>
