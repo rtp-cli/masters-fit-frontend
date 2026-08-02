@@ -266,21 +266,10 @@ export default function ProfileEditScreen() {
       const updatedProfile = await updateUserProfile(profileData as any);
 
       if (updatedProfile) {
-        // Refresh profile data after successful update
+        // §9: no "Success" dialog — refresh and return. The updated value on the
+        // Settings card is the confirmation.
         await refreshProfile();
-        setDialogConfig({
-          title: "Success",
-          description: "Your profile has been updated successfully!",
-          primaryButton: {
-            text: "OK",
-            onPress: () => {
-              setDialogVisible(false);
-              router.back();
-            },
-          },
-          icon: "checkmark-circle",
-        });
-        setDialogVisible(true);
+        router.back();
       } else {
         throw new Error("Failed to update profile");
       }
@@ -302,23 +291,9 @@ export default function ProfileEditScreen() {
   };
 
   const handleCancel = () => {
-    setDialogConfig({
-      title: "Discard Changes?",
-      description: "Are you sure you want to discard your changes?",
-      secondaryButton: {
-        text: "Cancel",
-        onPress: () => setDialogVisible(false),
-      },
-      primaryButton: {
-        text: "Discard",
-        onPress: () => {
-          setDialogVisible(false);
-          router.back();
-        },
-      },
-      icon: "warning",
-    });
-    setDialogVisible(true);
+    // §9: single-step edit — back just returns (Save is explicit). Dropped the
+    // "Discard Changes?" confirmation, which fired even when nothing was edited.
+    router.back();
   };
 
   if (loading) {
