@@ -9,6 +9,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { generateAuthCode, verify } from "@/lib/auth";
 
+type VerifyResult = {
+  success: boolean;
+  errorCode?: "INVALID_CODE" | "EXPIRED_CODE" | "CODE_EXHAUSTED";
+  attemptsLeft?: number;
+};
+
 export function useVerifyController() {
   const router = useRouter();
   const { setUserData, setIsPreloadingData } = useAuth();
@@ -61,7 +67,7 @@ export function useVerifyController() {
   }, []);
 
   const verifyCode = useCallback(
-    async (email: string, code: string) => {
+    async (email: string, code: string): Promise<VerifyResult> => {
       if (!email) return { success: false };
 
       if (code.length !== 4) {
@@ -138,7 +144,12 @@ export function useVerifyController() {
             return { success: true };
           }
         } else {
-          return { success: false, invalidCode: true };
+          // Distinct backend error codes (SPEC §4.4) drive per-case UI copy.
+          return {
+            success: false,
+            errorCode: response.errorCode,
+            attemptsLeft: response.attemptsLeft,
+          };
         }
       } catch (error) {
         console.error("Verification error:", error);

@@ -20,6 +20,8 @@ export interface AuthResponse {
   email?: string;
   token?: string;
   refreshToken?: string;
+  errorCode?: "INVALID_CODE" | "EXPIRED_CODE" | "CODE_EXHAUSTED";
+  attemptsLeft?: number;
 }
 
 export interface OnboardingData {
