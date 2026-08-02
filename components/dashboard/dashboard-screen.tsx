@@ -111,7 +111,18 @@ export default function DashboardScreen() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { reloadJobs, isGenerating } = useBackgroundJobs();
   const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
-  const { capabilities, isLoading: entitlementsLoading } = useEntitlements();
+  const { capabilities, tier, isLoading: entitlementsLoading } =
+    useEntitlements();
+  // Server-authoritative paid state for the upsell banner. Backend-granted
+  // PLUS/COMPLIMENTARY/BYPASS users have no RevenueCat entitlement, so the
+  // RC-derived `isPro` is false for them and the old check wrongly showed the
+  // "Upgrade to MastersFit+" banner. Trust the entitlements tier first (same
+  // fix already applied in the profile's subscription-section).
+  const isPaid =
+    tier === "PLUS" ||
+    tier === "COMPLIMENTARY" ||
+    tier === "BYPASS" ||
+    isPro;
   // Fail-CLOSED for the analytics gate: only fetch/show advanced analytics when
   // the capability is definitely granted. (can() fails open, which would fire
   // the gated fetches during the load window -> 403 -> auto-paywall.)
@@ -940,8 +951,8 @@ export default function DashboardScreen() {
 
         {/* Premium Upgrade Banner - Show for non-pro users */}
         <PremiumUpgradeBanner
-          isPro={isPro}
-          isLoading={subscriptionLoading}
+          isPro={isPaid}
+          isLoading={subscriptionLoading || entitlementsLoading}
           onPress={() => openPaywall(PAYWALL_COPY.GENERIC)}
         />
 
