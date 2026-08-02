@@ -25,12 +25,10 @@ import {
   setImpersonationExpiredCallback,
 } from "../lib/api";
 import {
-  checkEmailExists,
   clearAllData,
   completeOnboarding as apiCompleteOnboarding,
   deleteAccount as apiDeleteAccount,
   getCurrentUser,
-  getPendingUserId,
   login as apiLogin,
   saveUserToSecureStorage,
   signup as apiSignup,
@@ -47,12 +45,10 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isSigningUp: boolean;
   isGeneratingWorkout: boolean;
   isPreloadingData: boolean;
   needsFullAppRefresh: boolean;
   currentRegenerationType: RegenerationType;
-  setIsSigningUp: (value: boolean) => void;
   setUserData: (user: User | null) => void;
   setIsGeneratingWorkout: (
     value: boolean,
@@ -61,9 +57,6 @@ interface AuthContextType {
   setIsPreloadingData: (value: boolean) => void;
   setNeedsFullAppRefresh: (value: boolean) => void;
   triggerWorkoutReady: () => void;
-  checkEmail: (
-    email: string,
-  ) => Promise<{ success: boolean; user?: User; needsOnboarding?: boolean }>;
   signup: (params: {
     email: string;
     name: string;
@@ -152,7 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [isPreloadingData, setIsPreloadingData] = useState(false);
   const [needsFullAppRefresh, setNeedsFullAppRefresh] = useState(false);
@@ -222,47 +214,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isImpersonating]);
 
-  // Check if the email exists in the system
-  const checkEmail = async (email: string) => {
-    setIsLoading(true);
-    try {
-      const result = await checkEmailExists(email);
-      if (result.success && result.token) {
-        // Store the token if it's returned
-        await SecureStore.setItemAsync("token", result.token);
-
-        // Also store refresh token if provided
-        if (result.refreshToken) {
-          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
-        } else {
-          console.warn(
-            "[AuthContext] NO REFRESH TOKEN in checkEmail response!",
-          );
-        }
-
-        logger.info("User authentication successful", {
-          needsOnboarding: result.needsOnboarding,
-        });
-      }
-      return {
-        success: result.success,
-        user: result.user,
-        needsOnboarding: result.needsOnboarding,
-      };
-    } catch (error) {
-      logger.error("Email check failed", { error: error });
-      return { success: false };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Sign up a new user
   const signup = async (params: { email: string; name: string }) => {
     setIsLoading(true);
     try {
       const result = await apiSignup(params);
       if (result.success) {
+        // Work C: signup authorises on the onboarding token and returns a real
+        // session (access + refresh token + user). Persist it so the new user
+        // is fully authenticated by the waiver screen.
+        if (result.token) {
+          await SecureStore.setItemAsync("token", result.token);
+        }
+        if (result.refreshToken) {
+          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
+        }
+        if (result.user) {
+          await setUserData({
+            ...result.user,
+            needsOnboarding: result.needsOnboarding ?? true,
+          });
+        }
         logger.info("User signup successful", { name: params.name });
       }
       return { success: result.success };
@@ -299,9 +271,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Use userId from userData, or fallback to pending storage or current user ID
-      const userIdToUse =
-        userData.userId || (await getPendingUserId()) || user?.id;
+      // Use userId from userData, or fall back to the current authenticated user
+      const userIdToUse = userData.userId || user?.id;
       if (!userIdToUse) {
         throw new Error("User ID not found");
       }
@@ -319,8 +290,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
           setUser(updatedUser);
           await saveUserToSecureStorage(updatedUser);
-          await SecureStore.deleteItemAsync("pendingEmail");
-          await SecureStore.deleteItemAsync("pendingUserId");
 
           // User profile tracking now handled by backend in completeOnboarding API
           logger.debug(
@@ -545,18 +514,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     isAuthenticated: !!user,
     isLoading,
-    isSigningUp,
     isGeneratingWorkout,
     isPreloadingData,
     needsFullAppRefresh,
     currentRegenerationType,
-    setIsSigningUp,
     setUserData,
     setIsGeneratingWorkout: handleSetIsGeneratingWorkout,
     setIsPreloadingData,
     setNeedsFullAppRefresh,
     triggerWorkoutReady,
-    checkEmail,
     signup,
     login,
     completeOnboarding,

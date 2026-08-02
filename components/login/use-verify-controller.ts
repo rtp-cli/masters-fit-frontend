@@ -9,6 +9,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { generateAuthCode, verify } from "@/lib/auth";
 
+type VerifyResult = {
+  success: boolean;
+  errorCode?: "INVALID_CODE" | "EXPIRED_CODE" | "CODE_EXHAUSTED";
+  attemptsLeft?: number;
+};
+
 export function useVerifyController() {
   const router = useRouter();
   const { setUserData, setIsPreloadingData } = useAuth();
@@ -61,7 +67,7 @@ export function useVerifyController() {
   }, []);
 
   const verifyCode = useCallback(
-    async (email: string, code: string) => {
+    async (email: string, code: string): Promise<VerifyResult> => {
       if (!email) return { success: false };
 
       if (code.length !== 4) {
@@ -80,7 +86,7 @@ export function useVerifyController() {
 
       setIsLoading(true);
       try {
-        const response = await verify({ authCode: code.trim() });
+        const response = await verify({ authCode: code.trim(), email });
         trackEvent(AnalyticsEvent.OTP_SUBMITTED, { success: response.success }); // [AN-09]
 
         if (response.success) {
@@ -101,6 +107,7 @@ export function useVerifyController() {
           await SecureStore.setItemAsync("token", response.token);
 
           if (response.user) {
+            // Existing user — the code was valid and the account exists.
             const userWithOnboardingStatus = {
               ...response.user,
               needsOnboarding: response.needsOnboarding ?? false,
@@ -120,37 +127,29 @@ export function useVerifyController() {
               router.replace("/(auth)/waiver");
               return { success: true };
             } else if (response.needsOnboarding) {
-              await Promise.all([
-                SecureStore.setItemAsync("pendingEmail", email),
-                SecureStore.setItemAsync(
-                  "pendingUserId",
-                  response.user.id.toString(),
-                ),
-                SecureStore.setItemAsync("isVerifyingUser", "true"),
-              ]);
               router.replace("/(auth)/onboarding");
               return { success: true };
             } else {
-              await SecureStore.deleteItemAsync("isVerifyingUser");
               setIsPreloadingData(true);
               router.replace("/");
               return { success: true };
             }
           } else {
-            setDialogConfig({
-              title: "Error",
-              description: "User data not received. Please try again.",
-              primaryButton: {
-                text: "OK",
-                onPress: () => setDialogVisible(false),
-              },
-              icon: "alert-circle",
-            });
-            setDialogVisible(true);
-            return { success: false };
+            // New user — code valid, no account yet. `response.token` is the
+            // onboarding token (now stored above); collect a name next, and
+            // signup authorises on that token (Work C).
+            router.replace(
+              `/(auth)/name?email=${encodeURIComponent(email)}`,
+            );
+            return { success: true };
           }
         } else {
-          return { success: false, invalidCode: true };
+          // Distinct backend error codes (SPEC §4.4) drive per-case UI copy.
+          return {
+            success: false,
+            errorCode: response.errorCode,
+            attemptsLeft: response.attemptsLeft,
+          };
         }
       } catch (error) {
         console.error("Verification error:", error);

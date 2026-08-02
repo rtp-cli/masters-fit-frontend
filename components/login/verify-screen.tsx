@@ -26,13 +26,15 @@ type VerifyStatus = "idle" | "verifying" | "success" | "error";
 export const VerifyScreen = () => {
   const colors = useThemeColors();
   const router = useRouter();
-  const { email, isNewUser } = useLocalSearchParams<{ email: string; isNewUser?: string }>();
+  const { email } = useLocalSearchParams<{ email: string }>();
 
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [resendCooldown, setResendCooldown] = useState(54);
   const [status, setStatus] = useState<VerifyStatus>("idle");
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState("");
+  const [errorText, setErrorText] = useState("");
+  const [errorTone, setErrorTone] = useState<"danger" | "warning">("danger");
 
   const {
     isLoading,
@@ -124,19 +126,33 @@ export const VerifyScreen = () => {
       if (res.success) {
         setStatus("success");
         lastVerifiedCodeRef.current = "";
-      } else if (res.invalidCode) {
+      } else {
+        // Per-case copy from the backend error code (SPEC §4.4 / §7).
+        if (res.errorCode === "EXPIRED_CODE") {
+          setErrorText("That code has expired.");
+          setErrorTone("warning");
+          setResendCooldown(0); // expired forces the resend cooldown to zero
+        } else if (res.errorCode === "CODE_EXHAUSTED") {
+          setErrorText("No tries left on that code. Send a new one.");
+          setErrorTone("danger");
+        } else {
+          const left = res.attemptsLeft;
+          setErrorText(
+            left != null
+              ? `That code didn't match. ${left} ${left === 1 ? "try" : "tries"} left.`
+              : "That code didn't match.",
+          );
+          setErrorTone("danger");
+        }
         setStatus("error");
         triggerShake();
+        // Keep status "error" so the message stays until the next keystroke
+        // (handleOtpChange resets to idle on input).
         setTimeout(() => {
           setOtp(["", "", "", ""]);
-          setStatus("idle");
           lastVerifiedCodeRef.current = "";
           inputs.current[0]?.focus();
         }, 750);
-      } else {
-        setStatus("idle");
-        setOtp(["", "", "", ""]);
-        lastVerifiedCodeRef.current = "";
       }
     } finally {
       setTimeout(() => {
@@ -355,14 +371,14 @@ export const VerifyScreen = () => {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Image
               source={require("../../assets/logo-dark.png")}
-              style={{ width: 24, height: 22 }}
+              style={{ width: 27, height: 25 }}
               resizeMode="contain"
             />
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 19,
                 fontWeight: "600",
-                letterSpacing: -0.17,
+                letterSpacing: -0.19,
                 color: colors.text.primary,
               }}
             >
@@ -372,15 +388,16 @@ export const VerifyScreen = () => {
         </View>
       </View>
 
-      {/* Body — centered vertically and horizontally */}
+      {/* Body — optical centring via 0.45 : 1 spacers (matches the other screens);
+          alignItems:center is kept so the OTP cell row stays horizontally centred */}
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 24,
         }}
       >
+        <View style={{ flex: 0.45 }} />
         <Text
           style={{
             fontSize: 28,
@@ -395,17 +412,15 @@ export const VerifyScreen = () => {
         </Text>
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 24,
-            color: colors.text.muted,
+            color: colors.text.secondary,
             textAlign: "center",
             maxWidth: 280,
             marginTop: 12,
           }}
         >
-          {isNewUser === "true"
-            ? "We sent a confirmation code to verify your email"
-            : "Enter the 4-digit code we sent to"}{"\n"}
+          Enter the 4-digit code we sent to{"\n"}
           <Text style={{ color: colors.text.primary, fontWeight: "600" }}>
             {email}
           </Text>
@@ -452,25 +467,38 @@ export const VerifyScreen = () => {
           ))}
         </Animated.View>
 
-        {/* Error line */}
-        <View style={{ marginTop: 20, height: 20, justifyContent: "center" }}>
+        {/* Error line — per-case copy; amber for expired, red otherwise */}
+        <View
+          style={{
+            marginTop: 20,
+            minHeight: 20,
+            justifyContent: "center",
+            paddingHorizontal: 12,
+          }}
+        >
           {status === "error" && (
             <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 7 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 7,
+              }}
             >
               <Ionicons
                 name="alert-circle-outline"
                 size={15}
-                color={colors.danger}
+                color={errorTone === "warning" ? colors.warning : colors.danger}
               />
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: "500",
-                  color: colors.danger,
+                  color: errorTone === "warning" ? colors.warning : colors.danger,
+                  flexShrink: 1,
                 }}
               >
-                That code didn't match. Check it and try again.
+                {errorText}
               </Text>
             </View>
           )}
@@ -524,6 +552,7 @@ export const VerifyScreen = () => {
             </>
           )}
         </View>
+        <View style={{ flex: 1 }} />
       </View>
 
       {/* Footer */}
@@ -558,7 +587,7 @@ export const VerifyScreen = () => {
         )}
         <TouchableOpacity onPress={handleChangeEmail}>
           <Text style={{ fontSize: 13, color: colors.text.muted }}>
-            Wrong email?{" "}
+            Not your email?{" "}
             <Text style={{ color: colors.text.primary, fontWeight: "600" }}>
               Change it
             </Text>

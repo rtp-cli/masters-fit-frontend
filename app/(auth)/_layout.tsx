@@ -16,6 +16,7 @@ export default function AuthLayout() {
       >
         <Stack.Screen name="login" />
         <Stack.Screen name="verify" />
+        <Stack.Screen name="name" />
         <Stack.Screen name="onboarding" />
       </Stack>
     </View>

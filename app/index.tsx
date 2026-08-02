@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname,useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Image,Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,20 +26,6 @@ export default function GetStarted() {
   } = useAuth();
   const { preloadAllData } = useDataPreload();
   const hasRedirected = useRef(false);
-  const [isVerifyingUser, setIsVerifyingUser] = useState<boolean | null>(null);
-
-  // Check if user is in verification flow
-  useEffect(() => {
-    const checkVerificationFlag = async () => {
-      try {
-        const flag = await SecureStore.getItemAsync("isVerifyingUser");
-        setIsVerifyingUser(!!flag);
-      } catch (error) {
-        setIsVerifyingUser(false);
-      }
-    };
-    checkVerificationFlag();
-  }, []);
 
   // Handle data preloading completion
   useEffect(() => {
@@ -65,17 +50,12 @@ export default function GetStarted() {
 
   // If user is already authenticated, redirect based on onboarding status
   useEffect(() => {
-    // Don't redirect if user is in verification flow
-    if (isVerifyingUser) {
-      return;
-    }
-
     // Don't redirect if we already have
     if (hasRedirected.current) {
       return;
     }
 
-    if (isAuthenticated && !isLoading && user && isVerifyingUser !== null) {
+    if (isAuthenticated && !isLoading && user) {
       // Check if user has accepted the current waiver version
       const hasValidWaiver = hasAcceptedCurrentWaiver(
         user.waiverAcceptedAt || null,
@@ -117,7 +97,6 @@ export default function GetStarted() {
     user?.waiverVersion,
     isGeneratingWorkout,
     isPreloadingData,
-    isVerifyingUser,
     pathname,
     router,
     setIsPreloadingData,
@@ -166,14 +145,14 @@ export default function GetStarted() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Image
               source={require("../assets/logo-dark.png")}
-              style={{ width: 24, height: 22 }}
+              style={{ width: 27, height: 25 }}
               resizeMode="contain"
             />
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 19,
                 fontWeight: "600",
-                letterSpacing: -0.17,
+                letterSpacing: -0.19,
                 color: colors.text.primary,
               }}
             >
@@ -183,20 +162,21 @@ export default function GetStarted() {
         </View>
       </View>
 
-      {/* Body — centered vertically and horizontally */}
+      {/* Body — anchored to the optical center (upper-middle), not dead-center */}
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 24,
         }}
       >
+        {/* Fractional spacers pull the block above true center: 0.7 : 1 → sits at ~41% height */}
+        <View style={{ flex: 0.7 }} />
         <Image
           source={images.welcomeHero}
           style={{
-            width: 240,
-            height: 240,
+            width: 264,
+            height: 264,
             borderRadius: 9999,
             marginBottom: 32,
           }}
@@ -224,9 +204,11 @@ export default function GetStarted() {
             marginTop: 12,
           }}
         >
-          Built around your equipment, your days, and the joints that
-          don&apos;t cooperate.
+          Built around your goals, your schedule, your equipment—and how your
+          body moves today.
         </Text>
+        {/* Larger bottom spacer balances the 0.7 top spacer, anchoring content above center */}
+        <View style={{ flex: 1 }} />
       </View>
 
       {/* Footer */}
@@ -256,7 +238,7 @@ export default function GetStarted() {
               fontWeight: "600",
             }}
           >
-            Continue with email
+            Get started with email
           </Text>
           <Ionicons name="arrow-forward" size={18} color={colors.contentOnPrimary} />
         </TouchableOpacity>
@@ -269,7 +251,7 @@ export default function GetStarted() {
             marginTop: 12,
           }}
         >
-          We&apos;ll email you a code. No password to remember.
+          We’ll email you a secure code. No password needed.
         </Text>
       </View>
     </SafeAreaView>
