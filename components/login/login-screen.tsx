@@ -14,186 +14,54 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
+import { isValidEmail } from "@/utils";
 
-import { CustomDialog, type DialogButton } from "../../components/ui";
 import { useAuth } from "../../contexts/auth-context";
 import { useThemeColors } from "../../lib/theme";
 
 export const LoginScreen = () => {
   const colors = useThemeColors();
   const router = useRouter();
-  const { checkEmail, signup, login, setIsSigningUp } = useAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [showNameField, setShowNameField] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [sendFailed, setSendFailed] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const [isNameFocused, setIsNameFocused] = useState(false);
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState<{
-    title: string;
-    description: string;
-    primaryButton: DialogButton;
-    secondaryButton?: DialogButton;
-    icon?: keyof typeof Ionicons.glyphMap;
-  } | null>(null);
 
+  // Single merged entry point. Account lookup now happens inside `verify`
+  // (backend), so the client no longer calls checkEmail or branches on
+  // new-vs-returning here — everyone submits an email and gets a code.
   const handleContinue = async () => {
-    if (!email.trim()) {
-      setDialogConfig({
-        title: "Error",
-        description: "Please enter your email address",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return; // button is disabled while empty; guard anyway
+
+    if (!isValidEmail(trimmed)) {
+      setEmailError("That doesn’t look like an email address.");
       return;
     }
+
+    setEmailError("");
+    setSendFailed(false);
     setIsLoading(true);
     try {
-      const response = await checkEmail(email.trim().toLowerCase());
-      if (response.success) {
-        if (response.needsOnboarding) {
-          // Show name field for signup
-          if (!response.user) {
-            setShowNameField(true);
-            return;
-          }
-          setIsLoading(false);
-        }
-        // Existing user, proceed with login
-        setIsSigningUp(false);
-        const loginResponse = await login({
-          email: email.trim().toLowerCase(),
-        });
-        if (loginResponse.success) {
-          router.push(
-            `/(auth)/verify?email=${encodeURIComponent(
-              email.trim().toLowerCase(),
-            )}`,
-          );
-        } else {
-          setDialogConfig({
-            title: "Error",
-            description: "Failed to login. Please try again.",
-            primaryButton: {
-              text: "OK",
-              onPress: () => setDialogVisible(false),
-            },
-            icon: "alert-circle",
-          });
-          setDialogVisible(true);
-        }
+      const res = await login({ email: trimmed });
+      if (res.success) {
+        router.push(`/(auth)/verify?email=${encodeURIComponent(trimmed)}`);
       } else {
-        setDialogConfig({
-          title: "Error",
-          description: "Something went wrong. Please try again.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "alert-circle",
-        });
-        setDialogVisible(true);
+        setSendFailed(true);
       }
-    } catch (error) {
-      setDialogConfig({
-        title: "Error",
-        description: "Failed to process your request. Please try again.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
+    } catch {
+      setSendFailed(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignup = async () => {
-    if (!name.trim()) {
-      setDialogConfig({
-        title: "Error",
-        description: "Please enter your name",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
-      return;
-    }
+  const emailFilled = email.trim().length > 0;
 
-    setIsLoading(true);
-    try {
-      setIsSigningUp(true);
-      trackEvent(AnalyticsEvent.SIGNUP_STARTED, { is_new_user: true }); // [AN-09]
-      const signupResponse = await signup({
-        email: email.trim().toLowerCase(),
-        name: name.trim(),
-      });
-
-      if (signupResponse.success) {
-        router.push(
-          `/(auth)/verify?email=${encodeURIComponent(
-            email.trim().toLowerCase(),
-          )}&isNewUser=true`,
-        );
-      } else {
-        setDialogConfig({
-          title: "Error",
-          description: "Failed to sign up. Please try again.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "alert-circle",
-        });
-        setDialogVisible(true);
-      }
-    } catch (error) {
-      setDialogConfig({
-        title: "Error",
-        description: "Failed to sign up. Please try again.",
-        primaryButton: {
-          text: "OK",
-          onPress: () => setDialogVisible(false),
-        },
-        icon: "alert-circle",
-      });
-      setDialogVisible(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoBack = () => {
-    if (showNameField) {
-      setShowNameField(false);
-      setName("");
-      setIsSigningUp(false);
-    } else {
-      router.back();
-    }
-  };
-
-  const emailFilled = email.length > 0;
-  const nameFilled = name.length > 0;
-
-  const getInputStyle = (
-    filled: boolean,
-    focused: boolean,
-    hasError = false,
-  ) => ({
+  const getInputStyle = (filled: boolean, focused: boolean, hasError = false) => ({
     height: 54,
     paddingHorizontal: 18,
     fontSize: 17,
@@ -220,202 +88,221 @@ export const LoginScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style="dark" />
 
-      {/* Android needs an explicit behavior too: with SDK 54 edge-to-edge the
-          window no longer resizes for the keyboard, so `undefined` left the
-          centered name field hidden under it. Same pattern as the Adjust modal. */}
+      {/* Android needs an explicit behavior: with SDK 54 edge-to-edge the window
+          no longer resizes for the keyboard. Same pattern as the Adjust modal. */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-      {/* Header — back chevron + centered brand lockup */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingTop: 14,
-          paddingHorizontal: 20,
-        }}
-      >
-        <TouchableOpacity
-          onPress={handleGoBack}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 9999,
-            alignItems: "center",
-            justifyContent: "center",
-            marginLeft: -8,
-          }}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
+        {/* Header — back chevron + centered brand lockup */}
         <View
           style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 14,
+            flexDirection: "row",
             alignItems: "center",
-            pointerEvents: "none",
+            paddingTop: 14,
+            paddingHorizontal: 20,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Image
-              source={require("../../assets/logo-dark.png")}
-              style={{ width: 27, height: 25 }}
-              resizeMode="contain"
-            />
-            <Text
-              style={{
-                fontSize: 19,
-                fontWeight: "600",
-                letterSpacing: -0.19,
-                color: colors.text.primary,
-              }}
-            >
-              MastersFit
-            </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 9999,
+              alignItems: "center",
+              justifyContent: "center",
+              marginLeft: -8,
+            }}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+          <View
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 14,
+              alignItems: "center",
+              pointerEvents: "none",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Image
+                source={require("../../assets/logo-dark.png")}
+                style={{ width: 27, height: 25 }}
+                resizeMode="contain"
+              />
+              <Text
+                style={{
+                  fontSize: 19,
+                  fontWeight: "600",
+                  letterSpacing: -0.19,
+                  color: colors.text.primary,
+                }}
+              >
+                MastersFit
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Body — form group biased above center (0.45 : 1 spacers), so the
-          heading sits in the upper third instead of dead-center */}
-      <View
-        style={{
-          flex: 1,
-          paddingHorizontal: 24,
-        }}
-      >
-        <View style={{ flex: 0.45 }} />
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "700",
-            letterSpacing: -0.56,
-            lineHeight: 32.5,
-            color: colors.text.primary,
-            textAlign: "center",
-          }}
-        >
-          {showNameField ? "Create Account" : "Enter your email"}
-        </Text>
-        <Text
-          style={{
-            fontSize: 16,
-            lineHeight: 24,
-            color: colors.text.secondary,
-            textAlign: "center",
-            maxWidth: 280,
-            alignSelf: "center",
-            marginTop: 12,
-          }}
-        >
-          {showNameField
-            ? "Please enter your name to continue"
-            : "We’ll send you a secure code to sign in or get started."}
-        </Text>
+        {/* Body — form group biased above center (0.45 : 1 spacers) */}
+        <View style={{ flex: 1, paddingHorizontal: 24 }}>
+          <View style={{ flex: 0.45 }} />
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "700",
+              letterSpacing: -0.56,
+              lineHeight: 32.5,
+              color: colors.text.primary,
+              textAlign: "center",
+            }}
+          >
+            Enter your email
+          </Text>
+          <Text
+            style={{
+              fontSize: 16,
+              lineHeight: 24,
+              color: colors.text.secondary,
+              textAlign: "center",
+              maxWidth: 290,
+              alignSelf: "center",
+              marginTop: 12,
+            }}
+          >
+            We’ll send you a secure code to sign in or get started.
+          </Text>
 
-        {/* Email input */}
-        <TextInput
-          style={[
-            { marginTop: 30 },
-            getInputStyle(emailFilled, isEmailFocused, !!emailError),
-          ]}
-          placeholder="Email address"
-          value={email}
-          onChangeText={(t) => {
-            setEmail(t);
-            if (emailError) setEmailError("");
-          }}
-          onFocus={() => setIsEmailFocused(true)}
-          onBlur={() => setIsEmailFocused(false)}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          inputMode="email"
-          editable={!showNameField && !isLoading}
-          placeholderTextColor={colors.text.muted}
-          selectionColor={colors.brand.primary}
-          autoFocus={!showNameField}
-          returnKeyType="next"
-          onSubmitEditing={handleContinue}
-        />
-
-        {/* Name input (signup flow) */}
-        {showNameField && (
+          {/* Email input */}
           <TextInput
             style={[
-              { marginTop: 12 },
-              getInputStyle(nameFilled, isNameFocused),
+              { marginTop: 30 },
+              getInputStyle(emailFilled, isEmailFocused, !!emailError),
             ]}
-            placeholder="Full name"
-            value={name}
-            onChangeText={setName}
-            onFocus={() => setIsNameFocused(true)}
-            onBlur={() => setIsNameFocused(false)}
-            autoCapitalize="words"
+            placeholder="Email address"
+            value={email}
+            onChangeText={(t) => {
+              setEmail(t);
+              if (emailError) setEmailError("");
+              if (sendFailed) setSendFailed(false);
+            }}
+            onFocus={() => setIsEmailFocused(true)}
+            onBlur={() => setIsEmailFocused(false)}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            inputMode="email"
             editable={!isLoading}
             placeholderTextColor={colors.text.muted}
             selectionColor={colors.brand.primary}
             autoFocus
-            returnKeyType="done"
-            onSubmitEditing={handleSignup}
+            returnKeyType="go"
+            onSubmitEditing={handleContinue}
           />
-        )}
-        <View style={{ flex: 1 }} />
-      </View>
 
-      {/* Footer */}
-      <View
-        style={{
-          paddingHorizontal: 24,
-          paddingBottom: 24,
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            width: "100%",
-            height: 56,
-            backgroundColor: colors.brand.primary,
-            borderRadius: 9999,
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: isLoading ? 0.7 : 1,
-          }}
-          onPress={showNameField ? handleSignup : handleContinue}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={colors.contentOnPrimary} />
-          ) : (
-            <Text
+          {/* Inline validation — replaces the old "Error" dialog */}
+          {emailError ? (
+            <View
               style={{
-                color: colors.contentOnPrimary,
-                fontSize: 17,
-                fontWeight: "600",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 7,
+                marginTop: 10,
               }}
             >
-              {showNameField ? "Sign Up" : "Send code"}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-      </KeyboardAvoidingView>
+              <Ionicons
+                name="alert-circle-outline"
+                size={15}
+                color={colors.danger}
+              />
+              <Text style={{ fontSize: 14, fontWeight: "500", color: colors.danger }}>
+                {emailError}
+              </Text>
+            </View>
+          ) : null}
 
-      {/* Custom Dialog */}
-      {dialogConfig && (
-        <CustomDialog
-          visible={dialogVisible}
-          onClose={() => setDialogVisible(false)}
-          title={dialogConfig.title}
-          description={dialogConfig.description}
-          primaryButton={dialogConfig.primaryButton}
-          secondaryButton={dialogConfig.secondaryButton}
-          icon={dialogConfig.icon}
-        />
-      )}
+          {/* Send-failure card (frame 1h) — surfaces once the backend stops
+              swallowing send failures (SPEC §4.6) */}
+          {sendFailed && (
+            <View
+              style={{
+                marginTop: 16,
+                padding: 16,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.neutral.medium[1],
+                backgroundColor: colors.surface,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 7,
+                  marginBottom: 4,
+                }}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={15}
+                  color={colors.danger}
+                />
+                <Text
+                  style={{ fontSize: 14, fontWeight: "600", color: colors.text.primary }}
+                >
+                  We couldn’t send your code
+                </Text>
+              </View>
+              <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text.secondary }}>
+                Check your connection and try again.
+              </Text>
+              <TouchableOpacity onPress={handleContinue} style={{ marginTop: 10 }}>
+                <Text
+                  style={{ fontSize: 14, fontWeight: "600", color: colors.brand.primary }}
+                >
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={{ flex: 1 }} />
+        </View>
+
+        {/* Footer */}
+        <View
+          style={{
+            paddingHorizontal: 24,
+            paddingBottom: 24,
+            alignItems: "center",
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              width: "100%",
+              height: 56,
+              backgroundColor: colors.brand.primary,
+              borderRadius: 9999,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: !emailFilled || isLoading ? 0.5 : 1,
+            }}
+            onPress={handleContinue}
+            disabled={!emailFilled || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={colors.contentOnPrimary} />
+            ) : (
+              <Text
+                style={{ color: colors.contentOnPrimary, fontSize: 17, fontWeight: "600" }}
+              >
+                Send code
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
