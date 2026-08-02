@@ -184,6 +184,9 @@ export default function OnboardingForm({
       setErrors({});
     } else {
       setErrors(validation.errors);
+      // Bring the error into view — inline messages can otherwise sit below the
+      // fold on long list steps or under the fixed Continue button.
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
     }
   };
 
@@ -198,6 +201,9 @@ export default function OnboardingForm({
       onSubmit(formData);
     } else {
       setErrors(validation.errors);
+      // Bring the error into view — inline messages can otherwise sit below the
+      // fold on long list steps or under the fixed Continue button.
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
     }
   };
 
@@ -373,6 +379,21 @@ export default function OnboardingForm({
           currentStep={currentStep}
           name={mode === "onboarding" ? userName : undefined}
         />
+
+        {/* Top-of-step error banner: a blocked Continue is otherwise invisible —
+            inline field errors can sit below the fold or under the fixed button.
+            handleNext/handleSubmit scroll to top on failure, revealing this. */}
+        {Object.values(errors).some(Boolean) && (
+          <View className="mx-6 mb-4 flex-row items-center rounded-xl border border-danger/30 bg-surface px-4 py-3">
+            <Ionicons name="alert-circle" size={18} color={colors.danger} />
+            <Text
+              className="ml-2 flex-1 text-sm font-medium"
+              style={{ color: colors.danger }}
+            >
+              {Object.values(errors).find(Boolean)}
+            </Text>
+          </View>
+        )}
 
         {/* Step Content */}
         {renderStepContent()}
