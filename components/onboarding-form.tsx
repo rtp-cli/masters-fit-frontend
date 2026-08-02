@@ -44,6 +44,15 @@ export type {
   OnboardingFormProps,
 } from "@/types/components";
 
+// §9.3: one shared source for the slider fallbacks, so onboarding init and
+// convertProfileToFormData (edit) agree — a slider always sits somewhere.
+export const ONBOARDING_SLIDER_DEFAULTS = {
+  age: 40,
+  height: 170,
+  weight: 150,
+  workoutDuration: 30,
+} as const;
+
 // §5/§10: the canonical ordered step list. Callers render a subset via `steps`
 // (regeneration = ONBOARDING_STEPS_ALL.slice(1); a Settings editor = one step).
 export const ONBOARDING_STEPS_ALL: ONBOARDING_STEP[] = [
@@ -93,9 +102,9 @@ export default function OnboardingForm({
   // Initialize form data with default values
   const [formData, setFormData] = useState<FormData>({
     email: "",
-    age: 40,
-    height: 170,
-    weight: 150,
+    age: ONBOARDING_SLIDER_DEFAULTS.age,
+    height: ONBOARDING_SLIDER_DEFAULTS.height,
+    weight: ONBOARDING_SLIDER_DEFAULTS.weight,
     // §4: nothing pre-answered. Onboarding starts with no gender/fitness level
     // selected; edit mode fills them from initialData below. Sliders keep their
     // defaults (age/height/weight) — a slider position is a value, not a claim.
@@ -107,7 +116,7 @@ export default function OnboardingForm({
     otherEquipment: "",
     preferredStyles: [],
     availableDays: [],
-    workoutDuration: 30,
+    workoutDuration: ONBOARDING_SLIDER_DEFAULTS.workoutDuration,
     intensityLevel: INTENSITY_LEVELS.MODERATE,
     medicalNotes: "",
     includeWarmup: true,
