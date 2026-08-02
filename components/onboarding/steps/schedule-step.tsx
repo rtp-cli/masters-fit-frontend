@@ -12,7 +12,6 @@ import { formatEnumValue } from "../utils/formatters";
 
 interface ScheduleStepProps {
   formData: FormData;
-  errors: Record<string, string>;
   onFieldChange: (
     field: keyof FormData,
     value: FormData[keyof FormData]
@@ -24,7 +23,6 @@ interface ScheduleStepProps {
 // card, and session length.
 export default function ScheduleStep({
   formData,
-  errors,
   onFieldChange,
   onToggle,
 }: ScheduleStepProps) {
@@ -73,11 +71,6 @@ export default function ScheduleStep({
             </TouchableOpacity>
           ))}
         </View>
-        {errors.availableDays && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.availableDays}
-          </Text>
-        )}
       </View>
 
       {/* How long per session */}
@@ -93,11 +86,6 @@ export default function ScheduleStep({
           onValueChange={(value) => onFieldChange("workoutDuration", value)}
           unit=" min"
         />
-        {errors.workoutDuration && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.workoutDuration}
-          </Text>
-        )}
       </View>
     </View>
   );

@@ -9,7 +9,6 @@ import { formatEnumValue } from "../utils/formatters";
 
 interface WorkoutEnvironmentStepProps {
   formData: FormData;
-  errors: Record<string, string>;
   onFieldChange: (
     field: keyof FormData,
     value: FormData[keyof FormData]
@@ -19,7 +18,6 @@ interface WorkoutEnvironmentStepProps {
 
 export default function WorkoutEnvironmentStep({
   formData,
-  errors,
   onFieldChange,
   onToggle,
 }: WorkoutEnvironmentStepProps) {
@@ -232,11 +230,6 @@ export default function WorkoutEnvironmentStep({
             );
           })}
         </View>
-        {errors.environment && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.environment}
-          </Text>
-        )}
       </View>
 
       {/* Equipment Selection - Only show for HOME_GYM */}
@@ -325,11 +318,6 @@ export default function WorkoutEnvironmentStep({
                 );
               })}
           </View>
-          {errors.equipment && (
-            <Text className="text-red-500 text-xs mt-2">
-              {errors.equipment}
-            </Text>
-          )}
 
           {/* Other Equipment Input */}
           <View className="mt-6">

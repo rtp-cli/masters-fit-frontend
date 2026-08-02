@@ -232,7 +232,6 @@ export default function OnboardingForm({
         return (
           <PersonalInfoStep
             formData={formData}
-            errors={errors}
             onFieldChange={handleChange}
           />
         );
@@ -240,7 +239,6 @@ export default function OnboardingForm({
         return (
           <FitnessGoalsStep
             formData={formData}
-            errors={errors}
             onToggle={handleMultiSelectToggle}
           />
         );
@@ -257,7 +255,6 @@ export default function OnboardingForm({
         return (
           <FitnessLevelStep
             formData={formData}
-            errors={errors}
             onFieldChange={handleChange}
           />
         );
@@ -265,7 +262,6 @@ export default function OnboardingForm({
         return (
           <ScheduleStep
             formData={formData}
-            errors={errors}
             onFieldChange={handleChange}
             onToggle={handleMultiSelectToggle}
           />
@@ -274,7 +270,6 @@ export default function OnboardingForm({
         return (
           <WorkoutEnvironmentStep
             formData={formData}
-            errors={errors}
             onFieldChange={handleChange}
             onToggle={handleMultiSelectToggle}
           />
@@ -283,7 +278,6 @@ export default function OnboardingForm({
         return (
           <WorkoutStyleStep
             formData={formData}
-            errors={errors}
             onToggle={handleMultiSelectToggle}
             onFieldChange={handleChange}
           />

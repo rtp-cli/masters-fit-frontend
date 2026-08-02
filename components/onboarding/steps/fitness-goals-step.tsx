@@ -8,13 +8,11 @@ import { formatEnumValue } from "../utils/formatters";
 
 interface FitnessGoalsStepProps {
   formData: FormData;
-  errors: Record<string, string>;
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
 }
 
 export default function FitnessGoalsStep({
   formData,
-  errors,
   onToggle,
 }: FitnessGoalsStepProps) {
   // Goal configuration helper
@@ -126,9 +124,6 @@ export default function FitnessGoalsStep({
           </TouchableOpacity>
         );
       })}
-      {errors.goals && (
-        <Text className="text-red-500 text-xs mt-2">{errors.goals}</Text>
-      )}
     </View>
   );
 }

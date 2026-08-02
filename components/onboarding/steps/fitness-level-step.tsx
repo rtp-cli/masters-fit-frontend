@@ -8,7 +8,6 @@ import { formatEnumValue } from "../utils/formatters";
 
 interface FitnessLevelStepProps {
   formData: FormData;
-  errors: Record<string, string>;
   onFieldChange: (
     field: keyof FormData,
     value: FormData[keyof FormData]
@@ -19,7 +18,6 @@ interface FitnessLevelStepProps {
 // the plan card, and workout duration moved to schedule-step.tsx.
 export default function FitnessLevelStep({
   formData,
-  errors,
   onFieldChange,
 }: FitnessLevelStepProps) {
   // Fitness level configuration helper
@@ -137,11 +135,6 @@ export default function FitnessLevelStep({
             </TouchableOpacity>
           );
         })}
-        {errors.fitnessLevel && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.fitnessLevel}
-          </Text>
-        )}
       </View>
 
       {/* Preferred intensity */}
@@ -189,11 +182,6 @@ export default function FitnessLevelStep({
             </TouchableOpacity>
           );
         })}
-        {errors.intensityLevel && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.intensityLevel}
-          </Text>
-        )}
       </View>
     </View>
   );
