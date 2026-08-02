@@ -4,6 +4,7 @@ import {
   type FITNESS_LEVELS,
   type GENDER,
   type INTENSITY_LEVELS,
+  type ONBOARDING_STEP,
   type PHYSICAL_LIMITATIONS,
   type PREFERRED_DAYS,
   type PREFERRED_STYLES,
@@ -37,18 +38,22 @@ export interface FormData {
 export interface OnboardingFormProps {
   initialData?: Partial<FormData>;
   onSubmit: (data: FormData) => void;
-  onCancel?: () => void;
   isLoading?: boolean;
-  showNavigation?: boolean;
-  title?: string;
   submitButtonText?: string;
-  excludePersonalInfo?: boolean;
   /**
-   * Emit `onboarding_step_viewed` analytics on each step change. Only the real
-   * onboarding flow sets this — profile-edit and regeneration reuse this form but
-   * are NOT part of the signup funnel, so they leave it off.
+   * §10: chrome + behaviour only — greeting, skip control, `onboarding_step_viewed`
+   * analytics, and the default primary-button label ("Save" in edit). Defaults to
+   * "edit" so a mount that forgets to declare itself can't pollute the funnel.
    */
-  trackStepViews?: boolean;
+  mode?: "onboarding" | "edit";
+  /**
+   * §10: which steps render, in order. Defaults to all seven. Onboarding omits it;
+   * a Settings-card editor passes one step; regeneration passes the six (all but
+   * PERSONAL_INFO). The progress bar shows when this has length > 1.
+   */
+  steps?: ONBOARDING_STEP[];
+  /** §10: passed in, not read from useAuth — the form is presentational. */
+  userName?: string;
 }
 
 export type ArrayFields = Extract<

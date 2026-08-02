@@ -344,13 +344,11 @@ export default function ProfileEditScreen() {
 
       {/* Onboarding Form */}
       <OnboardingForm
-        title="Update Your Profile"
+        mode="edit"
         initialData={convertProfileToFormData(profile)}
         onSubmit={handleUpdateProfile}
-        onCancel={handleCancel}
         isLoading={saving}
         submitButtonText="Save Changes"
-        showNavigation={true}
       />
 
       {/* Custom Dialog */}

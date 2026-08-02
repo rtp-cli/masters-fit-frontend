@@ -6,12 +6,14 @@ import { getStepConfig } from "../utils/step-config";
 
 interface OnboardingHeaderProps {
   currentStep: ONBOARDING_STEP;
+  name?: string;
 }
 
 export default function OnboardingHeader({
   currentStep,
+  name,
 }: OnboardingHeaderProps) {
-  const stepConfig = getStepConfig(currentStep);
+  const stepConfig = getStepConfig(currentStep, { name });
 
   // The progress bar moved out to the fixed header row (§3); this component now
   // owns only the step title + description + disclaimer.

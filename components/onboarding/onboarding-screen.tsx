@@ -22,10 +22,11 @@ export const OnboardingScreen = () => {
       <StatusBar style="dark" />
 
       <OnboardingForm
+        mode="onboarding"
+        userName={user?.name ?? undefined}
         initialData={{ email: user?.email || pendingEmail || "" }}
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        trackStepViews
         submitButtonText={
           isLoading ? "Creating Profile..." : "Generate Weekly Plan"
         }

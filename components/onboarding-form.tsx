@@ -44,44 +44,43 @@ export type {
   OnboardingFormProps,
 } from "@/types/components";
 
+// §5/§10: the canonical ordered step list. Callers render a subset via `steps`
+// (regeneration = ONBOARDING_STEPS_ALL.slice(1); a Settings editor = one step).
+export const ONBOARDING_STEPS_ALL: ONBOARDING_STEP[] = [
+  ONBOARDING_STEP.PERSONAL_INFO,
+  ONBOARDING_STEP.FITNESS_GOALS,
+  ONBOARDING_STEP.FITNESS_LEVEL,
+  ONBOARDING_STEP.SCHEDULE,
+  ONBOARDING_STEP.PHYSICAL_LIMITATIONS,
+  ONBOARDING_STEP.WORKOUT_ENVIRONMENT,
+  ONBOARDING_STEP.WORKOUT_STYLE,
+];
+
 export default function OnboardingForm({
   initialData,
   onSubmit,
   isLoading = false,
-  submitButtonText = "Generate Weekly Plan",
-  excludePersonalInfo = false,
-  trackStepViews = false,
+  submitButtonText,
+  mode = "edit",
+  steps,
+  userName,
 }: OnboardingFormProps) {
   const colors = useThemeColors();
   const scrollRef = useRef<ScrollView | null>(null);
 
-  // Create dynamic step flow based on excludePersonalInfo
-  const getAvailableSteps = (): ONBOARDING_STEP[] => {
-    const allSteps = [
-      ONBOARDING_STEP.PERSONAL_INFO,
-      ONBOARDING_STEP.FITNESS_GOALS,
-      ONBOARDING_STEP.FITNESS_LEVEL,
-      ONBOARDING_STEP.SCHEDULE,
-      ONBOARDING_STEP.PHYSICAL_LIMITATIONS,
-      ONBOARDING_STEP.WORKOUT_ENVIRONMENT,
-      ONBOARDING_STEP.WORKOUT_STYLE,
-    ];
-
-    return excludePersonalInfo
-      ? allSteps.slice(1) // Remove PERSONAL_INFO step
-      : allSteps;
-  };
-
-  const availableSteps = getAvailableSteps();
+  // §10: render the requested steps, or all seven by default.
+  const availableSteps = steps ?? ONBOARDING_STEPS_ALL;
+  const submitLabel =
+    submitButtonText ?? (mode === "edit" ? "Save" : "Generate Weekly Plan");
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const currentStep = availableSteps[currentStepIndex];
 
-  // [AN-04] Onboarding funnel step views. Gated on trackStepViews so the reused
-  // profile-edit / regeneration mounts of this form don't pollute the signup
+  // [AN-04] Onboarding funnel step views. Gated on mode==="onboarding" so the
+  // reused profile-edit / regeneration mounts of this form don't pollute the
   // funnel. Fires on mount (step 0) and on each forward/back navigation.
   // step_name is the reverse-mapped enum name (numeric enum → readable label).
   useEffect(() => {
-    if (!trackStepViews) return;
+    if (mode !== "onboarding") return;
     trackEvent(AnalyticsEvent.ONBOARDING_STEP_VIEWED, {
       step_index: currentStepIndex,
       step_name: ONBOARDING_STEP[currentStep],
@@ -89,7 +88,7 @@ export default function OnboardingForm({
     });
     // availableSteps.length is stable for a given mount; key the effect on the index.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStepIndex, trackStepViews]);
+  }, [currentStepIndex, mode]);
 
   // Initialize form data with default values
   const [formData, setFormData] = useState<FormData>({
@@ -266,8 +265,8 @@ export default function OnboardingForm({
     >
       {/* Header — back chevron (steps > 0), then the fixed progress bar + step
           counter (§3). The brand lockup was deleted; the row it vacated is where
-          the progress chrome now lives. Progress + counter are onboarding-only
-          (gated on trackStepViews, which becomes mode==="onboarding" in §10). */}
+          the progress chrome now lives. Bar shows for multi-step; counter is
+          onboarding-only (§10). */}
       <View
         style={{
           flexDirection: "row",
@@ -299,35 +298,37 @@ export default function OnboardingForm({
           <View style={{ width: 40, height: 40 }} />
         )}
 
-        {trackStepViews && (
-          <>
-            <View
-              style={{ flex: 1 }}
-              accessibilityRole="progressbar"
-              accessibilityValue={{
-                min: 1,
-                max: availableSteps.length,
-                now: currentStepIndex + 1,
-              }}
-            >
-              <ProgressIndicator
-                currentStep={currentStepIndex}
-                totalSteps={availableSteps.length}
-              />
-            </View>
-            <Text
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: colors.text.muted,
-                flexShrink: 0,
-              }}
-            >
-              Step {currentStepIndex + 1} of {availableSteps.length}
-            </Text>
-          </>
+        {/* §10: bar follows steps.length > 1 (so regeneration keeps its bar);
+            counter is onboarding-only (so regeneration stays bar-no-counter). */}
+        {availableSteps.length > 1 && (
+          <View
+            style={{ flex: 1 }}
+            accessibilityRole="progressbar"
+            accessibilityValue={{
+              min: 1,
+              max: availableSteps.length,
+              now: currentStepIndex + 1,
+            }}
+          >
+            <ProgressIndicator
+              currentStep={currentStepIndex}
+              totalSteps={availableSteps.length}
+            />
+          </View>
+        )}
+        {mode === "onboarding" && (
+          <Text
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            style={{
+              fontSize: 14,
+              fontWeight: "600",
+              color: colors.text.muted,
+              flexShrink: 0,
+            }}
+          >
+            Step {currentStepIndex + 1} of {availableSteps.length}
+          </Text>
         )}
       </View>
 
@@ -339,7 +340,10 @@ export default function OnboardingForm({
         keyboardShouldPersistTaps="handled"
       >
         {/* Step title + description (progress bar moved to the fixed row) */}
-        <OnboardingHeader currentStep={currentStep} />
+        <OnboardingHeader
+          currentStep={currentStep}
+          name={mode === "onboarding" ? userName : undefined}
+        />
 
         {/* Step Content */}
         {renderStepContent()}
@@ -349,16 +353,15 @@ export default function OnboardingForm({
       <NavigationButtons
         currentStep={currentStep}
         isLoading={isLoading}
-        submitButtonText={submitButtonText}
+        submitButtonText={submitLabel}
         onNext={handleNext}
         onSubmit={handleSubmit}
         currentStepIndex={currentStepIndex}
         totalSteps={availableSteps.length}
         // §7: one skip, on WORKOUT_ENVIRONMENT, onboarding mode only. Uses the
         // submit path (validates this step, then generates — skipping step 7).
-        // Gated on trackStepViews for now; becomes mode==="onboarding" in §10.
         onSkip={
-          trackStepViews &&
+          mode === "onboarding" &&
           currentStep === ONBOARDING_STEP.WORKOUT_ENVIRONMENT
             ? handleSubmit
             : undefined

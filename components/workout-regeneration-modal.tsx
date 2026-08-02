@@ -51,7 +51,10 @@ import { resolveDefaultRegenerationTab } from "@/utils/regeneration-tab";
 
 import { useThemeColors } from "../lib/theme";
 import { useTheme } from "../lib/theme-context";
-import OnboardingForm, { type FormData } from "./onboarding-form";
+import OnboardingForm, {
+  type FormData,
+  ONBOARDING_STEPS_ALL,
+} from "./onboarding-form";
 import ProfileOverrideForm, {
   type TemporaryOverrides,
 } from "./profile-override-form";
@@ -733,14 +736,12 @@ export default function WorkoutRegenerationModal({
           {/* OnboardingForm */}
           <View className="flex-1">
             <OnboardingForm
-              title="Update Your Preferences"
+              mode="edit"
+              steps={ONBOARDING_STEPS_ALL.slice(1)}
               initialData={convertProfileToFormData(currentProfile)}
               onSubmit={handleUpdateProfile}
-              onCancel={() => setShowOnboardingForm(false)}
               isLoading={updatingProfile}
               submitButtonText="Save"
-              showNavigation={false}
-              excludePersonalInfo={true}
             />
           </View>
         </SafeAreaView>
