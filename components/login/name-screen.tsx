@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { usePreventRemove } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -23,7 +23,6 @@ import { useThemeColors } from "@/lib/theme";
 export const NameScreen = () => {
   const colors = useThemeColors();
   const router = useRouter();
-  const navigation = useNavigation();
   const { email } = useLocalSearchParams<{ email: string }>();
   const { signup } = useAuth();
 
@@ -32,32 +31,35 @@ export const NameScreen = () => {
   const [nameError, setNameError] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [exitVisible, setExitVisible] = useState(false);
-  const leavingRef = useRef(false);
+  // `leaving` gates every navigation AWAY from this screen. While it is false,
+  // usePreventRemove blocks user-initiated back (gesture + hardware) and shows
+  // the leave-setup dialog (§6.5); programmatic navigations flip it true first
+  // so they pass through. usePreventRemove — not a raw beforeRemove listener —
+  // is required because it disables the native iOS swipe gesture while active.
+  const [leaving, setLeaving] = useState(false);
+  const [nextRoute, setNextRoute] = useState<
+    "/(auth)/waiver" | "/(auth)/login" | "/" | null
+  >(null);
 
-  // No back chevron — the email is already verified, so a plain back is a dead
-  // end. Intercept every back vector (gesture, hardware, header) and confirm
-  // via the leave-setup dialog (§6.5). `leavingRef` lets the confirmed leave
-  // through without re-triggering the guard.
-  useEffect(() => {
-    const sub = navigation.addListener("beforeRemove", (e) => {
-      if (leavingRef.current) return;
-      e.preventDefault();
-      setExitVisible(true);
-    });
-    return sub;
-  }, [navigation]);
+  usePreventRemove(!leaving, () => setExitVisible(true));
 
   useEffect(() => {
-    if (!email) {
-      leavingRef.current = true; // programmatic redirect, not a user back
-      router.replace("/(auth)/login");
-    }
+    if (leaving && nextRoute) router.replace(nextRoute);
+  }, [leaving, nextRoute, router]);
+
+  const navigateAway = (route: "/(auth)/waiver" | "/(auth)/login" | "/") => {
+    setNextRoute(route);
+    setLeaving(true);
+  };
+
+  useEffect(() => {
+    if (!email) navigateAway("/(auth)/login");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
 
   const confirmLeave = () => {
-    leavingRef.current = true;
     setExitVisible(false);
-    router.replace("/");
+    navigateAway("/");
   };
 
   const handleContinue = async () => {
@@ -70,8 +72,7 @@ export const NameScreen = () => {
     try {
       const res = await signup({ email: email as string, name: trimmed });
       if (res.success) {
-        leavingRef.current = true; // advancing forward, not a user back
-        router.replace("/(auth)/waiver");
+        navigateAway("/(auth)/waiver");
       } else {
         setNameError("Something went wrong. Please try again.");
       }
