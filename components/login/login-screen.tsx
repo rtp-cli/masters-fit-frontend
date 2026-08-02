@@ -302,9 +302,9 @@ export const LoginScreen = () => {
         </Text>
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 24,
-            color: colors.text.muted,
+            color: colors.text.secondary,
             textAlign: "center",
             maxWidth: 280,
             alignSelf: "center",

@@ -35,14 +35,14 @@ export default function WarmingUpScreen({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Image
             source={images.logoDark}
-            style={{ width: 24, height: 22 }}
+            style={{ width: 27, height: 25 }}
             resizeMode="contain"
           />
           <Text
             style={{
-              fontSize: 17,
+              fontSize: 19,
               fontWeight: "600",
-              letterSpacing: -0.17,
+              letterSpacing: -0.19,
               color: colors.text.primary,
             }}
           >
@@ -73,7 +73,7 @@ export default function WarmingUpScreen({
         </Text>
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 22.5,
             color: colors.text.muted,
             marginTop: 7,

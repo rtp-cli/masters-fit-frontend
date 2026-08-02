@@ -372,15 +372,16 @@ export const VerifyScreen = () => {
         </View>
       </View>
 
-      {/* Body — centered vertically and horizontally */}
+      {/* Body — optical centring via 0.45 : 1 spacers (matches the other screens);
+          alignItems:center is kept so the OTP cell row stays horizontally centred */}
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 24,
         }}
       >
+        <View style={{ flex: 0.45 }} />
         <Text
           style={{
             fontSize: 28,
@@ -395,9 +396,9 @@ export const VerifyScreen = () => {
         </Text>
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 24,
-            color: colors.text.muted,
+            color: colors.text.secondary,
             textAlign: "center",
             maxWidth: 280,
             marginTop: 12,
@@ -524,6 +525,7 @@ export const VerifyScreen = () => {
             </>
           )}
         </View>
+        <View style={{ flex: 1 }} />
       </View>
 
       {/* Footer */}
