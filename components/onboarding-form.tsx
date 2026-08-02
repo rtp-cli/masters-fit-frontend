@@ -234,6 +234,7 @@ export default function OnboardingForm({
         return (
           <FitnessGoalsStep
             formData={formData}
+            errors={errors}
             onToggle={handleMultiSelectToggle}
           />
         );
@@ -276,6 +277,7 @@ export default function OnboardingForm({
         return (
           <WorkoutStyleStep
             formData={formData}
+            errors={errors}
             onToggle={handleMultiSelectToggle}
             onFieldChange={handleChange}
           />

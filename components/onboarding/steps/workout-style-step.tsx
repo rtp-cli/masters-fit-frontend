@@ -9,6 +9,7 @@ import { formatEnumValue } from "../utils/formatters";
 
 interface WorkoutStyleStepProps {
   formData: FormData;
+  errors: Record<string, string>;
   onToggle: (field: ArrayFields, value: ArrayValue) => void;
   onFieldChange: (field: keyof FormData, value: any) => void;
 }
@@ -22,6 +23,7 @@ interface StyleConfig {
 
 export default function WorkoutStyleStep({
   formData,
+  errors,
   onToggle,
   onFieldChange,
 }: WorkoutStyleStepProps) {
@@ -211,6 +213,11 @@ export default function WorkoutStyleStep({
             </TouchableOpacity>
           );
         })}
+        {errors.preferredStyles && (
+          <Text className="text-red-500 text-xs mt-2">
+            {errors.preferredStyles}
+          </Text>
+        )}
       </View>
     </View>
   );

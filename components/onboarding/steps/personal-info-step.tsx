@@ -118,6 +118,9 @@ export default function PersonalInfoStep({
             </Text>
           </TouchableOpacity>
         </View>
+        {errors.gender && (
+          <Text className="text-red-500 text-xs mt-2">{errors.gender}</Text>
+        )}
       </View>
 
       {/* Height slider */}
