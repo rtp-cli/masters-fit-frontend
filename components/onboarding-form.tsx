@@ -20,7 +20,7 @@ import {
 import {
   INTENSITY_LEVELS,
   ONBOARDING_STEP,
-  type WORKOUT_ENVIRONMENTS,
+  WORKOUT_ENVIRONMENTS,
 } from "@/types/enums";
 
 import FitnessGoalsStep from "./onboarding/steps/fitness-goals-step";
@@ -201,6 +201,24 @@ export default function OnboardingForm({
     }
   };
 
+  // §7: "Skip the rest and generate my plan." Steps 1–5 are already validated on
+  // Continue, so skip goes straight to generation — it does NOT re-run step-6
+  // validation (which would block on a not-yet-picked environment). If the user
+  // skipped before choosing where they train, fall back to bodyweight (works
+  // anywhere, needs no equipment) so a plan can always generate.
+  const handleSkip = () => {
+    if (formData.environment) {
+      onSubmit(formData);
+      return;
+    }
+    const environment = WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY;
+    onSubmit({
+      ...formData,
+      environment,
+      equipment: getEquipmentForEnvironment(environment),
+    });
+  };
+
   // Render the current step content
   const renderStepContent = () => {
     switch (currentStep) {
@@ -367,12 +385,12 @@ export default function OnboardingForm({
         onSubmit={handleSubmit}
         currentStepIndex={currentStepIndex}
         totalSteps={availableSteps.length}
-        // §7: one skip, on WORKOUT_ENVIRONMENT, onboarding mode only. Uses the
-        // submit path (validates this step, then generates — skipping step 7).
+        // §7: one skip, on WORKOUT_ENVIRONMENT, onboarding mode only. Generates
+        // now (handleSkip) rather than re-validating this step.
         onSkip={
           mode === "onboarding" &&
           currentStep === ONBOARDING_STEP.WORKOUT_ENVIRONMENT
-            ? handleSubmit
+            ? handleSkip
             : undefined
         }
       />
