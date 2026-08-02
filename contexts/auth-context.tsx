@@ -263,6 +263,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await apiSignup(params);
       if (result.success) {
+        // Work C: signup authorises on the onboarding token and returns a real
+        // session (access + refresh token + user). Persist it so the new user
+        // is fully authenticated by the waiver screen.
+        if (result.token) {
+          await SecureStore.setItemAsync("token", result.token);
+        }
+        if (result.refreshToken) {
+          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
+        }
+        if (result.user) {
+          await setUserData({
+            ...result.user,
+            needsOnboarding: result.needsOnboarding ?? true,
+          });
+        }
         logger.info("User signup successful", { name: params.name });
       }
       return { success: result.success };

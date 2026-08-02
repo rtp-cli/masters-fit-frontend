@@ -708,6 +708,7 @@ export async function refreshTokenAPI(params: {
  */
 export async function verifyAPI(params: {
   authCode: string;
+  email?: string;
 }): Promise<AuthResponse> {
   try {
     return await apiRequest<AuthResponse>("/auth/verify", {

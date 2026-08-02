@@ -101,6 +101,7 @@ export async function generateAuthCode(params: {
  */
 export async function verify(params: {
   authCode: string;
+  email?: string;
 }): Promise<AuthResponse> {
   try {
     const data = await verifyAPI(params);
