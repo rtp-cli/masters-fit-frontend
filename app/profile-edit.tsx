@@ -1,8 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, type Profile,updateUserProfile } from "@lib/profile";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect,useState } from "react";
-import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getStepConfig } from "@/components/onboarding/utils/step-config";
@@ -52,6 +59,8 @@ export default function ProfileEditScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const savedToastOpacity = useRef(new Animated.Value(0)).current;
+  const savedTranslateY = useRef(new Animated.Value(10)).current;
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -266,10 +275,26 @@ export default function ProfileEditScreen() {
       const updatedProfile = await updateUserProfile(profileData as any);
 
       if (updatedProfile) {
-        // §9: no "Success" dialog — refresh and return. The updated value on the
-        // Settings card is the confirmation.
+        // §9: lightweight "Saved" toast, then return. The updated value on the
+        // Settings card is the lasting confirmation.
         await refreshProfile();
-        router.back();
+        savedTranslateY.setValue(10);
+        savedToastOpacity.setValue(0);
+        Animated.parallel([
+          Animated.timing(savedToastOpacity, {
+            toValue: 1,
+            duration: 200,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.spring(savedTranslateY, {
+            toValue: 0,
+            damping: 14,
+            stiffness: 220,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        setTimeout(() => router.back(), 850);
       } else {
         throw new Error("Failed to update profile");
       }
@@ -354,6 +379,37 @@ export default function ProfileEditScreen() {
           icon={dialogConfig.icon}
         />
       )}
+
+      {/* Lightweight "Saved" toast — shown on save just before returning */}
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          bottom: 120,
+          left: 0,
+          right: 0,
+          alignItems: "center",
+          opacity: savedToastOpacity,
+          transform: [{ translateY: savedTranslateY }],
+        }}
+      >
+        <View
+          className="flex-row items-center rounded-full px-4 py-2"
+          style={{ backgroundColor: colors.brand.primary }}
+        >
+          <Ionicons
+            name="checkmark"
+            size={16}
+            color={colors.contentOnPrimary}
+          />
+          <Text
+            className="ml-1.5 text-sm font-semibold"
+            style={{ color: colors.contentOnPrimary }}
+          >
+            Saved
+          </Text>
+        </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
