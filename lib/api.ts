@@ -581,8 +581,12 @@ export async function apiRequest<T>(
         errorData.message ||
           errorData.error ||
           `HTTP error ${response.status}`
-      ) as Error & { status?: number };
+      ) as Error & { status?: number; data?: unknown };
       httpError.status = response.status;
+      // Attach the parsed body so callers can read structured error fields
+      // (e.g. /auth/verify's errorCode + attemptsLeft on a 401). Additive —
+      // existing callers reading .message/.status are unaffected.
+      httpError.data = errorData;
       throw httpError;
     }
 
@@ -701,6 +705,19 @@ export async function verifyAPI(params: {
       body: JSON.stringify(params),
     });
   } catch (error) {
+    // Verify failures come back as HTTP 401, so apiRequest throws — but it now
+    // attaches the parsed body. Surface the backend's errorCode/attemptsLeft
+    // (SPEC §4.4) so the OTP screen shows per-case copy ("N tries left",
+    // expired, exhausted) instead of a generic fallback.
+    const data = (error as { data?: AuthResponse })?.data;
+    if (data?.errorCode) {
+      return {
+        success: false,
+        errorCode: data.errorCode,
+        attemptsLeft: data.attemptsLeft,
+        error: data.error,
+      };
+    }
     console.error("Verify error:", error);
     return { success: false, error: "Failed to verify code" };
   }
