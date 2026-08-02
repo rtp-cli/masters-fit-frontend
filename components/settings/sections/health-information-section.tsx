@@ -1,32 +1,35 @@
 import { formatEnumValue } from "@utils/index";
-import { Text,View } from "react-native";
+import { Text, View } from "react-native";
+
+import EditableSectionCard from "./editable-section-card";
 
 interface HealthInformationSectionProps {
   limitations?: string[];
   medicalNotes?: string;
+  onNavigate?: () => void;
 }
 
+// §9.2.2: tappable — opens onboarding step 5 (what to work around).
 export default function HealthInformationSection({
   limitations,
   medicalNotes,
+  onNavigate,
 }: HealthInformationSectionProps) {
-  if ((!limitations || limitations.length === 0) && !medicalNotes) {
-    return null;
-  }
+  const hasLimitations = limitations && limitations.length > 0;
 
   return (
-    <View className="mx-6 mb-6   rounded-xl overflow-hidden">
-      <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-        Health Information
-      </Text>
-
-      {limitations && limitations.length > 0 && (
-        <View className="px-4 pb-3">
-          <Text className="text-sm font-medium text-text-primary mb-2">
-            Limitations
-          </Text>
+    <EditableSectionCard
+      title="Health information"
+      step="PHYSICAL_LIMITATIONS"
+      onNavigate={onNavigate}
+    >
+      <View className="px-4 pt-2 pb-3">
+        <Text className="text-sm font-medium text-text-primary mb-2">
+          Limitations
+        </Text>
+        {hasLimitations ? (
           <View className="flex-row flex-wrap">
-            {limitations.map((limitation, index) => (
+            {limitations!.map((limitation, index) => (
               <View
                 key={index}
                 className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
@@ -37,17 +40,19 @@ export default function HealthInformationSection({
               </View>
             ))}
           </View>
-        </View>
-      )}
+        ) : (
+          <Text className="text-sm text-text-muted">None</Text>
+        )}
+      </View>
 
-      {medicalNotes && (
+      {medicalNotes ? (
         <View className="px-4 pb-4 border-t border-neutral-light-2 pt-3">
           <Text className="text-sm font-medium text-text-primary mb-2">
-            Medical Notes
+            Medical notes
           </Text>
           <Text className="text-sm text-text-muted">{medicalNotes}</Text>
         </View>
-      )}
-    </View>
+      ) : null}
+    </EditableSectionCard>
   );
 }
