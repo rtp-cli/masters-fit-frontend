@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
 import {
-  checkEmailAPI,
   completeOnboardingAPI,
   deleteAccountAPI,
   generateAuthCodeAPI,
@@ -18,25 +17,9 @@ const STORAGE_KEYS = [
   "token",
   "refreshToken",
   "user",
-  "pendingEmail",
-  "pendingUserId",
 ] as const;
 
 // Authentication Functions
-
-/**
- * Check if a user with the given email exists
- * If they do, return user data, otherwise indicate onboarding is needed
- */
-export async function checkEmailExists(email: string): Promise<AuthResponse> {
-  try {
-    const data = await checkEmailAPI(email);
-    return data;
-  } catch (error) {
-    console.error("Check email error:", error);
-    return { success: false, error: "Failed to check email" };
-  }
-}
 
 /**
  * Sign up a new user
@@ -47,13 +30,6 @@ export async function signup(params: {
 }): Promise<AuthResponse> {
   try {
     const data = await signupAPI(params);
-    if (data.success && data.user?.id) {
-      // Store user ID and email for verification
-      await Promise.all([
-        SecureStore.setItemAsync("pendingUserId", data.user.id.toString()),
-        SecureStore.setItemAsync("pendingEmail", params.email),
-      ]);
-    }
     return data;
   } catch (error) {
     console.error("Signup error:", error);
@@ -67,13 +43,6 @@ export async function signup(params: {
 export async function login(params: { email: string }): Promise<AuthResponse> {
   try {
     const data = await loginAPI(params);
-    if (data.success && data.user?.id) {
-      // Store user ID and email for verification
-      await Promise.all([
-        SecureStore.setItemAsync("pendingUserId", data.user.id.toString()),
-        SecureStore.setItemAsync("pendingEmail", params.email),
-      ]);
-    }
     return data;
   } catch (error) {
     console.error("Login error:", error);
@@ -154,43 +123,10 @@ export async function completeOnboarding(
 ): Promise<{ success: boolean; user?: User }> {
   try {
     const data = await completeOnboardingAPI(userData);
-
-    if (data.success) {
-      // Clean up stored data after successful onboarding
-      await Promise.all([
-        SecureStore.deleteItemAsync("pendingEmail"),
-        SecureStore.deleteItemAsync("pendingUserId"),
-      ]);
-    }
-
     return data;
   } catch (error) {
     console.error("Onboarding error:", error);
     return { success: false };
-  }
-}
-
-/**
- * Get pending email for onboarding
- */
-export async function getPendingEmail(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync("pendingEmail");
-  } catch (error) {
-    console.error("Error retrieving pending email:", error);
-    return null;
-  }
-}
-
-/**
- * Get pending user ID for onboarding
- */
-export async function getPendingUserId(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync("pendingUserId");
-  } catch (error) {
-    console.error("Error retrieving pending user ID:", error);
-    return null;
   }
 }
 
@@ -276,8 +212,6 @@ export async function logout(): Promise<void> {
       SecureStore.deleteItemAsync("token"),
       SecureStore.deleteItemAsync("refreshToken"),
       SecureStore.deleteItemAsync("user"),
-      SecureStore.deleteItemAsync("pendingEmail"),
-      SecureStore.deleteItemAsync("pendingUserId"),
       // Clear theme preferences so the next user gets their own theme
       AsyncStorage.removeItem("@theme_preference"),
       AsyncStorage.removeItem("@color_theme"),

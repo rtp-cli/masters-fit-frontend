@@ -607,21 +607,6 @@ export async function apiRequest<T>(
 }
 
 /**
- * Check if a user with the given email exists
- */
-export async function checkEmailAPI(email: string): Promise<AuthResponse> {
-  try {
-    return await apiRequest<AuthResponse>("/auth/check-email", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    });
-  } catch (error) {
-    console.error("Check email error:", error);
-    return { success: false, error: "Failed to check email" };
-  }
-}
-
-/**
  * Sign up a new user
  */
 export async function signupAPI(params: {

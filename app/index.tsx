@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname,useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Image,Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,20 +26,6 @@ export default function GetStarted() {
   } = useAuth();
   const { preloadAllData } = useDataPreload();
   const hasRedirected = useRef(false);
-  const [isVerifyingUser, setIsVerifyingUser] = useState<boolean | null>(null);
-
-  // Check if user is in verification flow
-  useEffect(() => {
-    const checkVerificationFlag = async () => {
-      try {
-        const flag = await SecureStore.getItemAsync("isVerifyingUser");
-        setIsVerifyingUser(!!flag);
-      } catch (error) {
-        setIsVerifyingUser(false);
-      }
-    };
-    checkVerificationFlag();
-  }, []);
 
   // Handle data preloading completion
   useEffect(() => {
@@ -65,17 +50,12 @@ export default function GetStarted() {
 
   // If user is already authenticated, redirect based on onboarding status
   useEffect(() => {
-    // Don't redirect if user is in verification flow
-    if (isVerifyingUser) {
-      return;
-    }
-
     // Don't redirect if we already have
     if (hasRedirected.current) {
       return;
     }
 
-    if (isAuthenticated && !isLoading && user && isVerifyingUser !== null) {
+    if (isAuthenticated && !isLoading && user) {
       // Check if user has accepted the current waiver version
       const hasValidWaiver = hasAcceptedCurrentWaiver(
         user.waiverAcceptedAt || null,
@@ -117,7 +97,6 @@ export default function GetStarted() {
     user?.waiverVersion,
     isGeneratingWorkout,
     isPreloadingData,
-    isVerifyingUser,
     pathname,
     router,
     setIsPreloadingData,
