@@ -6,52 +6,60 @@ export interface StepConfig {
   disclaimer?: string;
 }
 
-// Get step configuration - matching exact titles from images
-export const getStepConfig = (currentStep: ONBOARDING_STEP): StepConfig => {
+// §8: short, second-person, sentence-case copy. Only PERSONAL_INFO reads
+// opts.name (trimmed — empty/whitespace/undefined falls back to the no-name
+// variant; the name is inserted verbatim, no title-casing or truncation).
+// SCHEDULE's copy is added with the §5 split; HEALTH_CONNECT leaves in §6.
+export const getStepConfig = (
+  currentStep: ONBOARDING_STEP,
+  opts?: { name?: string }
+): StepConfig => {
   switch (currentStep) {
-    case ONBOARDING_STEP.PERSONAL_INFO:
+    case ONBOARDING_STEP.PERSONAL_INFO: {
+      const name = opts?.name?.trim();
       return {
-        title: "Personal Information",
-        description:
-          "Tell us a bit about yourself so we can create a personalized fitness plan just for you. At MastersFit, your privacy matters - we'll keep your information secure and never share or sell it to third-parties.",
+        title: "About you",
+        description: name
+          ? `A few basics so we can size your plan, ${name}. Private — never shared, never sold.`
+          : "A few basics so we can size your plan. Private — never shared, never sold.",
       };
+    }
     case ONBOARDING_STEP.FITNESS_GOALS:
       return {
-        title: "Fitness Goals",
+        title: "What you're after",
         description:
-          "What do you want to achieve? Select all goals that apply to you.",
-      };
-    case ONBOARDING_STEP.PHYSICAL_LIMITATIONS:
-      return {
-        title: "Own Your Journey",
-        description:
-          "Let us know about any physical limitations or health concerns so we can build a workout plan that empowers you, safely and effectively.",
-        disclaimer:
-          "Before starting any new fitness program, check with your doctor, especially if you have existing health conditions.",
+          "Pick everything that applies. We'll weight your plan toward whatever you choose.",
       };
     case ONBOARDING_STEP.FITNESS_LEVEL:
       return {
-        title: "Let's Get Moving!",
+        title: "Where you're starting",
+        description: "Your training now, and how hard you want to push.",
+      };
+    case ONBOARDING_STEP.PHYSICAL_LIMITATIONS:
+      return {
+        title: "What to work around",
         description:
-          "Tell us about your fitness level and when you're available to workout. Whether you're just starting out or leveling up, we'll build powerful workouts that fit your goals and schedule.",
+          "Anything here means we plan around it, not that we leave it out. Pick as many as apply, or none.",
+        disclaimer:
+          "Before starting any new fitness program, check with your doctor, especially if you have existing health conditions.",
       };
     case ONBOARDING_STEP.WORKOUT_ENVIRONMENT:
       return {
-        title: "Workout Environment & Equipment",
-        description:
-          "Where will you workout and what equipment do you have access to?",
+        title: "Where you train",
+        description: "Your usual setup, and what you have access to.",
       };
+    case ONBOARDING_STEP.WORKOUT_STYLE:
+      return {
+        title: "How you like to train",
+        description:
+          "The styles you enjoy, so your plan feels like something you'd choose.",
+      };
+    // Leaves the flow in §6; copy kept until then.
     case ONBOARDING_STEP.HEALTH_CONNECT:
       return {
         title: "Connect Health",
         description:
           "Connect Apple Health or Health Connect to sync steps, calories, heart rate, and workouts.",
-      };
-    case ONBOARDING_STEP.WORKOUT_STYLE:
-      return {
-        title: "Workout Preferences",
-        description:
-          "What types of workouts do you enjoy? This helps us create workouts you'll love.",
       };
     default:
       return { title: "", description: "" };
