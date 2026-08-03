@@ -329,16 +329,22 @@ export default function OnboardingForm({
       {/* Header — back chevron (steps > 0), then the fixed progress bar + step
           counter (§3). The brand lockup was deleted; the row it vacated is where
           the progress chrome now lives. Bar shows for multi-step; counter is
-          onboarding-only (§10). */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 12,
-          paddingTop: 14,
-          paddingHorizontal: 20,
-        }}
-      >
+          onboarding-only (§10).
+
+          Skipped entirely on the single-step edit screen: its back arrow lives in
+          profile-edit's nav header, and with one step there is no bar and no
+          counter — so the row would be a ~54pt empty band pushing the description
+          down and clawing back the space the removed H1 just freed (§A1.2). */}
+      {!isEditScreen && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            paddingTop: 14,
+            paddingHorizontal: 20,
+          }}
+        >
         {currentStepIndex > 0 ? (
           <TouchableOpacity
             onPress={handlePrevious}
@@ -393,7 +399,8 @@ export default function OnboardingForm({
             Step {currentStepIndex + 1} of {availableSteps.length}
           </Text>
         )}
-      </View>
+        </View>
+      )}
 
       <ScrollView
         key={currentStep}
@@ -407,6 +414,7 @@ export default function OnboardingForm({
           currentStep={currentStep}
           name={mode === "onboarding" ? userName : undefined}
           editScreen={isEditScreen}
+          showDisclaimer={mode === "onboarding"}
         />
 
         {/* Top-of-step error banner: a blocked Continue is otherwise invisible —
