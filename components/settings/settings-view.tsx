@@ -164,6 +164,12 @@ export default function SettingsView({
 
   // Debug mode activation handler (10 taps on "App Settings")
   const handleDebugTap = async () => {
+    // Admin-only in release builds: a non-admin tapping the header 10 times must
+    // not be able to surface Developer Tools. __DEV__ keeps it open locally.
+    // (Not a security boundary — sensitive admin actions are server-enforced.)
+    if (!__DEV__ && !user?.isAdmin) {
+      return;
+    }
     // Clear existing timeout
     if (debugTapTimeout) {
       clearTimeout(debugTapTimeout);
@@ -552,6 +558,7 @@ export default function SettingsView({
         />
         {/* Developer Tools - only rendered once debug mode is activated */}
         <DeveloperToolsSection
+          isAdmin={!!user?.isAdmin}
           isDebugModeActivated={isDebugModeActivated}
           isSecretActivated={isSecretActivated}
           onDeactivateDebugMode={handleDeactivateDebugMode}

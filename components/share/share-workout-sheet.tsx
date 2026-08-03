@@ -203,7 +203,10 @@ export default function ShareWorkoutSheet({
       }
       const fileUri = await downloadCard(link.cardUrl);
       if (!fileUri) return;
-      const perm = await MediaLibrary.requestPermissionsAsync();
+      // writeOnly: we only save the card, never browse the library — this keeps us
+      // off the READ_MEDIA_* permissions (blocked in app.json) that trigger Google's
+      // photo/video declaration and break `eas submit --auto-submit`.
+      const perm = await MediaLibrary.requestPermissionsAsync(true);
       if (!perm.granted) return;
       await MediaLibrary.saveToLibraryAsync(fileUri);
     });

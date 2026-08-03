@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useThemeColors } from "@/lib/theme";
 
 interface DeveloperToolsSectionProps {
+  isAdmin: boolean;
   isDebugModeActivated: boolean;
   isSecretActivated: boolean;
   onDeactivateDebugMode: () => void;
@@ -24,6 +25,7 @@ interface DeveloperToolsSectionProps {
 }
 
 export default function DeveloperToolsSection({
+  isAdmin,
   isDebugModeActivated,
   isSecretActivated,
   onDeactivateDebugMode,
@@ -63,7 +65,10 @@ export default function DeveloperToolsSection({
     }
   };
 
-  if (!isDebugModeActivated && !__DEV__) {
+  // Release builds: admins only, and only once debug mode is on. The admin gate
+  // also hides the tools from a non-admin who activated debug mode on an older
+  // build. __DEV__ keeps everything available locally.
+  if (!__DEV__ && (!isDebugModeActivated || !isAdmin)) {
     return null;
   }
 

@@ -8,6 +8,9 @@ export interface User {
   waiverVersion?: string | null;
   themeMode?: string | null;
   colorTheme?: string | null;
+  // Set by the backend from ADMIN_USER_IDS. Gates admin-only client surfaces
+  // (enabling Developer Tools). Absent on older sessions → treated as non-admin.
+  isAdmin?: boolean;
 }
 
 export interface AuthResponse {
