@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Text,
+  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
@@ -28,6 +31,13 @@ export interface CustomDialogProps {
   iconColor?: string;
   /** Optional element rendered between the description and the buttons. */
   accessory?: React.ReactNode;
+  /**
+   * When set, the user must type this exact phrase (case-insensitive, trimmed)
+   * into a text field before the primary button enables — the GitHub-style
+   * "type to confirm" gate for irreversible actions. The dialog owns the input
+   * state and clears it whenever it opens/closes.
+   */
+  confirmationPhrase?: string;
   dismissOnBackdropPress?: boolean;
   // Fires after the dialog's dismiss animation completes (iOS). Lets callers
   // sequence a follow-up modal transition instead of triggering it in the same
@@ -46,10 +56,24 @@ export default function CustomDialog({
   icon,
   iconColor,
   accessory,
+  confirmationPhrase,
   dismissOnBackdropPress = true,
   onDismiss,
 }: CustomDialogProps) {
   const colors = useThemeColors();
+  const [confirmInput, setConfirmInput] = useState("");
+
+  // Clear the typed phrase whenever the dialog opens or closes so a prior
+  // attempt never leaves the primary button pre-enabled.
+  useEffect(() => {
+    setConfirmInput("");
+  }, [visible]);
+
+  const needsConfirmation = !!confirmationPhrase;
+  const confirmed =
+    !needsConfirmation ||
+    confirmInput.trim().toLowerCase() === confirmationPhrase!.trim().toLowerCase();
+
   const handleBackdropPress = () => {
     if (dismissOnBackdropPress && onClose) {
       onClose();
@@ -63,6 +87,10 @@ export default function CustomDialog({
     <Modal visible={visible} transparent animationType="fade" onDismiss={onDismiss}>
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            className="w-full items-center"
+          >
           <TouchableWithoutFeedback>
             <View className="bg-surface rounded-2xl p-6 w-full max-w-sm shadow-xl items-center border border-neutral-medium-1">
               {/* Icon */}
@@ -89,12 +117,37 @@ export default function CustomDialog({
               {/* Optional accessory (e.g. streak badge) */}
               {accessory}
 
+              {/* Type-to-confirm gate for irreversible actions */}
+              {needsConfirmation && (
+                <View className="w-full mb-5">
+                  <Text className="text-sm text-text-muted text-center mb-2">
+                    Type{" "}
+                    <Text className="font-semibold text-text-primary">
+                      {confirmationPhrase}
+                    </Text>{" "}
+                    to confirm
+                  </Text>
+                  <TextInput
+                    value={confirmInput}
+                    onChangeText={setConfirmInput}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoFocus
+                    placeholder={confirmationPhrase}
+                    placeholderTextColor={colors.text.muted}
+                    className="w-full border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-neutral-light-2"
+                  />
+                </View>
+              )}
+
               {/* Buttons */}
               {hasThreeButtons ? (
                 <View className="w-full gap-2">
                   {/* Primary Button (Top) */}
                   <TouchableOpacity
                     className="bg-primary rounded-xl py-3 px-6 items-center justify-center"
+                    style={{ opacity: confirmed ? 1 : 0.5 }}
+                    disabled={!confirmed}
                     onPress={primaryButton.onPress}
                   >
                     <Text className="text-content-on-primary font-semibold text-base">
@@ -137,6 +190,8 @@ export default function CustomDialog({
                   {/* Primary Button (Right) */}
                   <TouchableOpacity
                     className="flex-1 bg-primary rounded-xl py-3 px-6 items-center justify-center"
+                    style={{ opacity: confirmed ? 1 : 0.5 }}
+                    disabled={!confirmed}
                     onPress={primaryButton.onPress}
                   >
                     <Text className="text-content-on-primary font-semibold text-base">
@@ -147,6 +202,8 @@ export default function CustomDialog({
               ) : (
                 <TouchableOpacity
                   className="bg-primary rounded-xl py-3 px-8 w-full items-center justify-center"
+                  style={{ opacity: confirmed ? 1 : 0.5 }}
+                  disabled={!confirmed}
                   onPress={primaryButton.onPress}
                 >
                   <Text className="text-content-on-primary font-semibold text-base">
@@ -156,6 +213,7 @@ export default function CustomDialog({
               )}
             </View>
           </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
       </TouchableWithoutFeedback>
     </Modal>

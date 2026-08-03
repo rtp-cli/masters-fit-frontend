@@ -103,6 +103,7 @@ export default function SettingsView({
     secondaryButton?: DialogButton;
     icon?: keyof typeof Ionicons.glyphMap;
     iconColor?: string;
+    confirmationPhrase?: string;
   } | null>(null);
 
   // Use profile data from the centralized store
@@ -344,7 +345,8 @@ export default function SettingsView({
     setDialogConfig({
       title: "Delete Account",
       description:
-        "Are you sure you want to delete your account? This action cannot be undone. All your data, including workouts, progress, and subscription information, will be permanently deleted.",
+        "This permanently deletes your account and all your data — workouts, progress, and subscription info. This cannot be undone.",
+      confirmationPhrase: "delete my account",
       secondaryButton: {
         text: "Cancel",
         onPress: () => setDialogVisible(false),
@@ -661,6 +663,7 @@ export default function SettingsView({
           secondaryButton={dialogConfig.secondaryButton}
           icon={dialogConfig.icon}
           iconColor={dialogConfig.iconColor}
+          confirmationPhrase={dialogConfig.confirmationPhrase}
           onDismiss={() => {
             // The confirm dialog has fully dismissed — now it's safe to close
             // the settings sheet and log out (one modal transition at a time).
