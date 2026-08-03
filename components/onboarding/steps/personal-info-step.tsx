@@ -14,7 +14,6 @@ import {
 
 interface PersonalInfoStepProps {
   formData: FormData;
-  errors: Record<string, string>;
   onFieldChange: (
     field: keyof FormData,
     value: FormData[keyof FormData]
@@ -23,7 +22,6 @@ interface PersonalInfoStepProps {
 
 export default function PersonalInfoStep({
   formData,
-  errors,
   onFieldChange,
 }: PersonalInfoStepProps) {
   const colors = useThemeColors();
@@ -41,9 +39,6 @@ export default function PersonalInfoStep({
           onValueChange={(value) => onFieldChange("age", value)}
           unit=" yrs"
         />
-        {errors.age && (
-          <Text className="text-red-500 text-xs mt-2">{errors.age}</Text>
-        )}
       </View>
 
       {/* Gender selection */}
@@ -136,9 +131,6 @@ export default function PersonalInfoStep({
           formatValue={(value) => formatHeightFromInches(value)}
           formatMinMax={(value) => formatHeightFromInches(value)}
         />
-        {errors.height && (
-          <Text className="text-red-500 text-xs mt-2">{errors.height}</Text>
-        )}
       </View>
 
       {/* Weight slider */}
@@ -154,9 +146,6 @@ export default function PersonalInfoStep({
           onValueChange={(value) => onFieldChange("weight", value)}
           unit=" lbs"
         />
-        {errors.weight && (
-          <Text className="text-red-500 text-xs mt-2">{errors.weight}</Text>
-        )}
       </View>
     </View>
   );

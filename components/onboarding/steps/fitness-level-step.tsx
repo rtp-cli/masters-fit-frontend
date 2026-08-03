@@ -1,32 +1,24 @@
-import { Text, TouchableOpacity,View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
-import CustomSlider from "@/components/ui/slider";
-import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
-import {
-  FITNESS_LEVELS,
-  INTENSITY_LEVELS,
-  PREFERRED_DAYS,
-} from "@/types/enums";
-import { formatWorkoutPlanEndDate,formatWorkoutPlanStartDate } from "@/utils";
+import { type FormData } from "@/types/components";
+import { FITNESS_LEVELS, INTENSITY_LEVELS } from "@/types/enums";
 
 import IconComponent from "../ui/icon-component";
 import { formatEnumValue } from "../utils/formatters";
 
 interface FitnessLevelStepProps {
   formData: FormData;
-  errors: Record<string, string>;
   onFieldChange: (
     field: keyof FormData,
     value: FormData[keyof FormData]
   ) => void;
-  onToggle: (field: ArrayFields, value: ArrayValue) => void;
 }
 
+// §5: this step now holds only fitness level + intensity. Available days,
+// the plan card, and workout duration moved to schedule-step.tsx.
 export default function FitnessLevelStep({
   formData,
-  errors,
   onFieldChange,
-  onToggle,
 }: FitnessLevelStepProps) {
   // Fitness level configuration helper
   const getFitnessLevelConfig = (levelKey: FITNESS_LEVELS) => {
@@ -98,10 +90,10 @@ export default function FitnessLevelStep({
 
   return (
     <View className="flex-1 px-6 pb-6">
-      {/* Fitness Level Selection */}
+      {/* Current fitness level */}
       <View className="mb-8">
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
-          Current Fitness Level
+          Current fitness level
         </Text>
         {Object.values(FITNESS_LEVELS).map((value) => {
           const config = getFitnessLevelConfig(value);
@@ -143,84 +135,12 @@ export default function FitnessLevelStep({
             </TouchableOpacity>
           );
         })}
-        {errors.fitnessLevel && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.fitnessLevel}
-          </Text>
-        )}
       </View>
 
-      {/* Available Days */}
-      <View className="mb-8">
-        <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
-          Available Days
-        </Text>
-        {/* Schedule Information - Show specific dates */}
-        {formData.availableDays.length >= 1 && (
-          <View className="mb-4 p-4 bg-brand-light-1 rounded-xl">
-            <Text className="text-sm font-semibold text-text-primary mb-3">
-              Your Workout Plan Timeline
-            </Text>
-            <Text className="text-sm text-text-primary mb-2">
-              Your weekly plan will begin on {formatWorkoutPlanStartDate()} and
-              end on {formatWorkoutPlanEndDate()}.
-            </Text>
-          </View>
-        )}
-        <View className="flex-row flex-wrap">
-          {Object.entries(PREFERRED_DAYS).map(([key, value]) => (
-            <TouchableOpacity
-              key={key}
-              className={`p-3 rounded-lg mr-2 mb-2 ${
-                formData.availableDays.includes(value)
-                  ? "bg-primary"
-                  : "bg-surface"
-              }`}
-              onPress={() => onToggle("availableDays", value)}
-            >
-              <Text
-                className={`font-medium text-sm ${
-                  formData.availableDays.includes(value)
-                    ? "text-content-on-primary"
-                    : "text-neutral-dark-1"
-                }`}
-              >
-                {formatEnumValue(value)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {errors.availableDays && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.availableDays}
-          </Text>
-        )}
-      </View>
-
-      {/* Workout Duration */}
-      <View className="mb-8">
-        <Text className="text-lg font-semibold text-neutral-dark-1">
-          Workout Duration
-        </Text>
-        <CustomSlider
-          value={formData.workoutDuration}
-          minimumValue={15}
-          maximumValue={90}
-          step={5}
-          onValueChange={(value) => onFieldChange("workoutDuration", value)}
-          unit=" min"
-        />
-        {errors.workoutDuration && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.workoutDuration}
-          </Text>
-        )}
-      </View>
-
-      {/* Intensity Level */}
+      {/* Preferred intensity */}
       <View className="mb-6">
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
-          Preferred Intensity Level
+          Preferred intensity
         </Text>
         {Object.entries(INTENSITY_LEVELS).map(([key, value]) => {
           const config = getIntensityLevelConfig(value);
@@ -262,11 +182,6 @@ export default function FitnessLevelStep({
             </TouchableOpacity>
           );
         })}
-        {errors.intensityLevel && (
-          <Text className="text-red-500 text-xs mt-2">
-            {errors.intensityLevel}
-          </Text>
-        )}
       </View>
     </View>
   );

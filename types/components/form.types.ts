@@ -4,6 +4,7 @@ import {
   type FITNESS_LEVELS,
   type GENDER,
   type INTENSITY_LEVELS,
+  type ONBOARDING_STEP,
   type PHYSICAL_LIMITATIONS,
   type PREFERRED_DAYS,
   type PREFERRED_STYLES,
@@ -15,10 +16,13 @@ export interface FormData {
   age: number;
   height: number;
   weight: number;
-  gender: GENDER;
+  // §4: optional so onboarding can start with nothing selected (a filled card
+  // is a claim the user never made). handleSubmit assumes both present because
+  // validateStep gates it. A saved profile always has real values in edit mode.
+  gender?: GENDER;
   goals: FITNESS_GOALS[];
   limitations?: PHYSICAL_LIMITATIONS[];
-  fitnessLevel: FITNESS_LEVELS;
+  fitnessLevel?: FITNESS_LEVELS;
   environment?: WORKOUT_ENVIRONMENTS;
   equipment?: AVAILABLE_EQUIPMENT[];
   otherEquipment?: string;
@@ -34,18 +38,28 @@ export interface FormData {
 export interface OnboardingFormProps {
   initialData?: Partial<FormData>;
   onSubmit: (data: FormData) => void;
-  onCancel?: () => void;
   isLoading?: boolean;
-  showNavigation?: boolean;
-  title?: string;
   submitButtonText?: string;
-  excludePersonalInfo?: boolean;
   /**
-   * Emit `onboarding_step_viewed` analytics on each step change. Only the real
-   * onboarding flow sets this — profile-edit and regeneration reuse this form but
-   * are NOT part of the signup funnel, so they leave it off.
+   * §10: chrome + behaviour only — greeting, skip control, `onboarding_step_viewed`
+   * analytics, and the default primary-button label ("Save" in edit). Defaults to
+   * "edit" so a mount that forgets to declare itself can't pollute the funnel.
    */
-  trackStepViews?: boolean;
+  mode?: "onboarding" | "edit";
+  /**
+   * §10: which steps render, in order. Defaults to all seven. Onboarding omits it;
+   * a Settings-card editor passes one step; regeneration passes the six (all but
+   * PERSONAL_INFO). The progress bar shows when this has length > 1.
+   */
+  steps?: ONBOARDING_STEP[];
+  /** §10: passed in, not read from useAuth — the form is presentational. */
+  userName?: string;
+  /**
+   * §A2.1: fired when the single-step edit editor's values diverge from (or return
+   * to) the values it was mounted with. The host screen (profile-edit) uses it to
+   * gate the discard-changes dialog and is otherwise a no-op.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export type ArrayFields = Extract<

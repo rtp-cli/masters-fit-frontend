@@ -38,6 +38,7 @@ import PreferredWorkoutTypesSection from "./sections/preferred-workout-types-sec
 import ProfileSection from "./sections/profile-section";
 import SubscriptionSection from "./sections/subscription-section";
 import WeeklyScheduleSection from "./sections/weekly-schedule-section";
+import WhereYouStartSection from "./sections/where-you-start-section";
 
 interface SettingsViewProps {
   onClose?: () => void;
@@ -405,23 +406,8 @@ export default function SettingsView({
             Quick Actions
           </Text>
           <View className="flex-row justify-around">
-            <TouchableOpacity
-              className="items-center"
-              onPress={() => {
-                if (onClose) onClose();
-                router.push("/profile-edit");
-              }}
-            >
-              <View className="size-12 rounded-full bg-primary items-center justify-center mb-2">
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={colors.neutral.light[1]}
-                />
-              </View>
-              <Text className="text-xs text-text-muted">Edit Profile</Text>
-            </TouchableOpacity>
-
+            {/* §9: "Edit Profile" removed — each Account / Training profile card
+                below now opens its own onboarding step directly. */}
             <TouchableOpacity
               className="items-center"
               onPress={() => {
@@ -455,11 +441,16 @@ export default function SettingsView({
           </View>
         </View>
 
-        {/* [MF-020] Account */}
+        {/* [MF-020] Account — §9: tappable cards, each opens its onboarding step */}
         <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-2 pb-1">
           Account
         </Text>
-        {profile && <PersonalInformationSection profile={profile} />}
+        {profile && (
+          <>
+            <PersonalInformationSection profile={profile} onNavigate={onClose} />
+            <WhereYouStartSection profile={profile} onNavigate={onClose} />
+          </>
+        )}
 
         {/* Privacy — revoke shared workout links */}
         <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
@@ -467,36 +458,40 @@ export default function SettingsView({
         </Text>
         <SharedWorkoutsSection />
 
-        {/* [MF-020] Training Profile */}
+        {/* [MF-020] Training Profile — §9: each card opens its onboarding step */}
         <Text className="text-xs font-semibold text-text-muted uppercase tracking-wide px-6 pt-4 pb-1">
           Training Profile
         </Text>
-        {profile?.goals && profile.goals.length > 0 && (
-          <FitnessGoalsSection goals={profile.goals} />
+        {profile && (
+          <>
+            <FitnessGoalsSection goals={profile.goals ?? []} onNavigate={onClose} />
+            <WeeklyScheduleSection
+              availableDays={profile.availableDays ?? []}
+              workoutDuration={profile.workoutDuration}
+              onNavigate={onClose}
+            />
+            <HealthInformationSection
+              limitations={profile.limitations}
+              medicalNotes={profile.medicalNotes}
+              onNavigate={onClose}
+            />
+            <EquipmentSection
+              equipment={profile.equipment ?? []}
+              otherEquipment={profile.otherEquipment}
+              environment={profile.environment}
+              onNavigate={onClose}
+            />
+            <PreferredWorkoutTypesSection
+              preferredStyles={profile.preferredStyles ?? []}
+              onNavigate={onClose}
+            />
+          </>
         )}
-        {profile?.preferredStyles && profile.preferredStyles.length > 0 && (
-          <PreferredWorkoutTypesSection
-            preferredStyles={profile.preferredStyles}
-          />
-        )}
-        {profile?.equipment && profile.equipment.length > 0 && (
-          <EquipmentSection
-            equipment={profile.equipment}
-            otherEquipment={profile.otherEquipment}
-          />
-        )}
-        {profile?.availableDays && profile.availableDays.length > 0 && (
-          <WeeklyScheduleSection availableDays={profile.availableDays} />
-        )}
-        <HealthInformationSection
-          limitations={profile?.limitations}
-          medicalNotes={profile?.medicalNotes}
-        />
 
         {/* Excluded exercises — same class of fact as equipment/limitations, so
             it lives here and is one hop from Training profile (MF-020). */}
         <TouchableOpacity
-          className="mx-6 mb-6 flex-row items-center justify-between rounded-xl px-4 py-4 bg-surface"
+          className="mx-6 mb-6 flex-row items-center justify-between rounded-xl p-4 bg-surface"
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Excluded exercises"

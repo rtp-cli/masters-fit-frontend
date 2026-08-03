@@ -1,11 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserProfile, type Profile,updateUserProfile } from "@lib/profile";
-import { useRouter } from "expo-router";
-import React, { useEffect,useState } from "react";
-import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import OnboardingForm, { type FormData } from "@/components/onboarding-form";
+import { getStepConfig } from "@/components/onboarding/utils/step-config";
+import OnboardingForm, {
+  type FormData,
+  ONBOARDING_SLIDER_DEFAULTS,
+} from "@/components/onboarding-form";
 import { CustomDialog, type DialogButton } from "@/components/ui";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -15,6 +24,7 @@ import {
   FITNESS_LEVELS,
   GENDER,
   INTENSITY_LEVELS,
+  ONBOARDING_STEP,
   PHYSICAL_LIMITATIONS,
   PREFERRED_DAYS,
   PREFERRED_STYLES,
@@ -28,6 +38,18 @@ export default function ProfileEditScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
+  // §9: a Settings card passes ?step=<ENUM_NAME> to edit exactly one step. The
+  // form still initialises from the full profile, so untouched fields are saved
+  // unchanged. Without a valid step we fall back to the full form (legacy link).
+  const { step } = useLocalSearchParams<{ step?: string }>();
+  const editStep =
+    step && step in ONBOARDING_STEP
+      ? ONBOARDING_STEP[step as keyof typeof ONBOARDING_STEP]
+      : undefined;
+  const editSteps = editStep !== undefined ? [editStep] : undefined;
+  const headerTitle =
+    editStep !== undefined ? getStepConfig(editStep).title : "Edit Profile";
+
   // Get data refresh functions
   const {
     refresh: { refreshProfile },
@@ -35,6 +57,9 @@ export default function ProfileEditScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // §A2.2: the form reports when its values diverge from what it mounted with, so
+  // the back arrow only raises the discard dialog when there is something to lose.
+  const [isDirty, setIsDirty] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     title: string;
@@ -129,8 +154,9 @@ export default function ProfileEditScreen() {
       }
     }
 
-    // Handle gender conversion
-    let gender = GENDER.MALE;
+    // §9.3: absent → nothing selected. Was defaulted to MALE, with unrecognised
+    // strings silently becoming FEMALE — both hid that the user never answered.
+    let gender: GENDER | undefined;
     if (profile.gender) {
       switch (profile.gender.toLowerCase()) {
         case GENDER.MALE:
@@ -139,13 +165,11 @@ export default function ProfileEditScreen() {
         case GENDER.FEMALE:
           gender = GENDER.FEMALE;
           break;
-        default:
-          gender = GENDER.FEMALE;
       }
     }
 
-    // Handle fitness level conversion
-    let fitnessLevel = FITNESS_LEVELS.BEGINNER;
+    // §9.3: absent → nothing selected (was defaulted to BEGINNER).
+    let fitnessLevel: FITNESS_LEVELS | undefined;
     if (profile.fitnessLevel) {
       switch (profile.fitnessLevel.toLowerCase()) {
         case "beginner":
@@ -157,8 +181,6 @@ export default function ProfileEditScreen() {
         case "advanced":
           fitnessLevel = FITNESS_LEVELS.ADVANCED;
           break;
-        default:
-          fitnessLevel = FITNESS_LEVELS.BEGINNER;
       }
     }
 
@@ -180,9 +202,9 @@ export default function ProfileEditScreen() {
 
     return {
       email: user?.email || "",
-      age: profile.age || 25,
-      height: profile.height || 170,
-      weight: profile.weight || 70,
+      age: profile.age ?? ONBOARDING_SLIDER_DEFAULTS.age,
+      height: profile.height ?? ONBOARDING_SLIDER_DEFAULTS.height,
+      weight: profile.weight ?? ONBOARDING_SLIDER_DEFAULTS.weight,
       gender: gender,
       goals: convertStringArrayToEnum(profile.goals, FITNESS_GOALS),
       limitations: convertStringArrayToEnum(
@@ -204,7 +226,8 @@ export default function ProfileEditScreen() {
         profile.availableDays,
         PREFERRED_DAYS
       ),
-      workoutDuration: profile.workoutDuration || 30,
+      workoutDuration:
+        profile.workoutDuration ?? ONBOARDING_SLIDER_DEFAULTS.workoutDuration,
       intensityLevel: intensityLevel,
       medicalNotes: profile.medicalNotes || "",
       includeWarmup: profile.includeWarmup ?? true,
@@ -222,13 +245,13 @@ export default function ProfileEditScreen() {
         age: formData.age,
         height: formData.height,
         weight: formData.weight,
-        gender: formData.gender.toString(),
+        gender: formData.gender!.toString(),
         goals: formData.goals.map((g: FITNESS_GOALS) => g.toString()),
         limitations:
           formData.limitations?.map((l: PHYSICAL_LIMITATIONS) =>
             l.toString()
           ) || [],
-        fitnessLevel: formData.fitnessLevel.toString(),
+        fitnessLevel: formData.fitnessLevel!.toString(),
         environment: formData.environment!.toString(),
         equipment:
           formData.equipment?.map((e: AVAILABLE_EQUIPMENT) => e.toString()) ||
@@ -251,21 +274,10 @@ export default function ProfileEditScreen() {
       const updatedProfile = await updateUserProfile(profileData as any);
 
       if (updatedProfile) {
-        // Refresh profile data after successful update
+        // §A2.3: return to Settings silently — no success dialog, no toast. The
+        // new value on the card you came from is the confirmation.
         await refreshProfile();
-        setDialogConfig({
-          title: "Success",
-          description: "Your profile has been updated successfully!",
-          primaryButton: {
-            text: "OK",
-            onPress: () => {
-              setDialogVisible(false);
-              router.back();
-            },
-          },
-          icon: "checkmark-circle",
-        });
-        setDialogVisible(true);
+        router.back();
       } else {
         throw new Error("Failed to update profile");
       }
@@ -287,9 +299,16 @@ export default function ProfileEditScreen() {
   };
 
   const handleCancel = () => {
+    // §A2.2: a clean editor pops immediately; a dirty one confirms first. (Dirty
+    // tracking is what fixes the old bug where this fired with nothing edited.)
+    if (!isDirty) {
+      router.back();
+      return;
+    }
     setDialogConfig({
-      title: "Discard Changes?",
-      description: "Are you sure you want to discard your changes?",
+      title: "Discard changes?",
+      description: "Your edits won't be saved.",
+      icon: "warning",
       secondaryButton: {
         text: "Cancel",
         onPress: () => setDialogVisible(false),
@@ -301,7 +320,6 @@ export default function ProfileEditScreen() {
           router.back();
         },
       },
-      icon: "warning",
     });
     setDialogVisible(true);
   };
@@ -337,20 +355,20 @@ export default function ProfileEditScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-text-primary">
-          Edit Profile
+          {headerTitle}
         </Text>
         <View className="w-6" />
       </View>
 
-      {/* Onboarding Form */}
+      {/* Onboarding Form — pinned to one step when opened from a Settings card */}
       <OnboardingForm
-        title="Update Your Profile"
+        mode="edit"
+        steps={editSteps}
         initialData={convertProfileToFormData(profile)}
         onSubmit={handleUpdateProfile}
-        onCancel={handleCancel}
         isLoading={saving}
-        submitButtonText="Save Changes"
-        showNavigation={true}
+        submitButtonText="Save"
+        onDirtyChange={setIsDirty}
       />
 
       {/* Custom Dialog */}

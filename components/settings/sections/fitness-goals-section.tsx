@@ -1,36 +1,42 @@
 import { formatEnumValue } from "@utils/index";
-import { Text,View } from "react-native";
+import { Text, View } from "react-native";
+
+import EditableSectionCard from "./editable-section-card";
 
 interface FitnessGoalsSectionProps {
   goals: string[];
+  onNavigate?: () => void;
 }
 
+// §9.2.2: tappable — opens onboarding step 2.
 export default function FitnessGoalsSection({
   goals,
+  onNavigate,
 }: FitnessGoalsSectionProps) {
-  if (!goals || goals.length === 0) {
-    return null;
-  }
-
   return (
-    <View className="px-6 mb-6 bg-surface rounded-xl overflow-hidden border border-neutral-medium-1">
-      <Text className="text-base font-semibold text-text-primary p-4 pb-3">
-        Fitness Goals
-      </Text>
-      <View className="px-4 pb-4">
-        <View className="flex-row flex-wrap">
-          {goals.map((goal, index) => (
-            <View
-              key={index}
-              className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
-            >
-              <Text className="text-xs font-medium text-neutral-light-1">
-                {formatEnumValue(goal)}
-              </Text>
-            </View>
-          ))}
-        </View>
+    <EditableSectionCard
+      title="Fitness goals"
+      step="FITNESS_GOALS"
+      onNavigate={onNavigate}
+    >
+      <View className="px-4 pt-2 pb-4">
+        {goals && goals.length > 0 ? (
+          <View className="flex-row flex-wrap">
+            {goals.map((goal, index) => (
+              <View
+                key={index}
+                className="bg-primary rounded-xl px-3 py-1 mr-2 mb-2"
+              >
+                <Text className="text-xs font-medium text-neutral-light-1">
+                  {formatEnumValue(goal)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text className="text-sm text-text-muted">Not specified</Text>
+        )}
       </View>
-    </View>
+    </EditableSectionCard>
   );
 }
