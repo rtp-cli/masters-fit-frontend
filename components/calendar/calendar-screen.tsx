@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { type DateData } from "react-native-calendars";
 
+import FeedbackConflictsBanner from "@/components/feedback-conflicts-banner";
 import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
@@ -522,6 +523,13 @@ export default function CalendarScreen() {
             unbounded, so the meaning-carrying text lives in the wider
             subtitle slot instead of truncating at 17px. */}
         <Header title="Your Plan" subtitle={workoutPlan?.name} />
+
+        {/* [GQ-04] Dismissible "we adjusted your requests" banner — renders only
+            when the generated plan couldn't fully honor the user's request. */}
+        <FeedbackConflictsBanner
+          workoutId={workoutPlan?.id}
+          conflicts={workoutPlan?.feedbackConflicts}
+        />
 
         <CalendarViewSection
           calendarKey={`${calendarKey}-${isDark ? "dark" : "light"}`}

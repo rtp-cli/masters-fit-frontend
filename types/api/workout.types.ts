@@ -82,6 +82,9 @@ export interface WorkoutDetailed {
   userId: number;
   name: string;
   description?: string;
+  // [GQ-04] Parts of the user's request the plan couldn't fully honor
+  // ("couldn't apply X because Y"), shown in the dismissible week banner.
+  feedbackConflicts?: { request: string; reason: string }[];
   startDate: Date;
   endDate: Date;
   promptId: number;
