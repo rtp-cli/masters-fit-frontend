@@ -1,7 +1,12 @@
 import React from "react";
 import { Switch,Text, TextInput, TouchableOpacity, View } from "react-native";
 
+import { getEquipmentForEnvironment } from "@/components/onboarding/utils/equipment-logic";
 import CustomSlider from "@/components/ui/slider";
+import {
+  ENVIRONMENT_DISPLAY,
+  ENVIRONMENTS_IN_DISPLAY_ORDER,
+} from "@/constants/environment-display";
 import {
   AVAILABLE_EQUIPMENT,
   INTENSITY_LEVELS,
@@ -148,36 +153,18 @@ const getStyleConfig = (styleKey: string, _colors: any) => {
 };
 
 // Environment configuration helper - exact copy from onboarding
-const getEnvironmentConfig = (envKey: string, _colors: any) => {
-  switch (envKey) {
-    case "COMMERCIAL_GYM":
-      return {
-        icon: "business-outline",
-        color: "black",
-        bgColor: "bg-green-100",
-        description: "Full gym with all equipment available",
-      };
-    case "HOME_GYM":
-      return {
-        icon: "home-outline",
-        color: "black",
-        bgColor: "bg-purple-100",
-        description: "Personal home gym setup",
-      };
-    case "BODYWEIGHT_ONLY":
-      return {
-        icon: "body-outline",
-        color: "black",
-        bgColor: "bg-blue-100",
-        description: "No equipment needed, just your body",
-      };
+// Icon-tint background only — label/description/icon come from the shared
+// ENVIRONMENT_DISPLAY config so this stays in lock-step with step 6 and 1c.
+const getEnvironmentBgColor = (value: string): string => {
+  switch (value) {
+    case WORKOUT_ENVIRONMENTS.COMMERCIAL_GYM:
+      return "bg-green-100";
+    case WORKOUT_ENVIRONMENTS.HOME_GYM:
+      return "bg-purple-100";
+    case WORKOUT_ENVIRONMENTS.BODYWEIGHT_ONLY:
+      return "bg-blue-100";
     default:
-      return {
-        icon: "fitness-outline",
-        color: "black",
-        bgColor: "bg-green-100",
-        description: "",
-      };
+      return "bg-green-100";
   }
 };
 
@@ -455,22 +442,30 @@ export default function ProfileOverrideForm({
         <Text className="text-base font-semibold text-neutral-dark-1 mb-4">
           Workout Environment
         </Text>
-        {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
+        {ENVIRONMENTS_IN_DISPLAY_ORDER.map((value) => {
           const isSelected = overrides.environment === value;
-          const config = getEnvironmentConfig(key, colors);
+          const display = ENVIRONMENT_DISPLAY[value];
 
           return (
             <TouchableOpacity
-              key={key}
+              key={value}
               className={`p-4 rounded-xl mb-3 flex-row items-center ${
                 isSelected ? "bg-primary" : "bg-surface"
               }`}
-              onPress={() => updateOverride({ environment: value })}
+              onPress={() =>
+                // Reassign equipment on env change (custom → none, so the user
+                // picks; gym/bodyweight auto-derive) — matches onboarding, so a
+                // Full-Gym profile switching to Custom Equipment starts empty.
+                updateOverride({
+                  environment: value,
+                  equipment: getEquipmentForEnvironment(value),
+                })
+              }
             >
               <IconComponent
-                iconName={config.icon}
-                color={config.color}
-                backgroundColor={config.bgColor}
+                iconName={display.icon}
+                color="black"
+                backgroundColor={getEnvironmentBgColor(value)}
               />
               <View className="flex-1">
                 <Text
@@ -480,7 +475,7 @@ export default function ProfileOverrideForm({
                       : "text-neutral-dark-1"
                   }`}
                 >
-                  {formatEnumValue(key)}
+                  {display.label}
                 </Text>
                 <Text
                   className={`text-xs ${
@@ -489,7 +484,7 @@ export default function ProfileOverrideForm({
                       : "text-neutral-medium-4"
                   }`}
                 >
-                  {config.description}
+                  {display.description}
                 </Text>
               </View>
             </TouchableOpacity>

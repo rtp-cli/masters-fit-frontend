@@ -55,6 +55,13 @@ export const AnalyticsEvent = {
   APP_FEEDBACK_SENT: "app_feedback_sent",
   APP_FEEDBACK_ABANDONED: "app_feedback_abandoned",
 
+  // ── Training locations (§12) ──
+  LOCATION_PICKER_OPENED: "training_location_picker_opened",
+  LOCATION_CHOSEN: "training_location_chosen",
+  LOCATION_PLACE_SAVED: "training_location_place_saved",
+  LOCATION_REBUILD_OFFERED: "training_location_rebuild_offered",
+  LOCATION_REBUILD_CHOICE: "training_location_rebuild_choice",
+
   // ── Navigation ──
   SCREEN_VIEWED: "screen_viewed",
 } as const;
@@ -162,6 +169,15 @@ export interface AnalyticsEventProps {
   [AnalyticsEvent.APP_FEEDBACK_ABANDONED]: Record<string, never>;
 
   [AnalyticsEvent.SCREEN_VIEWED]: { screen: string };
+
+  // Training locations (§12) — the rebuild-offer outcome is the interesting one.
+  [AnalyticsEvent.LOCATION_PICKER_OPENED]: Record<string, never>;
+  [AnalyticsEvent.LOCATION_CHOSEN]: {
+    kind: "primary" | "saved" | "bodyweight" | "one_off";
+  };
+  [AnalyticsEvent.LOCATION_PLACE_SAVED]: Record<string, never>;
+  [AnalyticsEvent.LOCATION_REBUILD_OFFERED]: { missing_count: number };
+  [AnalyticsEvent.LOCATION_REBUILD_CHOICE]: { choice: "rebuild" | "keep" };
 }
 
 /**

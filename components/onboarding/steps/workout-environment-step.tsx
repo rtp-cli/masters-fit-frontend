@@ -1,5 +1,9 @@
 import { Text, TextInput,TouchableOpacity, View } from "react-native";
 
+import {
+  ENVIRONMENT_DISPLAY,
+  ENVIRONMENTS_IN_DISPLAY_ORDER,
+} from "@/constants/environment-display";
 import { useThemeColors } from "@/lib/theme";
 import { type ArrayFields, type ArrayValue,type FormData } from "@/types/components";
 import { AVAILABLE_EQUIPMENT,WORKOUT_ENVIRONMENTS } from "@/types/enums";
@@ -191,18 +195,19 @@ export default function WorkoutEnvironmentStep({
           Workout Environment
         </Text>
         <View className="flex-row justify-between space-x-2">
-          {Object.entries(WORKOUT_ENVIRONMENTS).map(([key, value]) => {
+          {ENVIRONMENTS_IN_DISPLAY_ORDER.map((value) => {
             const config = getEnvironmentConfig(value);
+            const display = ENVIRONMENT_DISPLAY[value];
             return (
               <TouchableOpacity
-                key={key}
+                key={value}
                 className={`flex-1 p-4 rounded-xl items-center ${
                   formData.environment === value ? "bg-primary" : "bg-surface"
                 }`}
                 onPress={() => onFieldChange("environment", value)}
               >
                 <IconComponent
-                  iconName={config.icon}
+                  iconName={display.icon}
                   color={config.color}
                   backgroundColor={config.bgColor}
                   noMargin={true}
@@ -215,7 +220,7 @@ export default function WorkoutEnvironmentStep({
                       : "text-neutral-dark-1"
                   }`}
                 >
-                  {formatEnumValue(value)}
+                  {display.label}
                 </Text>
                 <Text
                   className={`text-xs text-center mt-1 ${
@@ -224,7 +229,7 @@ export default function WorkoutEnvironmentStep({
                       : "text-neutral-medium-4"
                   }`}
                 >
-                  {config.description}
+                  {display.description}
                 </Text>
               </TouchableOpacity>
             );

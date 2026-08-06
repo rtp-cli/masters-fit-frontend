@@ -11,6 +11,9 @@ interface EditableSectionCardProps {
   step: string;
   // Runs before navigating (e.g. close the settings sheet first).
   onNavigate?: () => void;
+  // Optional full route to open instead of the profile-edit step (e.g. the
+  // training-locations management screen for "Where you train").
+  routeOverride?: string;
   children: React.ReactNode;
 }
 
@@ -21,6 +24,7 @@ export default function EditableSectionCard({
   title,
   step,
   onNavigate,
+  routeOverride,
   children,
 }: EditableSectionCardProps) {
   const router = useRouter();
@@ -34,7 +38,7 @@ export default function EditableSectionCard({
       accessibilityLabel={`Edit ${title}`}
       onPress={() => {
         onNavigate?.();
-        router.push(`/profile-edit?step=${step}`);
+        router.push(routeOverride ?? `/profile-edit?step=${step}`);
       }}
     >
       <View className="flex-row items-center justify-between p-4 pb-2">

@@ -1,6 +1,8 @@
 import { formatEnumValue } from "@utils/index";
 import { Text, View } from "react-native";
 
+import { getEnvironmentLabel } from "@/constants/environment-display";
+
 import EditableSectionCard from "./editable-section-card";
 
 interface EquipmentSectionProps {
@@ -19,7 +21,7 @@ function environmentDisplay(
     if (Array.isArray(environment)) {
       return environment.length === 0
         ? "Not specified"
-        : formatEnumValue(environment[0]);
+        : getEnvironmentLabel(environment[0]);
     }
     if (typeof environment === "string") {
       const cleaned = environment
@@ -27,9 +29,9 @@ function environmentDisplay(
         .replace(/^\[|\]$/g, "")
         .replace(/^["']|["']$/g, "")
         .trim();
-      return cleaned ? formatEnumValue(cleaned) : "Not specified";
+      return cleaned ? getEnvironmentLabel(cleaned) : "Not specified";
     }
-    return formatEnumValue(environment);
+    return getEnvironmentLabel(environment);
   } catch {
     return Array.isArray(environment) ? environment[0] : String(environment);
   }
@@ -46,6 +48,7 @@ export default function EquipmentSection({
     <EditableSectionCard
       title="Where you train"
       step="WORKOUT_ENVIRONMENT"
+      routeOverride="/training-locations"
       onNavigate={onNavigate}
     >
       <View className="px-4 py-3 border-t border-neutral-light-2">
