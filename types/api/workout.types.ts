@@ -102,6 +102,11 @@ export interface PlanDay {
   name: string;
   description?: string;
   dayNumber: number;
+  // Training-locations §2.2/§9: frozen snapshot of where this session was built
+  // for. Present only when a location was chosen for the day; the row falls back
+  // to the primary location's name when absent.
+  locationId?: number | null;
+  locationSnapshot?: import("./training-location.types").TrainingLocationSnapshot | null;
   created_at: Date;
   updated_at: Date;
 }

@@ -35,6 +35,14 @@ type ActiveWorkoutCardProps = {
   /** Rest-day escape hatch: open the "generate an optional workout" form
       directly, skipping the Workout tab + choice modal (saves two taps). */
   onGenerateRestDayWorkout: () => void;
+  /** Training-locations 1a: the place today's session is built for (e.g. "My
+      usual place"). Null hides the row (no location resolved yet). */
+  todayLocationName?: string | null;
+  /** Opens the location picker (1b). */
+  onChangeLocation?: () => void;
+  /** Rule 3: once the session is active the row disappears entirely — not
+      disabled, gone. The dashboard passes workoutInProgress from context. */
+  isSessionActive?: boolean;
 };
 
 const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
@@ -51,6 +59,9 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   onViewWorkout,
   onShowWorkoutChoice,
   onGenerateRestDayWorkout,
+  todayLocationName,
+  onChangeLocation,
+  isSessionActive,
 }) => {
   const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
@@ -214,6 +225,42 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
                 </Text>
               </View>
             </View>
+
+            {/* Training-locations 1a: states which place this session was built
+                for. Renders even for a single-location user (the only place the
+                plan states its assumption); disappears once the session starts
+                (Rule 3) and after completion. */}
+            {!isSessionActive &&
+              !isWorkoutCompleted &&
+              !!todayLocationName &&
+              !!onChangeLocation && (
+                <TouchableOpacity
+                  onPress={onChangeLocation}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Training at ${todayLocationName}. Change location.`}
+                  className="flex-row items-center rounded-xl mb-4 border border-neutral-medium-1 bg-neutral-light-2"
+                  style={{ paddingHorizontal: 18, paddingVertical: 14, minHeight: 44 }}
+                >
+                  <Ionicons
+                    name="location-outline"
+                    size={18}
+                    color={colors.text.secondary}
+                  />
+                  <Text
+                    className="text-base font-semibold text-text-primary ml-2 flex-1"
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {todayLocationName}
+                  </Text>
+                  <Text className="text-sm text-text-muted mr-1">Change</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={colors.text.muted}
+                  />
+                </TouchableOpacity>
+              )}
 
             {isWorkoutCompleted ? (
               <View

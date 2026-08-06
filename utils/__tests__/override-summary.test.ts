@@ -115,7 +115,7 @@ describe("describeOverrides", () => {
         },
         profile(),
       ),
-    ).toEqual(["Commercial Gym"]);
+    ).toEqual(["Full Gym"]);
   });
 
   it("describes equipment changes only for a home-gym environment", () => {

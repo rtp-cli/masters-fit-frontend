@@ -21,6 +21,11 @@ import Header from "@/components/header";
 import { type PlanEndedRecap } from "@/components/no-active-workout-card";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
+import {
+  ConflictDialog,
+  CreatePlaceSheet,
+  LocationPickerSheet,
+} from "@/components/training-locations";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
@@ -29,8 +34,10 @@ import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import { TIME_RANGE_FILTER } from "@/constants/global.enum";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
+import { useWorkout } from "@/contexts/workout-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useTrainingLocations } from "@/hooks/use-training-locations";
 import { PAYWALL_COPY } from "@/lib/paywall-copy";
 import { tabEvents } from "@/lib/tab-events";
 import {
@@ -109,7 +116,7 @@ export default function DashboardScreen() {
   const colors = useThemeColors();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { reloadJobs, isGenerating } = useBackgroundJobs();
+  const { reloadJobs, isGenerating, addJob } = useBackgroundJobs();
   const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
   const { capabilities, tier, isLoading: entitlementsLoading } =
     useEntitlements();
@@ -205,6 +212,18 @@ export default function DashboardScreen() {
   const [restDayQuickGenerate, setRestDayQuickGenerate] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
+
+  // Training locations (1a–1d). The row hides once a session is in progress
+  // (Rule 3), so we read the shared workout-context flag here.
+  const { isWorkoutInProgress } = useWorkout();
+  const locations = useTrainingLocations({
+    userId: user?.id,
+    todaysWorkout,
+    planDayId: todaysWorkout?.id,
+    // Register the rebuild job so it shows the global generation progress and
+    // refreshes today's card on completion — same wiring as the Adjust flow.
+    onRebuildJobCreated: (jobId) => addJob(jobId, "daily-regeneration"),
+  });
   const [showPaymentWall, setShowPaymentWall] = useState(false);
   const [paywallMessage, setPaywallMessage] = useState<string>(
     PAYWALL_COPY.GENERIC
@@ -339,7 +358,11 @@ export default function DashboardScreen() {
     useCallback(() => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
       reloadJobs();
-    }, [reloadJobs])
+      // Refresh training locations on return from Settings so a place added,
+      // renamed, made-primary, or removed there is reflected here (and a deleted
+      // optimistic pick is reconciled back to the primary).
+      locations.reloadLocations();
+    }, [reloadJobs, locations.reloadLocations])
   );
 
   const resetHealthMetrics = useCallback(() => {
@@ -977,6 +1000,41 @@ export default function DashboardScreen() {
             setRestDayQuickGenerate(true);
             setShowSingleDayRegenModal(true);
           }}
+          todayLocationName={locations.todayLocationName}
+          onChangeLocation={locations.openPicker}
+          isSessionActive={isWorkoutInProgress}
+        />
+
+        {/* Training locations 1b/1c/1d */}
+        <LocationPickerSheet
+          visible={locations.pickerVisible}
+          primary={locations.primary}
+          secondaries={locations.secondaries}
+          currentName={locations.todayLocationName}
+          onClose={locations.closePicker}
+          onSelect={locations.selectLocation}
+          onSomewhereElse={() => {
+            locations.closePicker();
+            locations.openCreate();
+          }}
+        />
+        <CreatePlaceSheet
+          visible={locations.createVisible}
+          userId={user?.id}
+          secondaryCount={locations.secondaries.length}
+          onClose={locations.closeCreate}
+          onUse={(snapshot) => {
+            locations.closeCreate();
+            locations.selectLocation(snapshot);
+          }}
+          onSaved={locations.reloadLocations}
+        />
+        <ConflictDialog
+          conflict={locations.conflict}
+          locationName={locations.conflict?.snapshot.name ?? ""}
+          rebuilding={locations.rebuilding}
+          onRebuild={locations.rebuildForConflict}
+          onKeep={locations.keepConflictWorkout}
         />
 
         {/* Hidden with no active plan: the fixed Mon–Sun row would read

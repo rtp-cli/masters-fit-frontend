@@ -1151,6 +1151,18 @@ export async function regenerateDailyWorkoutAsync(
     /** Session minutes for THIS generation only — drives the backend's hard
      * duration constraint; as prose in `reason` it was never enforced. */
     durationOverride?: number;
+    /** Training-locations 1d rebuild: generate today around a different place's
+     * equipment and freeze that location's snapshot onto the day. */
+    locationOverride?: {
+      environment: string;
+      equipment: string[];
+      snapshot: {
+        locationId: number | null;
+        name: string;
+        environment: string;
+        equipment: string[];
+      };
+    };
   }
 ): Promise<{ success: boolean; jobId: number; message: string } | null> {
   try {
