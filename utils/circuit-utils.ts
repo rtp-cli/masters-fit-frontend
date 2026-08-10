@@ -98,8 +98,19 @@ export function computeCircuitResult(
 
   const completedRounds = rounds.filter((r) => r.isCompleted);
   const roundsCompleted = completedRounds.length;
+  // Count reps only where they represent real work. A completed round counts
+  // all its reps (a one-tap "Complete Round" records the prescribed reps). A
+  // trailing uncompleted round counts only exercises the user actually logged
+  // (`completed`) — because when an AMRAP round is completed the next round is
+  // auto-created prefilled to target reps but never performed. Without this
+  // guard that phantom round inflates the score (a clean 5-round AMRAP shows
+  // "5+24" instead of "5").
   const repsIn = (round: CircuitRound) =>
-    round.exercises.reduce((sum, ex) => sum + (ex.actualReps || 0), 0);
+    round.exercises.reduce(
+      (sum, ex) =>
+        sum + (round.isCompleted || ex.completed ? ex.actualReps || 0 : 0),
+      0
+    );
   const totalReps = rounds.reduce((sum, round) => sum + repsIn(round), 0);
   // Reps performed in a trailing partial (uncompleted) round, e.g. the
   // "+12" in an AMRAP score of "5+12".
