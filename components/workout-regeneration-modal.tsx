@@ -124,6 +124,8 @@ interface WorkoutRegenerationModalProps {
   noActiveWorkoutDay?: boolean; // Add noActiveWorkoutDay prop for days outside workout plan
   selectedDate?: string; // The date for rest day workout generation
   singleTabOnly?: boolean; // When true, hides tab toggle and locks to single day mode
+  onEditManually?: () => void; // "Edit it myself" exit — hands off to the manual editor
+  onDismiss?: () => void; // iOS: fires once the sheet has finished dismissing
 }
 
 export default function WorkoutRegenerationModal({
@@ -138,6 +140,8 @@ export default function WorkoutRegenerationModal({
   noActiveWorkoutDay = false,
   selectedDate,
   singleTabOnly = false,
+  onEditManually,
+  onDismiss,
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -809,6 +813,7 @@ export default function WorkoutRegenerationModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <SafeAreaView edges={["top"]} className="flex-1">
@@ -827,7 +832,17 @@ export default function WorkoutRegenerationModal({
                   <Ionicons name="close" size={20} color={colors.text.muted} />
                 </TouchableOpacity>
                 <Text className="text-base font-semibold text-text-primary">
-                  Adjust Workout
+                  {/* §6.1: day/week scope named explicitly on the scheduled-day
+                      flow. Rest-day and no-plan entries keep "Adjust Workout"
+                      (they must stay pixel-identical), so both new titles are
+                      gated on !isRestDay && !noActiveWorkoutDay. */}
+                  {!isRestDay && !noActiveWorkoutDay && selectedType === "day"
+                    ? "Change today's workout"
+                    : !isRestDay &&
+                        !noActiveWorkoutDay &&
+                        selectedType === "week"
+                      ? "Change this week"
+                      : "Adjust Workout"}
                 </Text>
                 <View className="w-8" />
               </View>
@@ -931,7 +946,13 @@ export default function WorkoutRegenerationModal({
                       placeholder={
                         isRestDay && selectedType === "day"
                           ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
-                          : "Add notes about your workout here..."
+                          : !isRestDay &&
+                              !noActiveWorkoutDay &&
+                              selectedType === "day"
+                            ? // §6.3: teach what the coach can act on, rather
+                              // than describing the field.
+                              "Short on time? Sore shoulder? No rack today?"
+                            : "Add notes about your workout here..."
                       }
                       placeholderTextColor={colors.text.muted}
                       value={customFeedback}
@@ -1071,6 +1092,62 @@ export default function WorkoutRegenerationModal({
                   </>
                 )}
               </TouchableOpacity>
+
+              {/* §6.5: on the scheduled-day flow only, the primary coach action
+                  is followed by the manual-edit exit and a week-scope escape
+                  hatch. Fixed order; never reorders by usage. */}
+              {selectedType === "day" && !isRestDay && !noActiveWorkoutDay && (
+                <>
+                  <View className="h-px bg-neutral-light-2 mt-5" />
+
+                  <TouchableOpacity
+                    className="flex-row items-center mt-4"
+                    style={{ minHeight: 44 }}
+                    onPress={() => onEditManually?.()}
+                    disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit it myself. Swap or remove exercises, change sets, reps and weight."
+                  >
+                    <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
+                      <Ionicons
+                        name="create-outline"
+                        size={18}
+                        color={colors.text.primary}
+                      />
+                    </View>
+                    <View className="flex-1 ml-3">
+                      <Text className="text-base font-semibold text-text-primary">
+                        Edit it myself
+                      </Text>
+                      <Text className="text-sm text-text-muted">
+                        Swap or remove exercises, change sets, reps and weight.
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.text.muted}
+                    />
+                  </TouchableOpacity>
+
+                  {/* Approved deviation from SPEC §6.5.3: switch scope in place
+                      (keep selectedPlanDay + singleTabOnly) instead of
+                      closing/reopening with a null day. Nulling the day flips
+                      the parent's isRestDay true, which would reshow the tab
+                      control and block the "Change this week" title (§12.5). */}
+                  <TouchableOpacity
+                    className="py-3"
+                    onPress={() => setSelectedType("week")}
+                    disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Adjust the whole week instead"
+                  >
+                    <Text className="text-sm font-medium text-text-muted text-center">
+                      Adjust the whole week instead
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         </KeyboardAvoidingView>

@@ -10,8 +10,9 @@ type CalendarActionButtonsProps = {
   isHistoricalWorkout: boolean;
   isPastDate: boolean;
   currentSelectedPlanDay: PlanDayWithBlocks | null;
-  onShowWorkoutChoice: () => void;
-  onOpenEditExercises: (planDay: PlanDayWithBlocks) => void;
+  // [MF-022] Opens WorkoutRegenerationModal directly (not the choice modal).
+  // Used by both the rest-day and scheduled-day branches.
+  onOpenRegeneration: () => void;
 };
 
 export default function CalendarActionButtons({
@@ -19,8 +20,7 @@ export default function CalendarActionButtons({
   isHistoricalWorkout,
   isPastDate,
   currentSelectedPlanDay,
-  onShowWorkoutChoice,
-  onOpenEditExercises,
+  onOpenRegeneration,
 }: CalendarActionButtonsProps) {
   const colors = useThemeColors();
 
@@ -40,7 +40,7 @@ export default function CalendarActionButtons({
       <View className="px-lg my-lg">
         <TouchableOpacity
           className="bg-primary p-3 rounded-xl items-center flex-row justify-center"
-          onPress={() => onShowWorkoutChoice()}
+          onPress={() => onOpenRegeneration()}
           accessibilityRole="button"
           accessibilityLabel="Adjust week"
         >
@@ -69,58 +69,35 @@ export default function CalendarActionButtons({
     return null;
   }
 
+  // Scheduled, incomplete day: one door. "Change Workout" opens the
+  // regeneration sheet, which now also hosts the manual-edit exit and a
+  // week-scope link (see WorkoutRegenerationModal). Two sibling buttons whose
+  // labels both read "change this workout" were the confusion this replaces.
   return (
     <View className="px-lg my-lg">
-      <View className="flex-row" style={{ gap: 8 }}>
-        <TouchableOpacity
-          className="flex-1 bg-primary p-3 rounded-xl items-center flex-row justify-center"
-          onPress={() => onShowWorkoutChoice()}
-          accessibilityRole="button"
-          accessibilityLabel="Adjust today"
+      <TouchableOpacity
+        className="bg-primary p-3 rounded-xl items-center flex-row justify-center"
+        onPress={() => onOpenRegeneration()}
+        accessibilityRole="button"
+        accessibilityLabel="Change workout"
+      >
+        {/* Speech bubble, not a gear: the sheet is a conversation with the
+            coach, not a settings panel. */}
+        <Ionicons
+          name="chatbubble-ellipses-outline"
+          size={16}
+          color={colors.contentOnPrimary}
+        />
+        <Text
+          className="text-content-on-primary font-semibold text-sm ml-2"
+          style={{ flexShrink: 1 }}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          maxFontSizeMultiplier={1.3}
         >
-          <Ionicons
-            name="settings-outline"
-            size={16}
-            color={colors.contentOnPrimary}
-          />
-          <Text
-            className="text-content-on-primary font-semibold text-sm ml-2"
-            style={{ flexShrink: 1 }}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            maxFontSizeMultiplier={1.3}
-          >
-            {/* [MF-022] "Today" instead of the ambiguous "Workout" --
-                parallels "Adjust Week" below and signals day-scope
-                before the modal even opens. */}
-            Adjust Today
-          </Text>
-        </TouchableOpacity>
-
-        {currentSelectedPlanDay && (
-          <TouchableOpacity
-            className="flex-1 bg-card border border-neutral-light-2 p-3 rounded-xl items-center flex-row justify-center"
-            onPress={() => onOpenEditExercises(currentSelectedPlanDay)}
-            accessibilityRole="button"
-            accessibilityLabel="Edit workout"
-          >
-            <Ionicons
-              name="create-outline"
-              size={16}
-              color={colors.brand.primary}
-            />
-            <Text
-              className="text-primary font-semibold text-sm ml-2"
-              style={{ flexShrink: 1 }}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              maxFontSizeMultiplier={1.3}
-            >
-              Edit Workout
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          Change Workout
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
