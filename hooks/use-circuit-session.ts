@@ -134,7 +134,11 @@ export function useCircuitSession(
         (total, round) =>
           total +
           round.exercises.reduce(
-            (roundTotal, ex) => roundTotal + ex.actualReps,
+            // Skip the auto-created trailing round's prefilled reps: only a
+            // completed round or a user-logged exercise (`completed`) is real.
+            (roundTotal, ex) =>
+              roundTotal +
+              (round.isCompleted || ex.completed ? ex.actualReps : 0),
             0
           ),
         0

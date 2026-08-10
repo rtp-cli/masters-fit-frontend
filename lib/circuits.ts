@@ -12,18 +12,15 @@ import { logger } from "./logger";
  * Collect exercise log data from a circuit round (pure data, no API calls).
  * If the round is marked complete, log ALL exercises (including duration-based
  * cardio exercises that may have actualReps=0).
- * For incomplete rounds, only log exercises that have some recorded data.
+ * For incomplete rounds, only log exercises the user actually logged
+ * (`completed`) — actualReps is prefilled to target on an auto-created round,
+ * so it can't be used to tell real work from a never-performed trailing round.
  */
 function collectRoundExerciseLogs(
   roundData: CircuitRound
 ): CreateExerciseLogParams[] {
   return roundData.exercises
-    .filter(
-      (exercise) =>
-        roundData.isCompleted ||
-        exercise.actualReps > 0 ||
-        exercise.completed
-    )
+    .filter((exercise) => roundData.isCompleted || exercise.completed)
     .map((exercise) => ({
       planDayExerciseId: exercise.planDayExerciseId,
       roundNumber: roundData.roundNumber,
@@ -61,14 +58,15 @@ export async function logCircuitCompletion(
   }
 ): Promise<void> {
   try {
-    // Collect all rounds that have any user interaction:
-    // completed rounds, rounds with reps logged, or rounds with weight changes
+    // Collect all rounds that have any user interaction: completed rounds, or
+    // uncompleted rounds where the user actually logged an exercise. For an
+    // uncompleted round only `completed` marks real work — actualReps and
+    // weight are prefilled to the target/previous round when the next AMRAP
+    // round is auto-created, so they'd falsely flag the never-performed
+    // trailing round (the "5+24" phantom-round bug).
     const completedRounds = rounds.filter((r) => {
       if (r.isCompleted) return true;
-      const hasActivity = r.exercises?.some(
-        (ex) => (ex.actualReps || 0) > 0 || ex.completed || (ex.weight || 0) > 0
-      );
-      return hasActivity;
+      return r.exercises?.some((ex) => ex.completed) ?? false;
     });
 
     const allLogs = completedRounds.flatMap((round) =>

@@ -257,7 +257,7 @@ export default function ProfileEditScreen() {
           formData.equipment?.map((e: AVAILABLE_EQUIPMENT) => e.toString()) ||
           [],
         otherEquipment: formData.otherEquipment || "",
-        workoutStyles: formData.preferredStyles.map((s: PREFERRED_STYLES) =>
+        preferredStyles: formData.preferredStyles.map((s: PREFERRED_STYLES) =>
           s.toString()
         ),
         availableDays: formData.availableDays.map((d: PREFERRED_DAYS) =>
@@ -271,7 +271,7 @@ export default function ProfileEditScreen() {
       };
 
       // Update the profile
-      const updatedProfile = await updateUserProfile(profileData as any);
+      const updatedProfile = await updateUserProfile(profileData);
 
       if (updatedProfile) {
         // §A2.3: return to Settings silently — no success dialog, no toast. The

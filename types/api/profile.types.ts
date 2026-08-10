@@ -31,10 +31,10 @@ export interface UpdateProfileParams {
   goals?: string[];
   limitations?: string[];
   fitnessLevel?: string;
-  environment?: string[];
+  environment?: string;
   equipment?: string[];
   otherEquipment?: string;
-  workoutStyles?: string[];
+  preferredStyles?: string[];
   availableDays?: string[];
   preferredTime?: string;
   weeklyTarget?: number;
