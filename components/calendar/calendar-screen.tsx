@@ -9,6 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef,useState } from "react";
 import {
+  Platform,
   RefreshControl,
   ScrollView,
   Text,
@@ -80,6 +81,10 @@ export default function CalendarScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
+  // "Edit it myself" hands off from the regeneration sheet to the editor. On
+  // iOS a pageSheet can't be presented while another is dismissing, so we arm
+  // this, close the sheet, and open the editor from the sheet's onDismiss.
+  const pendingEditRef = useRef(false);
 
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
@@ -578,14 +583,9 @@ export default function CalendarScreen() {
           // extra step. That choice modal still applies where it actually
           // makes sense: WorkoutDaySection's NoActiveWorkoutCard, for dates
           // outside any existing plan (nothing to "regenerate" there).
-          onShowWorkoutChoice={() =>
+          onOpenRegeneration={() =>
             handleOpenRegeneration(currentSelectedPlanDay || undefined)
           }
-          onOpenEditExercises={(planDay) => {
-            if (planDay.isComplete) return;
-            setSelectedPlanDay(planDay);
-            setShowEditModal(true);
-          }}
         />
 
         {/* "Just generated" badge after a full-week generation */}
@@ -625,6 +625,10 @@ export default function CalendarScreen() {
         loading={false}
         regenerationType={selectedPlanDay ? "day" : "week"}
         selectedPlanDay={selectedPlanDay}
+        // Scheduled-day entry: lock to day scope and hide the Single/Full-Week
+        // control. Rest-day and no-plan entries (no selectedPlanDay) keep both
+        // tabs — they call genuinely different endpoints.
+        singleTabOnly={!!selectedPlanDay}
         isRestDay={
           !selectedPlanDay &&
           !!workoutPlan &&
@@ -639,6 +643,24 @@ export default function CalendarScreen() {
         selectedDate={selectedDate}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
+        }}
+        // "Edit it myself": close the sheet WITHOUT clearing selectedPlanDay
+        // (onClose would null it), then open the editor once the sheet has
+        // dismissed. Android has no onDismiss and no present-while-dismissing
+        // limit, so open immediately there.
+        onEditManually={() => {
+          pendingEditRef.current = true;
+          setShowRegenerationModal(false);
+          if (Platform.OS !== "ios") {
+            pendingEditRef.current = false;
+            setShowEditModal(true);
+          }
+        }}
+        onDismiss={() => {
+          if (pendingEditRef.current) {
+            pendingEditRef.current = false;
+            setShowEditModal(true);
+          }
         }}
       />
 

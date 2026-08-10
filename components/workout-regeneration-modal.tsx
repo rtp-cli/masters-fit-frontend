@@ -124,6 +124,8 @@ interface WorkoutRegenerationModalProps {
   noActiveWorkoutDay?: boolean; // Add noActiveWorkoutDay prop for days outside workout plan
   selectedDate?: string; // The date for rest day workout generation
   singleTabOnly?: boolean; // When true, hides tab toggle and locks to single day mode
+  onEditManually?: () => void; // "Edit it myself" exit — hands off to the manual editor
+  onDismiss?: () => void; // iOS: fires once the sheet has finished dismissing
 }
 
 export default function WorkoutRegenerationModal({
@@ -138,6 +140,8 @@ export default function WorkoutRegenerationModal({
   noActiveWorkoutDay = false,
   selectedDate,
   singleTabOnly = false,
+  onEditManually,
+  onDismiss,
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -803,12 +807,102 @@ export default function WorkoutRegenerationModal({
     );
   }
 
+  // §6.7: the primary action and the day-scope exits are placed differently by
+  // branch — pinned in a footer where the segmented control makes the content
+  // tall, but moved into the scroll flow on the single-tab (scheduled-day)
+  // entry, where the content is short and a pinned footer leaves a dead gap.
+  // Defined once here so both placements share the same markup.
+  const primaryActionButton = (
+    <TouchableOpacity
+      className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
+        loading ? "opacity-70" : ""
+      }`}
+      onPress={handleRegenerateWithFeedback}
+      disabled={loading}
+    >
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.neutral.white} />
+      ) : (
+        <>
+          <Ionicons name="refresh" size={18} color={colors.neutral.white} />
+          <Text
+            className="text-neutral-white font-semibold text-sm ml-2"
+            maxFontSizeMultiplier={1.3}
+          >
+            {selectedType === "week"
+              ? "Update Weekly Plan"
+              : noActiveWorkoutDay
+                ? "Generate Workout"
+                : "Update Today's Workout"}
+          </Text>
+        </>
+      )}
+    </TouchableOpacity>
+  );
+
+  // §6.5: manual-edit exit + week-scope escape hatch. Scheduled-day flow only.
+  // Fixed order; never reorders by usage.
+  const dayScopeExits =
+    selectedType === "day" && !isRestDay && !noActiveWorkoutDay ? (
+      <>
+        <View className="h-px bg-neutral-light-2 mt-5" />
+
+        <TouchableOpacity
+          className="flex-row items-center mt-4"
+          style={{ minHeight: 44 }}
+          onPress={() => onEditManually?.()}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Edit it myself. Swap or remove exercises, change sets, reps and weight."
+        >
+          <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color={colors.text.primary}
+            />
+          </View>
+          <View className="flex-1 ml-3">
+            <Text className="text-base font-semibold text-text-primary">
+              Edit it myself
+            </Text>
+            <Text className="text-sm text-text-muted">
+              Swap or remove exercises, change sets, reps and weight.
+            </Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.text.muted}
+          />
+        </TouchableOpacity>
+
+        {/* Approved deviation from SPEC §6.5.3: switch scope in place (keep
+            selectedPlanDay + singleTabOnly) instead of closing/reopening with a
+            null day. Nulling the day flips the parent's isRestDay true, which
+            would reshow the tab control and block the "Change this week" title
+            (§12.5). */}
+        <TouchableOpacity
+          className="py-3"
+          onPress={() => setSelectedType("week")}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Adjust the whole week instead"
+        >
+          <Text className="text-sm font-medium text-text-muted text-center">
+            Adjust the whole week instead
+          </Text>
+        </TouchableOpacity>
+      </>
+    ) : null;
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
       statusBarTranslucent
     >
       <SafeAreaView edges={["top"]} className="flex-1">
@@ -827,7 +921,17 @@ export default function WorkoutRegenerationModal({
                   <Ionicons name="close" size={20} color={colors.text.muted} />
                 </TouchableOpacity>
                 <Text className="text-base font-semibold text-text-primary">
-                  Adjust Workout
+                  {/* §6.1: day/week scope named explicitly on the scheduled-day
+                      flow. Rest-day and no-plan entries keep "Adjust Workout"
+                      (they must stay pixel-identical), so both new titles are
+                      gated on !isRestDay && !noActiveWorkoutDay. */}
+                  {!isRestDay && !noActiveWorkoutDay && selectedType === "day"
+                    ? "Change today's workout"
+                    : !isRestDay &&
+                        !noActiveWorkoutDay &&
+                        selectedType === "week"
+                      ? "Change this week"
+                      : "Adjust Workout"}
                 </Text>
                 <View className="w-8" />
               </View>
@@ -873,11 +977,16 @@ export default function WorkoutRegenerationModal({
                       workout for this day, or start a fresh 7-day plan.
                     </Text>
                   </View>
-                ) : (
+                ) : !singleTabOnly ? (
+                  // §6.7: this caption is the segmented control's own label —
+                  // it asks the user to pick a scope. Gate it on the same
+                  // condition as the control so it never survives when the
+                  // control is hidden (the sheet would name a choice it doesn't
+                  // offer). The field label below carries the ask from here.
                   <Text className="text-base text-text-muted mb-6 text-center">
                     Choose how you would like to adjust your workout plan:
                   </Text>
-                )}
+                ) : null}
 
                 {/* [MF-022] Shared SegmentedControl instead of a hand-rolled
                     duplicate -- consistent styling with the dashboard's
@@ -931,7 +1040,13 @@ export default function WorkoutRegenerationModal({
                       placeholder={
                         isRestDay && selectedType === "day"
                           ? "E.g., '30 minutes of light cardio', 'Quick upper body strength', 'Gentle yoga flow'..."
-                          : "Add notes about your workout here..."
+                          : !isRestDay &&
+                              !noActiveWorkoutDay &&
+                              selectedType === "day"
+                            ? // §6.3: teach what the coach can act on, rather
+                              // than describing the field.
+                              "Short on time? Sore shoulder? No rack today?"
+                            : "Add notes about your workout here..."
                       }
                       placeholderTextColor={colors.text.muted}
                       value={customFeedback}
@@ -1033,45 +1148,28 @@ export default function WorkoutRegenerationModal({
                       </Text>
                     </TouchableOpacity>
                   )}
+
+                  {/* §6.7: on the single-tab (scheduled-day) entry the content
+                      is short, so the primary action + exits live inline here —
+                      directly after the Customize row — instead of in a pinned
+                      footer that would leave a dead gap above it. */}
+                  {singleTabOnly && (
+                    <View className="mt-6">
+                      {primaryActionButton}
+                      {dayScopeExits}
+                    </View>
+                  )}
                 </View>
               </View>
             </ScrollView>
 
-            {/* Action Button */}
-            <View className="px-5 pb-10 mb-5">
-              <TouchableOpacity
-                className={`bg-primary py-4 rounded-md items-center flex-row justify-center ${
-                  loading ? "opacity-70" : ""
-                }`}
-                onPress={handleRegenerateWithFeedback}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={colors.neutral.white}
-                  />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="refresh"
-                      size={18}
-                      color={colors.neutral.white}
-                    />
-                    <Text
-                      className="text-neutral-white font-semibold text-sm ml-2"
-                      maxFontSizeMultiplier={1.3}
-                    >
-                      {selectedType === "week"
-                        ? "Update Weekly Plan"
-                        : noActiveWorkoutDay
-                          ? "Generate Workout"
-                          : "Update Today's Workout"}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
+            {/* §6.7: pinned footer only where the segmented control makes the
+                content tall enough to warrant it (rest-day / no-plan). On the
+                single-tab entry the primary action + exits move into the scroll
+                flow above, so the sheet no longer stretches. */}
+            {!singleTabOnly && (
+              <View className="px-5 pb-10 mb-5">{primaryActionButton}</View>
+            )}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
