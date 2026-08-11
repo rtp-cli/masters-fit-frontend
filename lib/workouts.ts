@@ -1320,3 +1320,40 @@ export async function addExerciseToBlock(
     return null;
   }
 }
+
+/**
+ * Update the sets/reps/weight/duration/rest of an EXISTING plan-day exercise.
+ * PUT /workouts/exercises/{id} — the backend updates only the fields present in
+ * the body (each is optional). `null` clears a field. Used by Edit Exercises to
+ * adjust an exercise's targets in place (incl. after a replace).
+ */
+export async function updateExerciseParams(
+  exerciseId: number,
+  data: {
+    sets?: number | null;
+    reps?: number | null;
+    weight?: number | null;
+    duration?: number | null;
+    restTime?: number | null;
+  }
+): Promise<{ success: boolean; workoutBlockExercise: any } | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      workoutBlockExercise: any;
+    }>(`/workouts/exercises/${exerciseId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+
+    if (response?.success) {
+      invalidateActiveWorkoutCache();
+      return response;
+    } else {
+      throw new Error("Failed to update exercise");
+    }
+  } catch (error) {
+    console.error("Error updating exercise:", error);
+    return null;
+  }
+}

@@ -32,6 +32,7 @@ import {
   addExerciseToBlock,
   deleteExerciseFromBlock,
   replaceExercise,
+  updateExerciseParams,
 } from "@/lib/workouts";
 import { type SearchExercise } from "@/types/api/search.types";
 import {
@@ -70,9 +71,9 @@ export default function WorkoutEditModal({
   >({});
 
   // Exercise replacement states
-  const [currentView, setCurrentView] = useState<"main" | "replace" | "add">(
-    "main"
-  );
+  const [currentView, setCurrentView] = useState<
+    "main" | "replace" | "add" | "editParams"
+  >("main");
   const [currentExercise, setCurrentExercise] =
     useState<WorkoutBlockWithExercise | null>(null);
   const [selectedExercise, setSelectedExercise] =
@@ -92,6 +93,8 @@ export default function WorkoutEditModal({
     restTime: "",
   });
   const [addingExercise, setAddingExercise] = useState(false);
+  // Edit-params view reuses `addParams` for its inputs; this is its own saver.
+  const [savingParams, setSavingParams] = useState(false);
 
   // 1a action sheet + exclusion flow. Tapping a row opens the three-door sheet
   // (Replace / Remove today / Never prescribe again); door three mounts the
@@ -299,6 +302,75 @@ export default function WorkoutEditModal({
       setSelectedMuscleGroups(exercise.exercise.muscles_targeted);
     }
     searchExercises();
+  };
+
+  // Door — edit this exercise's own sets/reps/weight/duration/rest in place.
+  // Reuses the Add view's `addParams` inputs, pre-filled from the exercise.
+  const startEditParams = (exercise: WorkoutBlockWithExercise) => {
+    const numToStr = (v?: number | null) =>
+      v != null && v > 0 ? String(v) : "";
+    setCurrentExercise(exercise);
+    setAddParams({
+      sets: numToStr(exercise.sets),
+      reps: numToStr(exercise.reps),
+      weight: numToStr(exercise.weight),
+      duration: numToStr(exercise.duration),
+      restTime: numToStr(exercise.restTime),
+    });
+    setCurrentView("editParams");
+  };
+
+  const handleSaveParams = async () => {
+    if (!currentExercise) return;
+    // Empty field → null (clears it); otherwise the parsed number. This is
+    // WYSIWYG: the form is pre-filled, so what's on screen is what persists.
+    const strToNum = (s: string): number | null => {
+      const t = s.trim();
+      if (t === "") return null;
+      const v = Number(t);
+      return Number.isFinite(v) ? v : null;
+    };
+    try {
+      setSavingParams(true);
+      const result = await updateExerciseParams(currentExercise.id, {
+        sets: strToNum(addParams.sets),
+        reps: strToNum(addParams.reps),
+        weight: strToNum(addParams.weight),
+        duration: strToNum(addParams.duration),
+        restTime: strToNum(addParams.restTime),
+      });
+      if (result?.success) {
+        setCurrentView("main");
+        setCurrentExercise(null);
+        setAddParams({
+          sets: "",
+          reps: "",
+          weight: "",
+          duration: "",
+          restTime: "",
+        });
+        refreshWorkout();
+      } else {
+        setDialogConfig({
+          title: "Error",
+          description: "Failed to update exercise. Please try again.",
+          primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+          icon: "alert-circle",
+        });
+        setDialogVisible(true);
+      }
+    } catch (error) {
+      console.error("Error updating exercise:", error);
+      setDialogConfig({
+        title: "Error",
+        description: "Failed to update exercise. Please try again.",
+        primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
+    } finally {
+      setSavingParams(false);
+    }
   };
 
   // Door 2 — remove from today only. No reason, no confirmation dialog (its
@@ -579,6 +651,19 @@ export default function WorkoutEditModal({
       return;
     }
 
+    if (currentView === "editParams") {
+      setCurrentView("main");
+      setCurrentExercise(null);
+      setAddParams({
+        sets: "",
+        reps: "",
+        weight: "",
+        duration: "",
+        restTime: "",
+      });
+      return;
+    }
+
     if (currentView === "add") {
       setCurrentView("main");
       setAddingToBlock(null);
@@ -636,6 +721,92 @@ export default function WorkoutEditModal({
     0
   );
 
+  // Sets/Reps/Weight/Duration/Rest inputs, bound to `addParams`. Shared by the
+  // Add-exercise view and the Edit-params view so the two stay identical.
+  const paramInputs = (
+    <>
+      <Text className="text-base font-semibold text-text-primary mb-4">
+        Exercise Parameters
+      </Text>
+
+      <View className="flex-row gap-3 mb-3">
+        <View className="flex-1">
+          <Text className="text-sm font-medium text-text-secondary mb-1">
+            Sets
+          </Text>
+          <TextInput
+            className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+            placeholder="e.g. 3"
+            placeholderTextColor={colors.text.muted}
+            value={addParams.sets}
+            onChangeText={(v) => setAddParams((p) => ({ ...p, sets: v }))}
+            keyboardType="number-pad"
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-sm font-medium text-text-secondary mb-1">
+            Reps
+          </Text>
+          <TextInput
+            className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+            placeholder="e.g. 10"
+            placeholderTextColor={colors.text.muted}
+            value={addParams.reps}
+            onChangeText={(v) => setAddParams((p) => ({ ...p, reps: v }))}
+            keyboardType="number-pad"
+          />
+        </View>
+      </View>
+
+      <View className="mb-3">
+        <Text className="text-sm font-medium text-text-secondary mb-1">
+          Weight (lbs)
+        </Text>
+        <TextInput
+          className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+          placeholder="e.g. 135"
+          placeholderTextColor={colors.text.muted}
+          value={addParams.weight}
+          onChangeText={(v) => setAddParams((p) => ({ ...p, weight: v }))}
+          keyboardType="decimal-pad"
+        />
+      </View>
+
+      <View className="flex-row gap-3 mb-3">
+        <View className="flex-1">
+          <Text className="text-sm font-medium text-text-secondary mb-1">
+            Duration (sec)
+          </Text>
+          <TextInput
+            className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+            placeholder="e.g. 30"
+            placeholderTextColor={colors.text.muted}
+            value={addParams.duration}
+            onChangeText={(v) => setAddParams((p) => ({ ...p, duration: v }))}
+            keyboardType="number-pad"
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-sm font-medium text-text-secondary mb-1">
+            Rest (sec)
+          </Text>
+          <TextInput
+            className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
+            placeholder="e.g. 60"
+            placeholderTextColor={colors.text.muted}
+            value={addParams.restTime}
+            onChangeText={(v) => setAddParams((p) => ({ ...p, restTime: v }))}
+            keyboardType="number-pad"
+          />
+        </View>
+      </View>
+
+      <Text className="text-xs text-text-muted italic mt-1">
+        Fill in the relevant fields. Leave empty if not applicable.
+      </Text>
+    </>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -664,7 +835,9 @@ export default function WorkoutEditModal({
                     ? "Edit Exercises"
                     : currentView === "replace"
                       ? "Replace Exercise"
-                      : "Add Exercise"}
+                      : currentView === "editParams"
+                        ? "Edit Sets & Reps"
+                        : "Add Exercise"}
                 </Text>
                 <View className="w-8" />
               </View>
@@ -1122,103 +1295,8 @@ export default function WorkoutEditModal({
                           </View>
                         </View>
 
-                        {/* Parameter Inputs */}
-                        <Text className="text-base font-semibold text-text-primary mb-4">
-                          Exercise Parameters
-                        </Text>
-
-                        <View className="flex-row gap-3 mb-3">
-                          <View className="flex-1">
-                            <Text className="text-sm font-medium text-text-secondary mb-1">
-                              Sets
-                            </Text>
-                            <TextInput
-                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
-                              placeholder="e.g. 3"
-                              placeholderTextColor={colors.text.muted}
-                              value={addParams.sets}
-                              onChangeText={(v) =>
-                                setAddParams((p) => ({ ...p, sets: v }))
-                              }
-                              keyboardType="number-pad"
-                            />
-                          </View>
-                          <View className="flex-1">
-                            <Text className="text-sm font-medium text-text-secondary mb-1">
-                              Reps
-                            </Text>
-                            <TextInput
-                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
-                              placeholder="e.g. 10"
-                              placeholderTextColor={colors.text.muted}
-                              value={addParams.reps}
-                              onChangeText={(v) =>
-                                setAddParams((p) => ({ ...p, reps: v }))
-                              }
-                              keyboardType="number-pad"
-                            />
-                          </View>
-                        </View>
-
-                        <View className="mb-3">
-                          <Text className="text-sm font-medium text-text-secondary mb-1">
-                            Weight (lbs)
-                          </Text>
-                          <TextInput
-                            className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
-                            placeholder="e.g. 135"
-                            placeholderTextColor={colors.text.muted}
-                            value={addParams.weight}
-                            onChangeText={(v) =>
-                              setAddParams((p) => ({ ...p, weight: v }))
-                            }
-                            keyboardType="decimal-pad"
-                          />
-                        </View>
-
-                        <View className="flex-row gap-3 mb-3">
-                          <View className="flex-1">
-                            <Text className="text-sm font-medium text-text-secondary mb-1">
-                              Duration (sec)
-                            </Text>
-                            <TextInput
-                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
-                              placeholder="e.g. 30"
-                              placeholderTextColor={colors.text.muted}
-                              value={addParams.duration}
-                              onChangeText={(v) =>
-                                setAddParams((p) => ({
-                                  ...p,
-                                  duration: v,
-                                }))
-                              }
-                              keyboardType="number-pad"
-                            />
-                          </View>
-                          <View className="flex-1">
-                            <Text className="text-sm font-medium text-text-secondary mb-1">
-                              Rest (sec)
-                            </Text>
-                            <TextInput
-                              className="border border-neutral-medium-1 rounded-xl px-4 py-3 text-base text-text-primary bg-surface"
-                              placeholder="e.g. 60"
-                              placeholderTextColor={colors.text.muted}
-                              value={addParams.restTime}
-                              onChangeText={(v) =>
-                                setAddParams((p) => ({
-                                  ...p,
-                                  restTime: v,
-                                }))
-                              }
-                              keyboardType="number-pad"
-                            />
-                          </View>
-                        </View>
-
-                        <Text className="text-xs text-text-muted italic mt-1">
-                          Fill in the relevant fields. Leave empty if not
-                          applicable.
-                        </Text>
+                        {/* Parameter Inputs (shared with the Edit view) */}
+                        {paramInputs}
                       </ScrollView>
                     ) : searching ? (
                       <View className="flex-1 justify-center items-center">
@@ -1327,6 +1405,51 @@ export default function WorkoutEditModal({
                     </TouchableOpacity>
                   </View>
                 )}
+              </View>
+            )}
+
+            {currentView === "editParams" && currentExercise && (
+              /* Edit Sets & Reps View — same inputs as Add, pre-filled */
+              <View className="flex-1">
+                <ScrollView
+                  className="flex-1"
+                  contentContainerStyle={{ padding: 20 }}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  <Text className="text-lg font-bold text-text-primary mb-1">
+                    {currentExercise.exercise.name}
+                  </Text>
+                  <Text className="text-sm text-text-muted mb-6">
+                    Adjust the targets for this exercise.
+                  </Text>
+                  {paramInputs}
+                </ScrollView>
+                <View className="px-5 py-4 border-t border-neutral-light-2">
+                  <TouchableOpacity
+                    className="bg-primary py-4 rounded-xl items-center"
+                    onPress={handleSaveParams}
+                    disabled={savingParams}
+                  >
+                    {savingParams ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.neutral.white}
+                      />
+                    ) : (
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color={colors.neutral.white}
+                        />
+                        <Text className="text-neutral-white font-semibold text-lg ml-2">
+                          Save changes
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
@@ -1602,6 +1725,11 @@ export default function WorkoutEditModal({
             ? formatExerciseDetails(actionSheetExercise)
             : undefined
         }
+        onEditParams={() => {
+          const ex = actionSheetExercise;
+          setActionSheetExercise(null);
+          if (ex) startEditParams(ex);
+        }}
         onReplace={() => {
           const ex = actionSheetExercise;
           setActionSheetExercise(null);

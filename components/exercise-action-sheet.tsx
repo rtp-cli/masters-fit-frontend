@@ -18,6 +18,7 @@ interface ExerciseActionSheetProps {
   exerciseName: string;
   /** e.g. "Main set · 3 × 8". Omitted line if empty. */
   contextLine?: string;
+  onEditParams: () => void;
   onReplace: () => void;
   onRemoveToday: () => void;
   onNeverPrescribe: () => void;
@@ -37,6 +38,7 @@ export default function ExerciseActionSheet({
   visible,
   exerciseName,
   contextLine,
+  onEditParams,
   onReplace,
   onRemoveToday,
   onNeverPrescribe,
@@ -46,6 +48,14 @@ export default function ExerciseActionSheet({
   const insets = useSafeAreaInsets();
 
   const rows: ActionRow[] = [
+    {
+      // First door: lightest, most reversible, most frequent edit. Keeps the
+      // reversible → permanent ordering below it intact.
+      icon: "options-outline",
+      title: "Edit sets, reps & weight",
+      subtitle: "Adjust this exercise's targets.",
+      onPress: onEditParams,
+    },
     {
       icon: "swap-horizontal",
       title: "Replace with something else",
