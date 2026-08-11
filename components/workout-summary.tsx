@@ -21,7 +21,6 @@ import { exerciseHasDemo } from "@/lib/exercise-video";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
   createExerciseLog,
-  deleteExerciseLog,
   fetchBlockLogsForPlanDay,
   fetchExerciseLogsForPlanDay,
   getPlanDayLog,
@@ -359,17 +358,24 @@ export default function WorkoutSummary({
     };
   };
 
+  // Two-option status control (SPEC §7, amended): "I did this" / "I didn't do
+  // this". `intent` "did" → completed; "didnt" → skipped. There is NO path here
+  // that produces `not_attempted` — that state is set only by how a session
+  // ended (it drives wasEndedEarly, Resume and Share), so a correction must
+  // never write it.
   const changeStatus = (
     exercise: WorkoutBlockWithExercise,
-    next: ExerciseStatus,
+    intent: "did" | "didnt",
     completionOnly: boolean
   ) => {
     const exId = exercise.id;
     const current = workingStatus[exId];
-    if (current === next) return;
 
-    if (next === "completed") {
-      // Promote: seed prescription sets if we don't already have some to edit.
+    if (intent === "did") {
+      if (current === "completed") return;
+      // Promote (from skipped OR not_attempted): seed prescription sets if we
+      // don't already have some to edit. Promoting a not-attempted exercise is
+      // the only correct way for wasEndedEarly to move — downward.
       setWorkingLogs((prev) => {
         const existing = prev[exId] || [];
         if (existing.length && (existing[0].sets || []).length) return prev;
@@ -379,29 +385,33 @@ export default function WorkoutSummary({
       return;
     }
 
-    // Leaving completed: warn only when real (persisted) sets would be lost.
-    if (current === "completed") {
-      const persistedSets = (exerciseLogs[exId] || []).reduce(
-        (n, l) => n + (l.sets?.length || 0),
-        0
-      );
-      if (baselineStatus[exId] === "completed" && persistedSets > 0) {
-        setPendingDemotion({
-          exId,
-          name: exercise.exercise.name,
-          next,
-          count: persistedSets,
-        });
-        return;
-      }
-      // Only a seeded (unsaved) promotion — drop it silently.
-      setWorkingLogs((prev) => {
-        const n = { ...prev };
-        delete n[exId];
-        return n;
+    // intent === "didnt". Already on the "didn't" side (skipped or the
+    // untouched not_attempted): no-op — never convert not_attempted → skipped
+    // spuriously, and never the reverse.
+    if (current !== "completed") return;
+
+    // Demoting from completed → skipped. Warn only when real (persisted) sets
+    // would be lost.
+    const persistedSets = (exerciseLogs[exId] || []).reduce(
+      (n, l) => n + (l.sets?.length || 0),
+      0
+    );
+    if (baselineStatus[exId] === "completed" && persistedSets > 0) {
+      setPendingDemotion({
+        exId,
+        name: exercise.exercise.name,
+        next: "skipped",
+        count: persistedSets,
       });
+      return;
     }
-    setWorkingStatus((prev) => ({ ...prev, [exId]: next }));
+    // Only a seeded (unsaved) promotion being undone — drop it silently.
+    setWorkingLogs((prev) => {
+      const n = { ...prev };
+      delete n[exId];
+      return n;
+    });
+    setWorkingStatus((prev) => ({ ...prev, [exId]: "skipped" }));
     setExpandedSet(null);
   };
 
@@ -487,9 +497,10 @@ export default function WorkoutSummary({
 
   const handleSave = async () => {
     // Classify every exercise's intent from its status transition + set diffs.
+    // The control only ever yields completed or skipped, so there is no
+    // not_attempted-producing path here (SPEC §7, amended).
     const promotions: { exId: number; log: ExerciseLog }[] = []; // → completed (write)
-    const skips: number[] = []; // → skipped
-    const didntDos: number[] = []; // → didn't do (delete logs)
+    const skips: number[] = []; // → skipped ("I didn't do this")
     const setEdits: { exId: number; log: ExerciseLog }[] = []; // stayed completed, sets changed
 
     for (const key of Object.keys(baselineStatus)) {
@@ -507,14 +518,13 @@ export default function WorkoutSummary({
             if (serializeLog(wl) !== serializeLog(ol)) setEdits.push({ exId, log: wl });
           }
         }
-      } else if (to === "skipped") {
-        if (from !== "skipped") skips.push(exId);
-      } else if (from !== "not_attempted") {
-        didntDos.push(exId);
+      } else if (to === "skipped" && from !== "skipped") {
+        skips.push(exId);
       }
+      // to === "not_attempted" only ever means "unchanged" here → no-op.
     }
 
-    const statusChanges = promotions.length + skips.length + didntDos.length;
+    const statusChanges = promotions.length + skips.length;
     if (statusChanges === 0 && setEdits.length === 0) {
       exitEditing();
       return;
@@ -535,13 +545,11 @@ export default function WorkoutSummary({
     try {
       // Sequentially, demotions before writes — a partial failure stops rather
       // than continuing (SPEC §6.5). Each call is destructive server-side.
+      // "I didn't do this" is a skip (deletes logs + sets isSkipped); it never
+      // writes not_attempted, so a completed day can't be turned ended-early.
       for (const exId of skips) {
         const res = await skipExercise(workout.workoutId, exId);
         if (res === null) throw new Error("save-failed");
-      }
-      for (const exId of didntDos) {
-        const ok = await deleteExerciseLog(exId);
-        if (!ok) throw new Error("save-failed");
       }
       for (const { exId, log } of [...promotions, ...setEdits]) {
         const nextSets = toApiSets(log);
@@ -566,7 +574,6 @@ export default function WorkoutSummary({
       const changedIds = new Set<number>([
         ...promotions.map((p) => p.exId),
         ...skips,
-        ...didntDos,
         ...setEdits.map((e) => e.exId),
       ]);
       const hoursSinceCompletion = planDayLog?.updatedAt
@@ -695,46 +702,45 @@ export default function WorkoutSummary({
     );
   };
 
-  // Three-way status control (SPEC §7). "Didn't do" is deliberate copy for the
-  // not_attempted state — friendlier than the data model's phrase.
+  // Two-option status control (SPEC §7, amended). First person: it's a
+  // statement about the user, not a label on a row. "I didn't do this" covers
+  // both skipped and not-attempted — the same claim from the user's side; the
+  // read view still distinguishes them (it reports what happened).
   const statusSegment = (
     exercise: WorkoutBlockWithExercise,
     completionOnly: boolean
   ) => {
-    const current = workingStatus[exercise.id];
-    const options: { key: ExerciseStatus; label: string }[] = [
-      { key: "completed", label: "Completed" },
-      { key: "skipped", label: "Skipped" },
-      { key: "not_attempted", label: "Didn't do" },
-    ];
+    const didActive = workingStatus[exercise.id] === "completed";
+    const options: { intent: "did" | "didnt"; label: string; active: boolean }[] =
+      [
+        { intent: "did", label: "I did this", active: didActive },
+        { intent: "didnt", label: "I didn't do this", active: !didActive },
+      ];
     return (
       <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
-        {options.map((o) => {
-          const active = current === o.key;
-          return (
-            <TouchableOpacity
-              key={o.key}
-              className={`flex-1 items-center justify-center rounded-md ${
-                active ? "bg-surface" : ""
-              }`}
-              style={{ minHeight: 44 }}
-              onPress={() => changeStatus(exercise, o.key, completionOnly)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`Mark ${exercise.exercise.name} ${o.label}`}
+        {options.map((o) => (
+          <TouchableOpacity
+            key={o.intent}
+            className={`flex-1 items-center justify-center rounded-md ${
+              o.active ? "bg-surface" : ""
+            }`}
+            style={{ minHeight: 44 }}
+            onPress={() => changeStatus(exercise, o.intent, completionOnly)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: o.active }}
+            accessibilityLabel={`${exercise.exercise.name}: ${o.label}`}
+          >
+            <Text
+              className={
+                o.active
+                  ? "text-sm font-bold text-text-primary"
+                  : "text-sm font-medium text-text-muted"
+              }
             >
-              <Text
-                className={
-                  active
-                    ? "text-sm font-bold text-text-primary"
-                    : "text-sm font-medium text-text-muted"
-                }
-              >
-                {o.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+              {o.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     );
   };
@@ -1018,7 +1024,7 @@ export default function WorkoutSummary({
                               </Text>
                             ) : (
                               <Text className="text-xs text-text-muted mt-2">
-                                Tap the status to change it, then log what you did.
+                                Tap "I did this" to log what you did.
                               </Text>
                             )}
                           </View>
