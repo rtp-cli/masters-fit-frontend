@@ -1,28 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 import DemoChip from "@/components/demo-chip";
+import SetStepperFields from "@/components/set-stepper-fields";
 import { ShareWorkoutButton } from "@/components/share";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
+import CustomDialog from "@/components/ui/custom-dialog";
 import WorkoutFeedbackCard from "@/components/workout-feedback-card";
 import { getLoggingMode } from "@/constants/block-types";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { exerciseHasDemo } from "@/lib/exercise-video";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
+  createExerciseLog,
   fetchBlockLogsForPlanDay,
   fetchExerciseLogsForPlanDay,
   getPlanDayLog,
+  notifyWorkoutUpdated,
 } from "@/lib/workouts";
 import {
   type BlockLog,
   type ExerciseLog,
+  type ExerciseSetLog,
   type PlanDayLog,
 } from "@/types/api/logs.types";
 import {
@@ -32,7 +39,7 @@ import {
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { isCircuitBlock } from "@/utils/circuit-utils";
-import { formatDistance } from "@/utils/exercise-helpers";
+import { formatDistance, shouldShowWeightInput } from "@/utils/exercise-helpers";
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -55,6 +62,53 @@ const getBlockIcon = (blockType?: string) => {
   };
   return icons[blockType || ""] || "fitness-outline";
 };
+
+type ExerciseStatus = "completed" | "skipped" | "not_attempted";
+
+/** Which metric a logged set is edited by — mirrors the read view's precedence
+ *  (distance → duration → reps) so the value line and the editor agree. A set
+ *  that carries e.g. both weight and distance is edited as distance in v1. */
+type SetKind = "distance" | "duration" | "reps";
+const setKind = (s: ExerciseSetLog): SetKind => {
+  if (s.distanceM && s.distanceM > 0) return "distance";
+  if (s.durationSeconds && s.durationSeconds > 0) return "duration";
+  return "reps";
+};
+
+const setValueLine = (s: ExerciseSetLog): string => {
+  const weightPrefix =
+    s.weight && Number(s.weight) > 0 ? `${s.weight} lb · ` : "";
+  switch (setKind(s)) {
+    case "distance":
+      return `${weightPrefix}${formatDistance(s.distanceM || 0)}`;
+    case "duration":
+      return `${weightPrefix}${s.durationSeconds}s`;
+    default:
+      return `${weightPrefix}${s.reps ?? 0} reps`;
+  }
+};
+
+// A stable, order-insensitive projection of a log's editable values, used both
+// to detect "did anything change" (Save enable, discard guard) and to decide
+// which (planDayExerciseId, roundNumber) pairs to rewrite on Save.
+const serializeLog = (log?: ExerciseLog): string =>
+  JSON.stringify(
+    (log?.sets || []).map((s) => ({
+      n: s.setNumber,
+      w: s.weight,
+      r: s.reps,
+      d: s.durationSeconds,
+      m: s.distanceM,
+    }))
+  );
+
+const serializeLogs = (map: Record<number, ExerciseLog[]>): string =>
+  JSON.stringify(
+    Object.keys(map)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((k) => (map[k] || []).map(serializeLog))
+  );
 
 function SummarySkeleton({ compact }: { compact: boolean }) {
   return (
@@ -128,6 +182,11 @@ interface WorkoutSummaryProps {
     block: WorkoutBlockWithExercises,
     exercise: WorkoutBlockWithExercise
   ) => void;
+  /** When true, the header shows an "Edit log" affordance. Hosts compute
+   *  editability (the window, SPEC §8) — the component does not. */
+  canEditLog?: boolean;
+  /** Fired after a successful save so the host can refresh sibling views. */
+  onLogEdited?: () => void;
 }
 
 export default function WorkoutSummary({
@@ -137,6 +196,8 @@ export default function WorkoutSummary({
   onResume,
   isResuming = false,
   onExerciseDemoPress,
+  canEditLog = false,
+  onLogEdited,
 }: WorkoutSummaryProps) {
   const colors = useThemeColors();
   // Reserved completion accent (MF-004/005); falls back to ink for themes without it.
@@ -156,6 +217,18 @@ export default function WorkoutSummary({
   const [feedbackSkipped, setFeedbackSkipped] = useState(false);
   const [feedbackAnswered, setFeedbackAnswered] = useState(false);
 
+  // ── Edit-log mode (SPEC §6). A working copy of exerciseLogs is held here and
+  // all edits mutate it; nothing is written until Save. ──
+  const [isEditing, setIsEditing] = useState(false);
+  const [workingLogs, setWorkingLogs] = useState<Record<number, ExerciseLog[]>>(
+    {}
+  );
+  // One set row expanded at a time, keyed `${exId}:${round}:${setNumber}`.
+  const [expandedSet, setExpandedSet] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showDiscard, setShowDiscard] = useState(false);
+  const [showError, setShowError] = useState(false);
+
   const toggleBlock = (blockId: number) => {
     setCollapsedBlocks((prev) => ({
       ...prev,
@@ -163,21 +236,185 @@ export default function WorkoutSummary({
     }));
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const [log, logs, blockResults] = await Promise.all([
-        getPlanDayLog(workout.id),
-        fetchExerciseLogsForPlanDay(workout.id),
-        fetchBlockLogsForPlanDay(workout.id),
-      ]);
-      setPlanDayLog(log);
-      setExerciseLogs(logs);
-      setBlockLogs(blockResults);
-      setLoading(false);
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const [log, logs, blockResults] = await Promise.all([
+      getPlanDayLog(workout.id),
+      fetchExerciseLogsForPlanDay(workout.id),
+      fetchBlockLogsForPlanDay(workout.id),
+    ]);
+    setPlanDayLog(log);
+    setExerciseLogs(logs);
+    setBlockLogs(blockResults);
+    setLoading(false);
   }, [workout.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const isDirty = useMemo(
+    () => serializeLogs(workingLogs) !== serializeLogs(exerciseLogs),
+    [workingLogs, exerciseLogs]
+  );
+
+  const startEditing = () => {
+    // Deep clone so edits never touch the persisted read-view state.
+    setWorkingLogs(JSON.parse(JSON.stringify(exerciseLogs)));
+    setExpandedSet(null);
+    setIsEditing(true);
+  };
+
+  const exitEditing = () => {
+    setShowDiscard(false);
+    setIsEditing(false);
+    setExpandedSet(null);
+    setWorkingLogs({});
+  };
+
+  const requestCancel = () => {
+    if (isDirty) setShowDiscard(true);
+    else exitEditing();
+  };
+
+  const patchWorkingSet = (
+    exId: number,
+    roundNumber: number,
+    setNumber: number,
+    patch: Partial<ExerciseSetLog>
+  ) => {
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).map((log) =>
+        log.roundNumber !== roundNumber
+          ? log
+          : {
+              ...log,
+              sets: (log.sets || []).map((s) =>
+                s.setNumber === setNumber ? { ...s, ...patch } : s
+              ),
+            }
+      ),
+    }));
+  };
+
+  const addWorkingSet = (exId: number, roundNumber: number) => {
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).map((log) => {
+        if (log.roundNumber !== roundNumber) return log;
+        const sets = log.sets || [];
+        const last = sets[sets.length - 1];
+        // Seed from the last logged set, matching addSet() in the tracker.
+        const newSet: ExerciseSetLog = {
+          id: -(sets.length + 1),
+          exerciseLogId: log.id,
+          roundNumber,
+          setNumber: (last?.setNumber || 0) + 1,
+          weight: last?.weight ?? 0,
+          reps: last?.reps ?? 0,
+          restAfter: last?.restAfter ?? null,
+          durationSeconds: last?.durationSeconds ?? null,
+          distanceM: last?.distanceM ?? null,
+          createdAt: "",
+        };
+        return { ...log, sets: [...sets, newSet] };
+      }),
+    }));
+  };
+
+  const removeWorkingSet = (
+    exId: number,
+    roundNumber: number,
+    setNumber: number
+  ) => {
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).map((log) =>
+        log.roundNumber !== roundNumber
+          ? log
+          : {
+              ...log,
+              sets: (log.sets || [])
+                .filter((s) => s.setNumber !== setNumber)
+                .map((s, i) => ({ ...s, setNumber: i + 1 })),
+            }
+      ),
+    }));
+    setExpandedSet(null);
+  };
+
+  const handleSave = async () => {
+    // Only the (planDayExerciseId, roundNumber) pairs that actually changed —
+    // each save is a destructive rewrite of that round's sets server-side.
+    const changed: { exId: number; log: ExerciseLog }[] = [];
+    for (const key of Object.keys(workingLogs)) {
+      const exId = Number(key);
+      const orig = exerciseLogs[exId] || [];
+      for (const wl of workingLogs[exId] || []) {
+        const ol = orig.find((o) => o.roundNumber === wl.roundNumber);
+        if (serializeLog(wl) !== serializeLog(ol)) changed.push({ exId, log: wl });
+      }
+    }
+    if (changed.length === 0) {
+      exitEditing();
+      return;
+    }
+
+    setSaving(true);
+    let setsChanged = 0;
+    try {
+      // Sequentially — the endpoint deletes and rewrites, and a partial failure
+      // mid-flight should stop rather than continue (SPEC §6.5).
+      for (const { exId, log } of changed) {
+        const nextSets = (log.sets || []).map((s) => ({
+          roundNumber: s.roundNumber,
+          setNumber: s.setNumber,
+          weight: Number(s.weight) || 0,
+          reps: Number(s.reps) || 0,
+          restAfter: s.restAfter ?? undefined,
+          durationSeconds: s.durationSeconds ?? undefined,
+          distanceM: s.distanceM ?? undefined,
+        }));
+        const res = await createExerciseLog({
+          planDayExerciseId: exId,
+          roundNumber: log.roundNumber,
+          sets: nextSets,
+          durationCompleted: log.durationCompleted ?? undefined,
+          timeTaken: log.timeTaken ?? undefined,
+          isComplete: true,
+        });
+        if (!res) throw new Error("save-failed");
+        setsChanged += nextSets.length;
+      }
+
+      const hoursSinceCompletion = planDayLog?.updatedAt
+        ? Math.round(
+            ((Date.now() - new Date(planDayLog.updatedAt).getTime()) / 3.6e6) *
+              10
+          ) / 10
+        : undefined;
+      trackEvent(AnalyticsEvent.WORKOUT_LOG_EDITED, {
+        plan_day_id: workout.id,
+        exercises_changed: changed.length,
+        sets_changed: setsChanged,
+        hours_since_completion: hoursSinceCompletion,
+      });
+
+      setIsEditing(false);
+      setExpandedSet(null);
+      setWorkingLogs({});
+      await loadData();
+      onLogEdited?.();
+      // So Dashboard + Calendar pick up the corrected numbers.
+      notifyWorkoutUpdated();
+    } catch {
+      // Keep edit mode open with the working copy intact (SPEC §6.5, §11.9).
+      setShowError(true);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return <SummarySkeleton compact={compact} />;
@@ -190,8 +427,9 @@ export default function WorkoutSummary({
   const allExercises = workout.blocks.flatMap((b) => b.exercises);
   const duration = planDayLog?.totalTimeSeconds || 0;
 
-  type ExerciseStatus = "completed" | "skipped" | "not_attempted";
-  const getExerciseStatus = (exercise: (typeof allExercises)[0]): ExerciseStatus => {
+  const getExerciseStatus = (
+    exercise: (typeof allExercises)[0]
+  ): ExerciseStatus => {
     if ((exerciseLogs[exercise.id] || []).length > 0) return "completed";
     if (exercise.isSkipped) return "skipped";
     return "not_attempted";
@@ -227,6 +465,360 @@ export default function WorkoutSummary({
       onAnswered={() => setFeedbackAnswered(true)}
     />
   );
+
+  // `compact` mirrors ShareWorkoutButton's own `self-start mt-2.5` + gap-6 so
+  // the two sit on the same baseline in the shared row; `post` is the centred
+  // link under the post-workout metadata (SPEC §4).
+  const editLogLink = (placement: "compact" | "post") => (
+    <TouchableOpacity
+      className={`flex-row items-center ${
+        placement === "compact" ? "self-start mt-2.5" : "mt-3"
+      }`}
+      style={{ gap: 6 }}
+      onPress={startEditing}
+      hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+      accessibilityRole="button"
+      accessibilityLabel="Edit log"
+    >
+      <Ionicons name="pencil-outline" size={14} color={colors.text.primary} />
+      <Text className="text-xs font-medium text-text-primary">Edit log</Text>
+    </TouchableOpacity>
+  );
+
+  const statusPill = (status: ExerciseStatus) => {
+    if (status === "completed") {
+      return (
+        <View
+          className="flex-row items-center rounded-full px-2.5 py-1"
+          style={{ backgroundColor: successColor + "1A" }}
+        >
+          <Ionicons name="checkmark" size={12} color={successColor} />
+          <Text
+            className="text-xs font-semibold ml-1"
+            style={{ color: successColor }}
+          >
+            Completed
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View className="rounded-full px-2.5 py-1 bg-neutral-light-2">
+        <Text className="text-xs font-medium text-text-muted">
+          {status === "skipped" ? "Skipped" : "Not attempted"}
+        </Text>
+      </View>
+    );
+  };
+
+  // ── Edit mode (SPEC §6) ──
+  if (isEditing) {
+    const renderSetEditor = (
+      exercise: WorkoutBlockWithExercise,
+      log: ExerciseLog,
+      set: ExerciseSetLog
+    ) => {
+      const kind = setKind(set);
+      if (kind === "reps") {
+        return (
+          <SetStepperFields
+            weight={Number(set.weight) || 0}
+            reps={set.reps ?? 0}
+            showWeight={shouldShowWeightInput(exercise)}
+            onChange={(patch) =>
+              patchWorkingSet(exercise.id, log.roundNumber, set.setNumber, patch)
+            }
+          />
+        );
+      }
+      const isDistance = kind === "distance";
+      return (
+        <View>
+          <Text className="text-xs mb-2 text-text-muted">
+            {isDistance ? "Distance (meters)" : "Duration (seconds)"}
+          </Text>
+          <View className="flex-row justify-center">
+            <View className="bg-background rounded-full px-4 py-2 border border-neutral-medium-1 min-w-[80px] items-center">
+              <TextInput
+                className="text-base font-bold text-center text-text-primary"
+                value={String(
+                  (isDistance ? set.distanceM : set.durationSeconds) ?? 0
+                )}
+                onChangeText={(text) =>
+                  patchWorkingSet(
+                    exercise.id,
+                    log.roundNumber,
+                    set.setNumber,
+                    isDistance
+                      ? { distanceM: parseInt(text, 10) || 0 }
+                      : { durationSeconds: parseInt(text, 10) || 0 }
+                  )
+                }
+                keyboardType="number-pad"
+                maxLength={isDistance ? 6 : 5}
+                placeholder="0"
+                placeholderTextColor={colors.text.muted}
+                accessibilityLabel={
+                  isDistance
+                    ? "Distance in meters"
+                    : "Duration in seconds"
+                }
+              />
+            </View>
+          </View>
+        </View>
+      );
+    };
+
+    const renderSetRow = (
+      exercise: WorkoutBlockWithExercise,
+      log: ExerciseLog,
+      set: ExerciseSetLog
+    ) => {
+      const key = `${exercise.id}:${log.roundNumber}:${set.setNumber}`;
+      const expanded = expandedSet === key;
+      return (
+        <View
+          key={key}
+          className="rounded-md"
+          style={{
+            borderColor: expanded
+              ? colors.brand.primary
+              : colors.neutral.light[2],
+            borderWidth: expanded ? 1.5 : 1,
+          }}
+        >
+          <TouchableOpacity
+            className="flex-row items-center p-2.5"
+            onPress={() => setExpandedSet(expanded ? null : key)}
+            accessibilityRole="button"
+            accessibilityLabel={`Set ${set.setNumber}: ${setValueLine(set)}. Tap to ${expanded ? "collapse" : "edit"}.`}
+          >
+            <View
+              className="size-7 rounded-full items-center justify-center mr-2.5"
+              style={{ backgroundColor: colors.brand.primary + "1A" }}
+            >
+              <Text
+                className="text-xs font-semibold"
+                style={{ color: colors.brand.primary }}
+              >
+                {set.setNumber}
+              </Text>
+            </View>
+            <Text className="text-base font-semibold text-text-primary flex-1">
+              {setValueLine(set)}
+            </Text>
+            <Ionicons
+              name={expanded ? "chevron-up" : "chevron-down"}
+              size={14}
+              color={colors.text.muted}
+            />
+          </TouchableOpacity>
+
+          {expanded && (
+            <View className="px-2.5 pb-2.5">
+              {renderSetEditor(exercise, log, set)}
+              <View className="flex-row items-center justify-end mt-3">
+                <TouchableOpacity
+                  className="flex-row items-center p-1"
+                  onPress={() =>
+                    removeWorkingSet(exercise.id, log.roundNumber, set.setNumber)
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove set ${set.setNumber}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={14}
+                    color={colors.text.muted}
+                  />
+                  <Text className="text-xs ml-1 text-text-muted">
+                    Remove set
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      );
+    };
+
+    return (
+      <View className="flex-1 bg-background">
+        {/* Editing chrome replaces the summary header (SPEC §6.2) */}
+        <View className="flex-row items-center justify-between border-b border-neutral-light-2 px-4 py-3.5">
+          <TouchableOpacity
+            onPress={requestCancel}
+            disabled={saving}
+            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel editing"
+          >
+            <Text className="text-sm font-medium text-text-muted">Cancel</Text>
+          </TouchableOpacity>
+          <Text className="text-base font-bold text-text-primary">
+            Editing log
+          </Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={!isDirty || saving}
+            style={{ opacity: !isDirty || saving ? 0.4 : 1 }}
+            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Save changes"
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={colors.text.primary} />
+            ) : (
+              <Text className="text-sm font-bold text-text-primary">Save</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        <Text className="text-xs text-text-muted px-4 pt-2 pb-1">
+          Correct what you actually did. This doesn't change the workout itself.
+        </Text>
+
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="px-4 mt-4">
+            {workout.blocks.map((block) => {
+              const isCircuit = isCircuitBlock(block.blockType);
+              const isCompletionOnly =
+                getLoggingMode(block) === "completion_only";
+              const isCollapsed = collapsedBlocks[block.id] ?? false;
+
+              return (
+                <View key={block.id} className="mb-4">
+                  {/* Block header — stays tappable to collapse (SPEC §6.2) */}
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => toggleBlock(block.id)}
+                    className={`bg-brand-light-2 p-4 ${isCollapsed ? "rounded-xl" : "rounded-t-xl"}`}
+                  >
+                    <View className="flex-row items-center">
+                      <View className="size-8 rounded-full bg-white/20 items-center justify-center mr-3">
+                        <Ionicons
+                          name={getBlockIcon(block.blockType) as any}
+                          size={16}
+                          color={colors.text.primary}
+                        />
+                      </View>
+                      <Text className="font-bold text-text-primary text-base flex-1">
+                        {block.blockName ||
+                          getBlockTypeDisplayName(block.blockType)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  {!isCollapsed && (
+                    <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2 p-3">
+                      {block.exercises.map((exercise) => {
+                        const status = getExerciseStatus(exercise);
+                        const logs = workingLogs[exercise.id] || [];
+                        // v1: circuit exercises and completion-only blocks are
+                        // read-only (SPEC §6.4). Non-completed exercises need a
+                        // status change to gain sets — that's Phase 2.
+                        const editable =
+                          !isCircuit &&
+                          !isCompletionOnly &&
+                          status === "completed" &&
+                          logs.length > 0;
+
+                        return (
+                          <View key={exercise.id} className="mb-3">
+                            <View className="flex-row items-center justify-between mb-2">
+                              <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
+                                {exercise.exercise.name}
+                              </Text>
+                              {statusPill(status)}
+                            </View>
+
+                            {editable ? (
+                              logs.map((log) => (
+                                <View key={log.id} className="gap-2">
+                                  {(log.sets || []).map((set) =>
+                                    renderSetRow(exercise, log, set)
+                                  )}
+                                  <TouchableOpacity
+                                    className="flex-row items-center justify-center border rounded-lg py-3 mt-1"
+                                    style={{ borderColor: colors.brand.primary }}
+                                    onPress={() =>
+                                      addWorkingSet(exercise.id, log.roundNumber)
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Add a set"
+                                  >
+                                    <Ionicons
+                                      name="add-circle-outline"
+                                      size={17}
+                                      color={colors.brand.primary}
+                                    />
+                                    <Text
+                                      className="text-sm font-semibold ml-2"
+                                      style={{ color: colors.brand.primary }}
+                                    >
+                                      Add a set
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
+                              ))
+                            ) : (
+                              <Text className="text-xs text-text-muted">
+                                {isCircuit
+                                  ? "Circuit results aren't editable here."
+                                  : status === "completed"
+                                    ? "Completed"
+                                    : status === "skipped"
+                                      ? "Skipped"
+                                      : "Not attempted"}
+                              </Text>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Window caption (SPEC §8) */}
+          <Text className="text-xs text-text-muted text-center px-6 my-2">
+            You can correct this log until your next workout is complete.
+          </Text>
+        </ScrollView>
+
+        <CustomDialog
+          visible={showDiscard}
+          title="Discard changes?"
+          description="Your corrections won't be saved."
+          primaryButton={{
+            text: "Discard",
+            onPress: exitEditing,
+            destructive: true,
+          }}
+          secondaryButton={{
+            text: "Keep editing",
+            onPress: () => setShowDiscard(false),
+          }}
+          onClose={() => setShowDiscard(false)}
+        />
+        <CustomDialog
+          visible={showError}
+          title="Couldn't save your changes"
+          description="Something went wrong saving your corrections. Your edits are still here — try again."
+          primaryButton={{ text: "OK", onPress: () => setShowError(false) }}
+          onClose={() => setShowError(false)}
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -271,17 +863,22 @@ export default function WorkoutSummary({
                   </Text>
                 )}
               </View>
-              {/* Quiet share affordance under the metadata row — left-aligned
-                  with the name above it, so you read the workout before the
-                  offer to share it. Only on a genuinely completed day; an
-                  ended-early summary is asking for feedback, not a share. */}
-              {!wasEndedEarly && (
-                <ShareWorkoutButton
-                  planDayId={workout.id}
-                  kind="completed"
-                  workoutName={workout.name ?? undefined}
-                  variant="calendar"
-                />
+              {/* Quiet share + edit affordances under the metadata row —
+                  left-aligned with the name above it. Share only on a
+                  genuinely completed day; Edit log only inside the window
+                  (canEditLog), computed by the host (SPEC §4, §8). */}
+              {(!wasEndedEarly || canEditLog) && (
+                <View className="flex-row items-start" style={{ gap: 20 }}>
+                  {!wasEndedEarly && (
+                    <ShareWorkoutButton
+                      planDayId={workout.id}
+                      kind="completed"
+                      workoutName={workout.name ?? undefined}
+                      variant="calendar"
+                    />
+                  )}
+                  {canEditLog && editLogLink("compact")}
+                </View>
               )}
             </View>
           </View>
@@ -319,6 +916,8 @@ export default function WorkoutSummary({
                 </Text>
               )}
             </View>
+            {/* Centred Edit log affordance beneath the metadata (SPEC §4) */}
+            {canEditLog && editLogLink("post")}
           </View>
         )}
 

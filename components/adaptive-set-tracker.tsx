@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity,View } from "react-native";
 
+import SetStepperFields from "@/components/set-stepper-fields";
 import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import { type ExerciseSet } from "@/types/api/logs.types";
@@ -344,102 +345,23 @@ export default function AdaptiveSetTracker({
                 </TouchableOpacity>
               </View>
 
-              {/* Expanded editor — steppers; keyboard only as a fallback */}
+              {/* Expanded editor — steppers; keyboard only as a fallback.
+                  The weight/reps steppers are the shared SetStepperFields
+                  (SPEC §5) so this control and the edit-log editor never
+                  drift. */}
               {isExpanded && (
                 <View className="px-3 pb-3">
-
-          {/* Weight Input */}
-          {showWeightInput && (
-            <View className="mb-3">
-              <Text className="text-xs mb-2 text-text-muted">Weight (lbs)</Text>
-              <View className="flex-row items-center justify-center gap-2">
-                <TouchableOpacity
-                  className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
-                  accessibilityRole="button"
-                  accessibilityLabel="Decrease weight 5 pounds"
-                  hitSlop={HIT_SLOP_6}
-                  onPress={() =>
-                    updateSet(index, "weight", Math.max(0, set.weight - 5))
-                  }
-                >
-                  <Text className="text-xs font-semibold text-text-primary">
-                    -5
-                  </Text>
-                </TouchableOpacity>
-
-                <View className="bg-background rounded-full px-4 py-3 border border-neutral-medium-1 min-w-[80px] items-center">
-                  <TextInput
-                    className="text-lg font-bold text-center text-text-primary"
-                    value={set.weight.toString()}
-                    onChangeText={(text) =>
-                      updateSet(index, "weight", parseFloat(text) || 0)
-                    }
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={colors.text.muted}
+                  <SetStepperFields
+                    weight={set.weight}
+                    reps={set.reps}
+                    showWeight={showWeightInput}
+                    onChange={(patch) => {
+                      if (patch.weight !== undefined)
+                        updateSet(index, "weight", patch.weight);
+                      if (patch.reps !== undefined)
+                        updateSet(index, "reps", patch.reps);
+                    }}
                   />
-                </View>
-
-                <TouchableOpacity
-                  className="size-8 rounded-full items-center justify-center"
-                  style={{ backgroundColor: colors.brand.primary }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Increase weight 5 pounds"
-                  hitSlop={HIT_SLOP_6}
-                  onPress={() => updateSet(index, "weight", set.weight + 5)}
-                >
-                  <Text
-                    className="text-xs font-semibold"
-                    style={{ color: colors.contentOnPrimary }}
-                  >
-                    +5
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Reps Input */}
-          <View>
-            <Text className="text-xs mb-2 text-text-muted">Reps</Text>
-            <View className="flex-row items-center justify-center gap-3">
-              <TouchableOpacity
-                className="size-8 rounded-full bg-neutral-light-2 items-center justify-center"
-                accessibilityRole="button"
-                accessibilityLabel="Decrease reps"
-                hitSlop={HIT_SLOP_6}
-                onPress={() =>
-                  updateSet(index, "reps", Math.max(0, set.reps - 1))
-                }
-              >
-                <Ionicons name="remove" size={18} color={colors.text.primary} />
-              </TouchableOpacity>
-
-              <View className="bg-background rounded-full px-4 py-3 border border-neutral-medium-1 min-w-[80px] items-center">
-                <TextInput
-                  className="text-lg font-bold text-center text-text-primary"
-                  value={set.reps.toString()}
-                  onChangeText={(text) =>
-                    updateSet(index, "reps", parseInt(text) || 0)
-                  }
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={colors.text.muted}
-                />
-              </View>
-
-              <TouchableOpacity
-                className="size-8 rounded-full items-center justify-center"
-                style={{ backgroundColor: colors.brand.primary }}
-                accessibilityRole="button"
-                accessibilityLabel="Increase reps"
-                hitSlop={HIT_SLOP_6}
-                onPress={() => updateSet(index, "reps", set.reps + 1)}
-              >
-                <Ionicons name="add" size={18} color={colors.brand.secondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
 
                   {/* Editor actions */}
                   <View className="flex-row items-center justify-end mt-3 gap-4">

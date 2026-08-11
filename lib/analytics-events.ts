@@ -43,6 +43,9 @@ export const AnalyticsEvent = {
   // "Workout Completed" event from logs.service. Per the single-owner rule it is
   // deliberately NOT a client event — don't re-add it here.
   EXERCISE_LOGGED: "exercise_logged",
+  // Correcting a completed day's log after the fact (edit-log feature). The
+  // backend still owns "Workout Completed"; this is a distinct client action.
+  WORKOUT_LOG_EDITED: "workout_log_edited",
 
   // ── Post-workout feedback + voice input ──
   WORKOUT_FEEDBACK_SHOWN: "workout_feedback_shown",
@@ -140,6 +143,13 @@ export interface AnalyticsEventProps {
   [AnalyticsEvent.EXERCISE_LOGGED]: {
     workout_id?: number;
     exercise_id?: number;
+  };
+
+  [AnalyticsEvent.WORKOUT_LOG_EDITED]: {
+    plan_day_id: number;
+    exercises_changed: number;
+    sets_changed: number;
+    hours_since_completion?: number;
   };
 
   [AnalyticsEvent.WORKOUT_FEEDBACK_SHOWN]: {
