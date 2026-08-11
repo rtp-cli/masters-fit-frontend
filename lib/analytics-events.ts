@@ -149,6 +149,8 @@ export interface AnalyticsEventProps {
     plan_day_id: number;
     exercises_changed: number;
     sets_changed: number;
+    /** Phase 2: how many exercises changed status (promote/skip/didn't-do). */
+    status_changes?: number;
     hours_since_completion?: number;
   };
 
