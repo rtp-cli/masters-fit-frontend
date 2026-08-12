@@ -1,5 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -27,6 +33,7 @@ import {
   notifyWorkoutUpdated,
   recomputePlanDayRollups,
   skipExercise,
+  subscribeToWorkoutUpdates,
 } from "@/lib/workouts";
 import {
   type BlockLog,
@@ -259,21 +266,39 @@ export default function WorkoutSummary({
     }));
   };
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const [log, logs, blockResults] = await Promise.all([
-      getPlanDayLog(workout.id),
-      fetchExerciseLogsForPlanDay(workout.id),
-      fetchBlockLogsForPlanDay(workout.id),
-    ]);
-    setPlanDayLog(log);
-    setExerciseLogs(logs);
-    setBlockLogs(blockResults);
-    setLoading(false);
-  }, [workout.id]);
+  // `soft` skips the skeleton — used for background refreshes (a log edited
+  // elsewhere) so the view updates in place without flashing.
+  const loadData = useCallback(
+    async (soft = false) => {
+      if (!soft) setLoading(true);
+      const [log, logs, blockResults] = await Promise.all([
+        getPlanDayLog(workout.id),
+        fetchExerciseLogsForPlanDay(workout.id),
+        fetchBlockLogsForPlanDay(workout.id),
+      ]);
+      setPlanDayLog(log);
+      setExerciseLogs(logs);
+      setBlockLogs(blockResults);
+      setLoading(false);
+    },
+    [workout.id]
+  );
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  // A log edited anywhere — this instance, another tab's summary, or the active
+  // session — fires a workout update. Soft-reload this view's logs so the edit
+  // shows without a manual tab refresh (fixes both Calendar↔Workout directions).
+  // Skip while this instance is mid-edit, so it never clobbers the working copy.
+  const isEditingRef = useRef(false);
+  isEditingRef.current = isEditing;
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkoutUpdates(() => {
+      if (!isEditingRef.current) loadData(true);
+    });
+    return unsubscribe;
   }, [loadData]);
 
   const statusDirty = useMemo(

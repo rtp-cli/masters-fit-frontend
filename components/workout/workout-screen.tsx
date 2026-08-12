@@ -191,9 +191,6 @@ export function WorkoutScreen() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
-  // Bumped to remount the completed WorkoutSummary so it reloads its logs when a
-  // log edit made elsewhere (Calendar edit-log) fires a workout update.
-  const [completedRefreshKey, setCompletedRefreshKey] = useState(0);
   // Tracks whether this session was ended early — used to suppress the share
   // affordance on the ended-early summary (that screen offers Resume/feedback).
   const [endedEarly, setEndedEarly] = useState(false);
@@ -698,16 +695,16 @@ export function WorkoutScreen() {
   isCompletedRef.current = isWorkoutCompleted;
 
   // The completed view is frozen (useFocusEffect skips reload when completed),
-  // so a log edited elsewhere — e.g. the Calendar edit-log flow — wouldn't show
-  // here without a manual refresh. Subscribe to workout updates and, when
-  // completed, refetch the plan day (fresh isSkipped) and remount the summary
-  // so it reloads its logs. Refetching a complete day keeps it complete
-  // (loadWorkout re-detects isComplete), so this never disturbs the view.
+  // so a log edited elsewhere — e.g. the Calendar edit-log flow — wouldn't
+  // refresh the workout prop here. Subscribe to workout updates and, when
+  // completed, refetch the plan day so the exercises' isSkipped flags stay
+  // current (WorkoutSummary reloads its own logs). Refetching a complete day
+  // keeps it complete (loadWorkout re-detects isComplete), so it never disturbs
+  // the view.
   useEffect(() => {
     const unsubscribe = subscribeToWorkoutUpdates(() => {
       if (isCompletedRef.current) {
         loadWorkout(true);
-        setCompletedRefreshKey((k) => k + 1);
       }
     });
     return unsubscribe;
@@ -1992,9 +1989,6 @@ export function WorkoutScreen() {
   if (isWorkoutCompleted) {
     return (
       <WorkoutSummary
-        // Remounts to reload logs when a log edit elsewhere (e.g. Calendar
-        // edit-log) fires a workout update — see the subscription below.
-        key={completedRefreshKey}
         workout={workout}
         onResume={isToday ? handleResume : undefined}
         isResuming={isResuming}
