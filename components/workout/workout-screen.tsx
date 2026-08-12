@@ -1969,6 +1969,10 @@ export function WorkoutScreen() {
         workout={workout}
         onResume={isToday ? handleResume : undefined}
         isResuming={isResuming}
+        // Just-finished today's workout is the most recent completed day, so
+        // it's inside the edit window (SPEC §8). Ended-early days lead with
+        // Resume instead, so no edit affordance there.
+        canEditLog={isToday && !endedEarly}
         footer={
           <>
             {/* Share slots into the existing footer prop (nothing else moves).

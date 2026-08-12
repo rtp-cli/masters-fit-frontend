@@ -108,11 +108,20 @@ export default function WorkoutDaySection({
 
   // Show summary view for completed plan days
   if (currentSelectedPlanDay.isComplete) {
+    // Editing window (SPEC §8): correctable until the next workout is complete.
+    // The host owns this check — no plan day with a later date is complete yet.
+    const hasLaterCompletedDay = (workoutPlan?.planDays || []).some(
+      (day) =>
+        day.isComplete &&
+        formatDateAsString(day.date) >
+          formatDateAsString(currentSelectedPlanDay.date)
+    );
     return (
       <>
         <WorkoutSummary
           workout={currentSelectedPlanDay}
           compact
+          canEditLog={!hasLaterCompletedDay}
           onExerciseDemoPress={(block, exercise) =>
             openDemoSheet(block, exercise.exercise.id)
           }
