@@ -770,6 +770,46 @@ export async function skipWorkoutBlock(
 }
 
 /**
+ * Delete a completed exercise's logs (edit-log demotion, SPEC §9). Omit
+ * `roundNumber` to clear every round. When no logs remain the backend demotes
+ * the exercise to "didn't do" and recomputes the day's rollups.
+ */
+export async function deleteExerciseLog(
+  planDayExerciseId: number,
+  roundNumber?: number
+): Promise<boolean> {
+  try {
+    const path =
+      roundNumber !== undefined
+        ? `/logs/exercise/${planDayExerciseId}/${roundNumber}`
+        : `/logs/exercise/${planDayExerciseId}`;
+    await apiRequest(path, { method: "DELETE" });
+    return true;
+  } catch (error) {
+    console.error("Error deleting exercise log:", error);
+    return false;
+  }
+}
+
+/**
+ * Recompute a completed day's rollups from actual state after an edit-log
+ * status change, so `exercisesCompleted` can't drift from the summary (§9).
+ */
+export async function recomputePlanDayRollups(
+  planDayId: number
+): Promise<boolean> {
+  try {
+    await apiRequest(`/logs/plan-day/${planDayId}/recompute`, {
+      method: "POST",
+    });
+    return true;
+  } catch (error) {
+    console.error("Error recomputing plan day rollups:", error);
+    return false;
+  }
+}
+
+/**
  * Repeat a previous week's workout with a new start date
  */
 export async function repeatPreviousWeekWorkout(

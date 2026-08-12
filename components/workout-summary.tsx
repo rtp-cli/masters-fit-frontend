@@ -25,6 +25,8 @@ import {
   fetchExerciseLogsForPlanDay,
   getPlanDayLog,
   notifyWorkoutUpdated,
+  recomputePlanDayRollups,
+  skipExercise,
 } from "@/lib/workouts";
 import {
   type BlockLog,
@@ -228,6 +230,20 @@ export default function WorkoutSummary({
   const [saving, setSaving] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
   const [showError, setShowError] = useState(false);
+  // Phase 2 (SPEC §7): the working + baseline three-way status per exercise id.
+  const [workingStatus, setWorkingStatus] = useState<
+    Record<number, ExerciseStatus>
+  >({});
+  const [baselineStatus, setBaselineStatus] = useState<
+    Record<number, ExerciseStatus>
+  >({});
+  // A completed→skipped/didn't-do change must warn before deleting logs (§7).
+  const [pendingDemotion, setPendingDemotion] = useState<{
+    exId: number;
+    name: string;
+    next: ExerciseStatus;
+    count: number;
+  } | null>(null);
 
   const toggleBlock = (blockId: number) => {
     setCollapsedBlocks((prev) => ({
@@ -253,14 +269,37 @@ export default function WorkoutSummary({
     loadData();
   }, [loadData]);
 
+  const statusDirty = useMemo(
+    () =>
+      Object.keys(workingStatus).some(
+        (k) => workingStatus[Number(k)] !== baselineStatus[Number(k)]
+      ),
+    [workingStatus, baselineStatus]
+  );
+
   const isDirty = useMemo(
-    () => serializeLogs(workingLogs) !== serializeLogs(exerciseLogs),
-    [workingLogs, exerciseLogs]
+    () =>
+      serializeLogs(workingLogs) !== serializeLogs(exerciseLogs) || statusDirty,
+    [workingLogs, exerciseLogs, statusDirty]
   );
 
   const startEditing = () => {
     // Deep clone so edits never touch the persisted read-view state.
     setWorkingLogs(JSON.parse(JSON.stringify(exerciseLogs)));
+    // Snapshot each exercise's derived status as the edit baseline (§7).
+    const status: Record<number, ExerciseStatus> = {};
+    for (const block of workout.blocks) {
+      for (const ex of block.exercises) {
+        status[ex.id] =
+          (exerciseLogs[ex.id] || []).length > 0
+            ? "completed"
+            : ex.isSkipped
+              ? "skipped"
+              : "not_attempted";
+      }
+    }
+    setWorkingStatus(status);
+    setBaselineStatus(status);
     setExpandedSet(null);
     setIsEditing(true);
   };
@@ -270,11 +309,123 @@ export default function WorkoutSummary({
     setIsEditing(false);
     setExpandedSet(null);
     setWorkingLogs({});
+    setWorkingStatus({});
+    setBaselineStatus({});
+    setPendingDemotion(null);
   };
 
   const requestCancel = () => {
     if (isDirty) setShowDiscard(true);
     else exitEditing();
+  };
+
+  // A fresh log seeded from the prescription for a promotion to "completed"
+  // (§7) — matching how the session materialises sets. completion-only
+  // exercises seed an empty set list (their "log" is just existence).
+  const seedLogFromPrescription = (
+    exercise: WorkoutBlockWithExercise,
+    completionOnly: boolean
+  ): ExerciseLog => {
+    const count = completionOnly ? 0 : Math.max(1, exercise.sets || 1);
+    const sets: ExerciseSetLog[] = Array.from({ length: count }, (_, i) => ({
+      id: -(i + 1),
+      exerciseLogId: -1,
+      roundNumber: 1,
+      setNumber: i + 1,
+      weight: exercise.weight ?? 0,
+      reps: exercise.reps ?? 0,
+      restAfter: null,
+      durationSeconds:
+        exercise.duration && exercise.duration > 0 ? exercise.duration : null,
+      distanceM:
+        exercise.distanceM && exercise.distanceM > 0 ? exercise.distanceM : null,
+      createdAt: "",
+    }));
+    return {
+      id: -1,
+      planDayExerciseId: exercise.id,
+      roundNumber: 1,
+      durationCompleted: null,
+      timeTaken: null,
+      isComplete: true,
+      isSkipped: false,
+      notes: null,
+      difficulty: null,
+      rating: null,
+      createdAt: "",
+      updatedAt: "",
+      sets,
+    };
+  };
+
+  // Two-option status control (SPEC §7, amended): "I did this" / "I didn't do
+  // this". `intent` "did" → completed; "didnt" → skipped. There is NO path here
+  // that produces `not_attempted` — that state is set only by how a session
+  // ended (it drives wasEndedEarly, Resume and Share), so a correction must
+  // never write it.
+  const changeStatus = (
+    exercise: WorkoutBlockWithExercise,
+    intent: "did" | "didnt",
+    completionOnly: boolean
+  ) => {
+    const exId = exercise.id;
+    const current = workingStatus[exId];
+
+    if (intent === "did") {
+      if (current === "completed") return;
+      // Promote (from skipped OR not_attempted): seed prescription sets if we
+      // don't already have some to edit. Promoting a not-attempted exercise is
+      // the only correct way for wasEndedEarly to move — downward.
+      setWorkingLogs((prev) => {
+        const existing = prev[exId] || [];
+        if (existing.length && (existing[0].sets || []).length) return prev;
+        return { ...prev, [exId]: [seedLogFromPrescription(exercise, completionOnly)] };
+      });
+      setWorkingStatus((prev) => ({ ...prev, [exId]: "completed" }));
+      return;
+    }
+
+    // intent === "didnt". Already on the "didn't" side (skipped or the
+    // untouched not_attempted): no-op — never convert not_attempted → skipped
+    // spuriously, and never the reverse.
+    if (current !== "completed") return;
+
+    // Demoting from completed → skipped. Warn only when real (persisted) sets
+    // would be lost.
+    const persistedSets = (exerciseLogs[exId] || []).reduce(
+      (n, l) => n + (l.sets?.length || 0),
+      0
+    );
+    if (baselineStatus[exId] === "completed" && persistedSets > 0) {
+      setPendingDemotion({
+        exId,
+        name: exercise.exercise.name,
+        next: "skipped",
+        count: persistedSets,
+      });
+      return;
+    }
+    // Only a seeded (unsaved) promotion being undone — drop it silently.
+    setWorkingLogs((prev) => {
+      const n = { ...prev };
+      delete n[exId];
+      return n;
+    });
+    setWorkingStatus((prev) => ({ ...prev, [exId]: "skipped" }));
+    setExpandedSet(null);
+  };
+
+  const confirmDemotion = () => {
+    if (!pendingDemotion) return;
+    const { exId, next } = pendingDemotion;
+    setWorkingLogs((prev) => {
+      const n = { ...prev };
+      delete n[exId];
+      return n;
+    });
+    setWorkingStatus((prev) => ({ ...prev, [exId]: next }));
+    setExpandedSet(null);
+    setPendingDemotion(null);
   };
 
   const patchWorkingSet = (
@@ -345,37 +496,63 @@ export default function WorkoutSummary({
   };
 
   const handleSave = async () => {
-    // Only the (planDayExerciseId, roundNumber) pairs that actually changed —
-    // each save is a destructive rewrite of that round's sets server-side.
-    const changed: { exId: number; log: ExerciseLog }[] = [];
-    for (const key of Object.keys(workingLogs)) {
+    // Classify every exercise's intent from its status transition + set diffs.
+    // The control only ever yields completed or skipped, so there is no
+    // not_attempted-producing path here (SPEC §7, amended).
+    const promotions: { exId: number; log: ExerciseLog }[] = []; // → completed (write)
+    const skips: number[] = []; // → skipped ("I didn't do this")
+    const setEdits: { exId: number; log: ExerciseLog }[] = []; // stayed completed, sets changed
+
+    for (const key of Object.keys(baselineStatus)) {
       const exId = Number(key);
-      const orig = exerciseLogs[exId] || [];
-      for (const wl of workingLogs[exId] || []) {
-        const ol = orig.find((o) => o.roundNumber === wl.roundNumber);
-        if (serializeLog(wl) !== serializeLog(ol)) changed.push({ exId, log: wl });
+      const from = baselineStatus[exId];
+      const to = workingStatus[exId];
+      if (to === "completed") {
+        if (from !== "completed") {
+          const log = (workingLogs[exId] || [])[0];
+          if (log) promotions.push({ exId, log });
+        } else {
+          const orig = exerciseLogs[exId] || [];
+          for (const wl of workingLogs[exId] || []) {
+            const ol = orig.find((o) => o.roundNumber === wl.roundNumber);
+            if (serializeLog(wl) !== serializeLog(ol)) setEdits.push({ exId, log: wl });
+          }
+        }
+      } else if (to === "skipped" && from !== "skipped") {
+        skips.push(exId);
       }
+      // to === "not_attempted" only ever means "unchanged" here → no-op.
     }
-    if (changed.length === 0) {
+
+    const statusChanges = promotions.length + skips.length;
+    if (statusChanges === 0 && setEdits.length === 0) {
       exitEditing();
       return;
     }
 
     setSaving(true);
     let setsChanged = 0;
+    const toApiSets = (log: ExerciseLog) =>
+      (log.sets || []).map((s) => ({
+        roundNumber: s.roundNumber,
+        setNumber: s.setNumber,
+        weight: Number(s.weight) || 0,
+        reps: Number(s.reps) || 0,
+        restAfter: s.restAfter ?? undefined,
+        durationSeconds: s.durationSeconds ?? undefined,
+        distanceM: s.distanceM ?? undefined,
+      }));
     try {
-      // Sequentially — the endpoint deletes and rewrites, and a partial failure
-      // mid-flight should stop rather than continue (SPEC §6.5).
-      for (const { exId, log } of changed) {
-        const nextSets = (log.sets || []).map((s) => ({
-          roundNumber: s.roundNumber,
-          setNumber: s.setNumber,
-          weight: Number(s.weight) || 0,
-          reps: Number(s.reps) || 0,
-          restAfter: s.restAfter ?? undefined,
-          durationSeconds: s.durationSeconds ?? undefined,
-          distanceM: s.distanceM ?? undefined,
-        }));
+      // Sequentially, demotions before writes — a partial failure stops rather
+      // than continuing (SPEC §6.5). Each call is destructive server-side.
+      // "I didn't do this" is a skip (deletes logs + sets isSkipped); it never
+      // writes not_attempted, so a completed day can't be turned ended-early.
+      for (const exId of skips) {
+        const res = await skipExercise(workout.workoutId, exId);
+        if (res === null) throw new Error("save-failed");
+      }
+      for (const { exId, log } of [...promotions, ...setEdits]) {
+        const nextSets = toApiSets(log);
         const res = await createExerciseLog({
           planDayExerciseId: exId,
           roundNumber: log.roundNumber,
@@ -388,6 +565,17 @@ export default function WorkoutSummary({
         setsChanged += nextSets.length;
       }
 
+      // One honest recompute after any status change keeps the day's counts
+      // truthful (§9). Pure set-value edits don't move the counts, so skip it.
+      if (statusChanges > 0) {
+        await recomputePlanDayRollups(workout.id);
+      }
+
+      const changedIds = new Set<number>([
+        ...promotions.map((p) => p.exId),
+        ...skips,
+        ...setEdits.map((e) => e.exId),
+      ]);
       const hoursSinceCompletion = planDayLog?.updatedAt
         ? Math.round(
             ((Date.now() - new Date(planDayLog.updatedAt).getTime()) / 3.6e6) *
@@ -396,14 +584,17 @@ export default function WorkoutSummary({
         : undefined;
       trackEvent(AnalyticsEvent.WORKOUT_LOG_EDITED, {
         plan_day_id: workout.id,
-        exercises_changed: changed.length,
+        exercises_changed: changedIds.size,
         sets_changed: setsChanged,
+        status_changes: statusChanges,
         hours_since_completion: hoursSinceCompletion,
       });
 
       setIsEditing(false);
       setExpandedSet(null);
       setWorkingLogs({});
+      setWorkingStatus({});
+      setBaselineStatus({});
       await loadData();
       onLogEdited?.();
       // So Dashboard + Calendar pick up the corrected numbers.
@@ -507,6 +698,49 @@ export default function WorkoutSummary({
         <Text className="text-xs font-medium text-text-muted">
           {status === "skipped" ? "Skipped" : "Not attempted"}
         </Text>
+      </View>
+    );
+  };
+
+  // Two-option status control (SPEC §7, amended). First person: it's a
+  // statement about the user, not a label on a row. "I didn't do this" covers
+  // both skipped and not-attempted — the same claim from the user's side; the
+  // read view still distinguishes them (it reports what happened).
+  const statusSegment = (
+    exercise: WorkoutBlockWithExercise,
+    completionOnly: boolean
+  ) => {
+    const didActive = workingStatus[exercise.id] === "completed";
+    const options: { intent: "did" | "didnt"; label: string; active: boolean }[] =
+      [
+        { intent: "did", label: "I did this", active: didActive },
+        { intent: "didnt", label: "I didn't do this", active: !didActive },
+      ];
+    return (
+      <View className="flex-row bg-neutral-light-2 rounded-lg p-1">
+        {options.map((o) => (
+          <TouchableOpacity
+            key={o.intent}
+            className={`flex-1 items-center justify-center rounded-md ${
+              o.active ? "bg-surface" : ""
+            }`}
+            style={{ minHeight: 44 }}
+            onPress={() => changeStatus(exercise, o.intent, completionOnly)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: o.active }}
+            accessibilityLabel={`${exercise.exercise.name}: ${o.label}`}
+          >
+            <Text
+              className={
+                o.active
+                  ? "text-sm font-bold text-text-primary"
+                  : "text-sm font-medium text-text-muted"
+              }
+            >
+              {o.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     );
   };
@@ -718,64 +952,79 @@ export default function WorkoutSummary({
                   {!isCollapsed && (
                     <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2 p-3">
                       {block.exercises.map((exercise) => {
-                        const status = getExerciseStatus(exercise);
+                        // Circuit exercises stay fully read-only in v1 (§6.4):
+                        // static pill, no status control, no set editor.
+                        if (isCircuit) {
+                          return (
+                            <View key={exercise.id} className="mb-3">
+                              <View className="flex-row items-center justify-between mb-1">
+                                <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
+                                  {exercise.exercise.name}
+                                </Text>
+                                {statusPill(getExerciseStatus(exercise))}
+                              </View>
+                              <Text className="text-xs text-text-muted">
+                                Circuit results aren't editable here.
+                              </Text>
+                            </View>
+                          );
+                        }
+
+                        // Everything else is status-changeable (§7). Only
+                        // set-by-set exercises expose the set editor; completion-
+                        // only blocks are status-only.
+                        const wStatus =
+                          workingStatus[exercise.id] ??
+                          getExerciseStatus(exercise);
                         const logs = workingLogs[exercise.id] || [];
-                        // v1: circuit exercises and completion-only blocks are
-                        // read-only (SPEC §6.4). Non-completed exercises need a
-                        // status change to gain sets — that's Phase 2.
-                        const editable =
-                          !isCircuit &&
-                          !isCompletionOnly &&
-                          status === "completed" &&
-                          logs.length > 0;
+                        const showSets =
+                          !isCompletionOnly && wStatus === "completed";
 
                         return (
-                          <View key={exercise.id} className="mb-3">
-                            <View className="flex-row items-center justify-between mb-2">
-                              <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
-                                {exercise.exercise.name}
-                              </Text>
-                              {statusPill(status)}
-                            </View>
+                          <View key={exercise.id} className="mb-4">
+                            <Text className="font-semibold text-text-primary text-sm mb-2">
+                              {exercise.exercise.name}
+                            </Text>
+                            {statusSegment(exercise, isCompletionOnly)}
 
-                            {editable ? (
-                              logs.map((log) => (
-                                <View key={log.id} className="gap-2">
-                                  {(log.sets || []).map((set) =>
-                                    renderSetRow(exercise, log, set)
-                                  )}
-                                  <TouchableOpacity
-                                    className="flex-row items-center justify-center border rounded-lg py-3 mt-1"
-                                    style={{ borderColor: colors.brand.primary }}
-                                    onPress={() =>
-                                      addWorkingSet(exercise.id, log.roundNumber)
-                                    }
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Add a set"
-                                  >
-                                    <Ionicons
-                                      name="add-circle-outline"
-                                      size={17}
-                                      color={colors.brand.primary}
-                                    />
-                                    <Text
-                                      className="text-sm font-semibold ml-2"
-                                      style={{ color: colors.brand.primary }}
+                            {showSets ? (
+                              <View className="mt-2">
+                                {logs.map((log) => (
+                                  <View key={log.id} className="gap-2">
+                                    {(log.sets || []).map((set) =>
+                                      renderSetRow(exercise, log, set)
+                                    )}
+                                    <TouchableOpacity
+                                      className="flex-row items-center justify-center border rounded-lg py-3 mt-1"
+                                      style={{ borderColor: colors.brand.primary }}
+                                      onPress={() =>
+                                        addWorkingSet(exercise.id, log.roundNumber)
+                                      }
+                                      accessibilityRole="button"
+                                      accessibilityLabel="Add a set"
                                     >
-                                      Add a set
-                                    </Text>
-                                  </TouchableOpacity>
-                                </View>
-                              ))
+                                      <Ionicons
+                                        name="add-circle-outline"
+                                        size={17}
+                                        color={colors.brand.primary}
+                                      />
+                                      <Text
+                                        className="text-sm font-semibold ml-2"
+                                        style={{ color: colors.brand.primary }}
+                                      >
+                                        Add a set
+                                      </Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                ))}
+                              </View>
+                            ) : isCompletionOnly && wStatus === "completed" ? (
+                              <Text className="text-xs text-text-muted mt-2">
+                                Marked complete.
+                              </Text>
                             ) : (
-                              <Text className="text-xs text-text-muted">
-                                {isCircuit
-                                  ? "Circuit results aren't editable here."
-                                  : status === "completed"
-                                    ? "Completed"
-                                    : status === "skipped"
-                                      ? "Skipped"
-                                      : "Not attempted"}
+                              <Text className="text-xs text-text-muted mt-2">
+                                Tap "I did this" to log what you did.
                               </Text>
                             )}
                           </View>
@@ -815,6 +1064,28 @@ export default function WorkoutSummary({
           description="Something went wrong saving your corrections. Your edits are still here — try again."
           primaryButton={{ text: "OK", onPress: () => setShowError(false) }}
           onClose={() => setShowError(false)}
+        />
+        {/* Demotion warns before the sets are dropped (SPEC §7). */}
+        <CustomDialog
+          visible={!!pendingDemotion}
+          title="Delete your logged sets?"
+          description={
+            pendingDemotion
+              ? `This deletes the ${pendingDemotion.count} set${
+                  pendingDemotion.count !== 1 ? "s" : ""
+                } you logged for ${pendingDemotion.name}.`
+              : ""
+          }
+          primaryButton={{
+            text: "Delete",
+            onPress: confirmDemotion,
+            destructive: true,
+          }}
+          secondaryButton={{
+            text: "Keep them",
+            onPress: () => setPendingDemotion(null),
+          }}
+          onClose={() => setPendingDemotion(null)}
         />
       </View>
     );
