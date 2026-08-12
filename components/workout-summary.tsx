@@ -8,12 +8,14 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
+  Modal,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import DemoChip from "@/components/demo-chip";
 import SetStepperFields from "@/components/set-stepper-fields";
@@ -915,7 +917,18 @@ export default function WorkoutSummary({
     };
 
     return (
-      <View className="flex-1 bg-background">
+      // Full-screen modal so the Cancel / Save chrome pins to the top and the
+      // list scrolls beneath it — the inline layout scrolls off on hosts that
+      // embed the summary in their own scroll view (e.g. the Calendar tab).
+      // fullScreen (not pageSheet) so a swipe can't dismiss past the discard
+      // guard.
+      <Modal
+        visible
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={requestCancel}
+      >
+        <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
         {/* Editing chrome replaces the summary header (SPEC §6.2) */}
         <View className="flex-row items-center justify-between border-b border-neutral-light-2 px-4 py-3.5">
           <TouchableOpacity
@@ -1123,7 +1136,8 @@ export default function WorkoutSummary({
           }}
           onClose={() => setPendingDemotion(null)}
         />
-      </View>
+        </SafeAreaView>
+      </Modal>
     );
   }
 
