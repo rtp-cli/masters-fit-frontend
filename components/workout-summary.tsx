@@ -1,13 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
+  Modal,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import DemoChip from "@/components/demo-chip";
 import SetStepperFields from "@/components/set-stepper-fields";
@@ -27,6 +38,7 @@ import {
   notifyWorkoutUpdated,
   recomputePlanDayRollups,
   skipExercise,
+  subscribeToWorkoutUpdates,
 } from "@/lib/workouts";
 import {
   type BlockLog,
@@ -189,6 +201,12 @@ interface WorkoutSummaryProps {
   canEditLog?: boolean;
   /** Fired after a successful save so the host can refresh sibling views. */
   onLogEdited?: () => void;
+  /** Authoritative "this session ended early" signal from the host. When set,
+   *  it overrides the derived not-attempted heuristic for the header + Resume,
+   *  so correcting a completed day's log can never resurrect "Ended Early" /
+   *  Resume. The Workout tab passes its real session state; hosts that don't
+   *  pass it (e.g. Calendar, compact) fall back to the derived value. */
+  endedEarly?: boolean;
 }
 
 export default function WorkoutSummary({
@@ -200,6 +218,7 @@ export default function WorkoutSummary({
   onExerciseDemoPress,
   canEditLog = false,
   onLogEdited,
+  endedEarly,
 }: WorkoutSummaryProps) {
   const colors = useThemeColors();
   // Reserved completion accent (MF-004/005); falls back to ink for themes without it.
@@ -252,21 +271,39 @@ export default function WorkoutSummary({
     }));
   };
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const [log, logs, blockResults] = await Promise.all([
-      getPlanDayLog(workout.id),
-      fetchExerciseLogsForPlanDay(workout.id),
-      fetchBlockLogsForPlanDay(workout.id),
-    ]);
-    setPlanDayLog(log);
-    setExerciseLogs(logs);
-    setBlockLogs(blockResults);
-    setLoading(false);
-  }, [workout.id]);
+  // `soft` skips the skeleton — used for background refreshes (a log edited
+  // elsewhere) so the view updates in place without flashing.
+  const loadData = useCallback(
+    async (soft = false) => {
+      if (!soft) setLoading(true);
+      const [log, logs, blockResults] = await Promise.all([
+        getPlanDayLog(workout.id),
+        fetchExerciseLogsForPlanDay(workout.id),
+        fetchBlockLogsForPlanDay(workout.id),
+      ]);
+      setPlanDayLog(log);
+      setExerciseLogs(logs);
+      setBlockLogs(blockResults);
+      setLoading(false);
+    },
+    [workout.id]
+  );
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  // A log edited anywhere — this instance, another tab's summary, or the active
+  // session — fires a workout update. Soft-reload this view's logs so the edit
+  // shows without a manual tab refresh (fixes both Calendar↔Workout directions).
+  // Skip while this instance is mid-edit, so it never clobbers the working copy.
+  const isEditingRef = useRef(false);
+  isEditingRef.current = isEditing;
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkoutUpdates(() => {
+      if (!isEditingRef.current) loadData(true);
+    });
+    return unsubscribe;
   }, [loadData]);
 
   const statusDirty = useMemo(
@@ -629,7 +666,11 @@ export default function WorkoutSummary({
   const completedCount = allExercises.filter((e) => getExerciseStatus(e) === "completed").length;
   const skippedCount = allExercises.filter((e) => getExerciseStatus(e) === "skipped").length;
   const notAttemptedCount = allExercises.filter((e) => getExerciseStatus(e) === "not_attempted").length;
-  const wasEndedEarly = notAttemptedCount > 0;
+  // Prefer the host's authoritative session state; only fall back to the
+  // derived not-attempted heuristic when a host doesn't supply it. This keeps a
+  // completed day that gets its log edited from flipping to "Ended Early" /
+  // offering Resume just because an edit left an exercise unlogged.
+  const wasEndedEarly = endedEarly ?? notAttemptedCount > 0;
 
   const getRoundCount = (block: WorkoutBlockWithExercises): number => {
     if (!isCircuitBlock(block.blockType)) return 0;
@@ -879,7 +920,23 @@ export default function WorkoutSummary({
     };
 
     return (
-      <View className="flex-1 bg-background">
+      // Full-screen modal so the Cancel / Save chrome pins to the top and the
+      // list scrolls beneath it — the inline layout scrolls off on hosts that
+      // embed the summary in their own scroll view (e.g. the Calendar tab).
+      // fullScreen (not pageSheet) so a swipe can't dismiss past the discard
+      // guard.
+      <Modal
+        visible
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={requestCancel}
+      >
+        {/* A Modal renders in its own native window that the app's
+            SafeAreaProvider doesn't reach, so SafeAreaView here would read 0
+            insets and tuck the chrome under the status bar — give the modal its
+            own provider. */}
+        <SafeAreaProvider>
+        <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
         {/* Editing chrome replaces the summary header (SPEC §6.2) */}
         <View className="flex-row items-center justify-between border-b border-neutral-light-2 px-4 py-3.5">
           <TouchableOpacity
@@ -1037,9 +1094,9 @@ export default function WorkoutSummary({
             })}
           </View>
 
-          {/* Window caption (SPEC §8) */}
+          {/* Reassurance that a correction only touches the record. */}
           <Text className="text-xs text-text-muted text-center px-6 my-2">
-            You can correct this log until your next workout is complete.
+            Corrections only update your log, not the workout plan.
           </Text>
         </ScrollView>
 
@@ -1087,7 +1144,9 @@ export default function WorkoutSummary({
           }}
           onClose={() => setPendingDemotion(null)}
         />
-      </View>
+        </SafeAreaView>
+        </SafeAreaProvider>
+      </Modal>
     );
   }
 

@@ -64,6 +64,7 @@ import {
   fetchExerciseLogsForPlanDay,
   markPlanDayAsComplete,
   skipExercise,
+  subscribeToWorkoutUpdates,
 } from "@/lib/workouts";
 import { invalidateActiveWorkoutCache } from "@/lib/workouts";
 import {
@@ -686,6 +687,28 @@ export function WorkoutScreen() {
   // Load workout on mount and when tab is focused
   useEffect(() => {
     loadWorkout();
+  }, []);
+
+  // Keep a live ref of completion state for the workout-update subscription
+  // (its listener closure would otherwise capture a stale value).
+  const isCompletedRef = useRef(isWorkoutCompleted);
+  isCompletedRef.current = isWorkoutCompleted;
+
+  // The completed view is frozen (useFocusEffect skips reload when completed),
+  // so a log edited elsewhere — e.g. the Calendar edit-log flow — wouldn't
+  // refresh the workout prop here. Subscribe to workout updates and, when
+  // completed, refetch the plan day so the exercises' isSkipped flags stay
+  // current (WorkoutSummary reloads its own logs). Refetching a complete day
+  // keeps it complete (loadWorkout re-detects isComplete), so it never disturbs
+  // the view.
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkoutUpdates(() => {
+      if (isCompletedRef.current) {
+        loadWorkout(true);
+      }
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Clear app data when user logs out (but not during initial auth loading)
@@ -1969,6 +1992,9 @@ export function WorkoutScreen() {
         workout={workout}
         onResume={isToday ? handleResume : undefined}
         isResuming={isResuming}
+        // Authoritative session state: a completed day stays "Workout Complete"
+        // even after its log is edited — editing never resurrects Ended Early.
+        endedEarly={endedEarly}
         // Just-finished today's workout is the most recent completed day, so
         // it's inside the edit window (SPEC §8). Ended-early days lead with
         // Resume instead, so no edit affordance there.
