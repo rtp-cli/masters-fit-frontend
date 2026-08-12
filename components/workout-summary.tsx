@@ -15,7 +15,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import DemoChip from "@/components/demo-chip";
 import SetStepperFields from "@/components/set-stepper-fields";
@@ -928,6 +931,11 @@ export default function WorkoutSummary({
         presentationStyle="fullScreen"
         onRequestClose={requestCancel}
       >
+        {/* A Modal renders in its own native window that the app's
+            SafeAreaProvider doesn't reach, so SafeAreaView here would read 0
+            insets and tuck the chrome under the status bar — give the modal its
+            own provider. */}
+        <SafeAreaProvider>
         <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
         {/* Editing chrome replaces the summary header (SPEC §6.2) */}
         <View className="flex-row items-center justify-between border-b border-neutral-light-2 px-4 py-3.5">
@@ -1137,6 +1145,7 @@ export default function WorkoutSummary({
           onClose={() => setPendingDemotion(null)}
         />
         </SafeAreaView>
+        </SafeAreaProvider>
       </Modal>
     );
   }
