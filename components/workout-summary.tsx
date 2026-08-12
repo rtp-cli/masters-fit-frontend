@@ -1086,9 +1086,9 @@ export default function WorkoutSummary({
             })}
           </View>
 
-          {/* Window caption (SPEC §8) */}
+          {/* Reassurance that a correction only touches the record. */}
           <Text className="text-xs text-text-muted text-center px-6 my-2">
-            You can correct this log until your next workout is complete.
+            Corrections only update your log, not the workout plan.
           </Text>
         </ScrollView>
 
