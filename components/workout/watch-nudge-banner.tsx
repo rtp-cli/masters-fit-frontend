@@ -31,7 +31,7 @@ export default function WatchNudgeBanner({
 
   useEffect(() => {
     if (!visible) return;
-    const timer = setTimeout(onDismiss, 10000);
+    const timer = setTimeout(onDismiss, 5000);
     return () => clearTimeout(timer);
   }, [visible, onDismiss]);
 
@@ -39,9 +39,8 @@ export default function WatchNudgeBanner({
 
   return (
     <Animated.View
-      className="mx-4 mb-2 rounded-2xl px-4 py-3 flex-row items-center shadow-lg"
+      className="mx-4 mb-2"
       style={{
-        backgroundColor: colors.text.primary,
         opacity: slide,
         transform: [
           {
@@ -54,24 +53,25 @@ export default function WatchNudgeBanner({
       }}
       accessibilityLiveRegion="polite"
     >
-      <Ionicons name="watch" size={20} color={colors.background} />
-      <Text
-        className="flex-1 text-sm font-semibold ml-2"
-        style={{ color: colors.background }}
-        numberOfLines={2}
-      >
-        Wearing a watch? Start a workout on it to capture your heart rate.
-      </Text>
+      {/* Whole chip is tap-to-dismiss, with a clear ✕ so the affordance is
+          obvious (the old low-contrast "GOT IT" wasn't). */}
       <TouchableOpacity
         onPress={onDismiss}
+        activeOpacity={0.9}
         accessibilityRole="button"
         accessibilityLabel="Dismiss watch reminder"
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        className="ml-3 py-1"
+        className="rounded-2xl px-4 py-3 flex-row items-center shadow-lg"
+        style={{ backgroundColor: colors.text.primary }}
       >
-        <Text className="text-sm font-bold" style={{ color: colors.brand.primary }}>
-          GOT IT
+        <Ionicons name="watch" size={20} color={colors.background} />
+        <Text
+          className="flex-1 text-sm font-semibold mx-2"
+          style={{ color: colors.background }}
+          numberOfLines={2}
+        >
+          Wearing a watch? Start a workout on it to capture your heart rate.
         </Text>
+        <Ionicons name="close" size={20} color={colors.background} />
       </TouchableOpacity>
     </Animated.View>
   );
