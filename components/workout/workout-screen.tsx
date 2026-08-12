@@ -64,6 +64,7 @@ import {
   fetchExerciseLogsForPlanDay,
   markPlanDayAsComplete,
   skipExercise,
+  subscribeToWorkoutUpdates,
 } from "@/lib/workouts";
 import { invalidateActiveWorkoutCache } from "@/lib/workouts";
 import {
@@ -190,6 +191,9 @@ export function WorkoutScreen() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false);
+  // Bumped to remount the completed WorkoutSummary so it reloads its logs when a
+  // log edit made elsewhere (Calendar edit-log) fires a workout update.
+  const [completedRefreshKey, setCompletedRefreshKey] = useState(0);
   // Tracks whether this session was ended early — used to suppress the share
   // affordance on the ended-early summary (that screen offers Resume/feedback).
   const [endedEarly, setEndedEarly] = useState(false);
@@ -686,6 +690,28 @@ export function WorkoutScreen() {
   // Load workout on mount and when tab is focused
   useEffect(() => {
     loadWorkout();
+  }, []);
+
+  // Keep a live ref of completion state for the workout-update subscription
+  // (its listener closure would otherwise capture a stale value).
+  const isCompletedRef = useRef(isWorkoutCompleted);
+  isCompletedRef.current = isWorkoutCompleted;
+
+  // The completed view is frozen (useFocusEffect skips reload when completed),
+  // so a log edited elsewhere — e.g. the Calendar edit-log flow — wouldn't show
+  // here without a manual refresh. Subscribe to workout updates and, when
+  // completed, refetch the plan day (fresh isSkipped) and remount the summary
+  // so it reloads its logs. Refetching a complete day keeps it complete
+  // (loadWorkout re-detects isComplete), so this never disturbs the view.
+  useEffect(() => {
+    const unsubscribe = subscribeToWorkoutUpdates(() => {
+      if (isCompletedRef.current) {
+        loadWorkout(true);
+        setCompletedRefreshKey((k) => k + 1);
+      }
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Clear app data when user logs out (but not during initial auth loading)
@@ -1966,9 +1992,15 @@ export function WorkoutScreen() {
   if (isWorkoutCompleted) {
     return (
       <WorkoutSummary
+        // Remounts to reload logs when a log edit elsewhere (e.g. Calendar
+        // edit-log) fires a workout update — see the subscription below.
+        key={completedRefreshKey}
         workout={workout}
         onResume={isToday ? handleResume : undefined}
         isResuming={isResuming}
+        // Authoritative session state: a completed day stays "Workout Complete"
+        // even after its log is edited — editing never resurrects Ended Early.
+        endedEarly={endedEarly}
         // Just-finished today's workout is the most recent completed day, so
         // it's inside the edit window (SPEC §8). Ended-early days lead with
         // Resume instead, so no edit affordance there.

@@ -189,6 +189,12 @@ interface WorkoutSummaryProps {
   canEditLog?: boolean;
   /** Fired after a successful save so the host can refresh sibling views. */
   onLogEdited?: () => void;
+  /** Authoritative "this session ended early" signal from the host. When set,
+   *  it overrides the derived not-attempted heuristic for the header + Resume,
+   *  so correcting a completed day's log can never resurrect "Ended Early" /
+   *  Resume. The Workout tab passes its real session state; hosts that don't
+   *  pass it (e.g. Calendar, compact) fall back to the derived value. */
+  endedEarly?: boolean;
 }
 
 export default function WorkoutSummary({
@@ -200,6 +206,7 @@ export default function WorkoutSummary({
   onExerciseDemoPress,
   canEditLog = false,
   onLogEdited,
+  endedEarly,
 }: WorkoutSummaryProps) {
   const colors = useThemeColors();
   // Reserved completion accent (MF-004/005); falls back to ink for themes without it.
@@ -629,7 +636,11 @@ export default function WorkoutSummary({
   const completedCount = allExercises.filter((e) => getExerciseStatus(e) === "completed").length;
   const skippedCount = allExercises.filter((e) => getExerciseStatus(e) === "skipped").length;
   const notAttemptedCount = allExercises.filter((e) => getExerciseStatus(e) === "not_attempted").length;
-  const wasEndedEarly = notAttemptedCount > 0;
+  // Prefer the host's authoritative session state; only fall back to the
+  // derived not-attempted heuristic when a host doesn't supply it. This keeps a
+  // completed day that gets its log edited from flipping to "Ended Early" /
+  // offering Resume just because an edit left an exercise unlogged.
+  const wasEndedEarly = endedEarly ?? notAttemptedCount > 0;
 
   const getRoundCount = (block: WorkoutBlockWithExercises): number => {
     if (!isCircuitBlock(block.blockType)) return 0;
