@@ -14,7 +14,6 @@ import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import * as TrackingTransparency from "expo-tracking-transparency";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import React, { useCallback, useEffect, useMemo, useRef,useState } from "react";
 import {
@@ -557,26 +556,6 @@ function RootLayout() {
   // Calculate isDark based on mode and system preference
   const isDark =
     mode === "auto" ? systemColorScheme === "dark" : mode === "dark";
-
-  // Request App Tracking Transparency permission on iOS
-  useEffect(() => {
-    const requestTrackingPermission = async () => {
-      if (Platform.OS === "ios") {
-        try {
-          const { status } =
-            await TrackingTransparency.requestTrackingPermissionsAsync();
-          console.log("ATT permission status:", status);
-        } catch (error) {
-          console.error("Error requesting ATT permission:", error);
-        }
-      }
-    };
-
-    // Request permission as early as possible after fonts are loaded
-    if (fontsLoaded || fontError) {
-      requestTrackingPermission();
-    }
-  }, [fontsLoaded, fontError]);
 
   // Load theme preferences on mount
   useEffect(() => {

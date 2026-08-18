@@ -14,8 +14,10 @@ export function initSentry() {
     tracesSampleRate: __DEV__ ? 1.0 : 0.2,
     // Only send events in production
     enabled: !__DEV__,
-    // Attach user context, screen breadcrumbs, etc.
-    attachScreenshot: true,
+    // Screenshots are intentionally OFF: this is a health app and a crash-time
+    // screenshot can capture on-screen profile/health/workout data. Keeping crash
+    // reports free of health data simplifies the App Privacy / Data Safety posture.
+    attachScreenshot: false,
     environment: __DEV__ ? "development" : "production",
   });
 }

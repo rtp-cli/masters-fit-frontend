@@ -54,7 +54,6 @@
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "~31.0.10",
     "expo-status-bar": "~3.0.8",
-    "expo-tracking-transparency": "^6.0.8",
     "mixpanel-react-native": "^3.1.2",
     "nativewind": "^4.1.23",
     "react": "19.1.0",
