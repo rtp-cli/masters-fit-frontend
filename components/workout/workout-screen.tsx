@@ -1010,6 +1010,82 @@ export function WorkoutScreen() {
     setTimeout(() => scrollToExerciseHeading(idx), 150);
   };
 
+  // Finish the workout day: advance the UI to complete, THEN persist the
+  // day-completion + refresh the dashboard. The persistence is deliberately
+  // separated from (and never gates) the local advance. Every set/circuit log
+  // has already landed by the time we get here, so a transient failure to mark
+  // the *day* finished must not strand the session mid-progress ("Exercise 1
+  // of N") nor masquerade as a "Couldn't Save Circuit/Exercise" error. On
+  // failure we show an honest finish error — markPlanDayAsComplete is
+  // idempotent, so Retry is safe and lossless.
+  const finishWorkoutDay = async () => {
+    // Advance first: the work is saved, so reflect completion regardless of
+    // the network call below.
+    setCurrentExerciseIndex(exercises.length);
+    setIsWorkoutCompleted(true);
+
+    if (!workout?.id) return;
+
+    const finalDuration = getWorkoutDurationForAnalytics();
+    const completedExerciseCount = exercises.length - skippedExercises.length;
+    const completedBlockCount = workout.blocks.length;
+
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 30);
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 7);
+
+    try {
+      await Promise.all([
+        markPlanDayAsComplete(workout.id, {
+          totalTimeSeconds: finalDuration,
+          exercisesCompleted: completedExerciseCount,
+          blocksCompleted: completedBlockCount,
+        }),
+        refreshDashboard({
+          startDate: startDate.toISOString().split("T")[0],
+          endDate: endDate.toISOString().split("T")[0],
+        }),
+      ]);
+
+      setDialogConfig({
+        title: "Workout Complete!",
+        description: "Congratulations! You've completed today's workout.",
+        primaryButton: {
+          text: "OK",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "checkmark-circle",
+        accessory: <StreakBadge />,
+      });
+      setDialogVisible(true);
+    } catch (err) {
+      console.error("Error finishing workout day:", err);
+      // The sets/circuit are already saved; only the day-completion call
+      // failed. Offer a Retry that re-runs just the (idempotent) finish step —
+      // not the whole save — and make the message honest about what's at risk.
+      setDialogConfig({
+        title: "Couldn't Finish Workout",
+        description:
+          "Your work is saved. We just couldn't mark the workout finished — check your connection and tap Retry.",
+        primaryButton: {
+          text: "Retry",
+          onPress: () => {
+            setDialogVisible(false);
+            finishWorkoutDay();
+          },
+        },
+        secondaryButton: {
+          text: "Not Now",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
+    }
+  };
+
   const completeExercise = async () => {
     if (!currentExercise || !currentProgress) return;
 
@@ -1046,36 +1122,8 @@ export function WorkoutScreen() {
           updateCurrentBlockForAbandonment(nextIndex);
           setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
         } else {
-          // All exercises completed, complete the workout
-          if (workout?.id) {
-            const completedExerciseCount =
-              exercises.length - skippedExercises.length;
-            const completedBlockCount = workout.blocks.length;
-
-            // Get duration for analytics (simple start to end time)
-            const finalDuration = getWorkoutDurationForAnalytics();
-
-            const today = new Date();
-            const startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-            const endDate = new Date(today);
-            endDate.setDate(today.getDate() + 7);
-
-            await Promise.all([
-              markPlanDayAsComplete(workout.id, {
-                totalTimeSeconds: finalDuration,
-                exercisesCompleted: completedExerciseCount,
-                blocksCompleted: completedBlockCount,
-              }),
-              refreshDashboard({
-                startDate: startDate.toISOString().split("T")[0],
-                endDate: endDate.toISOString().split("T")[0],
-              }),
-            ]);
-          }
-
-          setCurrentExerciseIndex(exercises.length);
-          setIsWorkoutCompleted(true);
+          // All exercises completed — finish the day (own error handling).
+          await finishWorkoutDay();
         }
         return;
       }
@@ -1149,36 +1197,11 @@ export function WorkoutScreen() {
           exerciseStartTime.current = Date.now();
           setTimeout(() => scrollToExerciseHeading(nextExerciseIndex), 150);
         } else {
-          // All exercises completed, complete the workout day
-          if (workout?.id) {
-            const completedExerciseCount =
-              exercises.length - skippedExercises.length;
-            const completedBlockCount = workout.blocks.length;
-
-            // Get duration for analytics (simple start to end time)
-            const finalDuration = getWorkoutDurationForAnalytics();
-
-            const today = new Date();
-            const startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-            const endDate = new Date(today);
-            endDate.setDate(today.getDate() + 7);
-
-            await Promise.all([
-              markPlanDayAsComplete(workout.id, {
-                totalTimeSeconds: finalDuration,
-                exercisesCompleted: completedExerciseCount,
-                blocksCompleted: completedBlockCount,
-              }),
-              refreshDashboard({
-                startDate: startDate.toISOString().split("T")[0],
-                endDate: endDate.toISOString().split("T")[0],
-              }),
-            ]);
-          }
-
-          setCurrentExerciseIndex(exercises.length);
-          setIsWorkoutCompleted(true);
+          // Last block done — finish the day (own error handling). The advance
+          // now happens inside finishWorkoutDay regardless of the day-complete
+          // call, so a transient finish failure can't strand progress at
+          // "Exercise 1 of N" on a fully-logged circuit.
+          await finishWorkoutDay();
         }
         return;
       }
@@ -1249,55 +1272,8 @@ export function WorkoutScreen() {
         updateCurrentBlockForAbandonment(nextIndex);
         setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
       } else {
-        // All exercises completed, so mark the plan day as complete
-        if (workout?.id) {
-          // Calculate completion data
-          const completedExerciseCount = currentExerciseIndex + 1; // +1 because we just completed this exercise
-          const completedBlockCount = workout.blocks.length; // All blocks completed
-
-          console.log("Workout completion data:", {
-            workoutTimer,
-            totalTimeSeconds: workoutTimer,
-            exercisesCompleted: completedExerciseCount,
-            blocksCompleted: completedBlockCount,
-          });
-
-          // Get duration for analytics (simple start to end time)
-          const finalDuration = getWorkoutDurationForAnalytics();
-
-          const today = new Date();
-          const startDate = new Date(today);
-          startDate.setDate(today.getDate() - 30);
-          const endDate = new Date(today);
-          endDate.setDate(today.getDate() + 7);
-
-          await Promise.all([
-            markPlanDayAsComplete(workout.id, {
-              totalTimeSeconds: finalDuration,
-              exercisesCompleted: completedExerciseCount,
-              blocksCompleted: completedBlockCount,
-            }),
-            refreshDashboard({
-              startDate: startDate.toISOString().split("T")[0],
-              endDate: endDate.toISOString().split("T")[0],
-            }),
-          ]);
-        }
-
-        setCurrentExerciseIndex(exercises.length); // This will make progress show 100%
-        setIsWorkoutCompleted(true);
-
-        setDialogConfig({
-          title: "Workout Complete!",
-          description: "Congratulations! You've completed today's workout.",
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "checkmark-circle",
-          accessory: <StreakBadge />,
-        });
-        setDialogVisible(true);
+        // All exercises completed — finish the day (own error handling).
+        await finishWorkoutDay();
       }
     } catch (err) {
       console.error(
@@ -1690,6 +1666,15 @@ export function WorkoutScreen() {
   const isCurrentBlockCompletionOnly = currentBlock
     ? getLoggingMode(currentBlock) === "completion_only"
     : false;
+
+  // A circuit is performed as rounds — all of its exercises together — not as
+  // sequential steps. So the progress rail treats the current circuit block's
+  // exercises as ONE unit (highlighted together while in the circuit, filled
+  // together once it's done) instead of showing a misleading "Exercise 1 of N".
+  const currentCircuitExerciseIds =
+    isCurrentBlockCircuit && currentBlock
+      ? new Set(currentBlock.exercises.map((ex) => ex.id))
+      : null;
 
   // Circuit session management - Always call hook but initialize properly
   const dummyBlock: WorkoutBlockWithExercises = {
@@ -2473,12 +2458,25 @@ export function WorkoutScreen() {
             {isWorkoutStarted && !isOverviewExpanded ? (
               <View>
                 <Text className="text-sm text-text-secondary mb-2">
-                  Exercise {currentExerciseIndex + 1} of {exercises.length}
+                  {isCurrentBlockCircuit && currentBlock
+                    ? `${
+                        currentBlock.blockName ||
+                        getBlockTypeDisplayName(currentBlock.blockType)
+                      } · Round ${circuitSession?.sessionData.currentRound ?? 1} of ${
+                        circuitSession?.sessionData.targetRounds ??
+                        currentBlock.rounds ??
+                        1
+                      }`
+                    : `Exercise ${currentExerciseIndex + 1} of ${exercises.length}`}
                 </Text>
                 <View className="flex-row gap-1">
                   {exercises.map((exercise, index) => {
                     const isCompleted = index < currentExerciseIndex;
-                    const isCurrent = index === currentExerciseIndex;
+                    // A circuit's exercises light up together as one unit (all
+                    // "current" while in the circuit) rather than one-at-a-time.
+                    const isCurrent =
+                      index === currentExerciseIndex ||
+                      (currentCircuitExerciseIds?.has(exercise.id) ?? false);
                     const isSkipped = skippedExercises.includes(exercise.id);
                     return (
                       <View
