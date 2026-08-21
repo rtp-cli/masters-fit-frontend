@@ -846,8 +846,25 @@ export default function DashboardScreen() {
   const weeklyProgressData = (() => {
     const planDays = workoutInfo?.planDays;
     if (!planDays) return [] as any[];
-    const todayStr = formatDateAsString(new Date());
-    return getTrainingDays(planDays).map((planDay) => {
+    const now = new Date();
+    const todayStr = formatDateAsString(now);
+    // "Weekly Progress" shows only the CURRENT week (Sun–Sat), mirroring
+    // getWorkoutsForWeek's convention. Most plans are a single week so this is a
+    // no-op, but a multi-week plan (e.g. a 30-day challenge) would otherwise
+    // render one squished/overflowing bar per plan day.
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const startStr = formatDateAsString(startOfWeek);
+    const endStr = formatDateAsString(endOfWeek);
+    return getTrainingDays(planDays)
+      .filter((planDay) => {
+        const d = formatDateAsString(planDay.date);
+        return d >= startStr && d <= endStr;
+      })
+      .map((planDay) => {
       const dateStr = formatDateAsString(planDay.date);
       const dayData = dailyWorkoutProgress?.find((d) => d.date === dateStr);
       const isToday = dateStr === todayStr;
