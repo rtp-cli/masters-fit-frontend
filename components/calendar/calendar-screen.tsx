@@ -146,12 +146,25 @@ export default function CalendarScreen() {
     }
   }, [user, authLoading, reset]);
 
+  const hasFocusedOnce = useRef(false);
+
   useFocusEffect(
     useCallback(() => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      // Self-heal on tab focus (mirrors the Workout screen). The completion
+      // event bus is the primary path, but if Calendar ever lands stale data
+      // — e.g. a post-regen refresh raced backend read-after-write — a plain
+      // tab switch back here re-fetches fresh instead of stranding the user
+      // on the old plan until a manual pull-to-refresh. Skip the very first
+      // focus, which the mount effect already covers.
+      if (hasFocusedOnce.current) {
+        refreshWorkout();
+      } else {
+        hasFocusedOnce.current = true;
+      }
       // Clear the "Just generated" badge once the user navigates away.
       return () => clearJustGenerated();
-    }, [clearJustGenerated])
+    }, [clearJustGenerated, refreshWorkout])
   );
 
   useEffect(() => {

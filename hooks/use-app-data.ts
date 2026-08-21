@@ -196,7 +196,12 @@ export const useAppData = () => {
     setError(null);
 
     try {
-      const response = await fetchActiveWorkout();
+      // Force-bypass the module cache. This path is driven by the
+      // post-mutation event bus (regen/complete/edit), where the cache may
+      // still hold — or be racing to re-hold — the pre-mutation plan. A
+      // non-forced fetch here can re-cache stale data with a fresh TTL and
+      // leave Calendar/Dashboard stuck on the old plan until a manual pull.
+      const response = await fetchActiveWorkout(true);
       setData((prev) => ({
         ...prev,
         workoutData: response || null,
