@@ -4,7 +4,7 @@ import {
   useSpeechRecognitionEvent,
 } from "@jamsch/expo-speech-recognition";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, Text, TouchableOpacity, View } from "react-native";
 
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { useThemeColors } from "@/lib/theme";
@@ -141,12 +141,33 @@ export default function VoiceInputButton({
         );
         return;
       }
+      // Privacy: dictation runs ON-DEVICE ONLY — audio never leaves the phone,
+      // so we declare no audio egress to Apple/Google speech servers (Play Data
+      // Safety / Apple privacy label). We deliberately do NOT fall back to the
+      // cloud recognizer when on-device is unavailable — that would reintroduce
+      // the egress we're avoiding. Instead we ask the user to type. On Android
+      // we kick off the one-time offline-model download so dictation works next
+      // time; iOS ships the on-device model on A12+ (2018+) devices.
+      if (!ExpoSpeechRecognitionModule.supportsOnDeviceRecognition()) {
+        if (Platform.OS === "android") {
+          ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({
+            locale: "en-US",
+          }).catch(() => {});
+        }
+        Alert.alert(
+          "Voice input unavailable",
+          "On-device dictation isn't ready on this device yet. Type your note instead."
+        );
+        return;
+      }
+
       segmentsRef.current = [];
       startedAtRef.current = Date.now();
       ExpoSpeechRecognitionModule.start({
         lang: "en-US",
         interimResults: true,
         continuous: true,
+        requiresOnDeviceRecognition: true,
       });
       setRecording(true);
     } catch {
