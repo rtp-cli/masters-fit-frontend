@@ -38,7 +38,16 @@ export const waiverDocument: LegalDocument = {
 ## 5. Binding Agreement
 
 - I confirm that I have read this Waiver, fully understand its terms, and agree voluntarily.
-- This Waiver is binding upon me, my heirs, executors, administrators, and assigns.`,
+- This Waiver is binding upon me, my heirs, executors, administrators, and assigns.
+
+## 6. Contact
+
+For questions regarding this Agreement, contact:
+
+MastersFit LLC
+1023 East Lincolnway
+Cheyenne, WY 82001
+legal@mastersfit.ai`,
 };
 
 export const termsDocument: LegalDocument = {
@@ -113,13 +122,22 @@ These Terms shall be governed by and construed in accordance with the laws of th
 
 ## 13. Changes to Terms
 
-We may update these Terms periodically. Updates will be posted in the App with a revised "Last Updated" date. Your continued use of the App indicates acceptance of the updated Terms.`,
+We may update these Terms periodically. Updates will be posted in the App with a revised "Last Updated" date. Your continued use of the App indicates acceptance of the updated Terms.
+
+## 14. Contact Us
+
+For questions regarding these Terms, contact:
+
+MastersFit LLC
+1023 East Lincolnway
+Cheyenne, WY 82001
+legal@mastersfit.ai`,
 };
 
 export const privacyDocument: LegalDocument = {
   title: `Privacy Policy (v${CURRENT_WAIVER_VERSION})`,
   effectiveDate: "September 20, 2025",
-  lastUpdated: "September 20, 2025",
+  lastUpdated: "August 25, 2026",
   disclaimer:
     "MastersFit LLC values your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and safeguard your data when you use the MastersFit mobile application, website, and related services. By using the App, you agree to the terms of this Privacy Policy. If you disagree, please discontinue use.",
   content: `## 1. Information We Collect
@@ -129,6 +147,9 @@ We may collect the following categories of information:
 ### Personal Information You Provide
 - Name, email address, and account login credentials
 - Age, gender, fitness goals, workout preferences, and health limitations (as provided by you during onboarding)
+
+### Health & Fitness Data
+- With your permission, health and activity data from Apple Health or Health Connect (for example, heart rate, calories, steps, and workout sessions), used to enrich your training history and inform your plan
 
 ### Usage & Activity Data
 - Workouts generated, logged results, and performance history
@@ -155,7 +176,8 @@ We use your data to:
 
 We do not sell your personal information. We may share limited data in these cases:
 
-- **Service Providers:** With trusted vendors (e.g., cloud hosting, authentication, analytics) who support the App's operations.
+- **Service Providers:** With trusted vendors who support the App's operations — including cloud hosting, authentication, analytics, crash and diagnostics reporting, subscription management, and transactional email.
+- **AI Personalization:** To generate and personalize your training, we share the profile and fitness inputs you provide with a third-party AI service provider that processes them on our behalf to return your plan. This provider does not use your data to train its own models or for advertising.
 - **Legal Compliance:** When required by law, regulation, or valid legal process.
 - **Business Transfers:** If MastersFit LLC undergoes a merger, acquisition, or asset sale, your data may be transferred.
 
@@ -168,7 +190,7 @@ We do not sell your personal information. We may share limited data in these cas
 ## 5. Data Retention
 
 - We retain personal data as long as necessary to provide services and comply with legal obligations.
-- You may request account deletion, and we will remove or anonymize your data unless retention is legally required.
+- You can delete your account and all associated data at any time — in the app under Settings → Delete Account, or by contacting us. Deletion removes your data except limited records we must retain for legal or financial reasons (for example, a one-way hashed record used to honor your deletion and prevent abuse, and any legally required transaction records).
 
 ## 6. Your Rights & Choices
 
@@ -190,7 +212,16 @@ If you access the App outside the United States, your data may be transferred to
 
 ## 9. Changes to this Privacy Policy
 
-We may update this Privacy Policy from time to time. Updates will be posted in the App and on our website with a revised "Last Updated" date. Continued use of the App after updates indicates acceptance.`,
+We may update this Privacy Policy from time to time. Updates will be posted in the App and on our website with a revised "Last Updated" date. Continued use of the App after updates indicates acceptance.
+
+## 10. Contact Us
+
+For questions regarding this Privacy Policy, contact:
+
+MastersFit LLC
+1023 East Lincolnway
+Cheyenne, WY 82001
+legal@mastersfit.ai`,
 };
 
 // Export individual content strings for backward compatibility

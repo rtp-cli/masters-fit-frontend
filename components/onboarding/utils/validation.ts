@@ -7,8 +7,8 @@ export const validateField = (field: string, value: any): string => {
     return `${field} is required`;
   }
 
-  if (field === "Age" && (value < 16 || value > 100)) {
-    return "Age must be between 16 and 100";
+  if (field === "Age" && (value < 18 || value > 100)) {
+    return "Age must be between 18 and 100";
   }
 
   if (field === "Height" && (value < 120 || value > 220)) {
