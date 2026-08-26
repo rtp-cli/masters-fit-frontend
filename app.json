@@ -10,7 +10,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.mastersfit.ai",
       "splash": {
         "image": "./assets/splash.png",
