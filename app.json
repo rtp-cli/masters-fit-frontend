@@ -96,7 +96,7 @@
       ],
       "./plugins/healthconnect",
       "./plugins/healthkit",
-      "./plugins/withRemoveAdId",
+      "./plugins/with-remove-ad-id",
       [
         "expo-build-properties",
         {
