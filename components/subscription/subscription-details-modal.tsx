@@ -1,12 +1,98 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Modal, ScrollView,Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, ScrollView,Text, TouchableOpacity, View } from "react-native";
+import { PACKAGE_TYPE, type PurchasesPackage } from "react-native-purchases";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MASTERSFIT_PLUS_BENEFITS } from "@/constants/subscription";
 import { useEntitlements } from "@/hooks/use-entitlements";
+import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import { useThemeColors } from "@/lib/theme";
+
+const isAnnualPackage = (p: PurchasesPackage): boolean =>
+  p.packageType === PACKAGE_TYPE.ANNUAL ||
+  /annual|yearly|_1y|\.1y/i.test(p.identifier);
+const isMonthlyPackage = (p: PurchasesPackage): boolean =>
+  p.packageType === PACKAGE_TYPE.MONTHLY ||
+  /monthly|_1m|\.1m/i.test(p.identifier);
+
+/**
+ * "Switch to annual" CTA for a monthly subscriber. Broken out as its own
+ * component so the RevenueCat offerings fetch (useSubscriptionPlans) only runs
+ * when an eligible monthly subscriber actually opens the modal — not on every
+ * Settings mount. RevenueCat's purchasePackage handles the upgrade + proration
+ * via the native purchase sheet; we just kick it off and reconcile the backend.
+ */
+function AnnualSwitchCta({ onSwitched }: { onSwitched: () => void }) {
+  const { packages, purchasePackage, isPurchasing } = useSubscriptionPlans();
+
+  const annualPkg = packages.find(isAnnualPackage);
+  const monthlyPkg = packages.find(isMonthlyPackage);
+  if (!annualPkg) return null;
+
+  const savingsPercent =
+    monthlyPkg && annualPkg && monthlyPkg.product.price > 0
+      ? Math.round(
+          ((monthlyPkg.product.price * 12 - annualPkg.product.price) /
+            (monthlyPkg.product.price * 12)) *
+            100,
+        )
+      : null;
+
+  const handleSwitch = () => {
+    Alert.alert(
+      "Switch to annual billing?",
+      `You'll move to the annual plan at ${annualPkg.product.priceString}/year${
+        savingsPercent && savingsPercent > 0
+          ? `, saving about ${savingsPercent}%`
+          : ""
+      }. You'll confirm the charge on the next screen, and your monthly plan stops renewing.`,
+      [
+        { text: "Not now", style: "cancel" },
+        {
+          text: "Switch",
+          onPress: async () => {
+            const ok = await purchasePackage(annualPkg);
+            if (ok) {
+              Alert.alert(
+                "You're on annual",
+                "Your plan switched to annual billing. Thanks for going all-in!",
+              );
+              onSwitched();
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handleSwitch}
+      disabled={isPurchasing}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Switch to annual billing"
+      className="flex-row items-center justify-center bg-primary rounded-xl py-3.5 px-4 mb-8"
+      style={{ opacity: isPurchasing ? 0.6 : 1 }}
+    >
+      {isPurchasing ? (
+        <ActivityIndicator color="#FFFFFF" />
+      ) : (
+        <>
+          <Ionicons name="trending-up" size={18} color="#FFFFFF" />
+          <Text className="text-white font-semibold text-base ml-2">
+            Switch to Annual
+            {savingsPercent && savingsPercent > 0
+              ? ` · Save ${savingsPercent}%`
+              : ""}
+          </Text>
+        </>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 interface SubscriptionDetailsModalProps {
   visible: boolean;
@@ -26,6 +112,14 @@ export default function SubscriptionDetailsModal({
   const isPaidTier =
     tier === "PLUS" || tier === "COMPLIMENTARY" || tier === "BYPASS";
   const isGranted = tier === "COMPLIMENTARY" || tier === "BYPASS";
+
+  // A real, auto-renewing monthly RevenueCat subscriber can switch to annual
+  // in-app. Granted (COMPLIMENTARY/BYPASS) users have no RC subscription to
+  // switch; annual subscribers have nothing to switch to.
+  const isMonthlyPlan =
+    !!productIdentifier && /monthly|_1m|\.1m/i.test(productIdentifier);
+  const showAnnualSwitch =
+    isPaidTier && !isGranted && isMonthlyPlan && willRenew;
 
   // Render for any paid tier. Backend-granted COMPLIMENTARY/BYPASS users have
   // no RevenueCat entitlement, so gating on activeEntitlement alone made this
@@ -161,6 +255,9 @@ export default function SubscriptionDetailsModal({
               </View>
             )}
           </View>
+
+          {/* Switch to annual — only for a monthly, auto-renewing subscriber */}
+          {showAnnualSwitch && <AnnualSwitchCta onSwitched={onClose} />}
 
           {/* Features */}
           <View className="mb-8">

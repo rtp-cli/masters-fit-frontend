@@ -24,6 +24,7 @@ import DemoChip from "@/components/demo-chip";
 import SetStepperFields from "@/components/set-stepper-fields";
 import { ShareWorkoutButton } from "@/components/share";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
+import ConfettiCelebration from "@/components/ui/confetti-celebration";
 import CustomDialog from "@/components/ui/custom-dialog";
 import WorkoutFeedbackCard from "@/components/workout-feedback-card";
 import { getLoggingMode } from "@/constants/block-types";
@@ -1477,6 +1478,10 @@ export default function WorkoutSummary({
         {/* Footer */}
         {footer}
       </ScrollView>
+      {/* One-shot confetti on the live full-screen completion celebration only:
+          the calendar renders this summary `compact`, and ended-early days lead
+          with Resume instead of a celebration. Honors Reduce Motion internally. */}
+      {!compact && !wasEndedEarly && <ConfettiCelebration />}
     </View>
   );
 }

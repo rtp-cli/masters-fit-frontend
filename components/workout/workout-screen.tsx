@@ -985,6 +985,9 @@ export function WorkoutScreen() {
   const undoAutoComplete = () => {
     const pending = pendingCommitRef.current;
     if (!pending) return;
+    // Light haptic to confirm the undo landed (the auto-complete that it
+    // reverses fired a Medium impact; a Light tap reads as "stepped back").
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     clearTimeout(pending.timeout);
     pendingCommitRef.current = null;
     setUndoSnackbar(null);
@@ -1023,6 +1026,14 @@ export function WorkoutScreen() {
     // the network call below.
     setCurrentExerciseIndex(exercises.length);
     setIsWorkoutCompleted(true);
+
+    // Celebratory flourish to punctuate finishing the whole workout, in sync
+    // with the confetti on the summary. Delayed slightly so it reads as an
+    // escalation after the per-exercise Success haptic rather than a stutter.
+    // (Genuine-completion only — end-early uses endWorkoutEarly, not this.)
+    setTimeout(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    }, 140);
 
     if (!workout?.id) return;
 
