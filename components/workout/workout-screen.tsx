@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
   type ViewStyle,
 } from "react-native";
@@ -158,6 +159,20 @@ function CircuitLoggingInterface({
 export function WorkoutScreen() {
   const colors = useThemeColors();
   const { isDark } = useTheme();
+
+  // Breathing room for the Skip/Pause pills in the bottom action bar. They hug
+  // their content, so their horizontal padding is the only thing between the
+  // icon/label and the pill edge — at px-2 (8dp) they read as squished.
+  // px-4 is comfortable but costs 16dp/button, which the primary "Complete"
+  // button (longest label + an icon) needs back in the worst case. Measured at
+  // 360dp: ~52dp of slack at fontScale 1.0, but only ~14dp at 1.3 — which is
+  // why px-3 was previously reverted. So key the padding on fontScale rather
+  // than pinning everything to the worst case: normal text gets px-4 (incl.
+  // 360dp Androids), and only scaled-up text or sub-360dp screens fall back to
+  // px-2. maxFontSizeMultiplier={1.3} on the labels caps the upper end.
+  const { width: screenWidth, fontScale } = useWindowDimensions();
+  const secondaryActionPadding =
+    screenWidth >= 360 && fontScale <= 1.15 ? "px-4" : "px-2";
 
   // Get workout context for tab disabling
   const {
@@ -2655,13 +2670,13 @@ export function WorkoutScreen() {
                 Skip/Pause sat on unused space. Sizing to content also keeps
                 this correct under Android font scaling (up to the 1.3
                 maxFontSizeMultiplier below), where fixed thirds break again.
-                px-2 (not px-3) is deliberate: at 360dp with font scale 1.3 the
-                extra 8dp/button is exactly what "Complete" needs to still fit. */}
+                Their horizontal padding is responsive — see
+                secondaryActionPadding above. */}
             <View className="flex-row gap-2">
               {/* Skip button - only for completion-only blocks */}
               {isCurrentBlockCompletionOnly && (
                 <TouchableOpacity
-                  className="bg-primary rounded-2xl py-4 px-2 flex-row items-center justify-center"
+                  className={`bg-primary rounded-2xl py-4 ${secondaryActionPadding} flex-row items-center justify-center`}
                   onPress={() => setShowSkipModal(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Skip"
@@ -2683,7 +2698,7 @@ export function WorkoutScreen() {
               {/* Surface + border, not neutral-light-2 — that gray vanished
                   against the bg-card action bar and Pause read as bare text. */}
               <TouchableOpacity
-                className="bg-surface border border-neutral-medium-1 rounded-2xl py-4 px-2 flex-row items-center justify-center"
+                className={`bg-surface border border-neutral-medium-1 rounded-2xl py-4 ${secondaryActionPadding} flex-row items-center justify-center`}
                 onPress={togglePause}
                 accessibilityRole="button"
                 accessibilityLabel={isPaused ? "Resume" : "Pause"}
