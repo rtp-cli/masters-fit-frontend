@@ -2648,11 +2648,20 @@ export function WorkoutScreen() {
           </TouchableOpacity>
         ) : (
           <>
+            {/* Secondary actions (Skip/Pause) hug their content; the primary
+                action takes the remaining width. Three equal flex-1 thirds
+                scrunched "Complete" on narrow Android screens — it has the
+                longest label AND an icon, so it hit the wall first while
+                Skip/Pause sat on unused space. Sizing to content also keeps
+                this correct under Android font scaling (up to the 1.3
+                maxFontSizeMultiplier below), where fixed thirds break again.
+                px-2 (not px-3) is deliberate: at 360dp with font scale 1.3 the
+                extra 8dp/button is exactly what "Complete" needs to still fit. */}
             <View className="flex-row gap-2">
               {/* Skip button - only for completion-only blocks */}
               {isCurrentBlockCompletionOnly && (
                 <TouchableOpacity
-                  className="bg-primary rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+                  className="bg-primary rounded-2xl py-4 px-2 flex-row items-center justify-center"
                   onPress={() => setShowSkipModal(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Skip"
@@ -2674,7 +2683,7 @@ export function WorkoutScreen() {
               {/* Surface + border, not neutral-light-2 — that gray vanished
                   against the bg-card action bar and Pause read as bare text. */}
               <TouchableOpacity
-                className="bg-surface border border-neutral-medium-1 rounded-2xl py-4 flex-1 flex-row items-center justify-center"
+                className="bg-surface border border-neutral-medium-1 rounded-2xl py-4 px-2 flex-row items-center justify-center"
                 onPress={togglePause}
                 accessibilityRole="button"
                 accessibilityLabel={isPaused ? "Resume" : "Pause"}
