@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
+import { setAuthItem } from "@/lib/secure-store";
+
 import {
   completeOnboardingAPI,
   deleteAccountAPI,
@@ -76,9 +78,9 @@ export async function verify(params: {
     const data = await verifyAPI(params);
     if (data.success && data.token) {
       // Store the auth token and refresh token
-      await SecureStore.setItemAsync("token", data.token);
+      await setAuthItem("token", data.token);
       if (data.refreshToken) {
-        await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+        await setAuthItem("refreshToken", data.refreshToken);
       } else {
         console.warn("[Auth] NO REFRESH TOKEN IN VERIFY RESPONSE!");
       }
@@ -88,7 +90,7 @@ export async function verify(params: {
           ...data.user,
           needsOnboarding: data.needsOnboarding ?? false,
         };
-        await SecureStore.setItemAsync(
+        await setAuthItem(
           "user",
           JSON.stringify(userWithOnboardingStatus)
         );
@@ -165,7 +167,7 @@ export async function getCurrentUser(): Promise<User | null> {
  */
 export async function saveUserToSecureStorage(user: User): Promise<void> {
   try {
-    await SecureStore.setItemAsync("user", JSON.stringify(user));
+    await setAuthItem("user", JSON.stringify(user));
   } catch (error) {
     console.error("Error saving user:", error);
   }
@@ -186,9 +188,9 @@ export async function refreshToken(): Promise<AuthResponse> {
 
     if (data.success && data.token) {
       // Store both new access token and new refresh token (backend rotates refresh tokens)
-      await SecureStore.setItemAsync("token", data.token);
+      await setAuthItem("token", data.token);
       if (data.refreshToken) {
-        await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+        await setAuthItem("refreshToken", data.refreshToken);
       } else {
         console.warn("[Auth] No new refresh token in response!");
       }

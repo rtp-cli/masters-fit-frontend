@@ -64,16 +64,33 @@ declare module "expo-router" {
 }
 
 declare module "expo-secure-store" {
+  export type KeychainAccessibilityConstant = number;
+  // Keychain accessibility levels (iOS; ignored on Android). Mirrors the real
+  // exports in expo-secure-store/build/SecureStore.d.ts, which this local
+  // override otherwise shadows.
+  export const AFTER_FIRST_UNLOCK: KeychainAccessibilityConstant;
+  export const AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: KeychainAccessibilityConstant;
+  export const WHEN_UNLOCKED: KeychainAccessibilityConstant;
+  export const WHEN_UNLOCKED_THIS_DEVICE_ONLY: KeychainAccessibilityConstant;
+  export type SecureStoreOptions = {
+    keychainService?: string;
+    keychainAccessible?: KeychainAccessibilityConstant;
+    requireAuthentication?: boolean;
+    authenticationPrompt?: string;
+  };
   export function getItemAsync(
     key: string,
-    options?: any
+    options?: SecureStoreOptions
   ): Promise<string | null>;
   export function setItemAsync(
     key: string,
     value: string,
-    options?: any
+    options?: SecureStoreOptions
   ): Promise<void>;
-  export function deleteItemAsync(key: string, options?: any): Promise<void>;
+  export function deleteItemAsync(
+    key: string,
+    options?: SecureStoreOptions
+  ): Promise<void>;
 }
 
 declare module "react-native-calendars" {

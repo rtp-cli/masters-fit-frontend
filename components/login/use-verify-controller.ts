@@ -1,6 +1,5 @@
 import { type Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { useCallback, useState } from "react";
 
 import type { DialogButton } from "@/components/ui";
@@ -8,6 +7,7 @@ import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 import { useAuth } from "@/contexts/auth-context";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { generateAuthCode, verify } from "@/lib/auth";
+import { setAuthItem } from "@/lib/secure-store";
 
 type VerifyResult = {
   success: boolean;
@@ -104,7 +104,7 @@ export function useVerifyController() {
             return { success: false };
           }
 
-          await SecureStore.setItemAsync("token", response.token);
+          await setAuthItem("token", response.token);
 
           if (response.user) {
             // Existing user — the code was valid and the account exists.
@@ -113,7 +113,7 @@ export function useVerifyController() {
               needsOnboarding: response.needsOnboarding ?? false,
             };
             setUserData(userWithOnboardingStatus);
-            await SecureStore.setItemAsync(
+            await setAuthItem(
               "user",
               JSON.stringify(userWithOnboardingStatus),
             );

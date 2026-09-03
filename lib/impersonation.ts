@@ -1,5 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 
+import { setAuthItem } from "@/lib/secure-store";
+
 import { apiRequest, setImpersonating } from "./api";
 import { logger } from "./logger";
 import { type User } from "./types";
@@ -58,15 +60,15 @@ export async function startImpersonationSession(
     SecureStore.getItemAsync("refreshToken"),
     SecureStore.getItemAsync("user"),
   ]);
-  if (adminToken) await SecureStore.setItemAsync(BACKUP_TOKEN, adminToken);
+  if (adminToken) await setAuthItem(BACKUP_TOKEN, adminToken);
   if (adminRefresh)
-    await SecureStore.setItemAsync(BACKUP_REFRESH, adminRefresh);
-  if (adminUser) await SecureStore.setItemAsync(BACKUP_USER, adminUser);
+    await setAuthItem(BACKUP_REFRESH, adminRefresh);
+  if (adminUser) await setAuthItem(BACKUP_USER, adminUser);
 
   // Swap to the impersonation token. Remove the refresh token so a background
   // 401 can't silently rotate the admin's session while impersonating — an
   // expired impersonation token should drop us back to admin, not refresh.
-  await SecureStore.setItemAsync("token", res.token);
+  await setAuthItem("token", res.token);
   await SecureStore.deleteItemAsync("refreshToken");
 
   impersonatedUser = res.user;
@@ -94,11 +96,11 @@ export async function endImpersonationSession(): Promise<User | null> {
   // the app would request the TARGET's resources with the ADMIN's token →
   // ownership 403s, which cascade into failed fetches AND a spurious waiver
   // redirect (api.ts treats any 403 as possibly-waiver).
-  if (adminToken) await SecureStore.setItemAsync("token", adminToken);
+  if (adminToken) await setAuthItem("token", adminToken);
   else await SecureStore.deleteItemAsync("token");
   if (adminRefresh)
-    await SecureStore.setItemAsync("refreshToken", adminRefresh);
-  if (adminUserStr) await SecureStore.setItemAsync("user", adminUserStr);
+    await setAuthItem("refreshToken", adminRefresh);
+  if (adminUserStr) await setAuthItem("user", adminUserStr);
 
   // Clear the backups.
   await Promise.all([

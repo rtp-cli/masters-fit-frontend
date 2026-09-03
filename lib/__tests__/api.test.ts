@@ -110,6 +110,72 @@ describe("apiRequest — 401 token refresh [LR-045]", () => {
     expect(authFailureSpy).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the session when the keychain is unreadable (lock-screen notification tap)", async () => {
+    // A keychain READ failure is a storage problem, not a dead session. This
+    // is the notification-tap logout bug: device still locked mid-launch, the
+    // read throws, and treating that as "no refresh token" logged users out.
+    mockedGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === "token") return "expired-token";
+      if (key === "refreshToken") throw new Error("keychain unavailable");
+      return null;
+    });
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ success: false }),
+    });
+
+    await expect(apiRequest("/some-endpoint")).rejects.toThrow(
+      "Temporary authentication problem"
+    );
+    // The whole point: NO logout, and no refresh call ever reached the server.
+    expect(authFailureSpy).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("recovers when the keychain read succeeds on the retry", async () => {
+    let refreshReads = 0;
+    mockedGetItemAsync.mockImplementation(async (key: string) => {
+      if (key === "token") return "expired-token";
+      if (key === "refreshToken") {
+        refreshReads++;
+        if (refreshReads === 1) throw new Error("keychain unavailable");
+        return "valid-refresh-token";
+      }
+      return null;
+    });
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ success: false }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          token: "new-token",
+          refreshToken: "new-refresh-token",
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true, data: "recovered" }),
+      });
+
+    const result = await apiRequest<{ success: boolean; data: string }>(
+      "/some-endpoint"
+    );
+
+    expect(result).toEqual({ success: true, data: "recovered" });
+    expect(refreshReads).toBe(2);
+    expect(authFailureSpy).not.toHaveBeenCalled();
+  });
+
   it("triggers auth-failure immediately on a 401 with no token at all (no refresh attempt)", async () => {
     mockedGetItemAsync.mockResolvedValue(null);
     fetchMock.mockResolvedValueOnce({

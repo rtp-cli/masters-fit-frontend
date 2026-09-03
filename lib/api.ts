@@ -1,5 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 
+import { setAuthItem } from "@/lib/secure-store";
+
 import { API_URL } from "../config";
 import { logger } from "./logger";
 import { type AuthResponse,type OnboardingData, type User } from "./types";
@@ -140,14 +142,12 @@ export async function getAuthToken(): Promise<string | null> {
 /**
  * Get the refresh token from secure storage
  */
-async function getRefreshToken(): Promise<string | null> {
-  try {
-    const refreshToken = await SecureStore.getItemAsync("refreshToken");
-    return refreshToken;
-  } catch (error) {
-    console.error("[TOKEN_REFRESH] Error retrieving refresh token:", error);
-    return null;
-  }
+async function readRefreshTokenStrict(): Promise<string | null> {
+  // Deliberately NO try/catch: a keychain read failure must stay
+  // distinguishable from "no token stored". Swallowing the throw into null is
+  // what turned a locked keychain (lock-screen notification tap) into a
+  // logout — null means the session is dead, a throw means "try again".
+  return SecureStore.getItemAsync("refreshToken");
 }
 
 /**
@@ -183,9 +183,30 @@ async function refreshAccessToken(): Promise<RefreshOutcome> {
   refreshInProgress = true;
 
   try {
-    const refreshToken = await getRefreshToken();
+    let refreshToken: string | null;
+    try {
+      refreshToken = await readRefreshTokenStrict();
+    } catch (readError) {
+      // Keychain unreadable (device locked mid-launch, keychain busy) — the
+      // token may well exist. Give the keychain a beat and try once more.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      try {
+        refreshToken = await readRefreshTokenStrict();
+      } catch (secondReadError) {
+        // Still unreadable. This is a STORAGE failure, not a dead session:
+        // fail this request, keep the user signed in, let the next request
+        // (with the keychain available again) refresh normally.
+        console.warn(
+          "[TOKEN_REFRESH] Keychain unreadable — keeping session:",
+          secondReadError
+        );
+        lastRefreshOutcome = "transient";
+        return lastRefreshOutcome;
+      }
+    }
 
     if (!refreshToken) {
+      // Genuinely absent (a successful read returned nothing): session over.
       lastRefreshOutcome = "invalid";
       return lastRefreshOutcome;
     }
@@ -228,8 +249,8 @@ async function refreshAccessToken(): Promise<RefreshOutcome> {
     }
 
     await Promise.all([
-      SecureStore.setItemAsync("token", data.token),
-      SecureStore.setItemAsync("refreshToken", data.refreshToken),
+      setAuthItem("token", data.token),
+      setAuthItem("refreshToken", data.refreshToken),
     ]);
     lastRefreshOutcome = "refreshed";
     return lastRefreshOutcome;

@@ -16,6 +16,7 @@ import {
   identify as mixpanelIdentify,
   reset as mixpanelReset,
 } from "@/lib/mixpanel";
+import { setAuthItem } from "@/lib/secure-store";
 import { Sentry } from "@/lib/sentry";
 
 import { RegenerationType } from "../constants";
@@ -224,10 +225,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // session (access + refresh token + user). Persist it so the new user
         // is fully authenticated by the waiver screen.
         if (result.token) {
-          await SecureStore.setItemAsync("token", result.token);
+          await setAuthItem("token", result.token);
         }
         if (result.refreshToken) {
-          await SecureStore.setItemAsync("refreshToken", result.refreshToken);
+          await setAuthItem("refreshToken", result.refreshToken);
         }
         if (result.user) {
           await setUserData({
