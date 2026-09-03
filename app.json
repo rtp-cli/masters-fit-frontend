@@ -1,6 +1,10 @@
 {
   "expo": {
     "name": "MastersFit",
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "slug": "mastersfit",
     "version": "1.2.1",
     "runtimeVersion": {
