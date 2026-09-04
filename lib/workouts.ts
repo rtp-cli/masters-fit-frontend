@@ -865,9 +865,16 @@ export async function fetchPastCompletedDays(): Promise<PlanDayWithBlocks[]> {
 /**
  * Copy a past plan day's workout to a new date.
  * Creates a new single-day active workout with the same blocks and exercises.
+ *
+ * `targetDate` defaults to today, which is what every entry point wanted back
+ * when the picker was only reachable with nothing scheduled. Reaching it from
+ * the calendar's "Change Workout" sheet means the user can be looking at a
+ * scheduled day that ISN'T today, so the caller has to be able to say which
+ * day it is replacing.
  */
 export async function repeatPastDay(
-  planDayId: number
+  planDayId: number,
+  targetDate: string = getCurrentDate()
 ): Promise<WorkoutResponse> {
   const user = await getCurrentUser();
   if (!user) throw new Error("User not authenticated");
@@ -879,7 +886,7 @@ export async function repeatPastDay(
     `/workouts/${user.id}/repeat-day/${planDayId}`,
     {
       method: "POST",
-      body: JSON.stringify({ newDate: getCurrentDate() }),
+      body: JSON.stringify({ newDate: targetDate }),
     }
   );
 

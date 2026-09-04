@@ -85,9 +85,20 @@ export default function CalendarScreen() {
   // iOS a pageSheet can't be presented while another is dismissing, so we arm
   // this, close the sheet, and open the editor from the sheet's onDismiss.
   const pendingEditRef = useRef(false);
+  // Same hand-off for "Use a workout I've done before".
+  const pendingRepeatRef = useRef(false);
 
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
+  // Set when the repeat picker is opened FROM the Change Workout sheet, which
+  // is day-scoped and lands on a day that already has a workout. Captured at
+  // tap time because closing the sheet nulls selectedPlanDay. Null when the
+  // picker is opened from the no-plan card, which keeps its week tab and its
+  // default "today" target.
+  const [repeatTarget, setRepeatTarget] = useState<{
+    date: string;
+    name: string;
+  } | null>(null);
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>(
     {}
   );
@@ -669,10 +680,27 @@ export default function CalendarScreen() {
             setShowEditModal(true);
           }
         }}
+        // Same dismiss-then-present dance as "Edit it myself" above.
+        onRepeatPast={() => {
+          setRepeatTarget({
+            date: selectedDate,
+            name: selectedPlanDay?.name || "Today's workout",
+          });
+          pendingRepeatRef.current = true;
+          setShowRegenerationModal(false);
+          if (Platform.OS !== "ios") {
+            pendingRepeatRef.current = false;
+            setShowRepeatPicker(true);
+          }
+        }}
         onDismiss={() => {
           if (pendingEditRef.current) {
             pendingEditRef.current = false;
             setShowEditModal(true);
+          }
+          if (pendingRepeatRef.current) {
+            pendingRepeatRef.current = false;
+            setShowRepeatPicker(true);
           }
         }}
       />
@@ -681,11 +709,20 @@ export default function CalendarScreen() {
         visible={showWorkoutChoice}
         onClose={() => setShowWorkoutChoice(false)}
         onGenerateNew={() => handleOpenRegeneration(currentSelectedPlanDay || undefined)}
-        onRepeatPast={() => setShowRepeatPicker(true)}
+        onRepeatPast={() => {
+          // No-plan entry: nothing scheduled to replace, both tabs stay.
+          setRepeatTarget(null);
+          setShowRepeatPicker(true);
+        }}
       />
 
       <WorkoutRepeatPicker
         visible={showRepeatPicker}
+        // Opened from the day-scoped sheet: hide the week tab, so "change this
+        // one day" can't quietly replace the whole plan.
+        singleDayOnly={!!repeatTarget}
+        targetDate={repeatTarget?.date}
+        replacingWorkoutName={repeatTarget?.name}
         onClose={() => setShowRepeatPicker(false)}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
