@@ -1,7 +1,31 @@
 import * as Application from "expo-application";
 import Constants from "expo-constants";
-import * as Updates from "expo-updates";
+import { requireOptionalNativeModule } from "expo-modules-core";
 import { Text, TouchableOpacity, View } from "react-native";
+
+/**
+ * Short OTA update id, or null when this JS is the bundle embedded in the
+ * binary, or when expo-updates isn't linked (dev clients, Expo Go).
+ *
+ * Gated on requireOptionalNativeModule rather than try/catch alone. expo-updates
+ * calls requireNativeModule("ExpoUpdates") at MODULE scope, and that reports the
+ * failure to React Native's global error handler *before* it throws -- so a bare
+ * try/catch keeps this screen alive but still puts a red box in front of it on
+ * every dev client without the module. requireOptionalNativeModule returns null
+ * instead of throwing, so the unlinked case becomes a plain branch. The
+ * try/catch stays for the case where the module exists but misbehaves.
+ */
+function getOtaUpdateId(): string | null {
+  if (!requireOptionalNativeModule("ExpoUpdates")) return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Updates = require("expo-updates");
+    if (Updates.isEmbeddedLaunch || !Updates.updateId) return null;
+    return String(Updates.updateId).split("-")[0];
+  } catch {
+    return null;
+  }
+}
 
 interface AppVersionSectionProps {
   tapCount: number;
@@ -23,10 +47,13 @@ export default function AppVersionSection({
   // live — the version/build above stay the same across every eas update.
   // isEmbeddedLaunch means "the JS baked into the binary" (no OTA applied);
   // updateId is null in dev, so the line simply doesn't render there.
-  const otaUpdateId =
-    !Updates.isEmbeddedLaunch && Updates.updateId
-      ? Updates.updateId.split("-")[0]
-      : null;
+  //
+  // Resolved lazily, never as a top-level import: a static
+  // `import * as Updates from "expo-updates"` throws during module evaluation
+  // in any binary without the ExpoUpdates native module, and this file is
+  // reached from calendar-screen → header → settings-modal → settings-view, so
+  // that throw took out the Calendar tab too. See getOtaUpdateId above.
+  const otaUpdateId = getOtaUpdateId();
 
   return (
     <View className="items-center pb-8">
