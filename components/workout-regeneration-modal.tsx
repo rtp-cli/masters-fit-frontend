@@ -829,11 +829,16 @@ export default function WorkoutRegenerationModal({
             className="text-neutral-white font-semibold text-sm ml-2"
             maxFontSizeMultiplier={1.3}
           >
+            {/* §6.1: the rest-day sheet keeps "Update Today's Workout". It
+                reaches this chain with selectedType === "day", so the new
+                scheduled-day label must be gated behind isRestDay. */}
             {selectedType === "week"
               ? "Update Weekly Plan"
               : noActiveWorkoutDay
                 ? "Generate Workout"
-                : "Update Today's Workout"}
+                : isRestDay
+                  ? "Update Today's Workout"
+                  : "Rebuild Today's Workout"}
           </Text>
         </>
       )}
@@ -853,7 +858,7 @@ export default function WorkoutRegenerationModal({
           onPress={() => onEditManually?.()}
           disabled={loading}
           accessibilityRole="button"
-          accessibilityLabel="Edit it myself. Swap or remove exercises, change sets, reps and weight."
+          accessibilityLabel="Keep this workout, edit it myself. Remove or swap one exercise, change sets, reps and weight."
         >
           <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
             <Ionicons
@@ -864,10 +869,10 @@ export default function WorkoutRegenerationModal({
           </View>
           <View className="flex-1 ml-3">
             <Text className="text-base font-semibold text-text-primary">
-              Edit it myself
+              Keep this workout, edit it myself
             </Text>
             <Text className="text-sm text-text-muted">
-              Swap or remove exercises, change sets, reps and weight.
+              Remove or swap one exercise, change sets, reps and weight.
             </Text>
           </View>
           <Ionicons
@@ -1024,9 +1029,16 @@ export default function WorkoutRegenerationModal({
                           ? selectedType === "day"
                             ? "Tell us what kind of workout you'd like for this day:"
                             : "Tell us what you'd like to include in your next week's workout plan:"
-                          : `Tell us why you want to adjust this ${
-                              selectedType === "day" ? "day's" : "week's"
-                            } workout, and what you'd like to change:`}
+                          : selectedType === "day"
+                            ? // §6.3/§3: ask for a circumstance, not an
+                              // instruction — "what you'd like to change" is the
+                              // clause that invited people to type edits here.
+                              "Tell us what's different today:"
+                            : // Week wording is byte-identical to the old
+                              // template's week output. "Adjust the whole week
+                              // instead" switches scope in place, so this branch
+                              // renders seconds after the day one.
+                              "Tell us why you want to adjust this week's workout, and what you'd like to change:"}
                   </Text>
                   <View>
                     <TextInput
@@ -1069,13 +1081,30 @@ export default function WorkoutRegenerationModal({
                   <Text className="text-xs text-text-muted mt-2">
                     Type it, or tap the mic to say it.
                   </Text>
+                  {/* §5: name the rebuild before the tap. The old line scoped
+                      the change in days, which read as reassurance that little
+                      would change. Card treatment is lifted from
+                      freeAdjustmentNote below rather than invented; when that
+                      note is present the two cards would stack, so this one
+                      drops the card and keeps the type hierarchy. */}
                   {selectedType === "day" &&
                     !isRestDay &&
                     !noActiveWorkoutDay && (
-                      <Text className="text-xs text-text-muted mt-3">
-                        Only this day's workout will be changed. All other days
-                        will remain the same.
-                      </Text>
+                      <View
+                        className={
+                          freeAdjustmentNote
+                            ? "mt-3"
+                            : "bg-card rounded-xl px-3.5 py-3 mt-3"
+                        }
+                      >
+                        <Text className="text-sm font-semibold text-text-primary leading-5">
+                          This builds a new workout for today.
+                        </Text>
+                        <Text className="text-xs text-text-muted leading-4 mt-0.5">
+                          Exercises, sets and reps may all change. Other days
+                          stay the same.
+                        </Text>
+                      </View>
                     )}
 
                   {selectedType === "week" && (
