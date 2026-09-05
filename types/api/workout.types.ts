@@ -287,6 +287,9 @@ export interface PlanDayWithBlocks
   isComplete: boolean;
   created_at: Date;
   updated_at: Date;
+  // Only set by /past-completed-days, which collapses repeats of the same
+  // workout into a single newest-instance card. Absent everywhere else.
+  timesCompleted?: number;
 }
 
 // Legacy types for backward compatibility

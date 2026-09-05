@@ -331,6 +331,9 @@ export default function WorkoutRepeatPicker({
     const isExpanded = expandedDayCards[item.id] || false;
     const blockCount = item.blocks?.length || 0;
     const exerciseCount = getTotalExerciseCount(item.blocks || []);
+    // Older builds hitting a newer server, or vice versa — treat a missing
+    // count as a one-off rather than rendering "Done undefined times".
+    const timesCompleted = item.timesCompleted ?? 1;
 
     return (
       <View className="mb-3">
@@ -349,10 +352,23 @@ export default function WorkoutRepeatPicker({
                 {item.name || item.description || "Workout"}
               </Text>
               <Text className="text-sm text-text-muted mb-2">
+                {/* Repeats are collapsed server-side into one card carrying
+                    the newest instance, so the date is the LAST time this was
+                    done, not the only time. Say so when it repeated. */}
+                {timesCompleted > 1 ? "Last done " : ""}
                 {formatDayDate(item.date as unknown as string)}
                 {item.blocks && item.blocks.length > 0 &&
                   ` • ${formatWorkoutDuration(calculatePlanDayDuration(item))}`}
               </Text>
+              {timesCompleted > 1 && (
+                <View className="flex-row items-center mb-2">
+                  <View className="px-2 py-0.5 rounded-full bg-neutral-light-2">
+                    <Text className="text-xs font-medium text-text-secondary">
+                      Done {timesCompleted} times
+                    </Text>
+                  </View>
+                </View>
+              )}
               {item.description && item.description !== item.name && (
                 <Text className="text-sm text-text-secondary mb-2 leading-5">
                   {item.description}
