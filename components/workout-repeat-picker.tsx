@@ -46,12 +46,24 @@ interface WorkoutRepeatPickerProps {
   onClose: () => void;
   onSuccess: () => void;
   singleDayOnly?: boolean;
+  // The day being replaced. Defaults to today, which is all the picker needed
+  // while it was only reachable with nothing scheduled. The calendar's "Change
+  // Workout" sheet can be open on a future scheduled day, so it passes that
+  // day's date instead.
+  targetDate?: string;
+  // Set when the target day already has a workout on it. Copying over a day
+  // the coach prescribed deletes its blocks server-side and can't be undone,
+  // so that entry point asks first. Entry points with nothing to destroy
+  // (rest days, dates outside any plan) leave this off and are unchanged.
+  replacingWorkoutName?: string;
 }
 
 export default function WorkoutRepeatPicker({
   visible,
   onClose,
   singleDayOnly = false,
+  targetDate,
+  replacingWorkoutName,
 }: WorkoutRepeatPickerProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -140,12 +152,40 @@ export default function WorkoutRepeatPicker({
 
   // --- Day tab handlers ---
 
-  const handleRepeatDay = async () => {
+  const handleRepeatDay = () => {
+    if (!selectedDay) return;
+    // Nothing scheduled on the target day — nothing to warn about.
+    if (!replacingWorkoutName) {
+      void copySelectedDay();
+      return;
+    }
+    setDialogConfig({
+      title: "Replace this workout?",
+      description: `${replacingWorkoutName} will be replaced with ${
+        selectedDay.name || "this workout"
+      }. You can't undo this.`,
+      primaryButton: {
+        text: "Replace",
+        onPress: () => {
+          setDialogVisible(false);
+          void copySelectedDay();
+        },
+      },
+      secondaryButton: {
+        text: "Cancel",
+        onPress: () => setDialogVisible(false),
+      },
+      icon: "swap-horizontal",
+    });
+    setDialogVisible(true);
+  };
+
+  const copySelectedDay = async () => {
     if (!selectedDay) return;
     try {
       setCopying(true);
 
-      const result = await repeatPastDay(selectedDay.id);
+      const result = await repeatPastDay(selectedDay.id, targetDate);
       if (result?.success) {
         onClose();
         invalidateActiveWorkoutCache();

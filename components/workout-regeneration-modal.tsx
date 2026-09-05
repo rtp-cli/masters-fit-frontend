@@ -125,6 +125,7 @@ interface WorkoutRegenerationModalProps {
   selectedDate?: string; // The date for rest day workout generation
   singleTabOnly?: boolean; // When true, hides tab toggle and locks to single day mode
   onEditManually?: () => void; // "Edit it myself" exit — hands off to the manual editor
+  onRepeatPast?: () => void; // "Use a workout I've done before" exit — hands off to the repeat picker
   onDismiss?: () => void; // iOS: fires once the sheet has finished dismissing
 }
 
@@ -141,6 +142,7 @@ export default function WorkoutRegenerationModal({
   selectedDate,
   singleTabOnly = false,
   onEditManually,
+  onRepeatPast,
   onDismiss,
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
@@ -881,6 +883,40 @@ export default function WorkoutRegenerationModal({
             color={colors.text.muted}
           />
         </TouchableOpacity>
+
+        {/* Third door. The backend's repeat-day already replaces a scheduled
+            day's blocks in place, and the picker was already built — it was
+            just unreachable from here, because [MF-022] removed the choice
+            modal from the scheduled-day path and took "Repeat Past Workout"
+            with it. Rendered only when a caller opts in, so the rest-day and
+            no-plan entries stay pixel-identical. */}
+        {onRepeatPast ? (
+          <TouchableOpacity
+            className="flex-row items-center mt-4"
+            style={{ minHeight: 44 }}
+            onPress={() => onRepeatPast()}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Use a workout you've done before. Replace this day with one of your completed workouts."
+          >
+            <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
+              <Ionicons name="repeat" size={18} color={colors.text.primary} />
+            </View>
+            <View className="flex-1 ml-3">
+              <Text className="text-base font-semibold text-text-primary">
+                Use a workout I've done before
+              </Text>
+              <Text className="text-sm text-text-muted">
+                Replace this day with one you've already completed.
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.text.muted}
+            />
+          </TouchableOpacity>
+        ) : null}
 
         {/* Approved deviation from SPEC §6.5.3: switch scope in place (keep
             selectedPlanDay + singleTabOnly) instead of closing/reopening with a
