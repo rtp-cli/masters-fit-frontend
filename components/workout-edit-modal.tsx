@@ -22,6 +22,7 @@ import { OutlineChip } from "@/components/ui";
 import WorkoutBlock from "@/components/workout-block";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
+import { getReplacementsAPI } from "@/lib/exclusions";
 import {
   getFilterOptionsAPI,
   searchExercisesWithFiltersAPI,
@@ -111,6 +112,12 @@ export default function WorkoutEditModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchExercise[]>([]);
   const [searching, setSearching] = useState(false);
+  // True while the replace list is the backend's ranked "closest movements"
+  // seed rather than a name search / filter browse — drives the list label.
+  const [resultsRanked, setResultsRanked] = useState(false);
+  // The muscle groups the replace view was seeded with, so we can tell a
+  // still-seeded filter state from one the user has narrowed themselves.
+  const seededMuscleGroupsRef = useRef<string[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<string[]>(
     []
@@ -215,6 +222,8 @@ export default function WorkoutEditModal({
       setSelectedEquipment([]);
       setSelectedMuscleGroups([]);
       setSelectedDifficulty(null);
+      setResultsRanked(false);
+      seededMuscleGroupsRef.current = [];
       setAddingToBlock(null);
       setAddParams({
         sets: "",
@@ -298,10 +307,14 @@ export default function WorkoutEditModal({
   const startReplace = (exercise: WorkoutBlockWithExercise) => {
     setCurrentExercise(exercise);
     setCurrentView("replace");
+    setSearchQuery("");
+    seededMuscleGroupsRef.current = exercise.exercise.muscles_targeted ?? [];
     if (exercise.exercise.muscles_targeted) {
       setSelectedMuscleGroups(exercise.exercise.muscles_targeted);
     }
-    searchExercises();
+    // No direct searchExercises() here: the [currentView, ...filters] effect
+    // fires on this transition with the new state already committed. Calling it
+    // here as well would race that fetch with one that read stale state.
   };
 
   // Door — edit this exercise's own sets/reps/weight/duration/rest in place.
@@ -401,11 +414,72 @@ export default function WorkoutEditModal({
     }
   };
 
+  // Same members, order-independent — the seeded muscle groups come straight
+  // off the exercise, so a set compare is enough to spot a user edit.
+  const sameMembers = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((v) => b.includes(v));
+
+  // The ranked seed is only the honest answer while the filters still describe
+  // the exercise being replaced: its own muscle groups, the user's own
+  // equipment, no difficulty narrowing. Once the user edits or clears the
+  // filters they're browsing the catalog, and the plain filtered search — with
+  // its alphabetical order — is what they asked for.
+  const filtersAreSeeded = () =>
+    selectedEquipment.length === 0 &&
+    !selectedDifficulty &&
+    sameMembers(selectedMuscleGroups, seededMuscleGroupsRef.current);
+
   const searchExercises = async () => {
     if (!user) return;
 
     setSearching(true);
     try {
+      // With an empty search box, seed the replace list from the backend's
+      // replacement ranker (muscle-overlap desc -> difficulty distance asc ->
+      // hasDemo first) instead of the filtered search's A-Z. Same retrieval
+      // underneath — owned equipment as a filter, the original and every
+      // exclusion dropped — so this only changes the ORDER, from "Air Squats,
+      // Arnold Press, ..." to closest movements first.
+      const replaceTarget = currentExercise;
+      const seedFromRanker =
+        currentView === "replace" &&
+        !searchQuery.trim() &&
+        !!replaceTarget &&
+        filtersAreSeeded();
+
+      if (seedFromRanker && replaceTarget) {
+        const candidates = await getReplacementsAPI(
+          user.id,
+          replaceTarget.exercise.id,
+          20
+        );
+        if (candidates.length > 0) {
+          // These are the same catalog rows the filtered search returns, so the
+          // row renderer needs no special case. The cast mirrors that path:
+          // `equipment` really is an array off the catalog (the type says
+          // string), and formatEquipment/displayMuscleGroups both take arrays.
+          setSearchResults(
+            candidates.map(
+              (c) =>
+                ({
+                  id: c.id,
+                  name: c.name,
+                  description: c.description ?? undefined,
+                  muscleGroups: c.muscleGroups,
+                  equipment: c.equipment ?? undefined,
+                  difficulty: c.difficulty ?? undefined,
+                  hasDemo: c.hasDemo,
+                }) as unknown as SearchExercise
+            )
+          );
+          setResultsRanked(true);
+          return;
+        }
+        // Ranker had nothing for us (no match left, or a backend that predates
+        // it) — fall through to the plain search rather than show an empty list.
+      }
+
+      setResultsRanked(false);
       const result = await searchExercisesWithFiltersAPI(user.id, {
         query: searchQuery.trim() || undefined,
         muscleGroups:
@@ -465,8 +539,9 @@ export default function WorkoutEditModal({
     setSelectedMuscleGroups([...tempMuscleGroups]);
     setSelectedDifficulty(tempDifficulty);
     setShowFilters(false);
-    // Trigger search with new filters
-    searchExercises();
+    // The filter-dependent effect re-runs the search once these land. Calling
+    // it here too would fetch with the PRE-apply filters and could resolve
+    // last, silently discarding the filter the user just applied.
   };
 
   const cancelFilters = () => {
@@ -992,7 +1067,7 @@ export default function WorkoutEditModal({
                           placeholderTextColor={colors.text.muted}
                           value={searchQuery}
                           onChangeText={setSearchQuery}
-                          onSubmitEditing={searchExercises}
+                          onSubmitEditing={() => searchExercises()}
                           returnKeyType="search"
                         />
                         {searchQuery.length > 0 && (
@@ -1069,6 +1144,21 @@ export default function WorkoutEditModal({
                         keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={{ padding: 20 }}
                         showsVerticalScrollIndicator={false}
+                        ListHeaderComponent={
+                          /* Say what the order is when it isn't A-Z, so the
+                             first row reads as a recommendation rather than an
+                             accident of the alphabet. */
+                          resultsRanked ? (
+                            <View className="mb-3">
+                              <Text className="text-xs font-bold tracking-widest text-text-muted">
+                                CLOSEST MATCHES
+                              </Text>
+                              <Text className="text-xs mt-1 text-text-muted">
+                                Same muscles, your equipment.
+                              </Text>
+                            </View>
+                          ) : null
+                        }
                         renderItem={({ item }) => (
                           <TouchableOpacity
                             className={`mb-3 p-4 rounded-xl border ${
@@ -1203,7 +1293,7 @@ export default function WorkoutEditModal({
                           placeholderTextColor={colors.text.muted}
                           value={searchQuery}
                           onChangeText={setSearchQuery}
-                          onSubmitEditing={searchExercises}
+                          onSubmitEditing={() => searchExercises()}
                           returnKeyType="search"
                         />
                         {searchQuery.length > 0 && (
