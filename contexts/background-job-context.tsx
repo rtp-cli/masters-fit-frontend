@@ -647,25 +647,33 @@ export function BackgroundJobProvider({
   );
 
   // Helper functions
+  // Calendar-aligned series (backend CALENDAR_ALIGNED_SERIES): a new series
+  // spans up to 13 days / ~12 fanned-out day generations, so full-series jobs
+  // run longer than the old 7-day week. Estimates drive the displayed ETA.
   const getEstimatedTime = (type: BackgroundJob["type"]): number => {
     switch (type) {
       case "generation":
-        return 120; // 2 minutes
+        return 150; // 2.5 minutes
       case "regeneration":
-        return 90; // 1.5 minutes
+        return 120; // 2 minutes
       case "daily-regeneration":
         return 60; // 1 minute
       default:
-        return 120;
+        return 150;
     }
   };
 
+  // Client-side timeouts are a LAST-RESORT safety net and must stay ABOVE the
+  // backend watchdogs (8 min for both generation and full-series
+  // regeneration), so the server always fails first with a real, retryable
+  // error — a client timeout that fires while the backend is still writing
+  // shows "took too long" for a job that then completes.
   const getTimeoutForJobType = (type: BackgroundJob["type"]): number => {
     switch (type) {
       case "generation":
         return 10 * 60 * 1000; // 10 minutes
       case "regeneration":
-        return 5 * 60 * 1000; // 5 minutes
+        return 10 * 60 * 1000; // 10 minutes (was 5 — under the new series length it false-failed healthy jobs)
       case "daily-regeneration":
         return 3 * 60 * 1000; // 3 minutes
       default:

@@ -1043,8 +1043,8 @@ export default function WorkoutRegenerationModal({
                         },
                         {
                           value: "week",
-                          label: "Full Week",
-                          sublabel: "Next 7 days",
+                          label: "Full Plan",
+                          sublabel: "Through Sunday",
                         },
                       ]}
                       value={selectedType}
@@ -1145,8 +1145,8 @@ export default function WorkoutRegenerationModal({
 
                   {selectedType === "week" && (
                     <Text className="text-xs text-text-muted mt-3">
-                      Your adjusted weekly plan will begin on{" "}
-                      {formatWorkoutPlanStartDate()} and end on{" "}
+                      Your adjusted plan will begin on{" "}
+                      {formatWorkoutPlanStartDate()} and run through{" "}
                       {formatWorkoutPlanEndDate()}.
                     </Text>
                   )}
