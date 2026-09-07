@@ -684,22 +684,24 @@ export function formatDateWithDayAndOrdinal(date: Date): string {
 }
 
 /**
- * Calculate workout plan start and end dates (7 consecutive days from today)
+ * Calculate workout plan start and end dates. Mirrors the backend's
+ * calendar-aligned series rule (backend docs/CALENDAR_ALIGNED_SERIES.md):
+ * a new series runs from today through the next Sunday at least 7 days out —
+ * a Monday start ends the same week's Sunday (7 days); any other start ends
+ * the FOLLOWING week's Sunday (8-13 days). Preview-only (the server's
+ * startDate/endDate are authoritative once the series exists); device-local
+ * today matches the timezone the app sends with the generation request.
  */
 export function calculateWorkoutPlanDates() {
   const today = new Date();
   const startDate = new Date(today);
 
-  // Add 6 days using milliseconds for more reliable calculation across month boundaries
-  const endDate = new Date(today.getTime() + (6 * 24 * 60 * 60 * 1000));
-
-  // Debug logging (temporary)
-  console.log('Workout plan dates:', {
-    today: today.toDateString(),
-    startDate: startDate.toDateString(),
-    endDate: endDate.toDateString(),
-    daysAdded: 6
-  });
+  // Days until this coming Sunday (0 when today IS Sunday).
+  const untilSunday = (7 - today.getDay()) % 7;
+  // Inclusive span must be >= 7 days, so the Sunday must be >= 6 days out.
+  const daysToEnd = untilSunday >= 6 ? untilSunday : untilSunday + 7;
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + daysToEnd);
 
   return {
     startDate,
