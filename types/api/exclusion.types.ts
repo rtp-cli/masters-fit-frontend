@@ -18,6 +18,11 @@ export interface ExcludedExercise {
 export interface ReplacementCandidate {
   id: number;
   name: string;
+  /**
+   * Catalog description. Optional so a build can run against a backend that
+   * predates it — the row just renders without the description line.
+   */
+  description?: string | null;
   muscleGroups: string[];
   equipment: string[] | null;
   difficulty: string | null;
