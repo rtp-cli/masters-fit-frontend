@@ -1891,6 +1891,7 @@ export function WorkoutScreen() {
           visible={showRegenerationModal}
           onClose={() => setShowRegenerationModal(false)}
           onRegenerate={() => {}}
+          onError={showErrorDialog}
           regenerationType="day"
           singleTabOnly={true}
           isRestDay={!workout}

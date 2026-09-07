@@ -6,7 +6,7 @@ import {
   regenerateDailyWorkoutAsync,
   regenerateWorkoutPlanAsync,
 } from "@lib/workouts";
-import React, { useEffect,useState } from "react";
+import React, { useCallback,useEffect,useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -41,6 +41,7 @@ import {
   WORKOUT_ENVIRONMENTS,
 } from "@/types/enums";
 import { formatWorkoutPlanEndDate,formatWorkoutPlanStartDate } from "@/utils";
+import { describeAdjustmentError } from "@/utils/adjustment-error";
 import { computeFreeAdjustmentNote } from "@/utils/entitlements";
 import {
   describeOverrides,
@@ -118,7 +119,9 @@ interface WorkoutRegenerationModalProps {
   loading?: boolean;
   regenerationType?: "day" | "week";
   onSuccess?: () => void; // New prop for refresh callback
-  onError?: (error: string) => void; // Add error callback
+  // Failure callback. Takes dialog copy (title + description) because this
+  // sheet closes itself before calling the API — see reportFailure below.
+  onError?: (title: string, description: string) => void;
   selectedPlanDay?: { id: number } | null; // Add selectedPlanDay for daily regeneration
   isRestDay?: boolean; // Add isRestDay prop to indicate rest day modal
   noActiveWorkoutDay?: boolean; // Add noActiveWorkoutDay prop for days outside workout plan
@@ -196,6 +199,36 @@ export default function WorkoutRegenerationModal({
 
   // Background job tracking
   const { addJob } = useBackgroundJobs();
+
+  /**
+   * Report an adjustment that never started.
+   *
+   * Every submit path calls `onClose()` before hitting the API, and the
+   * CustomDialog below renders INSIDE this Modal — so once the sheet is
+   * dismissed, an in-sheet dialog is mounted but invisible. That is how a
+   * 409 CONCURRENCY_LIMIT showed the user nothing at all (2026-09-07). Hand
+   * the mapped copy to the opening screen, which owns a screen-level dialog;
+   * fall back to the in-sheet dialog only when no opener supplied onError.
+   * Pass the caught error when there is one, or `undefined` when the request
+   * merely came back unsuccessful.
+   */
+  const reportFailure = useCallback(
+    (error: unknown, scope: "week" | "day") => {
+      const { title, description } = describeAdjustmentError(error, scope);
+      if (onError) {
+        onError(title, description);
+        return;
+      }
+      setDialogConfig({
+        title,
+        description,
+        primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
+    },
+    [onError]
+  );
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
@@ -371,12 +404,12 @@ export default function WorkoutRegenerationModal({
           } else if (result !== null) {
             // Only show error for genuine failures, not paywall-intercepted nulls
             setIsGeneratingWorkout(false);
-            onError?.("Adjustment failed to start");
+            reportFailure(undefined, "week");
           }
         } catch (error) {
           if (!(error instanceof PaywallError)) {
             setIsGeneratingWorkout(false);
-            onError?.("An error occurred while starting adjustment");
+            reportFailure(error, "week");
           }
         }
       } else {
@@ -407,39 +440,20 @@ export default function WorkoutRegenerationModal({
               onClose();
               onSuccess?.();
             } else if (result !== null) {
-              // Only show error dialog for genuine failures, not paywall-intercepted nulls
-              setDialogConfig({
-                title: "Daily Adjustment Failed",
-                description:
-                  "Unable to start daily workout adjustment. Please check your connection and try again.",
-                primaryButton: {
-                  text: "OK",
-                  onPress: () => setDialogVisible(false),
-                },
-                icon: "alert-circle",
-              });
-              setDialogVisible(true);
+              // Only show error for genuine failures, not paywall-intercepted nulls
+              reportFailure(undefined, "day");
             }
           } catch (error) {
             if (!(error instanceof PaywallError)) {
-              setDialogConfig({
-                title: "Daily Adjustment Error",
-                description:
-                  "An error occurred while starting daily workout adjustment. Please try again.",
-                primaryButton: {
-                  text: "OK",
-                  onPress: () => setDialogVisible(false),
-                },
-                icon: "alert-circle",
-              });
-              setDialogVisible(true);
+              reportFailure(error, "day");
             }
           }
         }
       }
     } catch (error) {
+      // Was console-only: the user watched the sheet close and nothing happen.
       console.error("Error updating profile:", error);
-      console.error("Failed to update your profile");
+      reportFailure(error, selectedType === "week" ? "week" : "day");
     } finally {
       setUpdatingProfile(false);
     }
@@ -502,7 +516,7 @@ export default function WorkoutRegenerationModal({
             onSuccess?.();
           } else if (result !== null) {
             // Only show error for genuine failures, not paywall-intercepted nulls
-            onError?.("Adjustment failed to start");
+            reportFailure(undefined, "week");
           }
         }
       } else {
@@ -533,18 +547,8 @@ export default function WorkoutRegenerationModal({
               // Success callback
               onSuccess?.();
             } else if (result !== null) {
-              // Only show error dialog for genuine failures, not paywall-intercepted nulls
-              setDialogConfig({
-                title: "Workout Generation Failed",
-                description:
-                  "Unable to start single-day workout generation. Please check your connection and try again.",
-                primaryButton: {
-                  text: "OK",
-                  onPress: () => setDialogVisible(false),
-                },
-                icon: "alert-circle",
-              });
-              setDialogVisible(true);
+              // Only show error for genuine failures, not paywall-intercepted nulls
+              reportFailure(undefined, "day");
             }
           } else if (selectedPlanDay) {
             // Regular daily regeneration
@@ -570,38 +574,15 @@ export default function WorkoutRegenerationModal({
               // Success callback
               onSuccess?.();
             } else if (result !== null) {
-              // Only show error dialog for genuine failures, not paywall-intercepted nulls
-              setDialogConfig({
-                title: "Daily Adjustment Failed",
-                description:
-                  "Unable to start daily workout adjustment. Please check your connection and try again.",
-                primaryButton: {
-                  text: "OK",
-                  onPress: () => setDialogVisible(false),
-                },
-                icon: "alert-circle",
-              });
-              setDialogVisible(true);
+              // Only show error for genuine failures, not paywall-intercepted nulls
+              reportFailure(undefined, "day");
             }
           }
         }
       }
     } catch (error) {
       if (!(error instanceof PaywallError)) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "An error occurred while starting adjustment. Please try again.";
-        setDialogConfig({
-          title: "Adjustment Error",
-          description: message,
-          primaryButton: {
-            text: "OK",
-            onPress: () => setDialogVisible(false),
-          },
-          icon: "alert-circle",
-        });
-        setDialogVisible(true);
+        reportFailure(error, selectedType === "week" ? "week" : "day");
       }
     }
   };

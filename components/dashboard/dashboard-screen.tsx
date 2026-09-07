@@ -241,6 +241,18 @@ export default function DashboardScreen() {
     icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
 
+  // Screen-level failure dialog for the adjust sheet: that sheet dismisses
+  // itself before calling the API, so its own dialog can't be seen (LR-067).
+  const showAdjustmentError = useCallback((title: string, description: string) => {
+    setDialogConfig({
+      title,
+      description,
+      primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+      icon: "alert-circle",
+    });
+    setDialogVisible(true);
+  }, []);
+
   const {
     data: {
       weeklySummary,
@@ -1150,6 +1162,7 @@ export default function DashboardScreen() {
           setRestDayQuickGenerate(false);
         }}
         onRegenerate={() => {}}
+        onError={showAdjustmentError}
         regenerationType="day"
         isRestDay={!!workoutInfo && !todaysWorkout}
         noActiveWorkoutDay={!workoutInfo}
