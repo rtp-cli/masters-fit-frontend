@@ -113,6 +113,18 @@ export default function CalendarScreen() {
     icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
 
+  // Screen-level failure dialog for the adjust sheet: that sheet dismisses
+  // itself before calling the API, so its own dialog can't be seen (LR-067).
+  const showAdjustmentError = useCallback((title: string, description: string) => {
+    setDialogConfig({
+      title,
+      description,
+      primaryButton: { text: "OK", onPress: () => setDialogVisible(false) },
+      icon: "alert-circle",
+    });
+    setDialogVisible(true);
+  }, []);
+
   const workoutPlan = useMemo(() => {
     if (!workoutData) {
       return null;
@@ -646,6 +658,7 @@ export default function CalendarScreen() {
           setSelectedPlanDay(null);
         }}
         onRegenerate={handleRegenerate}
+        onError={showAdjustmentError}
         loading={false}
         regenerationType={selectedPlanDay ? "day" : "week"}
         selectedPlanDay={selectedPlanDay}
