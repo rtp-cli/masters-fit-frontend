@@ -99,6 +99,27 @@ Other conventions:
    Then actually run the app (`npm start`) and look at the screen you changed. Type-checking
    and "it renders on a device/simulator" are both part of done. Report what you saw.
 
+## Troubleshooting a production issue
+
+The live data lives in the backend's Neon database. To read it, use the backend's read-only
+wrapper by **absolute path** (this repo has no `scripts/db-prod-read.sh` of its own):
+
+```bash
+/Users/richpusateri/Projects/MastersFit/backend/scripts/db-prod-read.sh -c 'select count(*) from users;'
+```
+
+It pins `default_transaction_read_only` on the connection, so Postgres itself refuses writes,
+and it never echoes the connection string. It's allowlisted, so it runs without a permission
+prompt — which bare `psql` (and any hand-rolled `DATABASE_URL` extraction) deliberately will
+not. Writing to prod is a separate, deliberate act: use the purpose-built skills
+(`comp-user`, `reset-workout-prod`, `delete-user`, …), which confirm first.
+
+**Never print anything that resolves to the prod credential.** It lives in the macOS Keychain,
+not in a file, because one `grep DATABASE_URL .env` in Aug 2026 printed the live password into
+a transcript and it was reused inline for the rest of that session — 6 transcripts and 15 shell
+history lines later, it had to be rotated. To confirm which database you're on, print the
+**host** only.
+
 ## Shipping
 
 - iOS → TestFlight is handled by the **`deploy-ios`** skill (EAS build + submit).
