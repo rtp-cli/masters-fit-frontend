@@ -6,7 +6,7 @@
       "android"
     ],
     "slug": "mastersfit",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -31,7 +31,7 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSHealthShareUsageDescription": "MastersFit needs access to your health data including steps, heart rate, workout sessions, calories burned, and nutrition to provide personalized fitness insights and track your progress.",
+        "NSHealthShareUsageDescription": "MastersFit needs access to your health data including steps, heart rate, workout sessions, and calories burned to provide personalized fitness insights and track your progress.",
         "NSHealthUpdateUsageDescription": "MastersFit saves your completed workouts to Apple Health so they appear in the Fitness app and count toward your activity.",
         "NSPhotoLibraryUsageDescription": "MastersFit accesses only the photos you explicitly select, such as when adding a picture to your profile.",
         "NSPhotoLibraryAddUsageDescription": "MastersFit saves the workout card you choose to share to your photo library."
@@ -59,7 +59,6 @@
         "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_EXERCISE_SESSION",
-        "android.permission.health.READ_NUTRITION",
         "android.permission.health.WRITE_EXERCISE_SESSION"
       ],
       "blockedPermissions": [
@@ -93,7 +92,7 @@
       [
         "react-native-health",
         {
-          "healthSharePermission": "MastersFit reads your health data including steps, heart rate, workouts, calories, and nutrition to provide personalized fitness insights.",
+          "healthSharePermission": "MastersFit reads your health data including steps, heart rate, workouts, and calories to provide personalized fitness insights.",
           "healthUpdatePermission": "MastersFit saves your completed workouts to Apple Health so they appear in the Fitness app and count toward your activity.",
           "isClinicalDataEnabled": false
         }

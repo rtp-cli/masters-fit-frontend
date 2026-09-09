@@ -12,7 +12,6 @@ import { useThemeColors } from "../../../lib/theme";
 
 type HealthMetricsProps = {
   stepsCount: number | null;
-  nutritionCaloriesConsumed: number | null;
   caloriesBurned: number | null;
   maxHeartRate: number | null;
   avgHeartRate: number | null;
@@ -51,7 +50,6 @@ const HealthMetricItem: React.FC<HealthMetricItemProps> = ({
 
 const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
   stepsCount,
-  nutritionCaloriesConsumed,
   caloriesBurned,
   maxHeartRate,
   avgHeartRate,
@@ -87,12 +85,6 @@ const HealthMetricsCarousel: React.FC<HealthMetricsProps> = ({
       value: workoutDuration,
       iconName: "stopwatch",
       unit: "min",
-    },
-    {
-      key: "calories-consumed",
-      value: nutritionCaloriesConsumed,
-      iconName: "restaurant",
-      unit: "kcal",
     },
     {
       key: "calories-burned",
