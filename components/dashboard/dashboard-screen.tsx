@@ -7,7 +7,6 @@ import {
   connectHealth as connectHealthAPI,
   fetchCaloriesToday,
   fetchHeartRateSamples,
-  fetchNutritionCaloriesToday,
   fetchStepsToday as fetchStepsTodayAPI,
   fetchWorkoutDuration,
   getHealthConnection,
@@ -153,9 +152,6 @@ export default function DashboardScreen() {
   const [maxHeartRate, setMaxHeartRate] = useState<number | null>(null);
   const [avgHeartRate, setAvgHeartRate] = useState<number | null>(null);
   const [caloriesBurned, setCaloriesBurned] = useState<number | null>(null);
-  const [nutritionCaloriesConsumed, setNutritionCaloriesConsumed] = useState<
-    number | null
-  >(null);
   const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
   const [healthReady, setHealthReady] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -382,7 +378,6 @@ export default function DashboardScreen() {
     setMaxHeartRate(null);
     setAvgHeartRate(null);
     setCaloriesBurned(null);
-    setNutritionCaloriesConsumed(null);
     setWorkoutDuration(null);
   }, []);
 
@@ -430,10 +425,6 @@ export default function DashboardScreen() {
       setAvgHeartRate(avg !== null ? Math.round(avg) : null);
       const calories = await fetchCaloriesToday();
       setCaloriesBurned(calories !== null ? Math.round(calories) : null);
-      const nutritionCalories = await fetchNutritionCaloriesToday();
-      setNutritionCaloriesConsumed(
-        nutritionCalories !== null ? Math.round(nutritionCalories) : null
-      );
       const duration = await fetchWorkoutDuration();
       setWorkoutDuration(duration !== null ? Math.round(duration) : null);
     } catch (error) {
@@ -1076,7 +1067,6 @@ export default function DashboardScreen() {
         {healthReady && (
           <HealthMetricsCarousel
             stepsCount={stepsCount}
-            nutritionCaloriesConsumed={nutritionCaloriesConsumed}
             caloriesBurned={caloriesBurned}
             maxHeartRate={maxHeartRate}
             avgHeartRate={avgHeartRate}

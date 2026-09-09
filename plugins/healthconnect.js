@@ -12,7 +12,6 @@ module.exports = function withHealthConnect(config) {
         "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_EXERCISE_SESSION",
-        "android.permission.health.READ_NUTRITION",
         "android.permission.health.WRITE_EXERCISE_SESSION"
       ]
     }
