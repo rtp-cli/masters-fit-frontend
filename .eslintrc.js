@@ -92,7 +92,11 @@ module.exports = {
       // Plain JS files (config files, app entry) aren't part of tsconfig, so
       // type-aware rules have no parserServices for them. Disable the
       // type-info parse + the type-aware rule here so `eslint .` doesn't crash.
+      // These all run in Node (config plugins, entry point, scripts/), not in
+      // the RN bundle, so declare that env or no-undef flags Node globals like
+      // Buffer / URLSearchParams / process.
       files: ['*.js', '*.cjs'],
+      env: { node: true },
       parserOptions: { project: null },
       rules: {
         '@typescript-eslint/consistent-type-imports': 'off',
