@@ -1,0 +1,104 @@
+<!-- @dsCard group="Components" name="Chips & pills" subtitle="Outline · muscle coverage · stat · streak" width="1000" height="860" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Chips & pills</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 12px;
+    font-size:13px;font-weight:600;margin:0 8px 8px 0}
+  .outline{border:1px solid var(--line);color:var(--ink-2)}
+  .cov{border:1px solid var(--success);color:var(--success)}
+  .gap{border:1px dashed #9E9E9E;color:var(--muted)}
+  .ink{border:1px solid transparent;background:var(--primary);color:var(--on-primary)}
+  .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--white);
+    padding:6px 12px;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.10);margin:0 10px 10px 0}
+  .pill .l{color:var(--muted)} .pill .v{color:var(--ink);font-weight:600}
+  .x{position:relative;padding-left:26px}
+  .x:before{content:"✕";position:absolute;left:0;top:-1px;color:#DC2626;font-weight:700}
+  .ok{position:relative;padding-left:26px}
+  .ok:before{content:"✓";position:absolute;left:0;top:-1px;color:#1B7A4B;font-weight:700}
+</style>
+<div class="wrap">
+<h1>Chips & pills</h1>
+<p class="lede">This family carries the single most important rule in the system: data wears an outline, actions wear ink. Informational chips — muscle groups, equipment, counts — are outline-only. The coverage chip goes further and uses a dashed border to admit a gap a swap created.</p>
+<h2>OutlineChip — the default for data</h2>
+  <div class="grid2">
+    <div class="stage"><p class="cap">Light</p>
+      <span class="chip outline">Chest</span><span class="chip outline">Triceps</span><span class="chip outline">Front delts</span><span class="chip outline">Dumbbells</span><span class="chip outline">Bench</span><span class="chip outline">12 exercises</span></div>
+    <div class="stage on-dark"><p class="cap">Dark</p>
+      <span class="chip outline">Chest</span><span class="chip outline">Triceps</span><span class="chip outline">Front delts</span><span class="chip outline">Dumbbells</span><span class="chip outline">Bench</span><span class="chip outline">12 exercises</span></div>
+  </div>
+  <div class="stage" style="margin-top:18px">
+    <p class="ok" style="margin:0 0 10px;font-size:14.5px;color:var(--ink-2)"><b>Do</b> — muscle groups, equipment and counts read as outline pills. They are facts, not buttons.</p>
+    <p class="x" style="margin:0;font-size:14.5px;color:var(--ink-2)"><b>Don't</b> — <span class="chip ink" style="margin:0 4px">Chest</span> solid ink on data. Ink is reserved for the one primary action on the screen; users tap what looks tappable.</p>
+  </div>
+  <h2>MuscleCoverageChip — the trust component</h2>
+  <div class="stage">
+    <p class="cap">Replacement covers these muscles from the original</p>
+    <span class="chip cov">✓ Chest</span><span class="chip cov">✓ Triceps</span>
+    <span class="chip gap">− Front delts</span><span class="chip gap">− Serratus</span>
+    <p class="note" style="margin-top:12px">Solid green + check = covered. <b>Dashed</b> grey + minus = the swap does not train it. The dashed chip is how the app admits what a substitution loses — never hide a gap.</p>
+  </div>
+  <h2>StatPill &amp; StreakChip</h2>
+  <div class="grid2">
+    <div class="stage"><p class="cap">Light</p>
+      <span class="pill">🔥 <span class="l">Streak</span> <span class="v">5 days</span></span>
+      <span class="pill"><span class="l">Volume</span> <span class="v">12,400 lb</span></span>
+      <span class="pill">🔥 <span class="v">5</span></span></div>
+    <div class="stage on-dark"><p class="cap">Dark</p>
+      <span class="pill">🔥 <span class="l">Streak</span> <span class="v">5 days</span></span>
+      <span class="pill"><span class="l">Volume</span> <span class="v">12,400 lb</span></span>
+      <span class="pill">🔥 <span class="v">5</span></span></div>
+  </div>
+  <p class="note">These sit on <code>neutral.white</code> and are separated from the page by the <b>lifted-pill shadow</b>, not by a fill or a border — so they read correctly even in dark themes where surface equals background. The warmth is carried by the 🔥 glyph, which is why the chip looks right in all ten palettes.</p>
+</div>

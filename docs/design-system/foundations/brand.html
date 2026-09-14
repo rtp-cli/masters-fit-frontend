@@ -1,0 +1,88 @@
+<!-- @dsCard group="Brand" name="Principles" subtitle="8 rules the app is actually built on" width="1040" height="1180" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Principles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.pr{display:grid;grid-template-columns:34px 1fr;gap:18px;padding:18px 0;border-bottom:1px solid #F4F4F4}
+  .pr:last-child{border-bottom:0}
+  .n{font-size:13px;font-weight:700;color:#9E9E9E;padding-top:2px}
+  .pt{font-size:17px;font-weight:700;margin:0 0 5px;letter-spacing:-.01em}
+  .pb{font-size:14.5px;color:#3C3C3C;margin:0;max-width:72ch}
+  .ref{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#9E9E9E;
+       margin-left:10px;font-weight:600;letter-spacing:.02em}
+</style>
+<div class="wrap">
+<h1>Principles</h1>
+<p class="lede">MastersFit is a training companion for masters-age lifters (40+). The visual system is deliberately quiet, achromatic by default, and high-contrast — the product's personality comes from precision and honesty, not decoration. These eight rules are extracted from the design decisions recorded in the codebase (the MF-### series), not invented for this document.</p>
+<h2>Voice</h2>
+  <div class="rule"><b>Plain, concrete, never hype.</b> "End now to save progress and mark the workout as done." — not "Awesome work, champion!" Numbers are stated, not celebrated. The one permitted flourish is the 🔥 streak emoji, which carries the warmth so the palette doesn't have to.</div>
+  <div class="rule"><b>Irreversible actions are spelled out.</b> Destructive paths use the <code>danger</code> token and, where truly unrecoverable, a type-to-confirm gate.</div>
+  <h2>Operating principles</h2>
+  <div class="pr"><div class="n">01</div>
+    <div><p class="pt">Solid ink is rationed<span class="ref">MF-006</span></p><p class="pb">Exactly one solid filled control per screen: the primary action. Everything informational — muscle groups, equipment, counts, tags — is an outline chip. When data wore ink pills, users tapped them.</p></div></div>
+<div class="pr"><div class="n">02</div>
+    <div><p class="pt">No status by color alone<span class="ref">MF-005 / MF-011 / MF-019</span></p><p class="pb">Every stateful cue carries a second channel. The active tab is a <i>filled</i> glyph vs an outline one, not just a tint. A selected calendar day is a ring, not a fill. A chosen date prints the date. Selection is announced via accessibilityState, never inferred from hue.</p></div></div>
+<div class="pr"><div class="n">03</div>
+    <div><p class="pt">Elevation goes lighter, both ways<span class="ref">MF-010</span></p><p class="pb">Light themes step surfaces toward grey; dark themes step them toward white. <code>surface</code> equalled <code>background</code> in every theme, which made every card invisible — <code>card</code> now resolves to <code>neutral.light[2]</code> so a card is always a real tonal step.</p></div></div>
+<div class="pr"><div class="n">04</div>
+    <div><p class="pt">Built for masters-age eyes<span class="ref">MF-008</span></p><p class="pb">The type floor is raised across the board: xs 11→13, sm 13→14, base 15→16. There is no 11px body text in this app. 40+ lifters read this mid-set, sweaty, in a gym.</p></div></div>
+<div class="pr"><div class="n">05</div>
+    <div><p class="pt">44px is the floor, always<span class="ref">MF-009 / MF-014</span></p><p class="pb">Every tappable thing presents a 44×44 target even when its glyph is 20px. Icon-only controls take a <i>required</i> accessibilityLabel — the component will not compile without one.</p></div></div>
+<div class="pr"><div class="n">06</div>
+    <div><p class="pt">One control, one place<span class="ref">MF-016 / MF-022</span></p><p class="pb">Hand-rolled duplicates of a shared control are how bugs breed: five copies of a segmented row is what let the 6M/1Y filter-vs-label mismatch ship per-card. Shared primitives, fixed once.</p></div></div>
+<div class="pr"><div class="n">07</div>
+    <div><p class="pt">The current task dominates<span class="ref">MF-012</span></p><p class="pb">Once a workout starts, the plan overview collapses to a progress rail and notes hide behind a row. Nothing competes with the set being logged.</p></div></div>
+<div class="pr"><div class="n">08</div>
+    <div><p class="pt">Admit what a change costs<span class="ref">MF-006 / trust</span></p><p class="pb">When a swap loses a muscle group, the app shows a <b>dashed</b> grey chip with a minus — never a hidden gap. Covered gets a solid green chip and a check. The app says what it did.</p></div></div>
+</div>
