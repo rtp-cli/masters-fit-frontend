@@ -45,8 +45,8 @@ export const waiverDocument: LegalDocument = {
 For questions regarding this Agreement, contact:
 
 MastersFit LLC
-1023 East Lincolnway
-Cheyenne, WY 82001
+1606 NW 106th Ter
+Kansas City, MO 64155-1656
 legal@mastersfit.ai`,
 };
 
@@ -129,8 +129,8 @@ We may update these Terms periodically. Updates will be posted in the App with a
 For questions regarding these Terms, contact:
 
 MastersFit LLC
-1023 East Lincolnway
-Cheyenne, WY 82001
+1606 NW 106th Ter
+Kansas City, MO 64155-1656
 legal@mastersfit.ai`,
 };
 
@@ -279,8 +279,8 @@ We may update this Policy from time to time. Updates are posted in the App and o
 For questions regarding this Privacy Policy, or to exercise any of the rights above, contact:
 
 MastersFit LLC
-Registered office: 1023 East Lincolnway, Cheyenne, WY 82001
-Mailing address: 1606 NW 106th Ter, Kansas City, MO 64155
+1606 NW 106th Ter
+Kansas City, MO 64155-1656
 legal@mastersfit.ai`,
 };
 
