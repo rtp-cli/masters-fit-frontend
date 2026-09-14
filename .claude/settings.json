@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx jest *)",
+      "Bash(npm run tsc *)",
+      "Bash(npm run tsc)",
+      "Bash(npx eslint *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run lint)",
+      "Bash(xcrun simctl io *)",
+      "Bash(xcrun simctl list *)",
+      "Bash(npx expo-doctor *)",
+      "Bash(eas whoami *)",
+      "Bash(eas whoami)",
+      "Bash(eas build:list *)",
+      "Bash(eas build:view *)",
+      "Bash(eas env:list *)",
+      "Bash(eas update:list *)",
+      "Bash(eas submit:list *)",
+      "Bash(npm run db:check *)",
+      "Bash(npm run db:check)"
+    ]
+  }
+}
