@@ -1,0 +1,82 @@
+<!-- @dsCard group="Components" name="SegmentedControl" subtitle="One selected segment · label + optional sublabel" width="940" height="640" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — SegmentedControl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.seg{display:flex;background:var(--l-2);border-radius:16px;padding:4px;gap:2px;max-width:420px}
+  .seg > div{flex:1;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:12px;font-size:13px;font-weight:500;color:var(--muted);padding:4px 12px;text-align:center}
+  .seg .on{background:var(--primary);color:var(--on-primary)}
+  .seg .sub{font-size:12px;margin-top:2px;opacity:.9}
+</style>
+<div class="wrap">
+<h1>SegmentedControl</h1>
+<p class="lede">A pill row where exactly one segment is selected. It replaced five hand-rolled copies across the dashboard analytics cards — and that duplication is exactly what let a filter offer 6M and 1Y while the data layer silently fell back to 30 days.</p>
+<h2>Time range — dashboard analytics</h2>
+  <div class="grid2">
+    <div class="stage"><p class="cap">Light</p>
+      <div class="seg"><div class="on">1W</div><div>1M</div><div>3M</div><div>6M</div><div>1Y</div></div></div>
+    <div class="stage on-dark"><p class="cap">Dark</p>
+      <div class="seg"><div class="on">1W</div><div>1M</div><div>3M</div><div>6M</div><div>1Y</div></div></div>
+  </div>
+  <h2>With sublabels</h2>
+  <div class="stage">
+    <div class="seg" style="max-width:340px">
+      <div class="on">Single Day<div class="sub">Today only</div></div>
+      <div>Rest of Week<div class="sub">Thu–Sun</div></div>
+    </div>
+  </div>
+  <div class="rule"><b>Only offer ranges the data layer honours.</b> The control takes a <code>supportedRanges</code> prop for exactly this reason — a card renders the subset it can actually filter, rather than every enum value.</div>
+  <div class="rule"><b>Selection is not colour.</b> Each segment carries <code>accessibilityState.selected</code> so the choice is announced, and the group is a <code>tablist</code>. Every segment is 44px tall regardless of whether it has a sublabel.</div>
+</div>
