@@ -379,10 +379,10 @@ export default function LegalDocumentScreen() {
                     MastersFit LLC
                   </Text>
                   <Text className="text-sm text-text-secondary mt-1">
-                    1023 East Lincolnway
+                    1606 NW 106th Ter
                   </Text>
                   <Text className="text-sm text-text-secondary">
-                    Cheyenne, WY 82001
+                    Kansas City, MO 64155-1656
                   </Text>
                 </View>
                 <TouchableOpacity

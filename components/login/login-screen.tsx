@@ -301,6 +301,55 @@ export const LoginScreen = () => {
               </Text>
             )}
           </TouchableOpacity>
+
+          {/* Trust microcopy. This screen is where a prospective user is first
+              asked for anything personal, and it previously said nothing about
+              what happens to it -- a tester told us she stopped here for exactly
+              that reason. The Privacy Policy was only reachable from the waiver,
+              three screens later. legal-document renders from a bundled
+              constant, so this link works pre-auth and offline. */}
+          <View style={{ alignItems: "center", marginTop: 16 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={13}
+                color={colors.text.muted}
+              />
+              <Text
+                style={{
+                  fontSize: 13,
+                  lineHeight: 18,
+                  color: colors.text.muted,
+                  textAlign: "center",
+                }}
+              >
+                No password to create. We never sell your data.
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push("/legal-document?type=privacy")}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="link"
+              accessibilityLabel="Read what MastersFit does with your email and health data"
+              style={{ marginTop: 6 }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  lineHeight: 18,
+                  fontWeight: "600",
+                  color: colors.text.secondary,
+                  textDecorationLine: "underline",
+                  textDecorationStyle: "solid",
+                  textAlign: "center",
+                }}
+              >
+                What we do with your email
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
