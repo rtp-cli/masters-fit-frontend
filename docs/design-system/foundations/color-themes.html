@@ -1,0 +1,113 @@
+<!-- @dsCard group="Color" name="Theme families" subtitle="5 families × light/dark = 10 variants" width="1180" height="1560" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Theme families</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1100px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.tf{margin:0 0 26px}
+  .tfl{font-size:15px;font-weight:700;margin:0 0 12px}
+  .sw{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
+  .s{min-width:0}
+  .chip{height:54px;border-radius:8px;border:1px solid rgba(0,0,0,.12);margin-bottom:6px}
+  .sk{font-size:10.5px;font-weight:600;color:#3C3C3C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sv{font-size:10px;color:#9E9E9E}
+</style>
+<div class="wrap">
+<h1>Theme families</h1>
+<p class="lede">Every screen renders through CSS variables set by NativeWind's vars(), so all ten variants are the same components with a different palette bound. Original is achromatic — near-black ink on white — and the four alternates are low-chroma tints. None is a saturated brand colour; the system leans on contrast and tone, not hue.</p>
+<h2>Original <span style="text-transform:none;letter-spacing:0;font-weight:500">— <code>original</code></span></h2>
+     <div class="tf">
+    <div class="tfl">Original · light</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">background</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#FAFAFA"></div><div class="sk">surface</div><div class="sv mono">#FAFAFA</div></div><div class="s"><div class="chip" style="background:#F4F4F4"></div><div class="sk">card</div><div class="sv mono">#F4F4F4</div></div><div class="s"><div class="chip" style="background:#0A0A0A"></div><div class="sk">primary</div><div class="sv mono">#0A0A0A</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">on-primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#0A0A0A"></div><div class="sk">text.primary</div><div class="sv mono">#0A0A0A</div></div><div class="s"><div class="chip" style="background:#3C3C3C"></div><div class="sk">text.secondary</div><div class="sv mono">#3C3C3C</div></div><div class="s"><div class="chip" style="background:#6E6E6E"></div><div class="sk">text.muted</div><div class="sv mono">#6E6E6E</div></div><div class="s"><div class="chip" style="background:#E0E0E0"></div><div class="sk">line</div><div class="sv mono">#E0E0E0</div></div><div class="s"><div class="chip" style="background:#DC2626"></div><div class="sk">danger</div><div class="sv mono">#DC2626</div></div><div class="s"><div class="chip" style="background:#B06105"></div><div class="sk">warning</div><div class="sv mono">#B06105</div></div><div class="s"><div class="chip" style="background:#1B7A4B"></div><div class="sk">success</div><div class="sv mono">#1B7A4B</div></div></div>
+  </div>
+     <div class="tf">
+    <div class="tfl">Original · dark</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#0A0A0A"></div><div class="sk">background</div><div class="sv mono">#0A0A0A</div></div><div class="s"><div class="chip" style="background:#141414"></div><div class="sk">surface</div><div class="sv mono">#141414</div></div><div class="s"><div class="chip" style="background:#1E1E1E"></div><div class="sk">card</div><div class="sv mono">#1E1E1E</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#0A0A0A"></div><div class="sk">on-primary</div><div class="sv mono">#0A0A0A</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">text.primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#C0C0C0"></div><div class="sk">text.secondary</div><div class="sv mono">#C0C0C0</div></div><div class="s"><div class="chip" style="background:#8C8C8C"></div><div class="sk">text.muted</div><div class="sv mono">#8C8C8C</div></div><div class="s"><div class="chip" style="background:#282828"></div><div class="sk">line</div><div class="sv mono">#282828</div></div><div class="s"><div class="chip" style="background:#FF4444"></div><div class="sk">danger</div><div class="sv mono">#FF4444</div></div><div class="s"><div class="chip" style="background:#FBBF24"></div><div class="sk">warning</div><div class="sv mono">#FBBF24</div></div><div class="s"><div class="chip" style="background:#34C77B"></div><div class="sk">success</div><div class="sv mono">#34C77B</div></div></div>
+  </div>
+<h2>Steel Blue <span style="text-transform:none;letter-spacing:0;font-weight:500">— <code>steel-blue</code></span></h2>
+     <div class="tf">
+    <div class="tfl">Steel Blue · light</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#F2F4F7"></div><div class="sk">background</div><div class="sv mono">#F2F4F7</div></div><div class="s"><div class="chip" style="background:#EBEEF2"></div><div class="sk">surface</div><div class="sv mono">#EBEEF2</div></div><div class="s"><div class="chip" style="background:#EBEEF2"></div><div class="sk">card</div><div class="sv mono">#EBEEF2</div></div><div class="s"><div class="chip" style="background:#5A7A94"></div><div class="sk">primary</div><div class="sv mono">#5A7A94</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">on-primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#1C1D1F"></div><div class="sk">text.primary</div><div class="sv mono">#1C1D1F</div></div><div class="s"><div class="chip" style="background:#464B55"></div><div class="sk">text.secondary</div><div class="sv mono">#464B55</div></div><div class="s"><div class="chip" style="background:#636B79"></div><div class="sk">text.muted</div><div class="sv mono">#636B79</div></div><div class="s"><div class="chip" style="background:#D2D7DE"></div><div class="sk">line</div><div class="sv mono">#D2D7DE</div></div><div class="s"><div class="chip" style="background:#D32A2A"></div><div class="sk">danger</div><div class="sv mono">#D32A2A</div></div><div class="s"><div class="chip" style="background:#8D6820"></div><div class="sk">warning</div><div class="sv mono">#8D6820</div></div><div class="s"><div class="chip" style="background:#5A7A94"></div><div class="sk">success</div><div class="sv mono">#5A7A94</div></div></div>
+  </div>
+     <div class="tf">
+    <div class="tfl">Steel Blue · dark</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#171A1E"></div><div class="sk">background</div><div class="sv mono">#171A1E</div></div><div class="s"><div class="chip" style="background:#242527"></div><div class="sk">surface</div><div class="sv mono">#242527</div></div><div class="s"><div class="chip" style="background:#2D2E30"></div><div class="sk">card</div><div class="sv mono">#2D2E30</div></div><div class="s"><div class="chip" style="background:#7A9BB8"></div><div class="sk">primary</div><div class="sv mono">#7A9BB8</div></div><div class="s"><div class="chip" style="background:#171A1E"></div><div class="sk">on-primary</div><div class="sv mono">#171A1E</div></div><div class="s"><div class="chip" style="background:#F0F3F6"></div><div class="sk">text.primary</div><div class="sv mono">#F0F3F6</div></div><div class="s"><div class="chip" style="background:#B4B9C3"></div><div class="sk">text.secondary</div><div class="sv mono">#B4B9C3</div></div><div class="s"><div class="chip" style="background:#92979F"></div><div class="sk">text.muted</div><div class="sv mono">#92979F</div></div><div class="s"><div class="chip" style="background:#37383C"></div><div class="sk">line</div><div class="sv mono">#37383C</div></div><div class="s"><div class="chip" style="background:#F06E6E"></div><div class="sk">danger</div><div class="sv mono">#F06E6E</div></div><div class="s"><div class="chip" style="background:#F0BE50"></div><div class="sk">warning</div><div class="sv mono">#F0BE50</div></div><div class="s"><div class="chip" style="background:#7A9BB8"></div><div class="sk">success</div><div class="sv mono">#7A9BB8</div></div></div>
+  </div>
+<h2>Dusty Denim <span style="text-transform:none;letter-spacing:0;font-weight:500">— <code>dusty-denim</code></span></h2>
+     <div class="tf">
+    <div class="tfl">Dusty Denim · light</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#EFF1F5"></div><div class="sk">background</div><div class="sv mono">#EFF1F5</div></div><div class="s"><div class="chip" style="background:#ECEEF2"></div><div class="sk">surface</div><div class="sv mono">#ECEEF2</div></div><div class="s"><div class="chip" style="background:#ECEEF2"></div><div class="sk">card</div><div class="sv mono">#ECEEF2</div></div><div class="s"><div class="chip" style="background:#5C6D7E"></div><div class="sk">primary</div><div class="sv mono">#5C6D7E</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">on-primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#19191B"></div><div class="sk">text.primary</div><div class="sv mono">#19191B</div></div><div class="s"><div class="chip" style="background:#484E58"></div><div class="sk">text.secondary</div><div class="sv mono">#484E58</div></div><div class="s"><div class="chip" style="background:#636B78"></div><div class="sk">text.muted</div><div class="sv mono">#636B78</div></div><div class="s"><div class="chip" style="background:#D4D8DE"></div><div class="sk">line</div><div class="sv mono">#D4D8DE</div></div><div class="s"><div class="chip" style="background:#CE2C2C"></div><div class="sk">danger</div><div class="sv mono">#CE2C2C</div></div><div class="s"><div class="chip" style="background:#896721"></div><div class="sk">warning</div><div class="sv mono">#896721</div></div><div class="s"><div class="chip" style="background:#5C6D7E"></div><div class="sk">success</div><div class="sv mono">#5C6D7E</div></div></div>
+  </div>
+     <div class="tf">
+    <div class="tfl">Dusty Denim · dark</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#16171A"></div><div class="sk">background</div><div class="sv mono">#16171A</div></div><div class="s"><div class="chip" style="background:#212123"></div><div class="sk">surface</div><div class="sv mono">#212123</div></div><div class="s"><div class="chip" style="background:#2A2A2D"></div><div class="sk">card</div><div class="sv mono">#2A2A2D</div></div><div class="s"><div class="chip" style="background:#8B9CAE"></div><div class="sk">primary</div><div class="sv mono">#8B9CAE</div></div><div class="s"><div class="chip" style="background:#16171A"></div><div class="sk">on-primary</div><div class="sv mono">#16171A</div></div><div class="s"><div class="chip" style="background:#F2F4F6"></div><div class="sk">text.primary</div><div class="sv mono">#F2F4F6</div></div><div class="s"><div class="chip" style="background:#B2B6C0"></div><div class="sk">text.secondary</div><div class="sv mono">#B2B6C0</div></div><div class="s"><div class="chip" style="background:#8D939B"></div><div class="sk">text.muted</div><div class="sv mono">#8D939B</div></div><div class="s"><div class="chip" style="background:#343438"></div><div class="sk">line</div><div class="sv mono">#343438</div></div><div class="s"><div class="chip" style="background:#EE6C6C"></div><div class="sk">danger</div><div class="sv mono">#EE6C6C</div></div><div class="s"><div class="chip" style="background:#EEBC4E"></div><div class="sk">warning</div><div class="sv mono">#EEBC4E</div></div><div class="s"><div class="chip" style="background:#8B9CAE"></div><div class="sk">success</div><div class="sv mono">#8B9CAE</div></div></div>
+  </div>
+<h2>Dusty Sage <span style="text-transform:none;letter-spacing:0;font-weight:500">— <code>dusty-sage</code></span></h2>
+     <div class="tf">
+    <div class="tfl">Dusty Sage · light</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#F3F4F3"></div><div class="sk">background</div><div class="sv mono">#F3F4F3</div></div><div class="s"><div class="chip" style="background:#ECF0EC"></div><div class="sk">surface</div><div class="sv mono">#ECF0EC</div></div><div class="s"><div class="chip" style="background:#ECF0EC"></div><div class="sk">card</div><div class="sv mono">#ECF0EC</div></div><div class="s"><div class="chip" style="background:#6E806B"></div><div class="sk">primary</div><div class="sv mono">#6E806B</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">on-primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#1B1C1B"></div><div class="sk">text.primary</div><div class="sv mono">#1B1C1B</div></div><div class="s"><div class="chip" style="background:#485048"></div><div class="sk">text.secondary</div><div class="sv mono">#485048</div></div><div class="s"><div class="chip" style="background:#646E64"></div><div class="sk">text.muted</div><div class="sv mono">#646E64</div></div><div class="s"><div class="chip" style="background:#D4DAD4"></div><div class="sk">line</div><div class="sv mono">#D4DAD4</div></div><div class="s"><div class="chip" style="background:#CA3838"></div><div class="sk">danger</div><div class="sv mono">#CA3838</div></div><div class="s"><div class="chip" style="background:#886A26"></div><div class="sk">warning</div><div class="sv mono">#886A26</div></div><div class="s"><div class="chip" style="background:#6E806B"></div><div class="sk">success</div><div class="sv mono">#6E806B</div></div></div>
+  </div>
+     <div class="tf">
+    <div class="tfl">Dusty Sage · dark</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#181918"></div><div class="sk">background</div><div class="sv mono">#181918</div></div><div class="s"><div class="chip" style="background:#232423"></div><div class="sk">surface</div><div class="sv mono">#232423</div></div><div class="s"><div class="chip" style="background:#2C2E2C"></div><div class="sk">card</div><div class="sv mono">#2C2E2C</div></div><div class="s"><div class="chip" style="background:#94A891"></div><div class="sk">primary</div><div class="sv mono">#94A891</div></div><div class="s"><div class="chip" style="background:#181918"></div><div class="sk">on-primary</div><div class="sv mono">#181918</div></div><div class="s"><div class="chip" style="background:#F2F4F2"></div><div class="sk">text.primary</div><div class="sv mono">#F2F4F2</div></div><div class="s"><div class="chip" style="background:#B2BAB2"></div><div class="sk">text.secondary</div><div class="sv mono">#B2BAB2</div></div><div class="s"><div class="chip" style="background:#909890"></div><div class="sk">text.muted</div><div class="sv mono">#909890</div></div><div class="s"><div class="chip" style="background:#363836"></div><div class="sk">line</div><div class="sv mono">#363836</div></div><div class="s"><div class="chip" style="background:#EB6E6E"></div><div class="sk">danger</div><div class="sv mono">#EB6E6E</div></div><div class="s"><div class="chip" style="background:#EBBC50"></div><div class="sk">warning</div><div class="sv mono">#EBBC50</div></div><div class="s"><div class="chip" style="background:#94A891"></div><div class="sk">success</div><div class="sv mono">#94A891</div></div></div>
+  </div>
+<h2>Carbon Violet <span style="text-transform:none;letter-spacing:0;font-weight:500">— <code>carbon-violet</code></span></h2>
+     <div class="tf">
+    <div class="tfl">Carbon Violet · light</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#F5F5F5"></div><div class="sk">background</div><div class="sv mono">#F5F5F5</div></div><div class="s"><div class="chip" style="background:#ECECEC"></div><div class="sk">surface</div><div class="sv mono">#ECECEC</div></div><div class="s"><div class="chip" style="background:#ECECEC"></div><div class="sk">card</div><div class="sv mono">#ECECEC</div></div><div class="s"><div class="chip" style="background:#6B6488"></div><div class="sk">primary</div><div class="sv mono">#6B6488</div></div><div class="s"><div class="chip" style="background:#FFFFFF"></div><div class="sk">on-primary</div><div class="sv mono">#FFFFFF</div></div><div class="s"><div class="chip" style="background:#1A1A1A"></div><div class="sk">text.primary</div><div class="sv mono">#1A1A1A</div></div><div class="s"><div class="chip" style="background:#4B5563"></div><div class="sk">text.secondary</div><div class="sv mono">#4B5563</div></div><div class="s"><div class="chip" style="background:#636A77"></div><div class="sk">text.muted</div><div class="sv mono">#636A77</div></div><div class="s"><div class="chip" style="background:#D4D4D4"></div><div class="sk">line</div><div class="sv mono">#D4D4D4</div></div><div class="s"><div class="chip" style="background:#C2424E"></div><div class="sk">danger</div><div class="sv mono">#C2424E</div></div><div class="s"><div class="chip" style="background:#896A2A"></div><div class="sk">warning</div><div class="sv mono">#896A2A</div></div><div class="s"><div class="chip" style="background:#6B6488"></div><div class="sk">success</div><div class="sv mono">#6B6488</div></div></div>
+  </div>
+     <div class="tf">
+    <div class="tfl">Carbon Violet · dark</div>
+    <div class="sw"><div class="s"><div class="chip" style="background:#121212"></div><div class="sk">background</div><div class="sv mono">#121212</div></div><div class="s"><div class="chip" style="background:#1A1A1A"></div><div class="sk">surface</div><div class="sv mono">#1A1A1A</div></div><div class="s"><div class="chip" style="background:#242424"></div><div class="sk">card</div><div class="sv mono">#242424</div></div><div class="s"><div class="chip" style="background:#9088A8"></div><div class="sk">primary</div><div class="sv mono">#9088A8</div></div><div class="s"><div class="chip" style="background:#121212"></div><div class="sk">on-primary</div><div class="sv mono">#121212</div></div><div class="s"><div class="chip" style="background:#F5F5F5"></div><div class="sk">text.primary</div><div class="sv mono">#F5F5F5</div></div><div class="s"><div class="chip" style="background:#B8B8B8"></div><div class="sk">text.secondary</div><div class="sv mono">#B8B8B8</div></div><div class="s"><div class="chip" style="background:#8C8C8C"></div><div class="sk">text.muted</div><div class="sv mono">#8C8C8C</div></div><div class="s"><div class="chip" style="background:#2E2E2E"></div><div class="sk">line</div><div class="sv mono">#2E2E2E</div></div><div class="s"><div class="chip" style="background:#E1737D"></div><div class="sk">danger</div><div class="sv mono">#E1737D</div></div><div class="s"><div class="chip" style="background:#E1B95F"></div><div class="sk">warning</div><div class="sv mono">#E1B95F</div></div><div class="s"><div class="chip" style="background:#9088A8"></div><div class="sk">success</div><div class="sv mono">#9088A8</div></div></div>
+  </div><p class="note"><b>Note for anyone reading the source:</b> <code>lib/theme.ts</code> still labels the default family “Original (Lime Green)”. It isn't — the values are a monochrome ink ramp. The comment is stale; the palette above is what ships.</p>
+</div>

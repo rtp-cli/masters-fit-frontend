@@ -1,0 +1,124 @@
+<!-- @dsCard group="Color" name="Semantic roles" subtitle="What each token is for + AA contrast per theme" width="1120" height="1200" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Semantic roles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.dot{width:26px;height:26px;border-radius:6px;border:1px solid rgba(128,128,128,.35);display:inline-block;vertical-align:middle}
+  td .mono{color:#9E9E9E}
+</style>
+<div class="wrap">
+<h1>Semantic roles</h1>
+<p class="lede">Components never reference a palette step directly — they use these roles, so all ten themes stay correct for free. The two hard pairings: content-on-primary always sits on primary, and the layering order is background → surface → card, never reversed.</p>
+<h2>Roles</h2>
+  <table><thead><tr><th>Token</th><th style="width:74px">Light</th><th style="width:74px">Dark</th><th>Used for</th></tr></thead><tbody>
+  <tr>
+    <td><code>background</code></td>
+    <td><span class="dot" style="background:#FFFFFF"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FFFFFF</div></td>
+    <td><span class="dot" style="background:#0A0A0A"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#0A0A0A</div></td>
+    <td>The page itself. Nothing else.</td></tr><tr>
+    <td><code>surface</code></td>
+    <td><span class="dot" style="background:#FAFAFA"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FAFAFA</div></td>
+    <td><span class="dot" style="background:#141414"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#141414</div></td>
+    <td>One step up from the page: cards, sheets, icon-button grounds.</td></tr><tr>
+    <td><code>card</code></td>
+    <td><span class="dot" style="background:#F4F4F4"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#F4F4F4</div></td>
+    <td><span class="dot" style="background:#1E1E1E"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#1E1E1E</div></td>
+    <td>Elevated card fill. Resolves to neutral.light[2] because surface used to equal background.</td></tr><tr>
+    <td><code>primary</code></td>
+    <td><span class="dot" style="background:#0A0A0A"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#0A0A0A</div></td>
+    <td><span class="dot" style="background:#FFFFFF"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FFFFFF</div></td>
+    <td>The single filled action per screen, and the active-tab tint. Rationed.</td></tr><tr>
+    <td><code>content-on-primary</code></td>
+    <td><span class="dot" style="background:#FFFFFF"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FFFFFF</div></td>
+    <td><span class="dot" style="background:#0A0A0A"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#0A0A0A</div></td>
+    <td>Text/glyphs sitting ON primary. Always pair these two.</td></tr><tr>
+    <td><code>text.primary</code></td>
+    <td><span class="dot" style="background:#0A0A0A"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#0A0A0A</div></td>
+    <td><span class="dot" style="background:#FFFFFF"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FFFFFF</div></td>
+    <td>Headings, values, anything the user reads to decide.</td></tr><tr>
+    <td><code>text.secondary</code></td>
+    <td><span class="dot" style="background:#3C3C3C"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#3C3C3C</div></td>
+    <td><span class="dot" style="background:#C0C0C0"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#C0C0C0</div></td>
+    <td>Body copy, descriptions, chip labels.</td></tr><tr>
+    <td><code>text.muted</code></td>
+    <td><span class="dot" style="background:#6E6E6E"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#6E6E6E</div></td>
+    <td><span class="dot" style="background:#8C8C8C"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#8C8C8C</div></td>
+    <td>Labels, captions, inactive tabs. AA-checked — was raised from #686868.</td></tr><tr>
+    <td><code>danger</code></td>
+    <td><span class="dot" style="background:#DC2626"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#DC2626</div></td>
+    <td><span class="dot" style="background:#FF4444"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FF4444</div></td>
+    <td>Destructive actions and errors only. Never a generic accent.</td></tr><tr>
+    <td><code>warning</code></td>
+    <td><span class="dot" style="background:#B06105"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#B06105</div></td>
+    <td><span class="dot" style="background:#FBBF24"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#FBBF24</div></td>
+    <td>Caution states. Darkened in light themes to clear AA on white.</td></tr><tr>
+    <td><code>success</code></td>
+    <td><span class="dot" style="background:#1B7A4B"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#1B7A4B</div></td>
+    <td><span class="dot" style="background:#34C77B"></span><div class="mono" style="font-size:10px;color:#9E9E9E;margin-top:3px">#34C77B</div></td>
+    <td>Reserved completion green. Decoupled from primary so 'done' is distinguishable without reading it.</td></tr>
+  </tbody></table>
+  <h2>Contrast against background — light / dark</h2>
+  <table><thead><tr><th>Theme</th><th>text.primary</th><th>text.secondary</th><th>text.muted</th><th>on-primary</th><th>success</th></tr></thead>
+  <tbody><tr><td style="font-weight:600">Original</td><td><span class="pill pass">19.80</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">19.80</span></td><td><span class="pill pass">11.03</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">10.88</span></td><td><span class="pill pass">5.10</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.89</span></td><td><span class="pill pass">19.80</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">19.80</span></td><td><span class="pill pass">5.34</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">9.05</span></td></tr>
+<tr><td style="font-weight:600">Steel Blue</td><td><span class="pill pass">15.31</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">15.68</span></td><td><span class="pill pass">7.95</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">8.87</span></td><td><span class="pill pass">4.87</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.94</span></td><td><span class="pill pass">4.52</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.99</span></td><td><span class="pill fail">4.10</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.99</span></td></tr>
+<tr><td style="font-weight:600">Dusty Denim</td><td><span class="pill pass">15.52</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">16.26</span></td><td><span class="pill pass">7.41</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">8.83</span></td><td><span class="pill pass">4.76</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.79</span></td><td><span class="pill pass">5.32</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">6.37</span></td><td><span class="pill pass">4.71</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">6.37</span></td></tr>
+<tr><td style="font-weight:600">Dusty Sage</td><td><span class="pill pass">15.50</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">15.95</span></td><td><span class="pill pass">7.57</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">8.87</span></td><td><span class="pill pass">4.81</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.94</span></td><td><span class="pill fail">4.23</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">6.94</span></td><td><span class="pill fail">3.84</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">6.94</span></td></tr>
+<tr><td style="font-weight:600">Carbon Violet</td><td><span class="pill pass">15.96</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">17.18</span></td><td><span class="pill pass">6.93</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">9.44</span></td><td><span class="pill pass">4.99</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.57</span></td><td><span class="pill pass">5.52</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.60</span></td><td><span class="pill pass">5.06</span> <span class="mono" style="color:#9E9E9E">/</span> <span class="pill pass">5.60</span></td></tr></tbody></table>
+  <p class="note">Computed from the live token values at build time. Everything shown must clear <b>4.5:1</b> (WCAG AA, normal text). Any red cell is a regression, not a style choice.</p>
+  <div class="rule" style="border-left-color:#DC2626"><b>Three cells are red today, and they share one cause.</b>
+  Only the Original family defines <code>success</code>; the other four fall back to <code>brand.primary</code>, which is a mid-tone tint chosen to sit <i>behind</i> white text, not to <i>be</i> text. Wherever success is used as a foreground — the MuscleCoverageChip's green border, check and label — it lands at 4.10:1 (Steel Blue light) and 3.84:1 (Dusty Sage light).
+  Separately, Dusty Sage's own primary is light enough that white on it reads 4.23:1, so <b>every filled button in that theme</b> is marginally under AA.
+  The fix is one line each: give the four alternate families an explicit darker <code>success</code>, and darken Dusty Sage's light <code>brand.primary</code> to roughly <code>#61735E</code>. Until then, don't design a light-theme surface that depends on green-on-background text.</div>
+  <div class="rule"><b>The layering rule.</b> A card must never equal the page. In light themes the card steps toward grey; in dark themes it steps toward white. Elevation reads as <i>lighter</i> in dark mode — going darker made every card black-on-black.</div>
+</div>

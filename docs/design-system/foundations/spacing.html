@@ -1,0 +1,87 @@
+<!-- @dsCard group="Spacing" name="Space, radius & elevation" subtitle="4pt spacing · 7 radii · RN-safe shadows" width="1000" height="1000" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Space, radius & elevation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.sp{display:flex;align-items:center;gap:16px;padding:9px 0}
+  .sp .k{width:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#6E6E6E;flex:none}
+  .bar{height:22px;background:#0A0A0A;border-radius:3px}
+  .rd{display:grid;grid-template-columns:repeat(7,1fr);gap:14px;text-align:center}
+  .rd .b{height:76px;background:#F4F4F4;border:1px solid #E0E0E0;margin-bottom:8px}
+  .rd .k{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#6E6E6E}
+  .sh{display:grid;grid-template-columns:repeat(5,1fr);gap:20px;text-align:center}
+  .sh .b{height:74px;background:#fff;border-radius:12px;margin-bottom:10px}
+  .tt{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  .tgt{width:44px;height:44px;border-radius:999px;background:#FAFAFA;border:1px dashed #C0C0C0;
+       display:flex;align-items:center;justify-content:center;color:#0A0A0A;font-size:20px}
+</style>
+<div class="wrap">
+<h1>Space, radius & elevation</h1>
+<p class="lede">A 4pt base grid, a radius ramp that tops out in a full pill, and shadows authored as React Native shadow objects (with an Android elevation twin) rather than CSS. Plus the one measurement that overrides all of them: the 44px touch target.</p>
+<h2>Spacing</h2>
+  <div class="sp"><div class="k">xs · 4px</div><div class="bar" style="width:4px"></div></div><div class="sp"><div class="k">sm · 8px</div><div class="bar" style="width:8px"></div></div><div class="sp"><div class="k">md · 16px</div><div class="bar" style="width:16px"></div></div><div class="sp"><div class="k">lg · 24px</div><div class="bar" style="width:24px"></div></div><div class="sp"><div class="k">xl · 32px</div><div class="bar" style="width:32px"></div></div><div class="sp"><div class="k">2xl · 40px</div><div class="bar" style="width:40px"></div></div><div class="sp"><div class="k">3xl · 48px</div><div class="bar" style="width:48px"></div></div>
+  <p class="note">Card and dialog padding is <code>md</code> (16px) and <code>lg</code>/24px respectively; screen gutters are 20–24px.</p>
+  <h2>Border radius</h2>
+  <div class="rd"><div><div class="b" style="border-radius:4px"></div><div class="k">xs<br>4px</div></div><div><div class="b" style="border-radius:8px"></div><div class="k">sm<br>8px</div></div><div><div class="b" style="border-radius:12px"></div><div class="k">md<br>12px</div></div><div><div class="b" style="border-radius:16px"></div><div class="k">lg<br>16px</div></div><div><div class="b" style="border-radius:20px"></div><div class="k">xl<br>20px</div></div><div><div class="b" style="border-radius:24px"></div><div class="k">2xl<br>24px</div></div><div><div class="b" style="border-radius:999px"></div><div class="k">full<br>full</div></div></div>
+  <p class="note"><code>sm</code> 8px = buttons · <code>md</code> 12px = cards · <code>xl</code>/<code>2xl</code> = dialogs & sheets · <code>full</code> = chips, pills, icon buttons.</p>
+  <h2>Elevation</h2>
+  <div class="stage"><div class="sh"><div><div class="b" style="box-shadow:0 1px 2px rgba(0,0,0,0.1)"></div><div class="k mono" style="font-size:11.5px;color:#6E6E6E">sm<br>elev 2</div></div><div><div class="b" style="box-shadow:0 2px 4px rgba(0,0,0,0.15)"></div><div class="k mono" style="font-size:11.5px;color:#6E6E6E">md<br>elev 4</div></div><div><div class="b" style="box-shadow:0 4px 10px rgba(0,0,0,0.25)"></div><div class="k mono" style="font-size:11.5px;color:#6E6E6E">lg<br>elev 8</div></div><div><div class="b" style="box-shadow:0 2px 8px rgba(0,0,0,0.12)"></div><div class="k mono" style="font-size:11.5px;color:#6E6E6E">card<br>elev 4</div></div><div><div class="b" style="box-shadow:0 4px 12px rgba(0,0,0,0.18)"></div><div class="k mono" style="font-size:11.5px;color:#6E6E6E">cardHover<br>elev 6</div></div></div></div>
+  <div class="rule"><b>Shadow, not fill, is what lifts a pill.</b> Because <code>surface</code> can equal <code>background</code> in dark themes, floating chips (streak, stat pills) separate themselves with the lifted-pill shadow — <code>0 1px 3px rgba(0,0,0,.10)</code>, elevation 2 — so they read identically in all ten variants.</div>
+  <h2>Touch target</h2>
+  <div class="stage"><div class="tt">
+    <div class="tgt">🔍</div><div class="tgt">👤</div><div class="tgt">✕</div>
+    <div style="font-size:14.5px;color:#3C3C3C;max-width:46ch">
+      <b>44×44 minimum, no exceptions.</b> The glyph inside is usually 20px; the target is not. Icon buttons additionally carry <code>hitSlop</code> of 8px on all sides, and every button's base class includes <code>min-h-[44px]</code>.</div>
+  </div></div>
+</div>

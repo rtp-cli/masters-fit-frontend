@@ -1,0 +1,132 @@
+[
+  {
+    "path": "foundations/brand.html",
+    "name": "Principles",
+    "subtitle": "8 rules the app is actually built on",
+    "group": "Brand",
+    "viewport": {
+      "width": 1040,
+      "height": 1180
+    }
+  },
+  {
+    "path": "foundations/color-themes.html",
+    "name": "Theme families",
+    "subtitle": "5 families × light/dark = 10 variants",
+    "group": "Color",
+    "viewport": {
+      "width": 1180,
+      "height": 1560
+    }
+  },
+  {
+    "path": "foundations/semantic-roles.html",
+    "name": "Semantic roles",
+    "subtitle": "What each token is for + AA contrast per theme",
+    "group": "Color",
+    "viewport": {
+      "width": 1120,
+      "height": 1200
+    }
+  },
+  {
+    "path": "foundations/typography.html",
+    "name": "Typography",
+    "subtitle": "Manrope · 8-step scale · raised floor",
+    "group": "Type",
+    "viewport": {
+      "width": 1000,
+      "height": 1080
+    }
+  },
+  {
+    "path": "foundations/spacing.html",
+    "name": "Space, radius & elevation",
+    "subtitle": "4pt spacing · 7 radii · RN-safe shadows",
+    "group": "Spacing",
+    "viewport": {
+      "width": 1000,
+      "height": 1000
+    }
+  },
+  {
+    "path": "components/buttons.html",
+    "name": "Button",
+    "subtitle": "5 variants × 3 sizes, light + dark",
+    "group": "Components",
+    "viewport": {
+      "width": 1000,
+      "height": 880
+    }
+  },
+  {
+    "path": "components/icon-button.html",
+    "name": "IconButton",
+    "subtitle": "surface · ghost · primary — 44×44, label required",
+    "group": "Components",
+    "viewport": {
+      "width": 920,
+      "height": 620
+    }
+  },
+  {
+    "path": "components/cards.html",
+    "name": "Card",
+    "subtitle": "default · outlined · flat + header/content/footer",
+    "group": "Components",
+    "viewport": {
+      "width": 1000,
+      "height": 760
+    }
+  },
+  {
+    "path": "components/chips-and-pills.html",
+    "name": "Chips & pills",
+    "subtitle": "Outline · muscle coverage · stat · streak",
+    "group": "Components",
+    "viewport": {
+      "width": 1000,
+      "height": 860
+    }
+  },
+  {
+    "path": "components/segmented-control.html",
+    "name": "SegmentedControl",
+    "subtitle": "One selected segment · label + optional sublabel",
+    "group": "Components",
+    "viewport": {
+      "width": 940,
+      "height": 640
+    }
+  },
+  {
+    "path": "components/dialog.html",
+    "name": "CustomDialog",
+    "subtitle": "1–3 buttons · icon · type-to-confirm gate",
+    "group": "Components",
+    "viewport": {
+      "width": 1040,
+      "height": 900
+    }
+  },
+  {
+    "path": "components/navigation.html",
+    "name": "Navigation",
+    "subtitle": "Header + 3-tab bar",
+    "group": "Components",
+    "viewport": {
+      "width": 1000,
+      "height": 780
+    }
+  },
+  {
+    "path": "components/text-styles.html",
+    "name": "Text",
+    "subtitle": "10 variants × 4 weight overrides",
+    "group": "Components",
+    "viewport": {
+      "width": 940,
+      "height": 640
+    }
+  }
+]

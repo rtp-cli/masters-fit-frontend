@@ -15,8 +15,18 @@ Run the relevant section for what you're shipping. For a full release (app + bac
 ## 0. Confirm you're on the code that will ship
 
 ```bash
-git checkout main && git pull origin main
-git status --short          # must be clean; a dirty tree means uncommitted work won't ship
+git fetch origin
+git log --oneline main..origin/main     # MUST be empty
+git status --short                      # must be clean; a dirty tree means uncommitted work won't ship
+```
+
+**Do not trust local `main`.** On 2026-09-09 a release branch was cut from a local `main` that was
+3 commits behind `origin/main`; the build would have shipped a *regression*, silently reverting
+fixes already live via OTA. `git pull` alone hides this when you are on another branch — the
+check above is what catches it. If you cut a branch earlier in the session, re-verify its base:
+
+```bash
+git log --oneline origin/main..<your-branch>   # should show ONLY your commits
 ```
 
 ## 1. Backend gates (before deploy-backend / deploy-db)
@@ -93,12 +103,57 @@ Backend auto-deploys to Render on merge/push to `main` — there is no manual de
 "deploy" here means "merge to `main`," and this preflight IS the gate. Confirm sections 1–2 are
 green before merging the PR that triggers the deploy.
 
+## 7. Verify the ARTIFACT, not just the config (after the build, before submitting)
+
+Config introspection proves what prebuild *will* consume; store reviewers parse the **binary**.
+When a release changes permissions, entitlements, or usage strings, check the built artifact:
+
+```bash
+# Android — download the .aab from the build, then:
+unzip -p <app>.aab base/manifest/AndroidManifest.xml | strings \
+  | grep -o "android.permission.health.[A-Z_]*" | sort -u
+
+# iOS — download the .ipa, then:
+unzip -q <app>.ipa -d x 'Payload/*.app/Info.plist'
+plutil -extract NSHealthShareUsageDescription raw x/Payload/*.app/Info.plist
+```
+
+**Always run a positive control** — confirm the values that SHOULD be present are found. A bare
+"0 hits" can mean your scan is blind rather than the string being absent.
+
+⚠️ **iOS gotcha:** a config plugin's usage string **overrides** `ios.infoPlist`. The
+`react-native-health` plugin's `healthSharePermission` is what actually lands in the binary, so
+editing only `app.json`'s `infoPlist` key looks fixed and ships unfixed. Edit both.
+
+## 8. Store-console truths (when a release touches permissions or availability)
+
+- **The Play tracks API reports STAGED config, not what users can download.** Mid-review it will
+  happily say `production: vc88 completed` while the console still reads "Last published on
+  <old date>". Never call a build live from that field — read **Publishing overview → Submission
+  activity**.
+- **Play's Health apps declaration is BUNDLE-DRIVEN.** Steps 1-2 are generated from your uploaded
+  bundles; there is no checkbox to remove a data type. A permission leaves that form only when a
+  bundle without it is uploaded. Check **Policy status** first — "No issues found" is stronger and
+  faster proof than inspecting the declaration form.
+- **Managed publishing means approval ≠ release.** Both Play (Publish button) and ASC ("Manually
+  release this version") hold their own gate. Plan for two.
+
+## 9. OTA runtime alignment (whenever you bump `version`)
+
+`runtimeVersion.policy` is `appVersion`, so **the version string IS the OTA runtime**. Bumping
+`version` for one platform splits the cohorts: a JS fix then needs TWO `eas update` publishes
+(one per version tree) to reach everyone, and a single publish silently covers only half your
+users. Either ship both platforms at the new version, or keep the version and let the store's
+build number distinguish the release. Realignment is **per-install as people update**, not
+instant at publish.
+
 ## ✅ Output
 
 Produce a short go/no-go summary:
 - Each gate: PASS / FAIL / N-A, with the tsc baseline count and any new errors.
 - Schema diff verdict (empty / additive / destructive).
-- Env + version decisions.
+- Env + version decisions, including the OTA runtime-alignment call (§9).
+- Artifact verification result if permissions/entitlements changed (§7).
 - A one-line verdict: **safe to ship**, or **blocked on X**.
 
 Then hand off to the specific deploy skill (`deploy-ios`, `deploy-android`, `deploy-backend`,
