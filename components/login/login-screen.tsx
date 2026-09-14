@@ -340,7 +340,9 @@ export const LoginScreen = () => {
                   fontSize: 13,
                   lineHeight: 18,
                   fontWeight: "600",
-                  color: colors.brand.primary,
+                  color: colors.text.secondary,
+                  textDecorationLine: "underline",
+                  textDecorationStyle: "solid",
                   textAlign: "center",
                 }}
               >
