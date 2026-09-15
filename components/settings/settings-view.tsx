@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/app/_layout";
 import { SharedWorkoutsSection } from "@/components/share";
@@ -64,6 +65,7 @@ export default function SettingsView({
 
   // Scroll to top ref
   const scrollViewRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
 
 
 
@@ -398,6 +400,11 @@ export default function SettingsView({
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"
+        // Android draws edge-to-edge, so the last rows of this screen sat under
+        // the navigation bar: the version line was half-covered and the OTA
+        // update id below it was hidden entirely. The extra 24 keeps Delete
+        // Account clear of the bar too, rather than flush against it.
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         refreshControl={
           <RefreshControl
             refreshing={loading.profileLoading}
