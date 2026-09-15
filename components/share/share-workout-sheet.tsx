@@ -91,7 +91,7 @@ export default function ShareWorkoutSheet({
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = Math.min(Math.round(screenWidth * 0.74), 320);
 
-  const [showWeights, setShowWeights] = useState(false);
+  const [showPerformance, setShowPerformance] = useState(false);
   const [showStreak, setShowStreak] = useState(true);
   const [nameStyle, setNameStyle] = useState<ShareNameStyle>("first");
 
@@ -103,8 +103,8 @@ export default function ShareWorkoutSheet({
   const params: ShareRequestParams = {
     planDayId,
     kind,
-    // planned cards never carry weights (§4.2) — force off regardless of toggle
-    showWeights: kind === "planned" ? false : showWeights,
+    // A planned card has nothing logged to show, so the toggle can't apply.
+    showPerformance: kind === "planned" ? false : showPerformance,
     showStreak,
     nameStyle,
   };
@@ -119,17 +119,17 @@ export default function ShareWorkoutSheet({
     if (!url) setPreviewFailed(true); // backend unreachable / share routes not up
     setLoadingPreview(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planDayId, kind, showWeights, showStreak, nameStyle]);
+  }, [planDayId, kind, showPerformance, showStreak, nameStyle]);
 
   useEffect(() => {
     if (visible) refreshPreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, showWeights, showStreak, nameStyle]);
+  }, [visible, showPerformance, showStreak, nameStyle]);
 
   // Reset toggles each time the sheet opens fresh.
   useEffect(() => {
     if (visible) {
-      setShowWeights(false);
+      setShowPerformance(false);
       setShowStreak(true);
       setNameStyle("first");
     }
@@ -262,17 +262,19 @@ export default function ShareWorkoutSheet({
           {kind !== "planned" ? (
             <View className="flex-row items-center justify-between px-6 py-3 border-t border-neutral-light-2">
               <View className="flex-1 pr-4">
-                <Text className="text-base text-text-primary">Show weights</Text>
-                <Text className="text-sm text-text-muted mt-0.5">Off by default</Text>
+                <Text className="text-base text-text-primary">Show performance</Text>
+                <Text className="text-sm text-text-muted mt-0.5">
+                  Sets, reps and loads. Off by default.
+                </Text>
               </View>
               <Switch
-                value={showWeights}
-                onValueChange={setShowWeights}
+                value={showPerformance}
+                onValueChange={setShowPerformance}
                 trackColor={{ false: colors.neutral.medium[1], true: successColor }}
                 thumbColor={Platform.OS === "android" ? colors.text.primary : undefined}
                 ios_backgroundColor={colors.neutral.medium[1]}
-                accessibilityLabel="Show weights on the card"
-                accessibilityState={{ checked: showWeights }}
+                accessibilityLabel="Show performance on the card"
+                accessibilityState={{ checked: showPerformance }}
               />
             </View>
           ) : null}
