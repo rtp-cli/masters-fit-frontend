@@ -10,7 +10,14 @@ export type ShareNameStyle = "first" | "full" | "anonymous";
 export interface ShareRequestParams {
   planDayId?: number;
   kind: ShareKind;
-  showWeights: boolean;
+  /**
+   * Show what was actually lifted — loads AND reps together. Named for what the
+   * user is deciding, not the column behind it: the card now reads
+   * "3 × 6-8 @ 40-50 lb" from the logs, where it used to show a prescribed
+   * weight alone. The server still accepts the old `showWeights` key, so an
+   * older app build keeps working.
+   */
+  showPerformance: boolean;
   showStreak: boolean;
   nameStyle: ShareNameStyle;
 }
@@ -54,7 +61,7 @@ export async function fetchSharePreview(
 /**
  * Mint (or reuse) a published public link. Called ONLY on an explicit
  * Share / Copy link / Save image tap — never on sheet open (§3.3). Idempotent
- * server-side per (planDayId, kind, showWeights, showStreak, nameStyle).
+ * server-side per (planDayId, kind, showPerformance, showStreak, nameStyle).
  */
 export async function createShareLink(
   params: ShareRequestParams
