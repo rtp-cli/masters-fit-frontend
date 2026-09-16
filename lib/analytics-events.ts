@@ -21,6 +21,13 @@ export const AnalyticsEvent = {
   GENERATION_COMPLETED: "workout_generation_completed",
   GENERATION_FAILED: "workout_generation_failed",
   GENERATION_MODAL_DISMISSED: "workout_generation_modal_dismissed",
+  // [AN-05] The moment a finished plan is actually put in front of the user.
+  // Fired from the single landing chokepoint (background-job-context's
+  // landAfterGeneration), so it covers all three ways a reveal can happen.
+  // This is the funnel step between "plan generated" and "workout started" —
+  // without it we cannot tell a user who never saw their plan from one who saw
+  // it and walked away.
+  PLAN_REVEAL_SHOWN: "plan_reveal_shown",
 
   // ── Subscription / paywall funnel (client intent; backend owns the verified purchase) ──
   PAYWALL_VIEWED: "paywall_viewed",
@@ -100,6 +107,17 @@ export interface AnalyticsEventProps {
     scope: string;
     ms_since_start?: number;
   };
+  [AnalyticsEvent.PLAN_REVEAL_SHOWN]: {
+    /** "day" lands on the workout tab, "week" on the calendar grid. */
+    scope: string;
+    /**
+     * How the reveal was reached: "auto" = the 1.5s beat after completion with
+     * the modal open, "view_button" = the modal's "View Your Workout", and
+     * "dock_chip" = returning via the minimized chip. The split matters: a
+     * dock_chip reveal means the user had already left the app once.
+     */
+    entry: "auto" | "view_button" | "dock_chip";
+  };
 
   [AnalyticsEvent.PAYWALL_VIEWED]: { source?: string; offering_id?: string };
   [AnalyticsEvent.CHECKOUT_STARTED]: {
@@ -143,6 +161,14 @@ export interface AnalyticsEventProps {
   [AnalyticsEvent.EXERCISE_LOGGED]: {
     workout_id?: number;
     exercise_id?: number;
+    /**
+     * 1-based position of this log within the session. `log_index === 1` is the
+     * activation moment — the first exercise this user has ever committed in
+     * this session. Previously "first log" could only be derived downstream by
+     * joining against workout_started, which made the activation funnel
+     * unanswerable without a warehouse.
+     */
+    log_index?: number;
   };
 
   [AnalyticsEvent.WORKOUT_LOG_EDITED]: {

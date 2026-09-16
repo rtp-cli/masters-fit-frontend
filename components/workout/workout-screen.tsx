@@ -823,6 +823,8 @@ export function WorkoutScreen() {
     setExerciseTimer(0);
     workoutStartTime.current = now;
     exerciseStartTime.current = now;
+    // [AN-05] Fresh session — the next committed log is the activation moment.
+    sessionLogCountRef.current = 0;
     // Set current workout data BEFORE marking workout as in progress
     if (workout) {
       const currentBlock = workout.blocks[0]; // Start with first block
@@ -917,15 +919,22 @@ export function WorkoutScreen() {
   const toApiSets = (setsToStrip: ExerciseSet[]) =>
     setsToStrip.map(({ isCompleted: _isCompleted, ...rest }) => rest);
 
+  // [AN-05] Counts committed logs within the current session so the first one
+  // is identifiable in the event itself. Reset in startWorkout.
+  const sessionLogCountRef = useRef(0);
+
   // [AN-04b] One `exercise_logged` per real (performance-data) exercise log.
   // Fired only after a successful persist and only from the standard/circuit
   // paths — completion-only blocks (warmup/cooldown) are intentionally excluded,
   // matching how the persistence path already treats them for analytics.
   // workout_id uses workout.workoutId to join with the "Workout Started" event.
+  // [AN-05] log_index === 1 is the activation moment.
   const fireExerciseLogged = (exerciseId?: number) => {
+    sessionLogCountRef.current += 1;
     trackEvent(AnalyticsEvent.EXERCISE_LOGGED, {
       workout_id: workout?.workoutId,
       exercise_id: exerciseId,
+      log_index: sessionLogCountRef.current,
     });
   };
 

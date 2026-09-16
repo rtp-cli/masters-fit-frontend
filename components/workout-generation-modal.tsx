@@ -425,7 +425,8 @@ export default function WorkoutGenerationModal() {
   const handleViewWorkout = () => {
     setShowCancelConfirm(false);
     landAfterGeneration(
-      currentJob?.type === "daily-regeneration" ? "day" : "week"
+      currentJob?.type === "daily-regeneration" ? "day" : "week",
+      "view_button"
     );
   };
   const handleDismiss = () => {
