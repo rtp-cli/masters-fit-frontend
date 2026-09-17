@@ -14,6 +14,7 @@ import React, {
 import { LIMITS, TIMEOUTS } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { useGenerationLifecycleEvents } from "@/hooks/use-generation-lifecycle-events";
+import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import {
   trackGenerationModalDismissed,
   trackGenerationStarted,
@@ -31,6 +32,9 @@ const GENERATION_JOB_TYPES: BackgroundJob["type"][] = [
 // and the dock chip's ready copy (Task 2). "day" = single-day (daily-regen),
 // "week" = full-week (generation / regeneration).
 export type GenerationScope = "day" | "week";
+
+/** How the user arrived at the post-generation reveal. See PLAN_REVEAL_SHOWN. */
+export type RevealEntry = "auto" | "view_button" | "dock_chip";
 
 const scopeForJobType = (type: BackgroundJob["type"]): GenerationScope =>
   type === "daily-regeneration" ? "day" : "week";
@@ -97,7 +101,7 @@ interface BackgroundJobContextType {
 
   // ── Post-generation landing + "Just generated" badge (Task 1) ─────────────
   // Route to the right tab by scope and flag the landed surface as fresh.
-  landAfterGeneration: (scope: GenerationScope) => void;
+  landAfterGeneration: (scope: GenerationScope, entry?: RevealEntry) => void;
   justGenerated: GenerationScope | null;
   clearJustGenerated: () => void;
 
@@ -204,19 +208,25 @@ export function BackgroundJobProvider({
   // Route to the scope-appropriate tab and flag the landed surface. Used by
   // the modal's "View Your Workout" button, the foreground completion beat,
   // and the dock chip's "View" action.
-  const landAfterGeneration = useCallback((scope: GenerationScope) => {
-    isModalOpenRef.current = false;
-    setIsGenerationModalOpen(false);
-    setReadyChip(null);
-    setJustGenerated(scope);
-    if (scope === "day") {
-      routerRef.current.replace("/(tabs)/workout");
-    } else {
-      routerRef.current.replace("/(tabs)/calendar");
-      // Re-select today in the month grid on arrival.
-      tabEvents.emit("selectToday:calendar");
-    }
-  }, []);
+  const landAfterGeneration = useCallback(
+    (scope: GenerationScope, entry: RevealEntry = "auto") => {
+      isModalOpenRef.current = false;
+      setIsGenerationModalOpen(false);
+      setReadyChip(null);
+      setJustGenerated(scope);
+      // [AN-05] The plan is now in front of the user. This is the funnel step
+      // between generation completing and the workout starting.
+      trackEvent(AnalyticsEvent.PLAN_REVEAL_SHOWN, { scope, entry });
+      if (scope === "day") {
+        routerRef.current.replace("/(tabs)/workout");
+      } else {
+        routerRef.current.replace("/(tabs)/calendar");
+        // Re-select today in the month grid on arrival.
+        tabEvents.emit("selectToday:calendar");
+      }
+    },
+    [],
+  );
 
   // Computed values
   const activeJobs = jobs.filter(

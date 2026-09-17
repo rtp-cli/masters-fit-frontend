@@ -154,7 +154,7 @@ export default function GenerationDockChip() {
   const handlePress = () => {
     if (showReady) {
       const id = readyChip!.id;
-      landAfterGeneration(readyChip!.scope);
+      landAfterGeneration(readyChip!.scope, "dock_chip");
       dismissReadyChip();
       removeJob(id);
     } else {

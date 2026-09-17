@@ -117,6 +117,46 @@ export async function trackWorkoutStarted(
 // the backend, which emits "Workout Completed" from logs.service — it is intentionally
 // NOT a client event (see the note in lib/analytics-events.ts).
 
+// ==================== Durable event mirror ====================
+
+/**
+ * Write a client event to Postgres alongside the Mixpanel send.
+ *
+ * Why: the client Mixpanel SDK only initialises in production builds, and even
+ * then the data lands in a separate tool. The activation funnel question ("of
+ * the people who got a plan, how many ever started it?") has to be answerable
+ * with a SQL query against prod, so the events that make up that funnel get a
+ * durable copy here. See backend src/models/analytics-event.schema.ts.
+ *
+ * This deliberately does NOT re-emit to Mixpanel — the SDK already did that.
+ *
+ * Fire-and-forget by design: never awaited by call sites, never throws. Losing
+ * an analytics row must not disturb the screen the user is on.
+ */
+export async function recordClientEvent(
+  eventName: string,
+  properties?: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await apiRequest<AnalyticsResponse>("/analytics/event", {
+      method: "POST",
+      body: JSON.stringify({
+        event_name: eventName,
+        // Idempotency key: apiRequest retries once after a token refresh, which
+        // would otherwise double-count the very funnel steps this exists to
+        // measure. Random + time is enough to be unique per emission.
+        client_event_id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        properties: properties ?? undefined,
+        occurred_at: new Date().toISOString(),
+      }),
+    });
+  } catch {
+    // Intentionally silent. This is a best-effort mirror; Mixpanel already has
+    // the event, and a failed write here is not worth a log line on every
+    // offline tap.
+  }
+}
+
 // ==================== Analytics Utilities ====================
 
 export const AnalyticsUtils = {

@@ -1,3 +1,4 @@
+import { recordClientEvent } from "./analytics";
 import { track } from "./mixpanel";
 
 /**
@@ -21,6 +22,13 @@ export const AnalyticsEvent = {
   GENERATION_COMPLETED: "workout_generation_completed",
   GENERATION_FAILED: "workout_generation_failed",
   GENERATION_MODAL_DISMISSED: "workout_generation_modal_dismissed",
+  // [AN-05] The moment a finished plan is actually put in front of the user.
+  // Fired from the single landing chokepoint (background-job-context's
+  // landAfterGeneration), so it covers all three ways a reveal can happen.
+  // This is the funnel step between "plan generated" and "workout started" —
+  // without it we cannot tell a user who never saw their plan from one who saw
+  // it and walked away.
+  PLAN_REVEAL_SHOWN: "plan_reveal_shown",
 
   // ── Subscription / paywall funnel (client intent; backend owns the verified purchase) ──
   PAYWALL_VIEWED: "paywall_viewed",
@@ -100,6 +108,17 @@ export interface AnalyticsEventProps {
     scope: string;
     ms_since_start?: number;
   };
+  [AnalyticsEvent.PLAN_REVEAL_SHOWN]: {
+    /** "day" lands on the workout tab, "week" on the calendar grid. */
+    scope: string;
+    /**
+     * How the reveal was reached: "auto" = the 1.5s beat after completion with
+     * the modal open, "view_button" = the modal's "View Your Workout", and
+     * "dock_chip" = returning via the minimized chip. The split matters: a
+     * dock_chip reveal means the user had already left the app once.
+     */
+    entry: "auto" | "view_button" | "dock_chip";
+  };
 
   [AnalyticsEvent.PAYWALL_VIEWED]: { source?: string; offering_id?: string };
   [AnalyticsEvent.CHECKOUT_STARTED]: {
@@ -143,6 +162,14 @@ export interface AnalyticsEventProps {
   [AnalyticsEvent.EXERCISE_LOGGED]: {
     workout_id?: number;
     exercise_id?: number;
+    /**
+     * 1-based position of this log within the session. `log_index === 1` is the
+     * activation moment — the first exercise this user has ever committed in
+     * this session. Previously "first log" could only be derived downstream by
+     * joining against workout_started, which made the activation funnel
+     * unanswerable without a warehouse.
+     */
+    log_index?: number;
   };
 
   [AnalyticsEvent.WORKOUT_LOG_EDITED]: {
@@ -193,6 +220,26 @@ export interface AnalyticsEventProps {
 }
 
 /**
+ * Events that additionally get a durable Postgres row via the backend mirror.
+ *
+ * Deliberately a SHORT allow-list, not "everything". Every entry costs one HTTP
+ * request at emission time, and high-frequency events (screen_viewed fires on
+ * every navigation) would turn that into meaningful battery and server load for
+ * no analytical gain.
+ *
+ * The rule for adding one: it is a step in a funnel someone needs to answer with
+ * a SQL query against prod. Today that is the activation funnel -- plan
+ * generated, reveal seen, workout started, first exercise logged. workout_started
+ * is absent on purpose: it is backend-owned and already persisted server-side by
+ * the same mirror.
+ */
+const PERSISTED_EVENTS: ReadonlySet<string> = new Set<string>([
+  AnalyticsEvent.GENERATION_COMPLETED,
+  AnalyticsEvent.PLAN_REVEAL_SHOWN,
+  AnalyticsEvent.EXERCISE_LOGGED,
+]);
+
+/**
  * Type-checked event tracking. Prefer this over the raw `track` in lib/mixpanel so
  * event names and property shapes stay consistent with the registry above.
  */
@@ -206,6 +253,14 @@ export function trackEvent<E extends AnalyticsEventName>(
 ): void {
   const [props] = args as [Record<string, unknown>?];
   track(event, props);
+  if (PERSISTED_EVENTS.has(event)) {
+    // Fire-and-forget. The .catch is not redundant with recordClientEvent's own
+    // try/catch: a bare `void promise` registers no rejection handler, so if that
+    // function ever grows a path that rejects, the app takes an unhandled
+    // rejection. Analytics must not be able to do that, and this call site
+    // should not depend on remembering the callee's contract.
+    recordClientEvent(event, props).catch(() => {});
+  }
 }
 
 /** Convenience for the very common screen-view event. */
