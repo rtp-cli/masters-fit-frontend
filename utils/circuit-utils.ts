@@ -192,28 +192,29 @@ export function getRoundCompleteButtonText(
 
 /**
  * Whether a circuit block currently has a per-round action to show (Complete
- * Round / Complete Interval / Undo, or the EMOM manual finish). Used to decide
- * whether the fixed footer shows the round-action pill as the primary button
- * and demotes "Complete Circuit" to a link, or falls back to Complete Circuit
- * as the primary button. Mirrors the render conditions in CircuitRoundAction so
- * the two never disagree.
+ * Round / Complete Interval, or the EMOM manual finish). Used to decide whether
+ * the fixed footer shows the round-action pill as the primary button and demotes
+ * "Complete Circuit" to a link, or falls back to Complete Circuit as the primary
+ * button. Mirrors the render conditions in CircuitRoundAction so the two never
+ * disagree.
+ *
+ * Undo used to be part of this decision — it took over the primary slot, which
+ * meant it BLOCKED the next round for the whole undo window (worst on tabata,
+ * EMOM and AMRAP, where the pace is highest). It now drains in the
+ * "Complete Circuit" row instead (UndoDrainStrip), so the primary slot is
+ * governed by the round label alone and canUndoRound is no longer an input.
  */
 export function isRoundActionVisible(
   block: WorkoutBlockWithExercises,
-  sessionData: { rounds: CircuitRound[]; currentRound: number; targetRounds?: number; isCompleted: boolean },
-  canUndoRound: boolean
+  sessionData: { rounds: CircuitRound[]; currentRound: number; targetRounds?: number; isCompleted: boolean }
 ): boolean {
   if (sessionData.isCompleted) return false;
 
   const currentRound = sessionData.rounds[sessionData.currentRound - 1];
-  const isCurrentRoundCompleted = currentRound?.isCompleted ?? false;
-  if (!(canUndoRound || !isCurrentRoundCompleted)) return false;
+  if (currentRound?.isCompleted ?? false) return false;
 
-  // EMOM always shows its manual finish / Undo while the round is open.
+  // EMOM always shows its manual finish while the round is open.
   if (block.blockType === "emom") return true;
-
-  // Undo is available regardless of the (possibly null) complete-round label.
-  if (canUndoRound) return true;
 
   // Otherwise the button only shows when there's a non-null label to display.
   return (

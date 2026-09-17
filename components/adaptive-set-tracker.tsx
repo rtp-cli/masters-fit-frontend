@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Text, TextInput, TouchableOpacity,View } from "react-native";
 
 import SetStepperFields from "@/components/set-stepper-fields";
@@ -23,8 +23,11 @@ interface AdaptiveSetTrackerProps {
     duration: number;
     isComplete: boolean;
   }) => void;
-  /** [T5-2] Fires when the user checks off the final remaining set. */
-  onAllSetsCompleted?: () => void;
+  /** [T5-2] Fires when the user checks off the final remaining set. Receives
+   *  the authoritative set list — see the note in toggleSetCompleted. */
+  onAllSetsCompleted?: (finalSets: ExerciseSet[]) => void;
+  /** Hand the parent the new "up next" row so it can scroll it into view. */
+  onNextSetRowChange?: (node: View | null) => void;
   blockType?: string;
 }
 
@@ -39,6 +42,7 @@ export default function AdaptiveSetTracker({
   onSetsChange,
   onProgressUpdate,
   onAllSetsCompleted,
+  onNextSetRowChange,
 }: AdaptiveSetTrackerProps) {
   const colors = useThemeColors();
   const loggingType = getExerciseLoggingType(exercise);
@@ -65,9 +69,28 @@ export default function AdaptiveSetTracker({
     String(exercise.distanceM || 0)
   );
 
+  // [SPEC §4] The row currently carrying the UP NEXT emphasis, so checking a
+  // set can scroll the NEXT one into view (the footer hides it by set 3).
+  const nextSetRowRef = useRef<View | null>(null);
+
   // [T5-1] Which traditional set row is expanded for editing (steppers).
   // Collapsed rows show just the prescription + the ✓ target.
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  // [SPEC §4] Keep the UP NEXT row on screen wherever it lands — after a set is
+  // checked, when re-entering a part-done exercise, and after an Undo returns
+  // here with the last set un-checked, which moves the emphasis DOWN below the
+  // footer. Index 0 is the one case to leave alone: set 1 of an untouched
+  // exercise is already in frame under its heading, and the parent is scrolling
+  // there anyway. Keying on the index (not the exercise) is deliberate — an
+  // Undo return IS an exercise change, so guarding on that suppressed the exact
+  // case this is for.
+  const nextPendingIndex = sets.findIndex((s) => !s.isCompleted);
+  useEffect(() => {
+    if (nextPendingIndex <= 0) return;
+    const t = setTimeout(() => onNextSetRowChange?.(nextSetRowRef.current), 80);
+    return () => clearTimeout(t);
+  }, [nextPendingIndex, onNextSetRowChange]);
 
   // Initialize duration sets if needed
   useEffect(() => {
@@ -144,7 +167,12 @@ export default function AdaptiveSetTracker({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setExpandedIndex(null);
       if (updatedSets.length > 0 && updatedSets.every((s) => s.isCompleted)) {
-        onAllSetsCompleted?.();
+        // MUST pass updatedSets: onSetsChange above only SCHEDULES the parent
+        // state update, and this fires in the same tick, so the parent's
+        // currentProgress.sets still lacks the set that just triggered this.
+        // Reading it there dropped the final set from every auto-completed
+        // exercise's log (silently, since T5-2).
+        onAllSetsCompleted?.(updatedSets);
       }
     }
   };
@@ -265,12 +293,19 @@ export default function AdaptiveSetTracker({
         {sets.map((set, index) => {
           const isDone = !!set.isCompleted;
           const isExpanded = expandedIndex === index && !isDone;
+          const isNext = index === nextPendingIndex;
           return (
             <View
               key={index}
-              className="mb-3 rounded-xl border bg-background"
+              ref={isNext ? nextSetRowRef : undefined}
+              className="mb-3 rounded-xl bg-background"
               style={{
-                borderColor: isDone ? successColor : colors.neutral.medium[1],
+                borderWidth: isNext ? 2 : 1,
+                borderColor: isDone
+                  ? successColor
+                  : isNext
+                    ? colors.text.primary
+                    : colors.neutral.medium[1],
                 backgroundColor: isDone ? successColor + "14" : undefined,
               }}
             >
@@ -288,40 +323,70 @@ export default function AdaptiveSetTracker({
                   <View
                     className="size-7 rounded-full items-center justify-center mr-3"
                     style={{
-                      backgroundColor:
-                        (isDone ? successColor : colors.brand.primary) + "30",
+                      backgroundColor: isNext
+                        ? colors.text.primary
+                        : (isDone ? successColor : colors.brand.primary) + "30",
                     }}
                   >
                     <Text
                       className="text-xs font-semibold"
                       style={{
-                        color: isDone ? successColor : colors.brand.primary,
+                        color: isNext
+                          ? colors.contentOnPrimary
+                          : isDone
+                            ? successColor
+                            : colors.brand.primary,
                       }}
                     >
                       {set.setNumber}
                     </Text>
                   </View>
-                  <Text className="text-base font-semibold text-text-primary">
-                    {set.reps} reps
-                    {showWeightInput ? ` · ${set.weight} lb` : ""}
-                  </Text>
-                  {!isDone && (
-                    <Ionicons
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
-                      size={14}
-                      color={colors.text.muted}
-                      style={{ marginLeft: 6 }}
-                    />
-                  )}
+                  <View className="flex-1">
+                    <View className="flex-row items-center">
+                      <Text className="text-base font-semibold text-text-primary">
+                        {set.reps} reps
+                        {showWeightInput ? ` · ${set.weight} lb` : ""}
+                      </Text>
+                      {!isDone && (
+                        <Ionicons
+                          name={isExpanded ? "chevron-up" : "chevron-down"}
+                          size={14}
+                          color={colors.text.muted}
+                          style={{ marginLeft: 6 }}
+                        />
+                      )}
+                    </View>
+                    {isNext && (
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "700",
+                          letterSpacing: 0.88,
+                          color: colors.text.muted,
+                          marginTop: 2,
+                        }}
+                        maxFontSizeMultiplier={1.3}
+                      >
+                        UP NEXT
+                      </Text>
+                    )}
+                  </View>
                 </TouchableOpacity>
 
                 {/* The one big tap: mark this set done (≥44×44 target) */}
+                {/* Never fill this ring on the up-next row: a filled circle
+                    with a check is the app's established "this set is logged"
+                    state, and borrowing it would make the emphasised row read
+                    as already complete (SPEC §4). */}
                 <TouchableOpacity
-                  className="size-11 rounded-full items-center justify-center border-2"
+                  className="size-11 rounded-full items-center justify-center"
                   style={{
+                    borderWidth: isNext ? 2.5 : 2,
                     borderColor: isDone
                       ? successColor
-                      : colors.neutral.medium[2],
+                      : isNext
+                        ? colors.text.primary
+                        : colors.neutral.medium[2],
                     backgroundColor: isDone ? successColor : "transparent",
                   }}
                   onPress={() => toggleSetCompleted(index)}
@@ -339,7 +404,9 @@ export default function AdaptiveSetTracker({
                     color={
                       isDone
                         ? colors.contentOnPrimary
-                        : colors.neutral.medium[2]
+                        : isNext
+                          ? colors.text.primary
+                          : colors.neutral.medium[2]
                     }
                   />
                 </TouchableOpacity>
