@@ -2,7 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   Text,
   TextInput,
@@ -67,6 +70,24 @@ export default function AddAnotherWorkoutSheet({
   const [focus, setFocus] = useState("");
   const [durationMinutes, setDurationMinutes] =
     useState<number>(DURATION_DEFAULT);
+  // Tracked so the backdrop can drop the keyboard instead of closing the sheet
+  // and throwing away what the user typed.
+  const [keyboardUp, setKeyboardUp] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardUp(true),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardUp(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Reset between openings so yesterday's "upper body" doesn't prefill tonight.
   useEffect(() => {
@@ -88,13 +109,29 @@ export default function AddAnotherWorkoutSheet({
       animationType="fade"
       onRequestClose={onClose}
     >
+      {/* Lifts the card clear of the keyboard. Without this the Generate
+          button sits underneath it and the sheet is unusable the moment the
+          user types anything. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
       <Pressable
         className={`flex-1 justify-center items-center ${isDark ? "dark" : ""}`}
         style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        onPress={submitting ? undefined : onClose}
+        // Backdrop: drop the keyboard FIRST if it is up. Closing here while the
+        // user is mid-sentence discards what they typed, and "tap outside" is
+        // exactly what people reach for to dismiss a keyboard.
+        onPress={
+          submitting ? undefined : keyboardUp ? Keyboard.dismiss : onClose
+        }
       >
-        {/* Stops a tap inside the card closing the sheet. */}
+        {/* Stops a tap inside the card closing the sheet, and gives the user a
+            way to dismiss the keyboard: the input is multiline, so Return
+            inserts a newline rather than closing it. */}
         <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
           className="bg-surface rounded-2xl mx-6 w-[85%] overflow-hidden border border-neutral-medium-1"
           style={{
             shadowColor: "#000",
@@ -134,6 +171,12 @@ export default function AddAnotherWorkoutSheet({
               placeholder="e.g. upper body, something easy on my knees"
               placeholderTextColor={colors.text.muted}
               multiline
+              // Same combination workout-feedback-card uses for its note field:
+              // multiline for the roomier box, but Return dismisses instead of
+              // inserting a newline. Nobody needs paragraphs here, and without
+              // it the keyboard has no Done key at all.
+              returnKeyType="done"
+              blurOnSubmit
               className="bg-background border border-neutral-medium-1 rounded-xl px-4 py-3 text-text-primary text-base"
               style={{ minHeight: 72, textAlignVertical: "top" }}
             />
@@ -188,6 +231,7 @@ export default function AddAnotherWorkoutSheet({
           </View>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
