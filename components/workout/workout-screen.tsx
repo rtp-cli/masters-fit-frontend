@@ -2297,7 +2297,7 @@ export function WorkoutScreen() {
         <View className="px-6 pt-2">
           {/* "Just generated" badge after a single-day generation. Used to
               float over the deleted hero media; now sits in flow. */}
-          {justGenerated === "day" && (
+          {(justGenerated === "day" || justGenerated === "first") && (
             <View className="mb-4 self-start">
               <JustGeneratedBadge />
             </View>

@@ -15,7 +15,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { images } from "@/assets";
-import { useBackgroundJobs } from "@/contexts/background-job-context";
+import {
+  scopeForJobType,
+  useBackgroundJobs,
+} from "@/contexts/background-job-context";
 import { useWorkoutProgress } from "@/hooks/use-workout-progress";
 import { buildStream, COMPLETION_LINE } from "@/lib/generation-stream";
 import { useThemeColors } from "@/lib/theme";
@@ -424,10 +427,9 @@ export default function WorkoutGenerationModal() {
   // "View Your Workout" — land on the scope-appropriate tab immediately.
   const handleViewWorkout = () => {
     setShowCancelConfirm(false);
-    landAfterGeneration(
-      currentJob?.type === "daily-regeneration" ? "day" : "week",
-      "view_button"
-    );
+    // Derived by the context's own helper so this button can never disagree
+    // with the auto-landing about what kind of generation just finished.
+    landAfterGeneration(scopeForJobType(currentJob?.type), "view_button");
   };
   const handleDismiss = () => {
     closeGenerationModal();

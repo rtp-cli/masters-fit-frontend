@@ -1,4 +1,8 @@
-import { getJobStatus, invalidateActiveWorkoutCache } from "@lib/workouts";
+import {
+  fetchActiveWorkout,
+  getJobStatus,
+  invalidateActiveWorkoutCache,
+} from "@lib/workouts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, {
@@ -20,6 +24,12 @@ import {
   trackGenerationStarted,
 } from "@/lib/generation-analytics";
 import { tabEvents } from "@/lib/tab-events";
+import { formatDateAsString, getCurrentDate } from "@/utils";
+import {
+  type GenerationJobType,
+  type GenerationScope as Scope,
+  scopeForJobType as resolveScope,
+} from "@/utils/generation-scope";
 
 // Job types that represent a workout generation (for analytics + coordination).
 const GENERATION_JOB_TYPES: BackgroundJob["type"][] = [
@@ -28,16 +38,18 @@ const GENERATION_JOB_TYPES: BackgroundJob["type"][] = [
   "daily-regeneration",
 ];
 
-// Scope of a completed generation — drives post-generation landing (Task 1)
-// and the dock chip's ready copy (Task 2). "day" = single-day (daily-regen),
-// "week" = full-week (generation / regeneration).
-export type GenerationScope = "day" | "week";
+// Scope + job-type mapping live in utils/generation-scope so they can be
+// tested without this module's native dependency tree. Re-exported here
+// because the modal and dock chip already import them from this context.
+export type { GenerationJobType, GenerationScope } from "@/utils/generation-scope";
+export { scopeForJobType } from "@/utils/generation-scope";
+
+// [LR-071] How long the reveal will wait to find out whether there is a
+// session today before giving up and showing the week instead.
+const REVEAL_LOOKUP_TIMEOUT_MS = 2500;
 
 /** How the user arrived at the post-generation reveal. See PLAN_REVEAL_SHOWN. */
 export type RevealEntry = "auto" | "view_button" | "dock_chip";
-
-const scopeForJobType = (type: BackgroundJob["type"]): GenerationScope =>
-  type === "daily-regeneration" ? "day" : "week";
 
 export interface JobDayStatus {
   dayNumber: number;
@@ -47,7 +59,7 @@ export interface JobDayStatus {
 
 export interface BackgroundJob {
   id: number;
-  type: "generation" | "regeneration" | "daily-regeneration";
+  type: GenerationJobType;
   status:
     | "pending"
     | "processing"
@@ -101,14 +113,17 @@ interface BackgroundJobContextType {
 
   // ── Post-generation landing + "Just generated" badge (Task 1) ─────────────
   // Route to the right tab by scope and flag the landed surface as fresh.
-  landAfterGeneration: (scope: GenerationScope, entry?: RevealEntry) => void;
-  justGenerated: GenerationScope | null;
+  landAfterGeneration: (
+    scope: Scope,
+    entry?: RevealEntry
+  ) => Promise<void>;
+  justGenerated: Scope | null;
   clearJustGenerated: () => void;
 
   // ── Dock chip "ready" latch (Task 2) ──────────────────────────────────────
   // When generation completes in the background, the chip morphs to "ready"
   // and must persist until tapped — even after the job itself is reaped.
-  readyChip: { id: number; scope: GenerationScope } | null;
+  readyChip: { id: number; scope: Scope } | null;
   dismissReadyChip: () => void;
 }
 
@@ -178,12 +193,12 @@ export function BackgroundJobProvider({
   // Mirror in a ref so the completion handler (a stale-closure callback) can
   // read the live open/closed state to decide foreground vs background landing.
   const isModalOpenRef = useRef(false);
-  const [justGenerated, setJustGenerated] = useState<GenerationScope | null>(
+  const [justGenerated, setJustGenerated] = useState<Scope | null>(
     null,
   );
   const [readyChip, setReadyChip] = useState<{
     id: number;
-    scope: GenerationScope;
+    scope: Scope;
   } | null>(null);
 
   const openGenerationModal = useCallback(() => {
@@ -208,16 +223,69 @@ export function BackgroundJobProvider({
   // Route to the scope-appropriate tab and flag the landed surface. Used by
   // the modal's "View Your Workout" button, the foreground completion beat,
   // and the dock chip's "View" action.
+  /**
+   * [LR-071] Does the active plan have a session dated TODAY?
+   *
+   * The workout tab renders today's plan day and nothing else, so landing
+   * there without one shows the rest-day state. That matters: 5 of 21 first
+   * plans on prod have no session on the day they were generated (the plan
+   * follows the user's chosen available days, so onboarding on a Tuesday with
+   * Mon/Wed/Fri selected starts tomorrow). Sending a quarter of new users to
+   * an empty screen would be worse than the week grid they get today.
+   *
+   * Deliberately uses the SAME helpers the workout screen uses to pick its
+   * day. If these two ever disagree we would route someone to a screen that
+   * then renders empty, which is the exact failure this check exists to stop.
+   */
+  const hasSessionToday = useCallback(async (): Promise<boolean> => {
+    try {
+      // Bounded: this runs at the single most important moment of the funnel,
+      // and a hung request on a flaky connection would leave the user staring
+      // at a finished modal. Losing the race just means the week grid, which
+      // is the pre-LR-071 behaviour.
+      const active = await Promise.race([
+        fetchActiveWorkout(true),
+        new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), REVEAL_LOOKUP_TIMEOUT_MS),
+        ),
+      ]);
+      if (!active?.planDays?.length) return false;
+      const today = getCurrentDate();
+      return active.planDays.some(
+        (day) => formatDateAsString(day.date) === today,
+      );
+    } catch {
+      // Never block the reveal on this. Falling back to the week grid is the
+      // behaviour that shipped before LR-071, so a failure here is a
+      // no-change, not a broken landing.
+      return false;
+    }
+  }, []);
+
   const landAfterGeneration = useCallback(
-    (scope: GenerationScope, entry: RevealEntry = "auto") => {
+    async (scope: Scope, entry: RevealEntry = "auto") => {
       isModalOpenRef.current = false;
       setIsGenerationModalOpen(false);
       setReadyChip(null);
+
+      // [LR-071] A first plan lands on the session itself when there is one to
+      // start today; otherwise it falls back to the week, where the user can at
+      // least see when their first session is.
+      const landOnSession =
+        scope === "day" || (scope === "first" && (await hasSessionToday()));
+
       setJustGenerated(scope);
       // [AN-05] The plan is now in front of the user. This is the funnel step
-      // between generation completing and the workout starting.
-      trackEvent(AnalyticsEvent.PLAN_REVEAL_SHOWN, { scope, entry });
-      if (scope === "day") {
+      // between generation completing and the workout starting. `landed`
+      // separates the two first-plan outcomes so the LR-071 hypothesis is
+      // measurable rather than assumed.
+      trackEvent(AnalyticsEvent.PLAN_REVEAL_SHOWN, {
+        scope,
+        entry,
+        landed: landOnSession ? "session" : "week",
+      });
+
+      if (landOnSession) {
         routerRef.current.replace("/(tabs)/workout");
       } else {
         routerRef.current.replace("/(tabs)/calendar");
@@ -225,7 +293,7 @@ export function BackgroundJobProvider({
         tabEvents.emit("selectToday:calendar");
       }
     },
-    [],
+    [hasSessionToday],
   );
 
   // Computed values
@@ -617,7 +685,7 @@ export function BackgroundJobProvider({
       // watching the timeline modal (foreground), auto-navigate after a brief
       // "ready" beat. If they tapped "Continue Using App" (background), do NOT
       // navigate — latch the ready chip so they return on their own terms.
-      const scope = scopeForJobType(type ?? "generation");
+      const scope = resolveScope(type ?? "generation");
       if (isModalOpenRef.current) {
         setTimeout(() => landAfterGeneration(scope), 1500);
       } else {

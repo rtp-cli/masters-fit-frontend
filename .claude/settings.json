@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm run lint)",
+      "Bash(xcrun simctl io:*)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(git check-ignore:*)"
+    ]
+  }
+}

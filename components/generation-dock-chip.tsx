@@ -10,7 +10,10 @@ import {
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
-import { useBackgroundJobs } from "@/contexts/background-job-context";
+import {
+  scopeForJobType,
+  useBackgroundJobs,
+} from "@/contexts/background-job-context";
 import { useThemeColors } from "@/lib/theme";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -76,19 +79,23 @@ export default function GenerationDockChip() {
       ? doneCount / totalCount
       : (genJob?.progress ?? 0) / 100;
 
-  const scope = showReady
-    ? readyChip!.scope
-    : genJob?.type === "daily-regeneration"
-      ? "day"
-      : "week";
+  // Same helper the context and the modal use, so the three can't drift.
+  const scope = showReady ? readyChip!.scope : scopeForJobType(genJob?.type);
 
+  // A first plan gets its own copy: "your week is ready" undersells the thing
+  // the person has been waiting through onboarding for, and "today's workout"
+  // would be wrong when their first session isn't today.
   const title = showReady
     ? scope === "day"
       ? "Today's workout is ready"
-      : "Your week is ready"
+      : scope === "first"
+        ? "Your plan is ready"
+        : "Your week is ready"
     : scope === "day"
       ? "Building today's workout"
-      : "Building your workouts";
+      : scope === "first"
+        ? "Building your plan"
+        : "Building your workouts";
 
   const subtitle = showReady
     ? "Tap to view"
