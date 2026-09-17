@@ -109,8 +109,19 @@ export interface AnalyticsEventProps {
     ms_since_start?: number;
   };
   [AnalyticsEvent.PLAN_REVEAL_SHOWN]: {
-    /** "day" lands on the workout tab, "week" on the calendar grid. */
+    /**
+     * "first" is the user's very first plan out of onboarding, "day" a
+     * single-day regeneration, "week" a full-week rebuild.
+     */
     scope: string;
+    /**
+     * [LR-071] Where the reveal actually landed. A "first" reveal only reaches
+     * the session when the plan has one dated today (16 of 21 first plans on
+     * prod do); otherwise it falls back to the week grid. Splitting these is
+     * what makes "does landing on the session raise activation?" answerable
+     * instead of a belief.
+     */
+    landed?: "session" | "week";
     /**
      * How the reveal was reached: "auto" = the 1.5s beat after completion with
      * the modal open, "view_button" = the modal's "View Your Workout", and
