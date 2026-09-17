@@ -2266,6 +2266,10 @@ export function WorkoutScreen() {
                 next workout" — a dead end at exactly the moment the most
                 engaged user on record asked for the opposite. Only offered for
                 TODAY: "add another" makes no sense while reviewing a past day. */}
+            {/* [LR-069] Offer another session, or tell them to come back —
+                never both. "Add another workout" and "check back tomorrow" side
+                by side contradict each other. Only TODAY gets the offer;
+                "add another" is meaningless while reviewing a past day. */}
             {isToday ? (
               <TouchableOpacity
                 onPress={() => setAddAnotherVisible(true)}
@@ -2277,10 +2281,11 @@ export function WorkoutScreen() {
                   + Add another workout
                 </Text>
               </TouchableOpacity>
-            ) : null}
-            <Text className="text-text-muted text-center text-sm px-6 mt-4">
-              Check back tomorrow for your next workout.
-            </Text>
+            ) : (
+              <Text className="text-text-muted text-center text-sm px-6 mt-4">
+                Check back tomorrow for your next workout.
+              </Text>
+            )}
           </>
         }
       />

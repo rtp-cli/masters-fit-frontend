@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 
+import CustomSlider from "@/components/ui/slider";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 
@@ -25,12 +26,21 @@ import { useTheme } from "@/lib/theme-context";
  *    type and duration of workout I want to generate, more impromptu."
  *   — app_feedback id 4, user 109
  *
- * So: two inputs, both optional-feeling, one button. Duration is chips rather
- * than a slider because picking "20" should be one tap, not a drag.
+ * So: two inputs, both optional-feeling, one button.
+ *
+ * Duration uses CustomSlider with the same bounds as the Adjust flow's duration
+ * override (profile-override-form) and onboarding: 15-90 in steps of 5. It
+ * started as four chips, which read faster but could only offer four values —
+ * somebody with 25 minutes had no way to say so — and introduced a control the
+ * app does not otherwise use for duration.
  */
 
-/** Minutes offered. Short options first — this is the "I have a spare 20" case. */
-const DURATIONS = [15, 20, 30, 45] as const;
+/** Matches the Adjust flow and onboarding. */
+const DURATION_MIN = 15;
+const DURATION_MAX = 90;
+const DURATION_STEP = 5;
+/** The "I have a spare 20 minutes" case this feature was asked for. */
+const DURATION_DEFAULT = 20;
 
 interface AddAnotherWorkoutSheetProps {
   visible: boolean;
@@ -50,13 +60,14 @@ export default function AddAnotherWorkoutSheet({
   const { isDark } = useTheme();
 
   const [focus, setFocus] = useState("");
-  const [durationMinutes, setDurationMinutes] = useState<number>(20);
+  const [durationMinutes, setDurationMinutes] =
+    useState<number>(DURATION_DEFAULT);
 
   // Reset between openings so yesterday's "upper body" doesn't prefill tonight.
   useEffect(() => {
     if (visible) {
       setFocus("");
-      setDurationMinutes(20);
+      setDurationMinutes(DURATION_DEFAULT);
     }
   }, [visible]);
 
@@ -127,40 +138,17 @@ export default function AddAnotherWorkoutSheet({
           </View>
 
           <View className="px-6 pt-4 pb-2">
-            <Text className="text-sm font-medium text-text-primary mb-2">
+            <Text className="text-sm font-medium text-text-primary mb-3">
               How long have you got?
             </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {DURATIONS.map((minutes) => {
-                const selected = minutes === durationMinutes;
-                return (
-                  <TouchableOpacity
-                    key={minutes}
-                    onPress={() => setDurationMinutes(minutes)}
-                    disabled={submitting}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    accessibilityLabel={`${minutes} minutes`}
-                    className={`px-4 py-2 rounded-full border ${
-                      selected
-                        ? "bg-primary border-primary"
-                        : "bg-background border-neutral-medium-1"
-                    }`}
-                  >
-                    <Text
-                      className="text-sm font-medium"
-                      style={
-                        selected
-                          ? { color: colors.contentOnPrimary }
-                          : { color: colors.text.primary }
-                      }
-                    >
-                      {minutes} min
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <CustomSlider
+              value={durationMinutes}
+              minimumValue={DURATION_MIN}
+              maximumValue={DURATION_MAX}
+              step={DURATION_STEP}
+              unit=" min"
+              onValueChange={setDurationMinutes}
+            />
           </View>
 
           <View className="px-6 pt-5 pb-6">
