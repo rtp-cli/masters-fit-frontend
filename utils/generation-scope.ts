@@ -34,3 +34,27 @@ export const scopeForJobType = (
   if (type === "generation") return "first";
   return "week";
 };
+
+/**
+ * Does this set of plan days contain a session dated today?
+ *
+ * [LR-071] Decides whether a first-plan reveal can land on the workout tab.
+ * That tab renders TODAY's plan day and nothing else, so landing there without
+ * one shows the rest-day state -- and 5 of 21 first plans on prod have no
+ * session on the day they were generated (the plan follows the user's chosen
+ * available days, so onboarding on a Tuesday with Mon/Wed/Fri selected starts
+ * tomorrow).
+ *
+ * Pure so the date comparison -- the part that would silently route someone to
+ * an empty screen -- is testable without a simulator. The caller supplies
+ * `today` and the normaliser from @/utils, so this cannot drift from the
+ * helpers the workout screen itself uses to pick its day.
+ */
+export const planHasSessionOn = (
+  planDays: { date: string | Date }[] | null | undefined,
+  today: string,
+  normalize: (d: string | Date) => string
+): boolean => {
+  if (!planDays?.length) return false;
+  return planDays.some((day) => normalize(day.date) === today);
+};

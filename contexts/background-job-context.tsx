@@ -28,6 +28,7 @@ import { formatDateAsString, getCurrentDate } from "@/utils";
 import {
   type GenerationJobType,
   type GenerationScope as Scope,
+  planHasSessionOn,
   scopeForJobType as resolveScope,
 } from "@/utils/generation-scope";
 
@@ -249,10 +250,10 @@ export function BackgroundJobProvider({
           setTimeout(() => resolve(null), REVEAL_LOOKUP_TIMEOUT_MS),
         ),
       ]);
-      if (!active?.planDays?.length) return false;
-      const today = getCurrentDate();
-      return active.planDays.some(
-        (day) => formatDateAsString(day.date) === today,
+      return planHasSessionOn(
+        active?.planDays,
+        getCurrentDate(),
+        formatDateAsString,
       );
     } catch {
       // Never block the reveal on this. Falling back to the week grid is the
