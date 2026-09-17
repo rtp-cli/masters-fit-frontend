@@ -345,7 +345,7 @@ export function WorkoutScreen() {
    * the minimum distance needed to clear the pinned action bar, and does
    * nothing when the row is already comfortably visible.
    */
-  const revealNextSetRow = (node: View | null) => {
+  const revealNextSetRow = useCallback((node: View | null) => {
     if (!node || !scrollViewRef.current) return;
     node.measureLayout(
       scrollViewRef.current as any,
@@ -366,7 +366,8 @@ export function WorkoutScreen() {
       },
       () => {},
     );
-  };
+    // Reads only refs, so it never needs to be re-created.
+  }, []);
   const exerciseHeadingRef = useRef<View>(null);
   const isResumingRef = useRef(false);
   const circuitHeadingRef = useRef<View>(null);
@@ -970,6 +971,10 @@ export function WorkoutScreen() {
     label: string;
     sublabel?: string;
   } | null>(null);
+  // Set list handed over by handleAllSetsCompleted when it delegates to
+  // completeExercise for the final exercise (see the note there). Consumed
+  // once, then cleared.
+  const setsOverrideRef = useRef<ExerciseSet[] | null>(null);
 
   // [T5-1] isCompleted is client-side only — strip it before the API call.
   const toApiSets = (setsToStrip: ExerciseSet[]) =>
@@ -1040,12 +1045,22 @@ export function WorkoutScreen() {
   };
 
   // All sets checked → complete + advance in one motion (no modal, T5-2).
-  const handleAllSetsCompleted = () => {
+  //
+  // `finalSets` is the authoritative list from the tracker. It CANNOT be read
+  // from currentProgress here: the tracker calls this in the same tick as its
+  // onSetsChange, so the parent's copy is one set behind — which silently
+  // dropped the final set from every auto-completed exercise's log.
+  const handleAllSetsCompleted = (finalSets?: ExerciseSet[]) => {
     if (!currentExercise || !currentProgress) return;
 
+    const authoritativeSets = finalSets ?? currentProgress.sets ?? [];
+
     // Final exercise: run the full completion path (marks the day complete,
-    // shows the summary) — immediate commit, no Undo window.
+    // shows the summary) — immediate commit, no Undo window. The override ref
+    // carries the sets across, since completeExercise is also an onPress
+    // handler and so can't take them as an argument.
     if (currentExerciseIndex >= exercises.length - 1) {
+      setsOverrideRef.current = authoritativeSets;
       completeExercise();
       return;
     }
@@ -1055,9 +1070,7 @@ export function WorkoutScreen() {
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const completedSets = (currentProgress.sets || []).filter(
-      (s) => s.isCompleted,
-    );
+    const completedSets = authoritativeSets.filter((s) => s.isCompleted);
     const payload = {
       planDayExerciseId: currentExercise.id,
       sets: toApiSets(completedSets),
@@ -1338,9 +1351,11 @@ export function WorkoutScreen() {
       // [T5-1] For rep-based exercises, only the sets the user actually
       // checked off count — pre-materialized-but-unchecked rows are NOT
       // logged. Duration-based exercises keep their original behavior.
-      let setsToLog = currentProgress.sets;
+      const progressSets = setsOverrideRef.current ?? currentProgress.sets;
+      setsOverrideRef.current = null;
+      let setsToLog = progressSets;
       if (!isDurationBasedExercise) {
-        setsToLog = (currentProgress.sets || []).filter((s) => s.isCompleted);
+        setsToLog = (progressSets || []).filter((s) => s.isCompleted);
       }
 
       const hasSets = setsToLog && setsToLog.length > 0;
@@ -1403,7 +1418,7 @@ export function WorkoutScreen() {
           label: `Undo · ${currentExercise.exercise.name}`,
           sublabel: isDurationBasedExercise
             ? undefined
-            : `${setsToLog.length} of ${(currentProgress.sets || []).length} sets`,
+            : `${setsToLog.length} of ${(progressSets || []).length} sets`,
         });
 
         const nextIndex = currentExerciseIndex + 1;

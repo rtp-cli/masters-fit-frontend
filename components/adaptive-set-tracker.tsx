@@ -23,8 +23,9 @@ interface AdaptiveSetTrackerProps {
     duration: number;
     isComplete: boolean;
   }) => void;
-  /** [T5-2] Fires when the user checks off the final remaining set. */
-  onAllSetsCompleted?: () => void;
+  /** [T5-2] Fires when the user checks off the final remaining set. Receives
+   *  the authoritative set list — see the note in toggleSetCompleted. */
+  onAllSetsCompleted?: (finalSets: ExerciseSet[]) => void;
   /** Hand the parent the new "up next" row so it can scroll it into view. */
   onNextSetRowChange?: (node: View | null) => void;
   blockType?: string;
@@ -71,10 +72,26 @@ export default function AdaptiveSetTracker({
   // [SPEC §4] The row currently carrying the UP NEXT emphasis, so checking a
   // set can scroll the NEXT one into view (the footer hides it by set 3).
   const nextSetRowRef = useRef<View | null>(null);
+  const revealedForExerciseRef = useRef<number | null>(null);
 
   // [T5-1] Which traditional set row is expanded for editing (steppers).
   // Collapsed rows show just the prescription + the ✓ target.
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  // [SPEC §4] Keep the UP NEXT row on screen whenever it moves — after a set is
+  // checked, and after an Undo returns here with the last set un-checked (which
+  // moves the emphasis DOWN, below the footer). Skipped on the first render for
+  // an exercise, where the parent is already scrolling to its heading.
+  const nextPendingIndex = sets.findIndex((s) => !s.isCompleted);
+  useEffect(() => {
+    if (revealedForExerciseRef.current !== exercise.id) {
+      revealedForExerciseRef.current = exercise.id;
+      return;
+    }
+    if (nextPendingIndex < 0) return;
+    const t = setTimeout(() => onNextSetRowChange?.(nextSetRowRef.current), 60);
+    return () => clearTimeout(t);
+  }, [nextPendingIndex, exercise.id, onNextSetRowChange]);
 
   // Initialize duration sets if needed
   useEffect(() => {
@@ -150,10 +167,13 @@ export default function AdaptiveSetTracker({
     if (!wasCompleted) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setExpandedIndex(null);
-      // After the re-render moves the emphasis down a row, reveal it.
-      setTimeout(() => onNextSetRowChange?.(nextSetRowRef.current), 60);
       if (updatedSets.length > 0 && updatedSets.every((s) => s.isCompleted)) {
-        onAllSetsCompleted?.();
+        // MUST pass updatedSets: onSetsChange above only SCHEDULES the parent
+        // state update, and this fires in the same tick, so the parent's
+        // currentProgress.sets still lacks the set that just triggered this.
+        // Reading it there dropped the final set from every auto-completed
+        // exercise's log (silently, since T5-2).
+        onAllSetsCompleted?.(updatedSets);
       }
     }
   };
@@ -257,10 +277,6 @@ export default function AdaptiveSetTracker({
   // the happy path. Checking the final set triggers auto-advance (T5-2).
   const renderTraditionalSets = () => {
     const doneCount = sets.filter((s) => s.isCompleted).length;
-    // [SPEC §4] The next set to log takes the ink, so it — not the pinned
-    // footer button — reads as the primary action. Sets can be checked out of
-    // order, so this is the first PENDING row, not `doneCount`.
-    const nextPendingIndex = sets.findIndex((s) => !s.isCompleted);
     return (
       <View>
         {/* Target Information */}
