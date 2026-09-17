@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Text, TextInput, TouchableOpacity,View } from "react-native";
 
 import SetStepperFields from "@/components/set-stepper-fields";
@@ -25,6 +25,8 @@ interface AdaptiveSetTrackerProps {
   }) => void;
   /** [T5-2] Fires when the user checks off the final remaining set. */
   onAllSetsCompleted?: () => void;
+  /** Hand the parent the new "up next" row so it can scroll it into view. */
+  onNextSetRowChange?: (node: View | null) => void;
   blockType?: string;
 }
 
@@ -39,6 +41,7 @@ export default function AdaptiveSetTracker({
   onSetsChange,
   onProgressUpdate,
   onAllSetsCompleted,
+  onNextSetRowChange,
 }: AdaptiveSetTrackerProps) {
   const colors = useThemeColors();
   const loggingType = getExerciseLoggingType(exercise);
@@ -64,6 +67,10 @@ export default function AdaptiveSetTracker({
   const [actualDistance, setActualDistance] = useState<string>(
     String(exercise.distanceM || 0)
   );
+
+  // [SPEC §4] The row currently carrying the UP NEXT emphasis, so checking a
+  // set can scroll the NEXT one into view (the footer hides it by set 3).
+  const nextSetRowRef = useRef<View | null>(null);
 
   // [T5-1] Which traditional set row is expanded for editing (steppers).
   // Collapsed rows show just the prescription + the ✓ target.
@@ -143,6 +150,8 @@ export default function AdaptiveSetTracker({
     if (!wasCompleted) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setExpandedIndex(null);
+      // After the re-render moves the emphasis down a row, reveal it.
+      setTimeout(() => onNextSetRowChange?.(nextSetRowRef.current), 60);
       if (updatedSets.length > 0 && updatedSets.every((s) => s.isCompleted)) {
         onAllSetsCompleted?.();
       }
@@ -273,6 +282,7 @@ export default function AdaptiveSetTracker({
           return (
             <View
               key={index}
+              ref={isNext ? nextSetRowRef : undefined}
               className="mb-3 rounded-xl bg-background"
               style={{
                 borderWidth: isNext ? 2 : 1,

@@ -331,6 +331,42 @@ export function WorkoutScreen() {
 
   // UI state
   const scrollViewRef = useRef<ScrollView>(null);
+  // Scroll geometry, so "reveal the next set" can scroll ONLY when the row is
+  // genuinely out of view — scrolling a row that is already visible yanks the
+  // page under the user's thumb mid-set.
+  const scrollOffsetRef = useRef(0);
+  const scrollViewportRef = useRef(0);
+
+  /**
+   * Bring the next unlogged set row into view after a set is checked.
+   *
+   * SPEC §4 makes that row the visual primary, which is wasted if it sits
+   * below the fold — on a 4-set exercise the footer covers it by set 3. Scrolls
+   * the minimum distance needed to clear the pinned action bar, and does
+   * nothing when the row is already comfortably visible.
+   */
+  const revealNextSetRow = (node: View | null) => {
+    if (!node || !scrollViewRef.current) return;
+    node.measureLayout(
+      scrollViewRef.current as any,
+      (_x, y, _width, height) => {
+        const viewport = scrollViewportRef.current;
+        const offset = scrollOffsetRef.current;
+        if (!viewport) return;
+        // The pinned footer (Pause + primary + End Workout) overlays the
+        // bottom of the scroll view; keep the row clear of it.
+        const FOOTER_ALLOWANCE = 180;
+        const visibleBottom = offset + viewport - FOOTER_ALLOWANCE;
+        const rowBottom = y + height;
+        if (rowBottom <= visibleBottom && y >= offset) return;
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(0, rowBottom - viewport + FOOTER_ALLOWANCE + 12),
+          animated: true,
+        });
+      },
+      () => {},
+    );
+  };
   const exerciseHeadingRef = useRef<View>(null);
   const isResumingRef = useRef(false);
   const circuitHeadingRef = useRef<View>(null);
@@ -579,11 +615,20 @@ export function WorkoutScreen() {
     setIsNotesExpanded(false);
   }, [currentExerciseIndex]);
 
-  // Cleanup workout context on unmount
+  // Cleanup workout context on unmount.
+  //
+  // Deps MUST stay empty. This used to depend on [setWorkoutInProgress], which
+  // the workout context defines as a plain function in its provider body — a
+  // NEW identity on every provider render. So the cleanup ran on every context
+  // update, not on unmount: advancing an exercise calls
+  // updateCurrentBlockForAbandonment → setCurrentWorkoutData → provider
+  // re-render → this cleanup → flushPendingCommit(). The undo window was
+  // destroyed the instant it opened, which silently killed T5-2's snackbar
+  // too. Re-adding a dep here re-breaks undo on both logging paths.
   useEffect(() => {
     return () => {
-      // [T5-2] Land any deferred auto-advance commit (reads a ref, so the
-      // stale closure is safe); fire-and-forget on teardown.
+      // [T5-2] Land any deferred commit (reads a ref, so the stale closure is
+      // safe); fire-and-forget on teardown.
       void flushPendingCommit();
       setWorkoutInProgress(false);
       // Keep-awake is released by the dedicated session effect's cleanup.
@@ -594,7 +639,7 @@ export function WorkoutScreen() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setWorkoutInProgress]);
+  }, []);
 
   // Load workout data
   const loadWorkout = async (forceRefresh = false) => {
@@ -2189,6 +2234,14 @@ export function WorkoutScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+          scrollViewportRef.current = e.nativeEvent.layoutMeasurement.height;
+        }}
+        onLayout={(e) => {
+          scrollViewportRef.current = e.nativeEvent.layout.height;
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -2466,6 +2519,7 @@ export function WorkoutScreen() {
                             updateProgress("duration", progress.duration);
                           }}
                           onAllSetsCompleted={handleAllSetsCompleted}
+                          onNextSetRowChange={revealNextSetRow}
                           blockType={currentBlock?.blockType}
                         />
                       </View>
