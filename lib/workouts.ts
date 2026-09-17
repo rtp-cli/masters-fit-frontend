@@ -1246,6 +1246,15 @@ export async function generateRestDayWorkoutAsync(
     date: string;
     reason: string;
     durationOverride?: number;
+    /**
+     * [LR-069] Deliberately add a SECOND session to a date that already has
+     * one — "I did my hour this morning, I've got 20 minutes tonight".
+     *
+     * Without this the backend returns 400 for that date, which is the correct
+     * default: it is what stops a double-tap generating two workouts and
+     * billing two AI operations. Only the "add another workout" action sets it.
+     */
+    additionalSession?: boolean;
   }
 ): Promise<{ success: boolean; jobId: number; message: string } | null> {
   try {

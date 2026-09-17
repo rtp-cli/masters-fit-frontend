@@ -33,6 +33,7 @@ import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
 import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
+import AddAnotherWorkoutSheet from "@/components/workout/add-another-workout-sheet";
 import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
 import UndoDrainStrip from "@/components/workout/undo-drain-strip";
 import WatchNudgeBanner from "@/components/workout/watch-nudge-banner";
@@ -64,6 +65,7 @@ import {
   createExerciseLog,
   fetchActiveWorkout,
   fetchExerciseLogsForPlanDay,
+  generateRestDayWorkoutAsync,
   markPlanDayAsComplete,
   skipExercise,
   subscribeToWorkoutUpdates,
@@ -194,8 +196,12 @@ export function WorkoutScreen() {
   const router = useRouter();
 
   // Background job tracking
-  const { isGenerating, justGenerated, clearJustGenerated } =
+  const { addJob, isGenerating, justGenerated, clearJustGenerated } =
     useBackgroundJobs();
+
+  // [LR-069] "Add another workout" — a second session on a day already trained.
+  const [addAnotherVisible, setAddAnotherVisible] = useState(false);
+  const [addAnotherSubmitting, setAddAnotherSubmitting] = useState(false);
 
   // Get data refresh functions
   const {
@@ -2180,9 +2186,58 @@ export function WorkoutScreen() {
     setTimeout(() => scrollToExerciseHeading(resumeIndex), 300);
   };
 
+  /**
+   * [LR-069] Generate a second session for today.
+   *
+   * Reuses the rest-day endpoint, which already takes a free-text reason and a
+   * clamped duration and is already metered through the DAY_ADJUSTMENT
+   * allowance. `additionalSession` is what lets it past the 400 that normally
+   * guards a date which already has a workout — that guard stays the default
+   * everywhere else, because it is also what stops a double-tap billing two
+   * generations.
+   */
+  const handleAddAnotherWorkout = async ({
+    focus,
+    durationMinutes,
+  }: {
+    focus: string;
+    durationMinutes: number;
+  }) => {
+    setAddAnotherSubmitting(true);
+    try {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error("No user");
+
+      const result = await generateRestDayWorkoutAsync(user.id, {
+        date: getCurrentDate(),
+        // Blank is allowed by the sheet; send something the generator can use
+        // rather than an empty string.
+        reason: focus || "An extra session on top of today's workout",
+        durationOverride: durationMinutes,
+        additionalSession: true,
+      });
+
+      // null means the paywall intercepted — it has already shown itself, so
+      // just close and leave the screen as it was.
+      if (result?.jobId) {
+        await addJob(result.jobId, "daily-regeneration");
+      }
+      setAddAnotherVisible(false);
+    } catch (err) {
+      console.error("Error generating additional workout:", err);
+      showErrorDialog(
+        "Couldn't start that workout",
+        "Something went wrong generating your extra session. Please try again.",
+      );
+    } finally {
+      setAddAnotherSubmitting(false);
+    }
+  };
+
   // Render workout completed state
   if (isWorkoutCompleted) {
     return (
+      <>
       <WorkoutSummary
         workout={workout}
         onResume={isToday ? handleResume : undefined}
@@ -2207,12 +2262,35 @@ export function WorkoutScreen() {
                 variant="completion"
               />
             ) : null}
+            {/* [LR-069] The old copy here was "Check back tomorrow for your
+                next workout" — a dead end at exactly the moment the most
+                engaged user on record asked for the opposite. Only offered for
+                TODAY: "add another" makes no sense while reviewing a past day. */}
+            {isToday ? (
+              <TouchableOpacity
+                onPress={() => setAddAnotherVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Add another workout today"
+                className="mt-4 mx-6 py-3 rounded-xl border border-neutral-medium-1 items-center"
+              >
+                <Text className="text-text-primary text-sm font-medium">
+                  + Add another workout
+                </Text>
+              </TouchableOpacity>
+            ) : null}
             <Text className="text-text-muted text-center text-sm px-6 mt-4">
               Check back tomorrow for your next workout.
             </Text>
           </>
         }
       />
+      <AddAnotherWorkoutSheet
+        visible={addAnotherVisible}
+        onClose={() => setAddAnotherVisible(false)}
+        onGenerate={handleAddAnotherWorkout}
+        submitting={addAnotherSubmitting}
+      />
+      </>
     );
   }
 
