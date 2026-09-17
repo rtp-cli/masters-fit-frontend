@@ -1135,7 +1135,16 @@ export function WorkoutScreen() {
     }
     setCurrentExerciseIndex(idx);
     exerciseStartTime.current = Date.now();
-    setTimeout(() => scrollToExerciseHeading(idx), 150);
+    // Don't scroll to the heading when the tracker is about to reveal the set
+    // row that came back (SPEC §4) — the heading scroll runs later and would
+    // win, putting the un-checked set back under the footer. Only exercises
+    // with no pending set row to reveal (duration-based) need the fallback.
+    const revealWillHandleScroll =
+      pending.uncheckLastOnUndo ||
+      (exerciseProgress[idx]?.sets || []).some((set) => !set.isCompleted);
+    if (!revealWillHandleScroll) {
+      setTimeout(() => scrollToExerciseHeading(idx), 150);
+    }
   };
 
   // Finish the workout day: advance the UI to complete, THEN persist the

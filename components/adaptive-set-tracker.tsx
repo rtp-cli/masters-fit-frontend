@@ -72,26 +72,25 @@ export default function AdaptiveSetTracker({
   // [SPEC §4] The row currently carrying the UP NEXT emphasis, so checking a
   // set can scroll the NEXT one into view (the footer hides it by set 3).
   const nextSetRowRef = useRef<View | null>(null);
-  const revealedForExerciseRef = useRef<number | null>(null);
 
   // [T5-1] Which traditional set row is expanded for editing (steppers).
   // Collapsed rows show just the prescription + the ✓ target.
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  // [SPEC §4] Keep the UP NEXT row on screen whenever it moves — after a set is
-  // checked, and after an Undo returns here with the last set un-checked (which
-  // moves the emphasis DOWN, below the footer). Skipped on the first render for
-  // an exercise, where the parent is already scrolling to its heading.
+  // [SPEC §4] Keep the UP NEXT row on screen wherever it lands — after a set is
+  // checked, when re-entering a part-done exercise, and after an Undo returns
+  // here with the last set un-checked, which moves the emphasis DOWN below the
+  // footer. Index 0 is the one case to leave alone: set 1 of an untouched
+  // exercise is already in frame under its heading, and the parent is scrolling
+  // there anyway. Keying on the index (not the exercise) is deliberate — an
+  // Undo return IS an exercise change, so guarding on that suppressed the exact
+  // case this is for.
   const nextPendingIndex = sets.findIndex((s) => !s.isCompleted);
   useEffect(() => {
-    if (revealedForExerciseRef.current !== exercise.id) {
-      revealedForExerciseRef.current = exercise.id;
-      return;
-    }
-    if (nextPendingIndex < 0) return;
-    const t = setTimeout(() => onNextSetRowChange?.(nextSetRowRef.current), 60);
+    if (nextPendingIndex <= 0) return;
+    const t = setTimeout(() => onNextSetRowChange?.(nextSetRowRef.current), 80);
     return () => clearTimeout(t);
-  }, [nextPendingIndex, exercise.id, onNextSetRowChange]);
+  }, [nextPendingIndex, onNextSetRowChange]);
 
   // Initialize duration sets if needed
   useEffect(() => {
