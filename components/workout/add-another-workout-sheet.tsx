@@ -28,16 +28,21 @@ import { useTheme } from "@/lib/theme-context";
  *
  * So: two inputs, both optional-feeling, one button.
  *
- * Duration uses CustomSlider with the same bounds as the Adjust flow's duration
- * override (profile-override-form) and onboarding: 15-90 in steps of 5. It
- * started as four chips, which read faster but could only offer four values —
- * somebody with 25 minutes had no way to say so — and introduced a control the
- * app does not otherwise use for duration.
+ * Duration uses CustomSlider, the same control the Adjust flow
+ * (profile-override-form) and onboarding use for this question. It started as
+ * four chips, which read faster but could only offer four values — somebody
+ * with 25 minutes had no way to say so — and introduced a control the app does
+ * not otherwise use for duration.
  */
 
-/** Matches the Adjust flow and onboarding. */
+/**
+ * Same control and step as the Adjust flow, but capped at 60 rather than its
+ * 90: this is a session on TOP of a workout already finished today, and nobody
+ * adding a top-up is adding an hour and a half. Well inside the backend's
+ * 10-180 clamp on durationOverride.
+ */
 const DURATION_MIN = 15;
-const DURATION_MAX = 90;
+const DURATION_MAX = 60;
 const DURATION_STEP = 5;
 /** The "I have a spare 20 minutes" case this feature was asked for. */
 const DURATION_DEFAULT = 20;
