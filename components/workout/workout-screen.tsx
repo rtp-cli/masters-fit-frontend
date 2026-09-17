@@ -98,6 +98,7 @@ import {
   getHealthConnection,
   hasRecentHeartRateSample,
 } from "@/utils/health";
+import { selectSessionForDate } from "@/utils/session-for-date";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -670,11 +671,14 @@ export function WorkoutScreen() {
       // Find today's workout using string comparison to avoid timezone issues
       const today = getCurrentDate(); // Use the same function as other parts of the app
 
-      const todaysWorkout = response.planDays.find((day: PlanDayWithBlocks) => {
-        // Use the formatDateAsString function to normalize dates consistently
-        const normalizedDayDate = formatDateAsString(day.date);
-        return normalizedDayDate === today;
-      });
+      // [LR-069] Not `.find()` — a day can now hold more than one session, and
+      // the first is the one already finished. selectSessionForDate prefers the
+      // session you can still act on.
+      const todaysWorkout = selectSessionForDate<PlanDayWithBlocks>(
+        response.planDays,
+        today,
+        formatDateAsString,
+      );
 
       if (!todaysWorkout) {
         setWorkout(null);
