@@ -614,7 +614,23 @@ export function WorkoutScreen() {
         updateProgress("sets", prescribedSets);
       }
     }
-  }, [currentExerciseIndex, isWorkoutStarted, isWorkoutCompleted]);
+    // currentExercise and the set count MUST be dependencies, not just read
+    // inside. The Calendar's Start button calls requestAutoStart() and
+    // navigates, so startWorkout() fires the moment the workout loads — which
+    // can flip isWorkoutStarted in a render where currentExercise/
+    // currentProgress are not derived yet. The guard above then bails, and
+    // without these deps the effect never re-ran: the session started with an
+    // empty set list and no way to log anything ("0 of 0 sets done"), while
+    // starting the same session from the Workout tab worked because the screen
+    // was already loaded. Re-running is safe — the sets.length === 0 check
+    // makes it idempotent.
+  }, [
+    currentExerciseIndex,
+    isWorkoutStarted,
+    isWorkoutCompleted,
+    currentExercise,
+    currentProgress?.sets.length,
+  ]);
 
   // [MF-012] Notes expansion is per-exercise -- collapse it again on
   // navigating to a new exercise so a note left open on a prior exercise
