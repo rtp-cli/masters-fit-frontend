@@ -248,6 +248,10 @@ export default function AdaptiveSetTracker({
   // the happy path. Checking the final set triggers auto-advance (T5-2).
   const renderTraditionalSets = () => {
     const doneCount = sets.filter((s) => s.isCompleted).length;
+    // [SPEC §4] The next set to log takes the ink, so it — not the pinned
+    // footer button — reads as the primary action. Sets can be checked out of
+    // order, so this is the first PENDING row, not `doneCount`.
+    const nextPendingIndex = sets.findIndex((s) => !s.isCompleted);
     return (
       <View>
         {/* Target Information */}
@@ -265,12 +269,18 @@ export default function AdaptiveSetTracker({
         {sets.map((set, index) => {
           const isDone = !!set.isCompleted;
           const isExpanded = expandedIndex === index && !isDone;
+          const isNext = index === nextPendingIndex;
           return (
             <View
               key={index}
-              className="mb-3 rounded-xl border bg-background"
+              className="mb-3 rounded-xl bg-background"
               style={{
-                borderColor: isDone ? successColor : colors.neutral.medium[1],
+                borderWidth: isNext ? 2 : 1,
+                borderColor: isDone
+                  ? successColor
+                  : isNext
+                    ? colors.text.primary
+                    : colors.neutral.medium[1],
                 backgroundColor: isDone ? successColor + "14" : undefined,
               }}
             >
@@ -288,40 +298,70 @@ export default function AdaptiveSetTracker({
                   <View
                     className="size-7 rounded-full items-center justify-center mr-3"
                     style={{
-                      backgroundColor:
-                        (isDone ? successColor : colors.brand.primary) + "30",
+                      backgroundColor: isNext
+                        ? colors.text.primary
+                        : (isDone ? successColor : colors.brand.primary) + "30",
                     }}
                   >
                     <Text
                       className="text-xs font-semibold"
                       style={{
-                        color: isDone ? successColor : colors.brand.primary,
+                        color: isNext
+                          ? colors.contentOnPrimary
+                          : isDone
+                            ? successColor
+                            : colors.brand.primary,
                       }}
                     >
                       {set.setNumber}
                     </Text>
                   </View>
-                  <Text className="text-base font-semibold text-text-primary">
-                    {set.reps} reps
-                    {showWeightInput ? ` · ${set.weight} lb` : ""}
-                  </Text>
-                  {!isDone && (
-                    <Ionicons
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
-                      size={14}
-                      color={colors.text.muted}
-                      style={{ marginLeft: 6 }}
-                    />
-                  )}
+                  <View className="flex-1">
+                    <View className="flex-row items-center">
+                      <Text className="text-base font-semibold text-text-primary">
+                        {set.reps} reps
+                        {showWeightInput ? ` · ${set.weight} lb` : ""}
+                      </Text>
+                      {!isDone && (
+                        <Ionicons
+                          name={isExpanded ? "chevron-up" : "chevron-down"}
+                          size={14}
+                          color={colors.text.muted}
+                          style={{ marginLeft: 6 }}
+                        />
+                      )}
+                    </View>
+                    {isNext && (
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "700",
+                          letterSpacing: 0.88,
+                          color: colors.text.muted,
+                          marginTop: 2,
+                        }}
+                        maxFontSizeMultiplier={1.3}
+                      >
+                        UP NEXT
+                      </Text>
+                    )}
+                  </View>
                 </TouchableOpacity>
 
                 {/* The one big tap: mark this set done (≥44×44 target) */}
+                {/* Never fill this ring on the up-next row: a filled circle
+                    with a check is the app's established "this set is logged"
+                    state, and borrowing it would make the emphasised row read
+                    as already complete (SPEC §4). */}
                 <TouchableOpacity
-                  className="size-11 rounded-full items-center justify-center border-2"
+                  className="size-11 rounded-full items-center justify-center"
                   style={{
+                    borderWidth: isNext ? 2.5 : 2,
                     borderColor: isDone
                       ? successColor
-                      : colors.neutral.medium[2],
+                      : isNext
+                        ? colors.text.primary
+                        : colors.neutral.medium[2],
                     backgroundColor: isDone ? successColor : "transparent",
                   }}
                   onPress={() => toggleSetCompleted(index)}
@@ -339,7 +379,9 @@ export default function AdaptiveSetTracker({
                     color={
                       isDone
                         ? colors.contentOnPrimary
-                        : colors.neutral.medium[2]
+                        : isNext
+                          ? colors.text.primary
+                          : colors.neutral.medium[2]
                     }
                   />
                 </TouchableOpacity>

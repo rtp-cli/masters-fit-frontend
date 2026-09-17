@@ -34,7 +34,7 @@ import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
 import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
-import ExerciseCompleteSnackbar from "@/components/workout/exercise-complete-snackbar";
+import UndoDrainStrip from "@/components/workout/undo-drain-strip";
 import WatchNudgeBanner from "@/components/workout/watch-nudge-banner";
 import WorkoutBlock from "@/components/workout-block";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
@@ -46,6 +46,7 @@ import {
   getEffectiveScoringType,
   getLoggingMode,
 } from "@/constants/block-types";
+import { CIRCUIT_UNDO_MS, EXERCISE_UNDO_MS } from "@/constants/undo";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
@@ -86,7 +87,11 @@ import {
   formatEquipment,
   getCurrentDate,
 } from "@/utils";
-import { isCircuitBlock, isRoundActionVisible } from "@/utils/circuit-utils";
+import {
+  getRoundUndoButtonText,
+  isCircuitBlock,
+  isRoundActionVisible,
+} from "@/utils/circuit-utils";
 import {
   getHealthConnection,
   hasRecentHeartRateSample,
@@ -121,7 +126,7 @@ function CircuitLoggingInterface({
     return null; // Don't render if no circuit session
   }
 
-  const { sessionData, actions, canUndoRound } = circuitSession;
+  const { sessionData, actions } = circuitSession;
 
   // Round/circuit completion callbacks are no-ops for logging — all logging
   // is batched into a single call via logCircuitCompletion() when the user
@@ -149,7 +154,6 @@ function CircuitLoggingInterface({
           onCircuitComplete={handleCircuitComplete}
           isActive={isWorkoutStarted}
           circuitActions={actions}
-          canUndoRound={canUndoRound}
         />
       </View>
     </View>
@@ -900,19 +904,26 @@ export function WorkoutScreen() {
   };
 
   // Complete current exercise
-  // ── [T5-2] Auto-advance with a deferred commit + Undo window ──────────────
-  // When the final set is checked, the UI advances immediately but the
-  // exercise log is committed after UNDO_WINDOW_MS. Undo cancels the commit
-  // and returns to the exercise. Every other flow that persists or leaves the
-  // session flushes the pending commit first so logs always land in order.
-  const UNDO_WINDOW_MS = 5000;
+  // ── [T5-2] Deferred commit + Undo window ─────────────────────────────────
+  // Both ways of finishing an exercise defer their commit by EXERCISE_UNDO_MS
+  // and show the drain strip: checking the final set (auto-advance), and
+  // pressing "Finish early" with fewer sets than prescribed (SPEC §5 — that
+  // path used to commit immediately with no way back, which is the defect this
+  // change set exists to fix). Undo cancels the commit and returns to the
+  // exercise. Every other flow that persists or leaves the session flushes the
+  // pending commit first so logs always land in order.
   const pendingCommitRef = useRef<{
     timeout: NodeJS.Timeout;
     exerciseIndex: number;
     payload: Parameters<typeof createExerciseLog>[0];
+    // [SPEC §5.1] Only the auto-advance path may uncheck the last set on undo
+    // (so re-checking re-triggers the advance). On the manual path the user
+    // performed every checked set, so unchecking one would delete real work.
+    uncheckLastOnUndo: boolean;
   } | null>(null);
-  const [undoSnackbar, setUndoSnackbar] = useState<{
-    exerciseName: string;
+  const [undoStrip, setUndoStrip] = useState<{
+    label: string;
+    sublabel?: string;
   } | null>(null);
 
   // [T5-1] isCompleted is client-side only — strip it before the API call.
@@ -938,24 +949,49 @@ export function WorkoutScreen() {
     });
   };
 
+  // Persist a deferred exercise log. The write is idempotent, so a failure
+  // offers a real Retry that re-arms the SAME payload rather than the dead-end
+  // "it will be missing from your log" this used to show — the manual finish
+  // routes through here now, and losing a partially-logged exercise is exactly
+  // the outcome SPEC §5 is trying to prevent.
+  const commitExerciseLog = async (
+    payload: Parameters<typeof createExerciseLog>[0],
+    exerciseIndex: number,
+  ): Promise<void> => {
+    try {
+      await createExerciseLog(payload);
+      fireExerciseLogged(exercises[exerciseIndex]?.exercise?.id);
+    } catch (err) {
+      // The user has already moved on — surface without blocking the session.
+      console.error("Error committing exercise log:", err);
+      setDialogConfig({
+        title: "Couldn't Save Exercise",
+        description:
+          "We couldn't save your last exercise just now — check your connection. Nothing was lost; retrying will save it.",
+        primaryButton: {
+          text: "Retry",
+          onPress: () => {
+            setDialogVisible(false);
+            void commitExerciseLog(payload, exerciseIndex);
+          },
+        },
+        secondaryButton: {
+          text: "Not Now",
+          onPress: () => setDialogVisible(false),
+        },
+        icon: "alert-circle",
+      });
+      setDialogVisible(true);
+    }
+  };
+
   const flushPendingCommit = async () => {
     const pending = pendingCommitRef.current;
     if (!pending) return;
     pendingCommitRef.current = null;
     clearTimeout(pending.timeout);
-    setUndoSnackbar(null);
-    try {
-      await createExerciseLog(pending.payload);
-      // Auto-advance path: exercise id resolved from the captured index.
-      fireExerciseLogged(exercises[pending.exerciseIndex]?.exercise?.id);
-    } catch (err) {
-      // The user has already moved on — surface without blocking the session.
-      console.error("Error committing auto-completed exercise log:", err);
-      showErrorDialog(
-        "Sync Issue",
-        "A completed exercise couldn't be saved. It will be missing from your log.",
-      );
-    }
+    setUndoStrip(null);
+    await commitExerciseLog(pending.payload, pending.exerciseIndex);
   };
 
   // All sets checked → complete + advance in one motion (no modal, T5-2).
@@ -987,13 +1023,15 @@ export function WorkoutScreen() {
     };
     const timeout = setTimeout(() => {
       void flushPendingCommit();
-    }, UNDO_WINDOW_MS);
+    }, EXERCISE_UNDO_MS);
     pendingCommitRef.current = {
       timeout,
       exerciseIndex: currentExerciseIndex,
       payload,
+      uncheckLastOnUndo: true,
     };
-    setUndoSnackbar({ exerciseName: currentExercise.exercise.name });
+    // Every set is checked on this path, so the count adds nothing.
+    setUndoStrip({ label: `Undo · ${currentExercise.exercise.name}` });
 
     // Advance the UI immediately (mirrors completeExercise's advance block).
     const nextIndex = currentExerciseIndex + 1;
@@ -1004,8 +1042,9 @@ export function WorkoutScreen() {
     setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
   };
 
-  // Undo: cancel the pending commit, return to the exercise, and uncheck its
-  // last set so re-checking naturally re-triggers the advance.
+  // Undo: cancel the pending commit and return to the exercise. On the
+  // auto-advance path only, uncheck its last set so re-checking naturally
+  // re-triggers the advance (SPEC §5.1).
   const undoAutoComplete = () => {
     const pending = pendingCommitRef.current;
     if (!pending) return;
@@ -1014,24 +1053,28 @@ export function WorkoutScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     clearTimeout(pending.timeout);
     pendingCommitRef.current = null;
-    setUndoSnackbar(null);
+    setUndoStrip(null);
 
     const idx = pending.exerciseIndex;
-    setExerciseProgress((prev) => {
-      const updated = [...prev];
-      const prog = updated[idx];
-      if (prog) {
-        const undoneSets = [...prog.sets];
-        for (let i = undoneSets.length - 1; i >= 0; i--) {
-          if (undoneSets[i].isCompleted) {
-            undoneSets[i] = { ...undoneSets[i], isCompleted: false };
-            break;
+    // Manual finish: every checked set was actually performed, so they all
+    // stay checked and the footer reads "Finish early · n of m" again.
+    if (pending.uncheckLastOnUndo) {
+      setExerciseProgress((prev) => {
+        const updated = [...prev];
+        const prog = updated[idx];
+        if (prog) {
+          const undoneSets = [...prog.sets];
+          for (let i = undoneSets.length - 1; i >= 0; i--) {
+            if (undoneSets[i].isCompleted) {
+              undoneSets[i] = { ...undoneSets[i], isCompleted: false };
+              break;
+            }
           }
+          updated[idx] = { ...prog, sets: undoneSets };
         }
-        updated[idx] = { ...prog, sets: undoneSets };
-      }
-      return updated;
-    });
+        return updated;
+      });
+    }
     setCurrentExerciseIndex(idx);
     exerciseStartTime.current = Date.now();
     setTimeout(() => scrollToExerciseHeading(idx), 150);
@@ -1287,19 +1330,37 @@ export function WorkoutScreen() {
         ];
       }
 
-      await createExerciseLog({
+      const payload = {
         planDayExerciseId: currentExercise.id,
         sets: toApiSets(setsToLog),
         durationCompleted: currentProgress.duration,
         isComplete: true,
         timeTaken: exerciseTimer, // This logs the actual time spent on exercise
         notes: currentProgress.notes,
-      });
-      // Standard (manual/final/duration) exercise completion.
-      fireExerciseLogged(currentExercise.exercise?.id);
+      };
 
       // Move to next exercise or complete workout
       if (currentExerciseIndex < exercises.length - 1) {
+        // [SPEC §5] Defer behind the undo window instead of committing now.
+        // Duration-based exercises get the window too, but no count in the
+        // sublabel — they aren't filtered to checked sets, so "2 of 4" would
+        // be a lie (SPEC §2).
+        const timeout = setTimeout(() => {
+          void flushPendingCommit();
+        }, EXERCISE_UNDO_MS);
+        pendingCommitRef.current = {
+          timeout,
+          exerciseIndex: currentExerciseIndex,
+          payload,
+          uncheckLastOnUndo: false,
+        };
+        setUndoStrip({
+          label: `Undo · ${currentExercise.exercise.name}`,
+          sublabel: isDurationBasedExercise
+            ? undefined
+            : `${setsToLog.length} of ${(currentProgress.sets || []).length} sets`,
+        });
+
         const nextIndex = currentExerciseIndex + 1;
         setCurrentExerciseIndex(nextIndex);
         setExerciseTimer(0);
@@ -1307,7 +1368,10 @@ export function WorkoutScreen() {
         updateCurrentBlockForAbandonment(nextIndex);
         setTimeout(() => scrollToExerciseHeading(nextIndex), 150);
       } else {
-        // All exercises completed — finish the day (own error handling).
+        // The final exercise runs finishWorkoutDay and shows the summary, so
+        // there is nowhere to undo TO — commit immediately (SPEC §5).
+        await createExerciseLog(payload);
+        fireExerciseLogged(currentExercise.exercise?.id);
         await finishWorkoutDay();
       }
     } catch (err) {
@@ -1738,12 +1802,53 @@ export function WorkoutScreen() {
   const showCircuitRoundAction = Boolean(
     isCurrentBlockCircuit &&
       currentBlock &&
-      isRoundActionVisible(
-        currentBlock,
-        circuitSession.sessionData,
-        circuitSession.canUndoRound
-      )
+      isRoundActionVisible(currentBlock, circuitSession.sessionData)
   );
+
+  // [SPEC §6] The round undo drains in the "Complete Circuit" row rather than
+  // taking the primary slot. Gated independently of showCircuitRoundAction:
+  // that flag goes false on the final round of a bounded block and on tabata
+  // interval 8 (§6.1), which is exactly when a window can still be open — the
+  // primary slot then falls back to a filled "Complete Circuit" and the strip
+  // still needs its row. Not shown once the circuit itself is logged.
+  const showCircuitUndoStrip = Boolean(
+    isCurrentBlockCircuit &&
+      currentBlock &&
+      circuitSession.canUndoRound &&
+      !circuitSession.sessionData.isCompleted
+  );
+  // The session doesn't advance currentRound on the final round of a bounded
+  // block, so read the last completed round rather than assuming currentRound - 1.
+  const lastCompletedRoundNumber =
+    [...circuitSession.sessionData.rounds]
+      .reverse()
+      .find((r) => r.isCompleted)?.roundNumber ??
+    circuitSession.sessionData.currentRound;
+
+  // [SPEC §2/§3] Gates for demoting the pinned Complete. Duration-based
+  // exercises are deliberately NOT filtered to checked sets by
+  // completeExercise, so a "2 of 4" count would be false — they keep the black
+  // primary. This is the same boolean completeExercise uses, and it also
+  // matches the tracker's duration render path exactly.
+  const isCurrentExerciseDurationBased = Boolean(
+    currentExercise?.duration &&
+      currentExercise.duration > 0 &&
+      (!currentExercise.reps || currentExercise.reps === 0)
+  );
+  const totalSetCount = (currentProgress?.sets || []).length;
+  const checkedSetCount = (currentProgress?.sets || []).filter(
+    (set) => set.isCompleted
+  ).length;
+  // Checking the LAST set already completes and advances the exercise, so the
+  // pinned button's only real job is finishing with fewer sets than
+  // prescribed. When every set is checked (transient, and the resting state of
+  // the final exercise) it keeps the black Complete treatment.
+  const showFinishEarlyAction =
+    !isCurrentBlockCircuit &&
+    !isCurrentBlockCompletionOnly &&
+    !isCurrentExerciseDurationBased &&
+    totalSetCount > 0 &&
+    checkedSetCount < totalSetCount;
 
   // Render loading state
   if (loading) {
@@ -2645,13 +2750,6 @@ export function WorkoutScreen() {
         </View>
       </ScrollView>
 
-      {/* [T5-2] Undo window for an auto-advanced exercise */}
-      <ExerciseCompleteSnackbar
-        visible={!!undoSnackbar}
-        exerciseName={undoSnackbar?.exerciseName}
-        onUndo={undoAutoComplete}
-      />
-
       <WatchNudgeBanner
         visible={showWatchNudge}
         onDismiss={() => setShowWatchNudge(false)}
@@ -2735,9 +2833,45 @@ export function WorkoutScreen() {
                   isActive={!isWorkoutCompleted}
                   block={currentBlock}
                   sessionData={circuitSession.sessionData}
-                  canUndoRound={circuitSession.canUndoRound}
                   circuitActions={circuitSession.actions}
                 />
+              ) : showFinishEarlyAction ? (
+                /* [SPEC §3] Demoted, not hidden or disabled. The black fill
+                   was the problem, not the label — it made finishing early
+                   look like the main event, outranking the per-set check that
+                   is the actual primary action. Now it names its own cost. */
+                <TouchableOpacity
+                  className={`rounded-2xl py-4 flex-row items-center justify-center flex-1 ${
+                    isCompletingExercise ? "opacity-75" : ""
+                  }`}
+                  style={{
+                    backgroundColor: "transparent",
+                    borderWidth: 1.5,
+                    borderColor: colors.neutral.medium[4],
+                  }}
+                  onPress={completeExercise}
+                  disabled={isCompletingExercise}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Finish this exercise early with ${checkedSetCount} of ${totalSetCount} sets logged.`}
+                  accessibilityState={{ disabled: isCompletingExercise }}
+                >
+                  {isCompletingExercise ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.text.secondary}
+                    />
+                  ) : null}
+                  <Text
+                    className={`font-semibold ${isCompletingExercise ? "ml-2" : ""}`}
+                    style={{ color: colors.text.secondary }}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={1.3}
+                  >
+                    {isCompletingExercise
+                      ? "Saving..."
+                      : `Finish early · ${checkedSetCount} of ${totalSetCount}`}
+                  </Text>
+                </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   className={`bg-primary rounded-2xl py-4 flex-row items-center justify-center flex-1 ${
@@ -2775,9 +2909,26 @@ export function WorkoutScreen() {
               )}
             </View>
 
-            {/* When the round action owns the primary slot, finishing the
-                whole circuit becomes a secondary link. */}
-            {showCircuitRoundAction && (
+            {/* [SPEC §6] One row, two tenants. While a round undo is open the
+                drain takes this row and "Complete Round N+1" stays tappable in
+                the primary slot above — the undo used to sit THERE and lock the
+                next round out for the whole window. The strip matches the
+                link's line box, so the bar doesn't move when they swap. */}
+            {showCircuitUndoStrip ? (
+              <View className="mt-3">
+                <UndoDrainStrip
+                  visible
+                  label={getRoundUndoButtonText(
+                    currentBlock?.blockType || "circuit",
+                    lastCompletedRoundNumber
+                  )}
+                  durationMs={CIRCUIT_UNDO_MS}
+                  onUndo={() => circuitSession.actions.undoCompleteRound()}
+                />
+              </View>
+            ) : showCircuitRoundAction ? (
+              /* When the round action owns the primary slot, finishing the
+                 whole circuit becomes a secondary link. */
               <TouchableOpacity
                 onPress={completeExercise}
                 disabled={isCompletingExercise}
@@ -2794,7 +2945,22 @@ export function WorkoutScreen() {
                   {isCompletingExercise ? "Saving..." : "Complete Circuit"}
                 </Text>
               </TouchableOpacity>
-            )}
+            ) : null}
+
+            {/* [SPEC §8] The traditional path has no link row to borrow, so
+                the strip costs ~18px plus a gap for the length of the window.
+                That is the one place the bar moves, and it is accepted. */}
+            {undoStrip ? (
+              <View className="mt-3">
+                <UndoDrainStrip
+                  visible
+                  label={undoStrip.label}
+                  sublabel={undoStrip.sublabel}
+                  durationMs={EXERCISE_UNDO_MS}
+                  onUndo={undoAutoComplete}
+                />
+              </View>
+            ) : null}
           </>
         )}
 
