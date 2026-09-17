@@ -1,3 +1,4 @@
+import { recordClientEvent } from "./analytics";
 import { track } from "./mixpanel";
 
 /**
@@ -219,6 +220,26 @@ export interface AnalyticsEventProps {
 }
 
 /**
+ * Events that additionally get a durable Postgres row via the backend mirror.
+ *
+ * Deliberately a SHORT allow-list, not "everything". Every entry costs one HTTP
+ * request at emission time, and high-frequency events (screen_viewed fires on
+ * every navigation) would turn that into meaningful battery and server load for
+ * no analytical gain.
+ *
+ * The rule for adding one: it is a step in a funnel someone needs to answer with
+ * a SQL query against prod. Today that is the activation funnel -- plan
+ * generated, reveal seen, workout started, first exercise logged. workout_started
+ * is absent on purpose: it is backend-owned and already persisted server-side by
+ * the same mirror.
+ */
+const PERSISTED_EVENTS: ReadonlySet<string> = new Set<string>([
+  AnalyticsEvent.GENERATION_COMPLETED,
+  AnalyticsEvent.PLAN_REVEAL_SHOWN,
+  AnalyticsEvent.EXERCISE_LOGGED,
+]);
+
+/**
  * Type-checked event tracking. Prefer this over the raw `track` in lib/mixpanel so
  * event names and property shapes stay consistent with the registry above.
  */
@@ -232,6 +253,14 @@ export function trackEvent<E extends AnalyticsEventName>(
 ): void {
   const [props] = args as [Record<string, unknown>?];
   track(event, props);
+  if (PERSISTED_EVENTS.has(event)) {
+    // Fire-and-forget. The .catch is not redundant with recordClientEvent's own
+    // try/catch: a bare `void promise` registers no rejection handler, so if that
+    // function ever grows a path that rejects, the app takes an unhandled
+    // rejection. Analytics must not be able to do that, and this call site
+    // should not depend on remembering the callee's contract.
+    recordClientEvent(event, props).catch(() => {});
+  }
 }
 
 /** Convenience for the very common screen-view event. */
