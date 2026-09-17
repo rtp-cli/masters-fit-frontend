@@ -33,6 +33,7 @@ import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
 import { StreakBadge } from "@/components/streak";
 import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
+import AddAnotherWorkoutSheet from "@/components/workout/add-another-workout-sheet";
 import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
 import UndoDrainStrip from "@/components/workout/undo-drain-strip";
 import WatchNudgeBanner from "@/components/workout/watch-nudge-banner";
@@ -64,6 +65,7 @@ import {
   createExerciseLog,
   fetchActiveWorkout,
   fetchExerciseLogsForPlanDay,
+  generateRestDayWorkoutAsync,
   markPlanDayAsComplete,
   skipExercise,
   subscribeToWorkoutUpdates,
@@ -96,6 +98,7 @@ import {
   getHealthConnection,
   hasRecentHeartRateSample,
 } from "@/utils/health";
+import { selectSessionForDate } from "@/utils/session-for-date";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -194,8 +197,12 @@ export function WorkoutScreen() {
   const router = useRouter();
 
   // Background job tracking
-  const { isGenerating, justGenerated, clearJustGenerated } =
+  const { addJob, isGenerating, justGenerated, clearJustGenerated } =
     useBackgroundJobs();
+
+  // [LR-069] "Add another workout" — a second session on a day already trained.
+  const [addAnotherVisible, setAddAnotherVisible] = useState(false);
+  const [addAnotherSubmitting, setAddAnotherSubmitting] = useState(false);
 
   // Get data refresh functions
   const {
@@ -607,7 +614,23 @@ export function WorkoutScreen() {
         updateProgress("sets", prescribedSets);
       }
     }
-  }, [currentExerciseIndex, isWorkoutStarted, isWorkoutCompleted]);
+    // currentExercise and the set count MUST be dependencies, not just read
+    // inside. The Calendar's Start button calls requestAutoStart() and
+    // navigates, so startWorkout() fires the moment the workout loads — which
+    // can flip isWorkoutStarted in a render where currentExercise/
+    // currentProgress are not derived yet. The guard above then bails, and
+    // without these deps the effect never re-ran: the session started with an
+    // empty set list and no way to log anything ("0 of 0 sets done"), while
+    // starting the same session from the Workout tab worked because the screen
+    // was already loaded. Re-running is safe — the sets.length === 0 check
+    // makes it idempotent.
+  }, [
+    currentExerciseIndex,
+    isWorkoutStarted,
+    isWorkoutCompleted,
+    currentExercise,
+    currentProgress?.sets.length,
+  ]);
 
   // [MF-012] Notes expansion is per-exercise -- collapse it again on
   // navigating to a new exercise so a note left open on a prior exercise
@@ -664,11 +687,14 @@ export function WorkoutScreen() {
       // Find today's workout using string comparison to avoid timezone issues
       const today = getCurrentDate(); // Use the same function as other parts of the app
 
-      const todaysWorkout = response.planDays.find((day: PlanDayWithBlocks) => {
-        // Use the formatDateAsString function to normalize dates consistently
-        const normalizedDayDate = formatDateAsString(day.date);
-        return normalizedDayDate === today;
-      });
+      // [LR-069] Not `.find()` — a day can now hold more than one session, and
+      // the first is the one already finished. selectSessionForDate prefers the
+      // session you can still act on.
+      const todaysWorkout = selectSessionForDate<PlanDayWithBlocks>(
+        response.planDays,
+        today,
+        formatDateAsString,
+      );
 
       if (!todaysWorkout) {
         setWorkout(null);
@@ -2180,9 +2206,58 @@ export function WorkoutScreen() {
     setTimeout(() => scrollToExerciseHeading(resumeIndex), 300);
   };
 
+  /**
+   * [LR-069] Generate a second session for today.
+   *
+   * Reuses the rest-day endpoint, which already takes a free-text reason and a
+   * clamped duration and is already metered through the DAY_ADJUSTMENT
+   * allowance. `additionalSession` is what lets it past the 400 that normally
+   * guards a date which already has a workout — that guard stays the default
+   * everywhere else, because it is also what stops a double-tap billing two
+   * generations.
+   */
+  const handleAddAnotherWorkout = async ({
+    focus,
+    durationMinutes,
+  }: {
+    focus: string;
+    durationMinutes: number;
+  }) => {
+    setAddAnotherSubmitting(true);
+    try {
+      const user = await getCurrentUser();
+      if (!user?.id) throw new Error("No user");
+
+      const result = await generateRestDayWorkoutAsync(user.id, {
+        date: getCurrentDate(),
+        // Blank is allowed by the sheet; send something the generator can use
+        // rather than an empty string.
+        reason: focus || "An extra session on top of today's workout",
+        durationOverride: durationMinutes,
+        additionalSession: true,
+      });
+
+      // null means the paywall intercepted — it has already shown itself, so
+      // just close and leave the screen as it was.
+      if (result?.jobId) {
+        await addJob(result.jobId, "daily-regeneration");
+      }
+      setAddAnotherVisible(false);
+    } catch (err) {
+      console.error("Error generating additional workout:", err);
+      showErrorDialog(
+        "Couldn't start that workout",
+        "Something went wrong generating your extra session. Please try again.",
+      );
+    } finally {
+      setAddAnotherSubmitting(false);
+    }
+  };
+
   // Render workout completed state
   if (isWorkoutCompleted) {
     return (
+      <>
       <WorkoutSummary
         workout={workout}
         onResume={isToday ? handleResume : undefined}
@@ -2207,12 +2282,40 @@ export function WorkoutScreen() {
                 variant="completion"
               />
             ) : null}
-            <Text className="text-text-muted text-center text-sm px-6 mt-4">
-              Check back tomorrow for your next workout.
-            </Text>
+            {/* [LR-069] The old copy here was "Check back tomorrow for your
+                next workout" — a dead end at exactly the moment the most
+                engaged user on record asked for the opposite. Only offered for
+                TODAY: "add another" makes no sense while reviewing a past day. */}
+            {/* [LR-069] Offer another session, or tell them to come back —
+                never both. "Add another workout" and "check back tomorrow" side
+                by side contradict each other. Only TODAY gets the offer;
+                "add another" is meaningless while reviewing a past day. */}
+            {isToday ? (
+              <TouchableOpacity
+                onPress={() => setAddAnotherVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Add another workout today"
+                className="mt-4 mx-6 py-3 rounded-xl border border-neutral-medium-1 items-center"
+              >
+                <Text className="text-text-primary text-sm font-medium">
+                  + Add another workout
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <Text className="text-text-muted text-center text-sm px-6 mt-4">
+                Check back tomorrow for your next workout.
+              </Text>
+            )}
           </>
         }
       />
+      <AddAnotherWorkoutSheet
+        visible={addAnotherVisible}
+        onClose={() => setAddAnotherVisible(false)}
+        onGenerate={handleAddAnotherWorkout}
+        submitting={addAnotherSubmitting}
+      />
+      </>
     );
   }
 

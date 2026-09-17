@@ -44,6 +44,7 @@ import { type RegenerationData } from "@/types/calendar.types";
 import { type ThemeColorPalette,useThemeColors } from "../../lib/theme";
 import { useTheme } from "../../lib/theme-context";
 import { formatDateAsString } from "../../utils";
+import { selectSessionForDate } from "../../utils/session-for-date";
 import { CustomDialog, type DialogButton } from "../ui";
 import CalendarActionButtons from "./sections/action-buttons";
 import CalendarViewSection from "./sections/calendar-view";
@@ -339,12 +340,26 @@ export default function CalendarScreen() {
     isHistorical?: boolean;
   } | null => {
     if (workoutPlan?.planDays) {
-      for (let i = 0; i < workoutPlan.planDays.length; i++) {
-        const planDay = workoutPlan.planDays[i];
-        const planDate = formatDateAsString(planDay.date);
-        if (planDate === date) {
-          return { day: planDay, index: i, isHistorical: false };
-        }
+      // [LR-069] Not "first match" — a date can hold more than one session now
+      // (a bonus workout added to a day already trained), and the first is the
+      // one already finished. Picking the actionable session keeps this in step
+      // with what the Workout tab shows for the same date.
+      //
+      // Known limitation: the day detail still shows ONE session. With two, the
+      // completed one is not reachable from here. Listing both is the right
+      // answer for a review surface and is deliberately left as a follow-up —
+      // that is a layout change, not a selection fix.
+      const chosen = selectSessionForDate<PlanDayWithBlocks>(
+        workoutPlan.planDays,
+        date,
+        formatDateAsString,
+      );
+      if (chosen) {
+        return {
+          day: chosen,
+          index: workoutPlan.planDays.indexOf(chosen),
+          isHistorical: false,
+        };
       }
     }
 
@@ -401,8 +416,15 @@ export default function CalendarScreen() {
             dots.push({ color: colors.text.secondary });
           }
 
+          // [LR-069] Append rather than replace. A date can now hold more than
+          // one session (a bonus workout added to a day already trained), and
+          // assigning here meant the second plan day overwrote the first —
+          // one dot instead of two, showing only the later session's status.
+          // markingType is already "multi-dot"; this just stops throwing the
+          // earlier dots away.
+          const existingDots = markedDates[dateStr]?.dots ?? [];
           markedDates[dateStr] = {
-            dots,
+            dots: [...existingDots, ...dots],
             selected: dateStr === selectedDate,
           };
         }
