@@ -1,6 +1,7 @@
 import {
   countSessionsForDate,
   selectSessionForDate,
+  sessionsForDate,
 } from "@/utils/session-for-date";
 
 const normalize = (d: string | Date) =>
@@ -122,5 +123,32 @@ describe("selectSessionForDate — sessions still generating", () => {
   it("still returns a genuine blockless rest day when it is the only session", () => {
     const restDay = { date: TODAY, isComplete: false, id: "rest", blocks: [] };
     expect(selectSessionForDate([restDay], TODAY, normalize)).toBe(restDay);
+  });
+});
+
+describe("sessionsForDate", () => {
+  const normalize2 = (d: string | Date) =>
+    typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
+
+  it("returns both sessions on a doubled-up day, in order", () => {
+    const morning = { date: TODAY, isComplete: true, id: "m", blocks: [1] };
+    const bonus = { date: TODAY, isComplete: false, id: "b", blocks: [1] };
+    const other = { date: "2026-09-18", isComplete: false, blocks: [1] };
+    expect(sessionsForDate([morning, bonus, other], TODAY, normalize2)).toEqual([
+      morning,
+      bonus,
+    ]);
+  });
+
+  // A placeholder mid-generation is not something to offer as a choice.
+  it("excludes a session that has no blocks yet", () => {
+    const real = { date: TODAY, isComplete: true, id: "r", blocks: [1] };
+    const generating = { date: TODAY, isComplete: false, id: "g", blocks: [] };
+    expect(sessionsForDate([real, generating], TODAY, normalize2)).toEqual([real]);
+  });
+
+  it("is empty for a date with nothing on it", () => {
+    expect(sessionsForDate([], TODAY, normalize2)).toEqual([]);
+    expect(sessionsForDate(null, TODAY, normalize2)).toEqual([]);
   });
 });
