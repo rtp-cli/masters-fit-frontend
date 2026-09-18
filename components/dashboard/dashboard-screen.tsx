@@ -206,6 +206,11 @@ export default function DashboardScreen() {
   // so it generates an optional workout for TODAY rather than defaulting to the
   // full-week regeneration the rest-day modal otherwise shows.
   const [restDayQuickGenerate, setRestDayQuickGenerate] = useState(false);
+  // [LR-066] The same sheet, opened at WEEK scope from the dashboard's new
+  // top-level door. Kept as its own flag rather than overloading
+  // restDayQuickGenerate: that one LOCKS to day scope (singleTabOnly), which is
+  // the exact opposite of what this entry wants.
+  const [weekAdjustRequested, setWeekAdjustRequested] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
 
@@ -1020,6 +1025,14 @@ export default function DashboardScreen() {
             setRestDayQuickGenerate(true);
             setShowSingleDayRegenModal(true);
           }}
+          onAdjustWeek={
+            workoutInfo
+              ? () => {
+                  setWeekAdjustRequested(true);
+                  setShowSingleDayRegenModal(true);
+                }
+              : undefined
+          }
           todayLocationName={locations.todayLocationName}
           onChangeLocation={locations.openPicker}
           isSessionActive={isWorkoutInProgress}
@@ -1150,18 +1163,23 @@ export default function DashboardScreen() {
         onClose={() => {
           setShowSingleDayRegenModal(false);
           setRestDayQuickGenerate(false);
+          setWeekAdjustRequested(false);
         }}
         onRegenerate={() => {}}
         onError={showAdjustmentError}
-        regenerationType="day"
-        isRestDay={!!workoutInfo && !todaysWorkout}
-        noActiveWorkoutDay={!workoutInfo}
+        regenerationType={weekAdjustRequested ? "week" : "day"}
+        // [LR-066] A deliberate week entry must not be re-read as a rest day or
+        // an out-of-plan day — both force the scope resolver's hand and would
+        // change the sheet's title and primary-button copy.
+        isRestDay={!weekAdjustRequested && !!workoutInfo && !todaysWorkout}
+        noActiveWorkoutDay={!weekAdjustRequested && !workoutInfo}
         singleTabOnly={restDayQuickGenerate}
         selectedDate={getCurrentDate()}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
           setShowSingleDayRegenModal(false);
           setRestDayQuickGenerate(false);
+          setWeekAdjustRequested(false);
           handleRefresh();
         }}
       />

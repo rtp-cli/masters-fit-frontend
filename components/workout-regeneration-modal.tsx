@@ -899,21 +899,46 @@ export default function WorkoutRegenerationModal({
           </TouchableOpacity>
         ) : null}
 
-        {/* Approved deviation from SPEC §6.5.3: switch scope in place (keep
+        {/* Fourth door. [LR-066] This was a bare centered line of
+            `text-text-muted` — it read as helper text, not an action, and was
+            the ONLY way to reach free-text weekly programming while a plan was
+            active. The owner, who specified the flow, could not find it. Now it
+            matches its siblings exactly (icon, title, subtitle, chevron) so the
+            week-level action is as visible as the day-level ones.
+
+            Approved deviation from SPEC §6.5.3: switch scope in place (keep
             selectedPlanDay + singleTabOnly) instead of closing/reopening with a
             null day. Nulling the day flips the parent's isRestDay true, which
             would reshow the tab control and block the "Change this week" title
             (§12.5). */}
         <TouchableOpacity
-          className="py-3"
+          className="flex-row items-center mt-4"
+          style={{ minHeight: 44 }}
           onPress={() => setSelectedType("week")}
           disabled={loading}
           accessibilityRole="button"
-          accessibilityLabel="Adjust the whole week instead"
+          accessibilityLabel="Change my whole week instead. Rebuild every remaining day from a prompt."
         >
-          <Text className="text-sm font-medium text-text-muted text-center">
-            Adjust the whole week instead
-          </Text>
+          <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
+            <Ionicons
+              name="calendar-outline"
+              size={18}
+              color={colors.text.primary}
+            />
+          </View>
+          <View className="flex-1 ml-3">
+            <Text className="text-base font-semibold text-text-primary">
+              Change my whole week instead
+            </Text>
+            <Text className="text-sm text-text-muted">
+              Rebuild every remaining day from a prompt.
+            </Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.text.muted}
+          />
         </TouchableOpacity>
       </>
     ) : null;
