@@ -1,8 +1,13 @@
-// Helper function to format enum values for display
+// Helper function to format enum values for display.
+// [LR-084] Special cases live in ONE place — utils/index.ts's
+// ENUM_DISPLAY_OVERRIDES — because Settings renders the same profile fields
+// through the other formatEnumValue, and the two had already drifted.
+import { ENUM_DISPLAY_OVERRIDES } from "@/utils";
+
 export const formatEnumValue = (value: string): string => {
-  // Special cases
-  if (value === "HIIT") return "HIIT";
-  if (value === "MOBILITY_FLEXIBILITY") return "Mobility & Flexibility";
+  if (!value) return "";
+  const override = ENUM_DISPLAY_OVERRIDES[value.toLowerCase()];
+  if (override) return override;
 
   return value
     .toLowerCase()

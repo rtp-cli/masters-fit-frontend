@@ -28,28 +28,31 @@ export default function FitnessLevelStep({
           icon: "walk-outline",
           color: "black",
           bgColor: "bg-green-100",
-          description: "New to fitness or returning after a long break",
+          description:
+            "Little or no exercise right now. Building basic activity and consistency.",
         };
       case FITNESS_LEVELS.INTERMEDIATE:
         return {
           icon: "fitness-outline",
           color: "black",
           bgColor: "bg-yellow-100",
-          description: "Consistent exercise for 6+ months",
+          description:
+            "Exercising somewhat regularly. Ready for structured strength and cardio.",
         };
       case FITNESS_LEVELS.ADVANCED:
         return {
           icon: "flame-outline",
           color: "black",
           bgColor: "bg-red-100",
-          description: "Regular challenging workouts for 1+ years",
+          description:
+            "Already active and training consistently. Want progression and performance.",
         };
       default:
         return {
           icon: "fitness-outline",
           color: "black",
           bgColor: "bg-green-100",
-          description: "Fitness level",
+          description: "Where you're starting from",
         };
     }
   };
@@ -92,8 +95,17 @@ export default function FitnessLevelStep({
     <View className="flex-1 px-6 pb-6">
       {/* Current fitness level */}
       <View className="mb-8">
-        <Text className="text-lg font-semibold text-neutral-dark-1 mb-4">
-          Current fitness level
+        {/* [LR-084] Was "Current fitness level" over Beginner/Intermediate/
+            Advanced. A self-rating is both badly answered and quietly shaming;
+            this asks what the user actually DOES right now, which they can
+            answer accurately and which we can check against their logs later.
+            The stored values are unchanged, so nothing downstream moves. */}
+        <Text className="text-lg font-semibold text-neutral-dark-1 mb-1">
+          Where are you starting from?
+        </Text>
+        <Text className="text-sm text-neutral-medium-4 mb-4">
+          Be honest rather than optimistic — we'll build from here, and you can
+          move up whenever you're ready.
         </Text>
         {Object.values(FITNESS_LEVELS).map((value) => {
           const config = getFitnessLevelConfig(value);
