@@ -35,6 +35,7 @@ import type { DialogButton } from "@/components/ui";
 import { CustomDialog } from "@/components/ui";
 import AddAnotherWorkoutSheet from "@/components/workout/add-another-workout-sheet";
 import { CircuitTimeModal } from "@/components/workout/circuit-time-modal";
+import SessionSwitcher from "@/components/workout/session-switcher";
 import UndoDrainStrip from "@/components/workout/undo-drain-strip";
 import WatchNudgeBanner from "@/components/workout/watch-nudge-banner";
 import WorkoutBlock from "@/components/workout-block";
@@ -98,7 +99,10 @@ import {
   getHealthConnection,
   hasRecentHeartRateSample,
 } from "@/utils/health";
-import { selectSessionForDate } from "@/utils/session-for-date";
+import {
+  selectSessionForDate,
+  sessionsForDate,
+} from "@/utils/session-for-date";
 
 // Local types for this component
 interface ExerciseProgress {
@@ -203,6 +207,9 @@ export function WorkoutScreen() {
   // [LR-069] "Add another workout" — a second session on a day already trained.
   const [addAnotherVisible, setAddAnotherVisible] = useState(false);
   const [addAnotherSubmitting, setAddAnotherSubmitting] = useState(false);
+  // Every session on the shown date, so a doubled-up day can offer both. The
+  // screen renders one at a time; without this the other is unreachable.
+  const [todaysSessions, setTodaysSessions] = useState<PlanDayWithBlocks[]>([]);
 
   // Get data refresh functions
   const {
@@ -666,6 +673,54 @@ export function WorkoutScreen() {
   }, []);
 
   // Load workout data
+
+  /**
+   * Show one specific session: set it as the current workout and rebuild the
+   * per-exercise progress for it.
+   *
+   * [LR-069] Extracted from loadWorkout so switching between two sessions on
+   * the same date goes through exactly the same path as loading one, rather
+   * than a second copy of the rules that could drift.
+   */
+  const applySession = (planDay: PlanDayWithBlocks | null) => {
+    if (!planDay) {
+      setWorkout(null);
+      return;
+    }
+
+    if (planDay.isComplete) {
+      setWorkout(planDay);
+      setIsWorkoutCompleted(true);
+      setWorkoutInProgress(false);
+      return;
+    }
+
+    // Rest day plan days have no blocks — treat as rest day
+    if (!planDay.blocks || planDay.blocks.length === 0) {
+      setWorkout(null);
+      return;
+    }
+
+    setIsWorkoutCompleted(false);
+    setWorkout(planDay);
+
+    const flatExercises = planDay.blocks.flatMap(
+      (block: WorkoutBlockWithExercises) => block.exercises,
+    );
+    setExerciseProgress(
+      flatExercises.map((exercise: WorkoutBlockWithExercise) => ({
+        setsCompleted: 0,
+        repsCompleted: 0,
+        roundsCompleted: 0,
+        weightUsed: exercise.weight || 0,
+        sets: [],
+        duration: exercise.duration || 0,
+        restTime: exercise.restTime || 0,
+        notes: "",
+      })),
+    );
+  };
+
   const loadWorkout = async (forceRefresh = false) => {
     try {
       if (!forceRefresh) {
@@ -696,44 +751,16 @@ export function WorkoutScreen() {
         formatDateAsString,
       );
 
-      if (!todaysWorkout) {
-        setWorkout(null);
-        return;
-      }
-
-      // If the plan day is already marked as complete, show the completed screen.
-      if (todaysWorkout.isComplete) {
-        setWorkout(todaysWorkout);
-        setIsWorkoutCompleted(true);
-        setWorkoutInProgress(false); // Make sure context knows workout is complete
-        return;
-      }
-
-      // Rest day plan days have no blocks — treat as rest day
-      if (!todaysWorkout.blocks || todaysWorkout.blocks.length === 0) {
-        setWorkout(null);
-        return;
-      }
-
-      setWorkout(todaysWorkout);
-
-      // Initialize exercise progress
-      const flatExercises = todaysWorkout.blocks.flatMap(
-        (block: WorkoutBlockWithExercises) => block.exercises,
+      // Remember every session on this date so the switcher can offer them.
+      setTodaysSessions(
+        sessionsForDate<PlanDayWithBlocks>(
+          response.planDays,
+          today,
+          formatDateAsString,
+        ),
       );
-      const initialProgress: ExerciseProgress[] = flatExercises.map(
-        (exercise: WorkoutBlockWithExercise) => ({
-          setsCompleted: 0,
-          repsCompleted: 0,
-          roundsCompleted: 0,
-          weightUsed: exercise.weight || 0,
-          sets: [],
-          duration: exercise.duration || 0,
-          restTime: exercise.restTime || 0,
-          notes: "",
-        }),
-      );
-      setExerciseProgress(initialProgress);
+
+      applySession(todaysWorkout);
 
     } catch (err) {
       console.error("Error loading workout:", err);
@@ -2207,6 +2234,27 @@ export function WorkoutScreen() {
   };
 
   /**
+   * [LR-069] Switch which of the date's sessions is on screen.
+   *
+   * Refuses while a workout is in progress: swapping the session out from
+   * under a running timer would strand logs against the wrong plan day.
+   */
+  const handleSelectSession = (planDayId: number) => {
+    if (planDayId === workout?.id) return;
+    if (isWorkoutStarted && !isWorkoutCompleted) {
+      showErrorDialog(
+        "Finish this one first",
+        "You're part way through a session. Finish or end it before switching to the other one.",
+      );
+      return;
+    }
+    const next = todaysSessions.find((session) => session.id === planDayId);
+    if (!next) return;
+    setIsWorkoutStarted(false);
+    applySession(next);
+  };
+
+  /**
    * [LR-069] Generate a second session for today.
    *
    * Reuses the rest-day endpoint, which already takes a free-text reason and a
@@ -2258,6 +2306,11 @@ export function WorkoutScreen() {
   if (isWorkoutCompleted) {
     return (
       <>
+      <SessionSwitcher
+        sessions={todaysSessions}
+        selectedId={workout?.id ?? null}
+        onSelect={handleSelectSession}
+      />
       <WorkoutSummary
         workout={workout}
         onResume={isToday ? handleResume : undefined}
@@ -2322,6 +2375,15 @@ export function WorkoutScreen() {
   // Main workout interface
   return (
     <View className="flex-1 bg-background">
+      {/* [LR-069] Only rendered when the date holds more than one session, and
+          hidden once a workout is running — mid-session the choice is made. */}
+      {!isWorkoutStarted ? (
+        <SessionSwitcher
+          sessions={todaysSessions}
+          selectedId={workout?.id ?? null}
+          onSelect={handleSelectSession}
+        />
+      ) : null}
       {/* Active-workout header: pinned OUTSIDE the ScrollView so the elapsed
           clock and progress bar stay visible while the user works down the
           set list (the pre-start variant scrolls with the content below). */}

@@ -77,3 +77,24 @@ export function countSessionsForDate<T extends SessionLike>(
   if (!planDays?.length) return 0;
   return planDays.filter((day) => normalize(day.date) === date).length;
 }
+
+/**
+ * Every session on a date that has content, in plan order.
+ *
+ * [LR-069] The Workout tab can only render one session at a time, so when a
+ * date holds two it needs to offer a choice — otherwise the one it does not
+ * pick becomes unreachable, and a completed workout can disappear behind a
+ * bonus session the user did not want. Blockless days are excluded for the
+ * same reason selectSessionForDate skips them: a placeholder mid-generation is
+ * not something to switch to.
+ */
+export function sessionsForDate<T extends SessionLike>(
+  planDays: T[] | null | undefined,
+  date: string,
+  normalize: (d: string | Date) => string
+): T[] {
+  if (!planDays?.length) return [];
+  return planDays.filter(
+    (day) => normalize(day.date) === date && (day.blocks?.length ?? 0) > 0
+  );
+}
