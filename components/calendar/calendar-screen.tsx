@@ -44,8 +44,12 @@ import { type RegenerationData } from "@/types/calendar.types";
 import { type ThemeColorPalette,useThemeColors } from "../../lib/theme";
 import { useTheme } from "../../lib/theme-context";
 import { formatDateAsString } from "../../utils";
-import { selectSessionForDate } from "../../utils/session-for-date";
+import {
+  selectSessionForDate,
+  sessionsForDate,
+} from "../../utils/session-for-date";
 import { CustomDialog, type DialogButton } from "../ui";
+import SessionSwitcher from "../workout/session-switcher";
 import CalendarActionButtons from "./sections/action-buttons";
 import CalendarViewSection from "./sections/calendar-view";
 import WorkoutDaySection from "./sections/workout-day";
@@ -80,6 +84,11 @@ export default function CalendarScreen() {
   );
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  // [LR-069] Which session the user picked when a date holds more than one.
+  // Null means "whatever selectSessionForDate would choose".
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
+    null,
+  );
   const [selectedPlanDay, setSelectedPlanDay] =
     useState<PlanDayWithBlocks | null>(null);
   // "Edit it myself" hands off from the regeneration sheet to the editor. On
@@ -490,6 +499,8 @@ export default function CalendarScreen() {
   const handleDateSelect = (day: DateData) => {
     setSelectedDate(day.dateString);
     setExpandedBlocks({});
+    // A session choice belongs to the date it was made on.
+    setSelectedSessionId(null);
   };
 
   const isToday = () => {
@@ -549,9 +560,22 @@ export default function CalendarScreen() {
   }
 
   const selectedPlanDayResult = getPlanDayForDate(selectedDate);
-  const currentSelectedPlanDay = selectedPlanDayResult
-    ? selectedPlanDayResult.day
-    : null;
+
+  // [LR-069] Every session on this date, so a doubled-up day can offer both.
+  // Without this the one the screen does not pick is unreachable from the
+  // calendar — on production that hid a completed workout behind a second
+  // session logged the same day.
+  const sessionsOnDate = sessionsForDate<PlanDayWithBlocks>(
+    workoutPlan?.planDays,
+    selectedDate,
+    formatDateAsString,
+  );
+  const chosenSession = selectedSessionId
+    ? sessionsOnDate.find((session) => session.id === selectedSessionId)
+    : undefined;
+
+  const currentSelectedPlanDay =
+    chosenSession ?? (selectedPlanDayResult ? selectedPlanDayResult.day : null);
   const isHistoricalWorkout = selectedPlanDayResult?.isHistorical || false;
 
   const handleRefresh = async () => {
@@ -652,6 +676,13 @@ export default function CalendarScreen() {
             <JustGeneratedBadge />
           </View>
         )}
+
+        {/* [LR-069] Only renders when the date holds more than one session. */}
+        <SessionSwitcher
+          sessions={sessionsOnDate}
+          selectedId={currentSelectedPlanDay?.id ?? null}
+          onSelect={setSelectedSessionId}
+        />
 
         <WorkoutDaySection
           selectedDate={selectedDate}
