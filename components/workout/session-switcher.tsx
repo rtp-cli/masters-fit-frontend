@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { useThemeColors } from "@/lib/theme";
 
@@ -14,6 +14,11 @@ import { useThemeColors } from "@/lib/theme";
  * cancelled. It read as though the training had been deleted.
  *
  * Renders nothing for a single session, so the ordinary day is unchanged.
+ *
+ * Laid out as a row that shares the width rather than a horizontal scroller.
+ * The scroller let a long session name run off the right edge, which reads as
+ * a broken layout rather than as "there is more to scroll to" — and a date
+ * realistically holds two sessions, occasionally three, which fit.
  */
 
 interface SwitchableSession {
@@ -43,11 +48,7 @@ export default function SessionSwitcher({
       <Text className="text-xs text-text-muted mb-2">
         {sessions.length} sessions today
       </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8 }}
-      >
+      <View className="flex-row" style={{ gap: 8 }}>
         {sessions.map((session, index) => {
           const selected = session.id === selectedId;
           const done = !!session.isComplete;
@@ -60,7 +61,8 @@ export default function SessionSwitcher({
               accessibilityLabel={`${session.name || `Session ${index + 1}`}${
                 done ? ", completed" : ""
               }`}
-              className={`flex-row items-center px-3 py-2 rounded-full border ${
+              // flex-1 so the pills divide the width evenly and always fit.
+              className={`flex-1 flex-row items-center justify-center px-3 py-2 rounded-full border ${
                 selected
                   ? "bg-primary border-primary"
                   : "bg-background border-neutral-medium-1"
@@ -77,8 +79,11 @@ export default function SessionSwitcher({
               <Text
                 className="text-sm font-medium"
                 numberOfLines={1}
+                ellipsizeMode="tail"
                 style={{
-                  maxWidth: 180,
+                  // No maxWidth: the pill itself is already bounded by flex-1,
+                  // so the label truncates to whatever share it gets.
+                  flexShrink: 1,
                   color: selected
                     ? colors.contentOnPrimary
                     : colors.text.primary,
@@ -89,7 +94,7 @@ export default function SessionSwitcher({
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
