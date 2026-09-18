@@ -43,7 +43,11 @@ import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutSummary from "@/components/workout-summary";
-import { HIT_SLOP_6, HIT_SLOP_10 } from "@/constants";
+import {
+  HIT_SLOP_6,
+  HIT_SLOP_10,
+  MAX_SESSIONS_PER_DATE,
+} from "@/constants";
 import {
   getEffectiveScoringType,
   getLoggingMode,
@@ -100,6 +104,7 @@ import {
   hasRecentHeartRateSample,
 } from "@/utils/health";
 import {
+  countSessionsForDate,
   selectSessionForDate,
   sessionsForDate,
 } from "@/utils/session-for-date";
@@ -210,6 +215,10 @@ export function WorkoutScreen() {
   // Every session on the shown date, so a doubled-up day can offer both. The
   // screen renders one at a time; without this the other is unreachable.
   const [todaysSessions, setTodaysSessions] = useState<PlanDayWithBlocks[]>([]);
+  // Counts EVERY plan day on the date, including one still generating — a
+  // placeholder has no blocks so it is absent from todaysSessions, and without
+  // this a second tap during generation would sail past the cap into a 400.
+  const [todaysSessionCount, setTodaysSessionCount] = useState(0);
 
   // Get data refresh functions
   const {
@@ -758,6 +767,9 @@ export function WorkoutScreen() {
           today,
           formatDateAsString,
         ),
+      );
+      setTodaysSessionCount(
+        countSessionsForDate(response.planDays, today, formatDateAsString),
       );
 
       applySession(todaysWorkout);
@@ -2343,7 +2355,9 @@ export function WorkoutScreen() {
                 never both. "Add another workout" and "check back tomorrow" side
                 by side contradict each other. Only TODAY gets the offer;
                 "add another" is meaningless while reviewing a past day. */}
-            {isToday ? (
+            {/* [LR-069] Hidden at the cap. The backend enforces it too — this
+                just avoids offering a button that would return a 400. */}
+            {isToday && todaysSessionCount < MAX_SESSIONS_PER_DATE ? (
               <TouchableOpacity
                 onPress={() => setAddAnotherVisible(true)}
                 accessibilityRole="button"
