@@ -15,6 +15,12 @@
 interface SessionLike {
   date: string | Date;
   isComplete?: boolean | null;
+  /**
+   * Present so a session still being generated can be skipped. The backend
+   * creates the plan day FIRST and fills in blocks when the job finishes, so a
+   * blockless day is a placeholder, not something the user can do.
+   */
+  blocks?: unknown[] | null;
 }
 
 /**
@@ -24,10 +30,20 @@ interface SessionLike {
  *                  cannot disagree with how the rest of the screen reads dates
  *
  * Preference order:
- *  1. The first session today that is NOT complete — the one you can act on,
- *     which after finishing the morning workout is the bonus just generated.
- *  2. Failing that (everything today is done), the LAST one, so the summary
- *     reflects the session you finished most recently rather than the first.
+ *  1. The first session that is NOT complete AND has blocks — the one you can
+ *     actually do, which after finishing the morning workout is the bonus just
+ *     generated.
+ *  2. Failing that, the LAST session WITH blocks, so a fully-trained day shows
+ *     what you finished most recently rather than the first thing you did.
+ *  3. Failing that, the last session at all.
+ *
+ * Blockless days are skipped at every step, and that is the load-bearing part.
+ * A bonus workout's plan day is created BEFORE its exercises are generated, so
+ * for the length of that job the date holds an empty placeholder. The workout
+ * screen treats a blockless day as a rest day, so preferring it shadowed the
+ * real completed workout and rendered "Rest Day" over a session the user had
+ * already finished — which looks exactly like data loss. Seen on production
+ * 2026-09-17.
  */
 export function selectSessionForDate<T extends SessionLike>(
   planDays: T[] | null | undefined,
@@ -39,8 +55,17 @@ export function selectSessionForDate<T extends SessionLike>(
   const onDate = planDays.filter((day) => normalize(day.date) === date);
   if (onDate.length === 0) return null;
 
-  const firstUnfinished = onDate.find((day) => !day.isComplete);
-  return firstUnfinished ?? onDate[onDate.length - 1];
+  // A day mid-generation has no blocks yet; it is not something to show.
+  const real = onDate.filter((day) => (day.blocks?.length ?? 0) > 0);
+
+  const firstUnfinished = real.find((day) => !day.isComplete);
+  if (firstUnfinished) return firstUnfinished;
+
+  if (real.length > 0) return real[real.length - 1];
+
+  // Nothing on this date has content — fall back so a genuine rest day (a plan
+  // day deliberately created with no blocks) still resolves as it always did.
+  return onDate[onDate.length - 1];
 }
 
 /** How many sessions fall on that date — drives "1 of 2" style affordances. */
