@@ -32,7 +32,7 @@ export const getStepConfig = (
     case ONBOARDING_STEP.FITNESS_LEVEL:
       return {
         title: "Where you're starting",
-        description: "Your training now, and how hard you want to push.",
+        description: "Your current training and how hard you want to push.",
       };
     case ONBOARDING_STEP.SCHEDULE:
       return {
