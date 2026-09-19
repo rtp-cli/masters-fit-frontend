@@ -36,6 +36,13 @@ export default function WorkoutStyleStep({
 
   const getStyleConfig = (styleKey: PREFERRED_STYLES): StyleConfig => {
     switch (styleKey) {
+      case PREFERRED_STYLES.WALKING_MOVEMENT:
+        return {
+          icon: "walk-outline",
+          color: "black",
+          bgColor: "bg-lime-100",
+          description: "Walks, easy hills, and gentle movement to build a base",
+        };
       case PREFERRED_STYLES.HIIT:
         return {
           icon: "flash-outline",

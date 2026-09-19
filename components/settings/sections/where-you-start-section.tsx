@@ -52,7 +52,10 @@ export default function WhereYouStartSection({
       onNavigate={onNavigate}
     >
       <Row
-        label="Fitness level"
+        // [LR-084] Not "Fitness level" any more — the value is now a
+        // description of what the user does ("Building fitness"), and
+        // "Fitness level: Building fitness" reads as a category error.
+        label="Right now"
         value={
           profile.fitnessLevel
             ? formatEnumValue(profile.fitnessLevel)

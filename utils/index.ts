@@ -516,8 +516,35 @@ export function formatExerciseDuration(
  * @param value The enum value to format (e.g., "muscle_gain", "weight_loss")
  * @returns Formatted string (e.g., "Muscle Gain", "Weight Loss")
  */
+/**
+ * [LR-084] Display labels that title-casing gets wrong or that deliberately
+ * differ from the stored value.
+ *
+ * Keyed by the LOWERCASED stored value. This exists because the app has TWO
+ * formatEnumValue implementations — this one (used by Settings and most
+ * screens) and `components/onboarding/utils/formatters.ts` (used by the
+ * onboarding steps) — and both render the same profile fields. Without a shared
+ * map, onboarding said "Getting moving" while Settings still said "Beginner"
+ * for the identical stored value.
+ *
+ * The fitness-level entries are a relabel only: the stored values remain
+ * `beginner`/`intermediate`/`advanced`, so no migration and no consumer change.
+ * The question moved from a self-rating to a description of what the user
+ * actually does now.
+ */
+export const ENUM_DISPLAY_OVERRIDES: Readonly<Record<string, string>> = {
+  hiit: "HIIT",
+  mobility_flexibility: "Mobility & Flexibility",
+  walking_movement: "Walking & Movement",
+  beginner: "Getting moving",
+  intermediate: "Building fitness",
+  advanced: "Training regularly",
+};
+
 export function formatEnumValue(value: string): string {
   if (!value) return "";
+  const override = ENUM_DISPLAY_OVERRIDES[value.toLowerCase()];
+  if (override) return override;
   return value
     .toLowerCase()
     .replace(/_/g, " ")
