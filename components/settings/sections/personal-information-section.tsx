@@ -35,7 +35,7 @@ export default function PersonalInformationSection({
   onNavigate,
 }: PersonalInformationSectionProps) {
   return (
-    <EditableSectionCard title="About you" step="PERSONAL_INFO" onNavigate={onNavigate}>
+    <EditableSectionCard step="PERSONAL_INFO" onNavigate={onNavigate}>
       <Row
         label="Age"
         value={profile.age ? `${profile.age} years` : "Not specified"}

@@ -46,7 +46,6 @@ export default function EquipmentSection({
 }: EquipmentSectionProps) {
   return (
     <EditableSectionCard
-      title="Where you train"
       step="WORKOUT_ENVIRONMENT"
       routeOverride="/training-locations"
       onNavigate={onNavigate}

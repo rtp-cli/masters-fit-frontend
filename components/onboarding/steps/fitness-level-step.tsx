@@ -86,7 +86,7 @@ export default function FitnessLevelStep({
           icon: "fitness-outline",
           color: "black",
           bgColor: "bg-green-100",
-          description: "Where you're starting from",
+          description: "Your current training",
         };
     }
   };
@@ -135,7 +135,7 @@ export default function FitnessLevelStep({
             answer accurately and which we can check against their logs later.
             The stored values are unchanged, so nothing downstream moves. */}
         <Text className="text-lg font-semibold text-neutral-dark-1 mb-1">
-          Where are you starting from?
+          Your training right now
         </Text>
         <Text className="text-sm text-neutral-medium-4 mb-4">
           Choose what best describes you today. We'll build from there, and you
@@ -189,8 +189,7 @@ export default function FitnessLevelStep({
           Preferred intensity
         </Text>
         <Text className="text-sm text-neutral-medium-4 mb-4">
-          How hard you want your workouts to feel, based on where you're
-          starting.
+          How hard you want your workouts to feel.
         </Text>
         {Object.entries(INTENSITY_LEVELS).map(([key, value]) => {
           const config = getIntensityLevelConfig(value);

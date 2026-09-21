@@ -1,13 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { fetchUserProfile, type Profile,updateUserProfile } from "@lib/profile";
+import {
+  fetchUserProfile,
+  type Profile,
+  updateUserProfile,
+} from "@lib/profile";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getStepConfig } from "@/components/onboarding/utils/step-config";
@@ -47,8 +46,13 @@ export default function ProfileEditScreen() {
       ? ONBOARDING_STEP[step as keyof typeof ONBOARDING_STEP]
       : undefined;
   const editSteps = editStep !== undefined ? [editStep] : undefined;
-  const headerTitle =
-    editStep !== undefined ? getStepConfig(editStep).title : "Edit Profile";
+  // Editing stored state, not asking a first-time question: prefer the step's
+  // editTitle where it defines one (§9.2.1), else its onboarding title.
+  const editStepConfig =
+    editStep !== undefined ? getStepConfig(editStep) : undefined;
+  const headerTitle = editStepConfig
+    ? (editStepConfig.editTitle ?? editStepConfig.title)
+    : "Edit Profile";
 
   // Get data refresh functions
   const {
@@ -187,13 +191,13 @@ export default function ProfileEditScreen() {
     // Convert string arrays to enum arrays
     const convertStringArrayToEnum = <T extends string>(
       arr: string[] | undefined,
-      enumObj: Record<string, T>
+      enumObj: Record<string, T>,
     ): T[] => {
       if (!arr) return [];
       return arr
         .map((item) => {
           const enumKey = Object.keys(enumObj).find(
-            (key) => enumObj[key].toLowerCase() === item.toLowerCase()
+            (key) => enumObj[key].toLowerCase() === item.toLowerCase(),
           );
           return enumKey ? enumObj[enumKey] : null;
         })
@@ -209,22 +213,22 @@ export default function ProfileEditScreen() {
       goals: convertStringArrayToEnum(profile.goals, FITNESS_GOALS),
       limitations: convertStringArrayToEnum(
         profile.limitations,
-        PHYSICAL_LIMITATIONS
+        PHYSICAL_LIMITATIONS,
       ),
       fitnessLevel: fitnessLevel,
       environment: environment,
       equipment: convertStringArrayToEnum(
         profile.equipment,
-        AVAILABLE_EQUIPMENT
+        AVAILABLE_EQUIPMENT,
       ),
       otherEquipment: profile.otherEquipment || "",
       preferredStyles: convertStringArrayToEnum(
         profile.preferredStyles,
-        PREFERRED_STYLES
+        PREFERRED_STYLES,
       ),
       availableDays: convertStringArrayToEnum(
         profile.availableDays,
-        PREFERRED_DAYS
+        PREFERRED_DAYS,
       ),
       workoutDuration:
         profile.workoutDuration ?? ONBOARDING_SLIDER_DEFAULTS.workoutDuration,
@@ -249,7 +253,7 @@ export default function ProfileEditScreen() {
         goals: formData.goals.map((g: FITNESS_GOALS) => g.toString()),
         limitations:
           formData.limitations?.map((l: PHYSICAL_LIMITATIONS) =>
-            l.toString()
+            l.toString(),
           ) || [],
         fitnessLevel: formData.fitnessLevel!.toString(),
         environment: formData.environment!.toString(),
@@ -258,10 +262,10 @@ export default function ProfileEditScreen() {
           [],
         otherEquipment: formData.otherEquipment || "",
         preferredStyles: formData.preferredStyles.map((s: PREFERRED_STYLES) =>
-          s.toString()
+          s.toString(),
         ),
         availableDays: formData.availableDays.map((d: PREFERRED_DAYS) =>
-          d.toString()
+          d.toString(),
         ),
         workoutDuration: formData.workoutDuration,
         intensityLevel: formData.intensityLevel.toString(),

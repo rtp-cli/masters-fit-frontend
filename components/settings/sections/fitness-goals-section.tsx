@@ -15,6 +15,8 @@ export default function FitnessGoalsSection({
 }: FitnessGoalsSectionProps) {
   return (
     <EditableSectionCard
+      // Deliberate override: the step asks "What you're after"; the card
+      // names the stored field so it reads as a profile row.
       title="Fitness goals"
       step="FITNESS_GOALS"
       onNavigate={onNavigate}

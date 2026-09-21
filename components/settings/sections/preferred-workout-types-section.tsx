@@ -15,6 +15,8 @@ export default function PreferredWorkoutTypesSection({
 }: PreferredWorkoutTypesSectionProps) {
   return (
     <EditableSectionCard
+      // Deliberate override: the step asks "How you like to train"; the card
+      // names the stored field so it reads as a profile row.
       title="Preferred workout types"
       step="WORKOUT_STYLE"
       onNavigate={onNavigate}

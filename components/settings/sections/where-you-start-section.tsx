@@ -34,28 +34,29 @@ function intensityDisplay(level: string | number | undefined | null): string {
     return formatEnumValue(level);
   }
   if (typeof level === "number") {
-    if (level <= 3) return level === 1 ? "Low" : level === 2 ? "Moderate" : "High";
+    if (level <= 3)
+      return level === 1 ? "Low" : level === 2 ? "Moderate" : "High";
     return getIntensityText(level);
   }
   return "Not specified";
 }
 
-// §9.2.1: "Where you're starting" — fitness level + intensity. Opens step 3.
+// §9.2.1: "Where you are now" — fitness level + intensity. Opens step 3.
+// The heading is derived from the step's editTitle, not passed as a literal:
+// onboarding still asks "Where you're starting", but this card shows stored
+// state, and a heading that says *starting* contradicts "Training regularly".
 export default function WhereYouStartSection({
   profile,
   onNavigate,
 }: WhereYouStartSectionProps) {
   return (
-    <EditableSectionCard
-      title="Where you're starting"
-      step="FITNESS_LEVEL"
-      onNavigate={onNavigate}
-    >
+    <EditableSectionCard step="FITNESS_LEVEL" onNavigate={onNavigate}>
       <Row
-        // [LR-084] Not "Fitness level" any more — the value is now a
-        // description of what the user does ("Building fitness"), and
-        // "Fitness level: Building fitness" reads as a category error.
-        label="Right now"
+        // [LR-084] Not "Fitness level" — the value describes what the user
+        // does ("Building fitness"), and "Fitness level: Building fitness"
+        // reads as a category error. Was "Right now", which restated the
+        // tense the heading now carries.
+        label="Activity"
         value={
           profile.fitnessLevel
             ? formatEnumValue(profile.fitnessLevel)
