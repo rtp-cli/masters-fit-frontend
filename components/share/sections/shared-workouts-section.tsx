@@ -46,9 +46,10 @@ export default function SharedWorkoutsSection() {
             const ok = await revokeShareLink(link.code);
             setRevoking(null);
             if (ok) {
-              setLinks((prev) =>
-                prev.map((l) => (l.code === link.code ? { ...l, revoked: true } : l))
-              );
+              // Drop the row outright: a revoked link has no action left, and
+              // leaving it behind turns this list into a graveyard of dead
+              // entries (the server keeps the record so the URL stays dead).
+              setLinks((prev) => prev.filter((l) => l.code !== link.code));
             }
           },
         },
@@ -56,6 +57,9 @@ export default function SharedWorkoutsSection() {
     );
   };
 
+  // This list exists to revoke links, so only live ones belong in it. The
+  // server still returns revoked rows (it never hard-deletes them); filter
+  // them out here rather than rendering a row whose only control is gone.
   const active = links.filter((l) => !l.revoked);
 
   return (
@@ -72,14 +76,16 @@ export default function SharedWorkoutsSection() {
         <View className="p-4 border-t border-neutral-light-2">
           <ActivityIndicator color={colors.text.muted} />
         </View>
-      ) : links.length === 0 ? (
+      ) : active.length === 0 ? (
         <View className="p-4 border-t border-neutral-light-2">
           <Text className="text-sm text-text-muted">
-            You haven't shared any workouts yet.
+            {links.length === 0
+              ? "You haven't shared any workouts yet."
+              : "No active share links."}
           </Text>
         </View>
       ) : (
-        links.map((link) => (
+        active.map((link) => (
           <View
             key={link.code}
             className="flex-row items-center px-4 py-3 border-t border-neutral-light-2"
@@ -89,29 +95,23 @@ export default function SharedWorkoutsSection() {
                 {link.workoutName}
               </Text>
               <Text className="text-xs text-text-muted mt-0.5">
-                {link.revoked
-                  ? "Revoked"
-                  : `${link.openCount} open${link.openCount === 1 ? "" : "s"} · ${link.url.replace(/^https?:\/\//, "")}`}
+                {`${link.openCount} open${link.openCount === 1 ? "" : "s"} · ${link.url.replace(/^https?:\/\//, "")}`}
               </Text>
             </View>
-            {link.revoked ? (
-              <Text className="text-xs text-text-muted">—</Text>
-            ) : (
-              <TouchableOpacity
-                onPress={() => confirmRevoke(link)}
-                disabled={revoking === link.code}
-                accessibilityRole="button"
-                accessibilityLabel={`Revoke ${link.workoutName}`}
-                className="items-center justify-center"
-                style={{ minHeight: 44, minWidth: 44 }}
-              >
-                {revoking === link.code ? (
-                  <ActivityIndicator color={colors.text.muted} />
-                ) : (
-                  <Text className="text-sm font-semibold text-danger">Revoke</Text>
-                )}
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              onPress={() => confirmRevoke(link)}
+              disabled={revoking === link.code}
+              accessibilityRole="button"
+              accessibilityLabel={`Revoke ${link.workoutName}`}
+              className="items-center justify-center"
+              style={{ minHeight: 44, minWidth: 44 }}
+            >
+              {revoking === link.code ? (
+                <ActivityIndicator color={colors.text.muted} />
+              ) : (
+                <Text className="text-sm font-semibold text-danger">Revoke</Text>
+              )}
+            </TouchableOpacity>
           </View>
         ))
       )}
