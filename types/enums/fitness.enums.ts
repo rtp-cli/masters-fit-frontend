@@ -84,6 +84,10 @@ export enum AVAILABLE_EQUIPMENT {
 }
 
 export enum PREFERRED_STYLES {
+  // [LR-084] FIRST deliberately: Object.entries() renders in declaration order,
+  // and this is the entry point for the cohort with 0% activation. A STYLE, not
+  // a level — a consistent walker who won't do gym work is not a beginner.
+  WALKING_MOVEMENT = "walking_movement",
   HIIT = "HIIT",
   STRENGTH = "strength",
   CARDIO = "cardio",

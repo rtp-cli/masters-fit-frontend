@@ -43,6 +43,11 @@ type ActiveWorkoutCardProps = {
   /** Rule 3: once the session is active the row disappears entirely — not
       disabled, gone. The dashboard passes workoutInProgress from context. */
   isSessionActive?: boolean;
+  /** [LR-066] Week-level door. Free-text weekly programming previously lived
+      ONLY under a day-level action (Calendar → a day → Change Workout → a muted
+      link), so a week-scope intent had to be expressed as a day-scope one
+      first. Omitted → the row doesn't render. */
+  onAdjustWeek?: () => void;
 };
 
 const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
@@ -62,6 +67,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   todayLocationName,
   onChangeLocation,
   isSessionActive,
+  onAdjustWeek,
 }) => {
   const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
@@ -289,6 +295,40 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
                 <Text className="text-content-on-primary font-semibold text-sm">
                   View Workout
                 </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* [LR-066] The week-level door, at the top level rather than
+                nested under a day. Hidden mid-session for the same reason as
+                the location row (Rule 3): rebuilding the week while the user is
+                training is disruptive, not helpful. It stays visible after
+                completion — "today is done, change the rest of the week" is
+                exactly when this is wanted. */}
+            {!isSessionActive && !!onAdjustWeek && (
+              <TouchableOpacity
+                onPress={onAdjustWeek}
+                accessibilityRole="button"
+                accessibilityLabel="Change my whole week. Rebuild every remaining day from a prompt."
+                className="flex-row items-center rounded-xl mt-3 border border-neutral-medium-1 bg-neutral-light-2"
+                style={{ paddingHorizontal: 18, paddingVertical: 14, minHeight: 44 }}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={18}
+                  color={colors.text.secondary}
+                />
+                <Text
+                  className="text-base font-semibold text-text-primary ml-2 flex-1"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Change my whole week
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.text.muted}
+                />
               </TouchableOpacity>
             )}
           </View>

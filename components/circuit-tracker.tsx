@@ -27,9 +27,6 @@ export default function CircuitTracker({
   circuitActions,
 }: CircuitTrackerProps & {
   circuitActions?: CircuitActions;
-  // Still passed by the caller but the round-action UI (and its Undo) now lives
-  // in the workout screen's fixed footer via CircuitRoundAction.
-  canUndoRound?: boolean;
 }) {
   const colors = useThemeColors();
   // [T5-3/MF-003] The circuit timer (toggle + CircuitTimer render) was removed

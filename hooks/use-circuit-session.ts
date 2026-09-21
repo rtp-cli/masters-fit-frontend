@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useRef,useState } from "react";
 
+import { CIRCUIT_UNDO_MS } from "@/constants/undo";
 import { logger } from "@/lib/logger";
 import {
   type CircuitExerciseLog,
@@ -16,9 +17,6 @@ import {
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import { computeCircuitResult } from "@/utils/circuit-utils";
-
-/** Duration in ms for the undo round window — used by both the timeout and the UI animation */
-export const UNDO_DURATION_MS = 3000;
 
 export function useCircuitSession(
   config: CircuitSessionConfig
@@ -75,13 +73,6 @@ export function useCircuitSession(
       startedAt: autoStartTimer ? new Date() : undefined,
     };
   }
-
-  // Re-initialize the session whenever the active block changes
-  // This ensures circuit exercises render when switching from a dummy block to a real block
-  useEffect(() => {
-    setSessionData(initializeSession(block));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [block.id]);
 
   // Create a new round with all exercises
   function createRound(
@@ -202,8 +193,47 @@ export function useCircuitSession(
     });
   }, [sessionData.blockId, sessionData.blockType, sessionData.targetRounds]);
 
+  const clearUndoTimer = useCallback(() => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  }, []);
+
+  /**
+   * Retire an open undo window without undoing anything.
+   *
+   * Logging into the new round means the user has moved on, so touching it is
+   * proof the last round was right (SPEC §7). Also called when the circuit
+   * finishes and when the active block changes — the snapshot belongs to a
+   * session that no longer exists, and re-initialization resets isCompleted,
+   * which used to leave a live Undo pointing at the PREVIOUS block.
+   *
+   * Deliberately unconditional: setCanUndoRound(false) on an already-false
+   * value is a no-op, so this needs no canUndoRound in its closure and the
+   * callbacks below stay dependency-stable (a re-created updateExerciseReps
+   * re-renders every round card mid-keystroke).
+   */
+  const closeUndoWindow = useCallback(() => {
+    clearUndoTimer();
+    undoSnapshotRef.current = null;
+    setCanUndoRound(false);
+  }, [clearUndoTimer]);
+
+  // Re-initialize the session whenever the active block changes
+  // This ensures circuit exercises render when switching from a dummy block to a real block
+  useEffect(() => {
+    setSessionData(initializeSession(block));
+    // The previous block's undo snapshot cannot apply to a fresh session, and
+    // re-initializing resets isCompleted — which is what used to let a live
+    // Undo survive into the NEXT block and restore the wrong session (SPEC §6).
+    closeUndoWindow();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [block.id]);
+
   // Update exercise reps in current round
   const updateExerciseReps = useCallback((exerciseId: number, reps: number) => {
+    closeUndoWindow();
     setSessionData((prev) => {
       const updatedRounds = [...prev.rounds];
       const currentRoundIndex = prev.currentRound - 1;
@@ -227,11 +257,12 @@ export function useCircuitSession(
         rounds: updatedRounds,
       };
     });
-  }, []);
+  }, [closeUndoWindow]);
 
   // Update exercise weight in current round
   const updateExerciseWeight = useCallback(
     (exerciseId: number, weight: number) => {
+      closeUndoWindow();
       setSessionData((prev) => {
         const updatedRounds = [...prev.rounds];
         const currentRoundIndex = prev.currentRound - 1;
@@ -255,22 +286,15 @@ export function useCircuitSession(
         };
       });
     },
-    []
+    [closeUndoWindow]
   );
-
-  const clearUndoTimer = useCallback(() => {
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current);
-      undoTimerRef.current = null;
-    }
-  }, []);
 
   const startUndoTimer = useCallback(() => {
     clearUndoTimer();
     undoTimerRef.current = setTimeout(() => {
       undoSnapshotRef.current = null;
       setCanUndoRound(false);
-    }, UNDO_DURATION_MS);
+    }, CIRCUIT_UNDO_MS);
   }, [clearUndoTimer]);
 
   useEffect(() => {
@@ -563,6 +587,9 @@ export function useCircuitSession(
       setIsLoading(true);
 
       try {
+        // The circuit is being logged — there is nothing left to undo, and the
+        // strip must not linger into the next exercise (SPEC §6).
+        closeUndoWindow();
         setSessionData((prev) => ({
           ...prev,
           isCompleted: true,
@@ -595,7 +622,7 @@ export function useCircuitSession(
         setIsLoading(false);
       }
     },
-    [calculateMetrics, sessionData]
+    [calculateMetrics, closeUndoWindow, sessionData]
   );
 
   // Toggle timer (pause/resume)
