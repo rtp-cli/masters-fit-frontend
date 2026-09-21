@@ -2,6 +2,13 @@ import { ONBOARDING_STEP } from "@/types/enums";
 
 export interface StepConfig {
   title: string;
+  /**
+   * Title for surfaces that show this step as stored, editable state rather than
+   * as a first-time question: the Settings card and the single-step profile editor.
+   * Falls back to `title` when unset — most steps are already tense-neutral
+   * ("Your week", "Where you train") and should NOT set this.
+   */
+  editTitle?: string;
   description: string;
   disclaimer?: string;
 }
@@ -32,6 +39,7 @@ export const getStepConfig = (
     case ONBOARDING_STEP.FITNESS_LEVEL:
       return {
         title: "Where you're starting",
+        editTitle: "Where you are now",
         description: "Your current training and how hard you want to push.",
       };
     case ONBOARDING_STEP.SCHEDULE:

@@ -3,10 +3,14 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
+import { getStepConfig } from "@/components/onboarding/utils/step-config";
 import { useThemeColors } from "@/lib/theme";
+import { ONBOARDING_STEP } from "@/types/enums";
 
 interface EditableSectionCardProps {
-  title: string;
+  // Optional: the heading is derived from `step` by default, so the card and the
+  // screen it opens cannot drift apart. Pass it only to override that.
+  title?: string;
   // ONBOARDING_STEP enum name — deep-links the single-step profile editor.
   step: string;
   // Runs before navigating (e.g. close the settings sheet first).
@@ -30,12 +34,18 @@ export default function EditableSectionCard({
   const router = useRouter();
   const colors = useThemeColors();
 
+  // The card shows stored state, so it takes editTitle when the step defines one.
+  // PERSONAL_INFO is 0, so guard on undefined rather than falsiness.
+  const stepEnum = ONBOARDING_STEP[step as keyof typeof ONBOARDING_STEP];
+  const cfg = stepEnum !== undefined ? getStepConfig(stepEnum) : undefined;
+  const heading = title ?? cfg?.editTitle ?? cfg?.title ?? "";
+
   return (
     <TouchableOpacity
       className="mx-6 mb-6 bg-surface rounded-xl overflow-hidden border border-neutral-medium-1"
       activeOpacity={0.7}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${title}`}
+      accessibilityLabel={`Edit ${heading}`}
       onPress={() => {
         onNavigate?.();
         router.push(routeOverride ?? `/profile-edit?step=${step}`);
@@ -43,7 +53,7 @@ export default function EditableSectionCard({
     >
       <View className="flex-row items-center justify-between p-4 pb-2">
         <Text className="text-base font-semibold text-text-primary">
-          {title}
+          {heading}
         </Text>
         <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
       </View>

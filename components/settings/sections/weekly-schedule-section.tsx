@@ -42,7 +42,7 @@ export default function WeeklyScheduleSection({
   }));
 
   return (
-    <EditableSectionCard title="Your week" step="SCHEDULE" onNavigate={onNavigate}>
+    <EditableSectionCard step="SCHEDULE" onNavigate={onNavigate}>
       <View className="flex-row justify-between px-4 pb-4 pt-1">
         {dayInfo.map((d) => (
           <View

@@ -19,6 +19,8 @@ export default function HealthInformationSection({
 
   return (
     <EditableSectionCard
+      // Deliberate override: the step asks "What to work around", but the
+      // card names the data it stores rather than the question.
       title="Health information"
       step="PHYSICAL_LIMITATIONS"
       onNavigate={onNavigate}
