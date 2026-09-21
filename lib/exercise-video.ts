@@ -67,17 +67,15 @@ export function processExerciseLink(
       }
     }
 
-    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
-    const isImage =
-      imageExtensions.some((ext) =>
-        urlObj.pathname.toLowerCase().endsWith(ext),
-      ) ||
-      urlObj.searchParams.has("format") ||
-      urlObj.hostname.includes("images") ||
-      urlObj.hostname.includes("img") ||
-      urlObj.hostname.includes("cdn");
-
-    if (isImage) {
+    // [#103] Extension-only, and deliberately narrower than this used to be.
+    // The old predicate also accepted any host containing "cdn", "img" or
+    // "images", or any URL carrying a `format` param. That was harmless while
+    // `type: "image"` was produced and then consumed by nothing; now that an
+    // image actually renders in the demo sheet, the loose version would put a
+    // broken picture in front of the user. A missing chip beats a broken one.
+    // Mirrored server-side in backend src/utils/video-validation.ts
+    // (`isImageLink`) — keep the two in lockstep.
+    if (/\.(jpe?g|png|gif|webp|svg)$/i.test(urlObj.pathname)) {
       return { type: "image", isValid: true };
     }
 
@@ -90,9 +88,17 @@ export function processExerciseLink(
 /**
  * Whether an exercise gets a Demo chip. Synchronous on purpose — the chip
  * must never pop in/out as async checks resolve (SPEC §4). `hasDemo` is the
- * backend's generation-time oEmbed verdict; `null`/`undefined` means
+ * backend's generation-time verdict; `null`/`undefined` means
  * not-yet-validated, which renders optimistically (the sheet's runtime
  * fallback catches the rare dead video).
+ *
+ * [#103] A still image counts. Some movements have no required form to
+ * demonstrate — the generation prompt has always told the model to attach a
+ * public image rather than a video for "something like walking or cycling" —
+ * and until now this gate accepted YouTube only, so those links produced no
+ * affordance at all. Note the backend must agree: `checkDemoLink` stamps
+ * has_demo, and a `false` there short-circuits this function regardless of the
+ * link.
  */
 export function exerciseHasDemo(exercise: {
   link?: string | null;
@@ -100,6 +106,7 @@ export function exerciseHasDemo(exercise: {
 }): boolean {
   if (exercise.hasDemo === false) return false;
   const info = processExerciseLink(exercise.link);
+  if (info.type === "image") return info.isValid;
   return info.isValid && info.type === "youtube" && !!info.videoId;
 }
 

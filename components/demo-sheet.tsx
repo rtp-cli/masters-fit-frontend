@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Image,
   Modal,
   Pressable,
   TouchableOpacity,
@@ -75,17 +76,22 @@ export default function DemoSheet({
   }, [visible, initialIndex]);
 
   const entry = entries[index];
-  const videoId = useMemo(
-    () => (entry ? processExerciseLink(entry.link).videoId : undefined),
+  const linkInfo = useMemo(
+    () => (entry ? processExerciseLink(entry.link) : undefined),
     [entry],
   );
+  const videoId = linkInfo?.videoId;
+  // [#103] Not every demo is a video. Movements with no required form —
+  // walking, cycling — carry a still image instead, which the generation
+  // prompt has always asked for and nothing ever rendered.
+  const isImage = linkInfo?.type === "image" && linkInfo.isValid;
 
   // Per-video state resets when stepping prev/next.
   useEffect(() => {
     setUnavailable(false);
     setChannel(undefined);
     setMuted(true);
-    if (!visible || !entry || !videoId) return;
+    if (!visible || !entry || (!videoId && !isImage)) return;
 
     trackVideoEngagement({
       exercise_id: entry.exerciseId,
@@ -93,6 +99,10 @@ export default function DemoSheet({
       video_url: entry.link,
       surface,
     }).catch(() => {});
+
+    // An image has no oEmbed endpoint and no embedding permission to revoke,
+    // so there is nothing to pre-check — a dead URL surfaces via onError below.
+    if (!videoId) return;
 
     let cancelled = false;
     checkYouTubeVideo(videoId).then((result) => {
@@ -103,9 +113,9 @@ export default function DemoSheet({
     return () => {
       cancelled = true;
     };
-    // entry/videoId change together; visible re-runs for reopen.
+    // entry/videoId/isImage change together; visible re-runs for reopen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, videoId]);
+  }, [visible, videoId, isImage]);
 
   // Horizontal fling steps the series, mirroring the prev/next arrows. Bound to
   // the sheet body — flings over the WebView player are swallowed by the WebView
@@ -178,7 +188,9 @@ export default function DemoSheet({
                 >
                   {unavailable
                     ? "Demo unavailable"
-                    : `Demo${channel ? ` · ${channel}` : ""}`}
+                    : isImage
+                      ? "Demo photo"
+                      : `Demo${channel ? ` · ${channel}` : ""}`}
                 </Text>
               </View>
               <IconButton
@@ -189,7 +201,7 @@ export default function DemoSheet({
             </View>
 
             {/* Player, full-bleed 16:9 — or the unavailable panel. Never empty. */}
-            {unavailable || !videoId ? (
+            {unavailable || (!videoId && !isImage) ? (
               <View
                 className="bg-brand-light-1 items-center justify-center"
                 style={{ height: 160 }}
@@ -202,6 +214,19 @@ export default function DemoSheet({
                 <Text className="text-sm text-text-muted mt-2">
                   This demo is not available right now
                 </Text>
+              </View>
+            ) : isImage ? (
+              // A still, letterboxed in the same 16:9 frame the player uses so
+              // the sheet does not resize as you step between a video and a
+              // photo. No mute control: there is nothing to hear.
+              <View style={{ height: playerHeight }} className="bg-black">
+                <Image
+                  source={{ uri: entry.link }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                  accessibilityLabel={`${entry.exerciseName} demonstration photo`}
+                  onError={() => setUnavailable(true)}
+                />
               </View>
             ) : (
               <View style={{ height: playerHeight }} className="bg-black">
