@@ -1,4 +1,8 @@
-import { exerciseHasDemo, extractYouTubeVideoId } from "@/lib/exercise-video";
+import {
+  exerciseHasDemo,
+  extractYouTubeVideoId,
+  processExerciseLink,
+} from "@/lib/exercise-video";
 
 // Regression guard for the URL-shape parser fix: the seeded catalog carries
 // valid video IDs in several non-standard shapes that the old parser dropped,
@@ -43,9 +47,57 @@ describe("exerciseHasDemo", () => {
     expect(
       exerciseHasDemo({ link: "https://youtube.com/watch/cO3lDuMXuzc?si=abc" })
     ).toBe(true);
-    expect(exerciseHasDemo({ link: "https://images.unsplash.com/x.jpg" })).toBe(
-      false
-    );
     expect(exerciseHasDemo({ link: null })).toBe(false);
+  });
+
+  // [#103] DELIBERATE CONTRACT CHANGE. This case previously asserted `false`:
+  // a still image was not a demo, so the movements the generation prompt asks
+  // the model to illustrate with a photo rather than a video — "something like
+  // walking or cycling", which has no required form — produced no affordance
+  // at all. An image is now a demo.
+  it("treats a still image as a demo", () => {
+    expect(exerciseHasDemo({ link: "https://images.unsplash.com/x.jpg" })).toBe(
+      true
+    );
+  });
+
+  it("still lets the backend verdict veto an image", () => {
+    expect(
+      exerciseHasDemo({
+        link: "https://images.unsplash.com/x.jpg",
+        hasDemo: false,
+      })
+    ).toBe(false);
+  });
+});
+
+// [#103] The predicate got STRICTER at the same time as it started mattering.
+// While `type: "image"` was produced and consumed by nothing, a loose match
+// cost nothing; now that an image renders in the demo sheet, a false positive
+// is a broken picture in front of the user.
+describe("processExerciseLink image detection", () => {
+  it.each([
+    "https://images.unsplash.com/photo-123.jpg",
+    "https://example.com/a/walk.JPEG",
+    "https://example.com/x.png",
+    "https://example.com/pic.jpg?w=800&fit=crop",
+  ])("classifies %s as an image", (url) => {
+    expect(processExerciseLink(url).type).toBe("image");
+  });
+
+  it.each([
+    ["a CDN-hosted page", "https://cdn.example.com/article/walking"],
+    ["a host merely containing 'images'", "https://images.example.com/gallery"],
+    ["a format param on a non-image", "https://example.com/data?format=json"],
+    ["an extension in the query only", "https://example.com/p?next=/photo.jpg"],
+  ])("no longer misclassifies %s", (_label, url) => {
+    expect(processExerciseLink(url).type).not.toBe("image");
+    expect(exerciseHasDemo({ link: url })).toBe(false);
+  });
+
+  it("keeps YouTube winning over the image check", () => {
+    expect(
+      processExerciseLink("https://www.youtube.com/watch?v=cO3lDuMXuzc").type
+    ).toBe("youtube");
   });
 });
