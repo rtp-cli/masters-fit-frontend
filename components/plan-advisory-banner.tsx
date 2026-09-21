@@ -6,29 +6,55 @@ import { Pressable, Text, View } from "react-native";
 import { useThemeColors } from "@/lib/theme";
 
 /**
- * [GQ-04] Dismissible banner shown at the top of the generated week when the
- * plan couldn't fully honor the user's request ("couldn't apply X because Y").
- * Collapsed it reads "We adjusted N of your requests"; tapping expands the list;
- * "Got it" dismisses it for good (persisted per workout so it doesn't reappear
- * when the user revisits the same week).
+ * Dismissible advisories shown at the top of the generated week. Two of them,
+ * on purpose:
  *
- * Renders nothing when there are no conflicts or it's already been dismissed —
- * safe to always mount on the calendar.
+ * - [GQ-04]  FeedbackConflictsBanner — "We adjusted N of your requests".
+ *            Parts of the request the plan could NOT honor.
+ * - [GQ-04b] CoachingCautionsBanner — "One thing to watch".
+ *            Parts it DID honor exactly, that carry a training risk.
+ *
+ * They used to be one channel, and the model reached for the conflicts field to
+ * say "built exactly what you asked, but be careful" (prod workout 927,
+ * 2026-09-21) — so the heading announced an adjustment that never happened.
+ * Separate backend fields, separate headings, each true to its payload.
+ *
+ * Both render nothing when empty or already dismissed, so they're safe to mount
+ * unconditionally on the calendar.
  */
+
 export interface FeedbackConflict {
   request: string;
   reason: string;
 }
 
-const dismissKey = (workoutId: number) =>
-  `@feedback_conflicts_dismissed:${workoutId}`;
+export interface CoachingCaution {
+  what: string;
+  why: string;
+}
 
-export default function FeedbackConflictsBanner({
+/** One row: a bolded lead-in, an em dash, then the explanation. */
+interface AdvisoryItem {
+  lead: string;
+  body: string;
+}
+
+/**
+ * Shared shell. Tapping the header expands the list; "Got it" dismisses it for
+ * good, persisted per workout so it doesn't reappear on revisit.
+ */
+function PlanAdvisoryBanner({
   workoutId,
-  conflicts,
+  items,
+  heading,
+  icon,
+  storagePrefix,
 }: {
   workoutId: number | undefined;
-  conflicts: FeedbackConflict[] | undefined;
+  items: AdvisoryItem[];
+  heading: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  storagePrefix: string;
 }) {
   const colors = useThemeColors();
   const [expanded, setExpanded] = useState(false);
@@ -41,34 +67,32 @@ export default function FeedbackConflictsBanner({
       setDismissed(true);
       return;
     }
-    AsyncStorage.getItem(dismissKey(workoutId))
+    AsyncStorage.getItem(`${storagePrefix}${workoutId}`)
       .then((v) => {
         if (active) setDismissed(v === "1");
       })
       .catch(() => {
-        // Storage read failure shouldn't hide a real adjustment — show it.
+        // Storage read failure shouldn't hide a real advisory — show it.
         if (active) setDismissed(false);
       });
     return () => {
       active = false;
     };
-  }, [workoutId]);
+  }, [workoutId, storagePrefix]);
 
   const onDismiss = () => {
     setDismissed(true);
     if (workoutId != null) {
-      AsyncStorage.setItem(dismissKey(workoutId), "1").catch(() => {
+      AsyncStorage.setItem(`${storagePrefix}${workoutId}`, "1").catch(() => {
         // Best effort — if it fails to persist, the banner is still hidden this
         // session; it may reappear next visit, which is acceptable.
       });
     }
   };
 
-  if (!conflicts || conflicts.length === 0) return null;
+  if (!items || items.length === 0) return null;
   // Don't flash the banner before we know whether it was dismissed.
   if (dismissed !== false) return null;
-
-  const count = conflicts.length;
 
   return (
     <View
@@ -86,16 +110,12 @@ export default function FeedbackConflictsBanner({
       <Pressable
         onPress={() => setExpanded((e) => !e)}
         accessibilityRole="button"
-        accessibilityLabel={`We adjusted ${count} of your requests. Tap to ${
+        accessibilityLabel={`${heading}. Tap to ${
           expanded ? "collapse" : "expand"
         }.`}
         style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
       >
-        <Ionicons
-          name="information-circle-outline"
-          size={18}
-          color={colors.warning}
-        />
+        <Ionicons name={icon} size={18} color={colors.warning} />
         <Text
           style={{
             flex: 1,
@@ -104,7 +124,7 @@ export default function FeedbackConflictsBanner({
             color: colors.text.primary,
           }}
         >
-          We adjusted {count} of your {count === 1 ? "requests" : "requests"}
+          {heading}
         </Text>
         <Ionicons
           name={expanded ? "chevron-up" : "chevron-down"}
@@ -115,7 +135,7 @@ export default function FeedbackConflictsBanner({
 
       {expanded && (
         <View style={{ marginTop: 10, gap: 8 }}>
-          {conflicts.map((c, i) => (
+          {items.map((item, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 6 }}>
               <Text style={{ color: colors.warning, fontSize: 13 }}>•</Text>
               <Text
@@ -127,10 +147,10 @@ export default function FeedbackConflictsBanner({
                 }}
               >
                 <Text style={{ fontWeight: "600", color: colors.text.primary }}>
-                  {c.request}
+                  {item.lead}
                 </Text>
                 {" — "}
-                {c.reason}
+                {item.body}
               </Text>
             </View>
           ))}
@@ -154,5 +174,53 @@ export default function FeedbackConflictsBanner({
         </View>
       )}
     </View>
+  );
+}
+
+/** [GQ-04] What the plan could NOT honor. */
+export function FeedbackConflictsBanner({
+  workoutId,
+  conflicts,
+}: {
+  workoutId: number | undefined;
+  conflicts: FeedbackConflict[] | undefined;
+}) {
+  const count = conflicts?.length ?? 0;
+  return (
+    <PlanAdvisoryBanner
+      workoutId={workoutId}
+      items={(conflicts ?? []).map((c) => ({
+        lead: c.request,
+        body: c.reason,
+      }))}
+      heading={`We adjusted ${count} of your ${
+        count === 1 ? "request" : "requests"
+      }`}
+      icon="information-circle-outline"
+      // Unchanged key — anyone who already dismissed this stays dismissed.
+      storagePrefix="@feedback_conflicts_dismissed:"
+    />
+  );
+}
+
+/** [GQ-04b] What it DID honor, but that's worth watching. */
+export function CoachingCautionsBanner({
+  workoutId,
+  cautions,
+}: {
+  workoutId: number | undefined;
+  cautions: CoachingCaution[] | undefined;
+}) {
+  const count = cautions?.length ?? 0;
+  return (
+    <PlanAdvisoryBanner
+      workoutId={workoutId}
+      items={(cautions ?? []).map((c) => ({ lead: c.what, body: c.why }))}
+      heading={count === 1 ? "One thing to watch" : `${count} things to watch`}
+      // "eye" rather than the conflicts "i": same warning accent, but the icon
+      // tells the two apart at a glance when both happen to be showing.
+      icon="eye-outline"
+      storagePrefix="@coaching_cautions_dismissed:"
+    />
   );
 }

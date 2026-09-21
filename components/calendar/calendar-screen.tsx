@@ -18,9 +18,12 @@ import {
 } from "react-native";
 import { type DateData } from "react-native-calendars";
 
-import FeedbackConflictsBanner from "@/components/feedback-conflicts-banner";
 import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
+import {
+  CoachingCautionsBanner,
+  FeedbackConflictsBanner,
+} from "@/components/plan-advisory-banner";
 import { CalendarSkeleton } from "@/components/skeletons/skeleton-screens";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
@@ -616,6 +619,13 @@ export default function CalendarScreen() {
         <FeedbackConflictsBanner
           workoutId={workoutPlan?.id}
           conflicts={workoutPlan?.feedbackConflicts}
+        />
+
+        {/* [GQ-04b] Its sibling: the plan DID do what was asked, but there's a
+            risk worth naming. Separate banner so the heading stays honest. */}
+        <CoachingCautionsBanner
+          workoutId={workoutPlan?.id}
+          cautions={workoutPlan?.coachingCautions}
         />
 
         <CalendarViewSection
