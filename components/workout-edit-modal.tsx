@@ -115,6 +115,11 @@ export default function WorkoutEditModal({
   // True while the replace list is the backend's ranked "closest movements"
   // seed rather than a name search / filter browse — drives the list label.
   const [resultsRanked, setResultsRanked] = useState(false);
+  // [#102] The one reserved row in a ranked list, if the backend sent one —
+  // the Indoor Walk offered to a walking-only user replacing a walk. Held as
+  // an id rather than a field on SearchExercise so the shared search type
+  // stays free of a replace-only concept.
+  const [pinnedSwapId, setPinnedSwapId] = useState<number | null>(null);
   // The muscle groups the replace view was seeded with, so we can tell a
   // still-seeded filter state from one the user has narrowed themselves.
   const seededMuscleGroupsRef = useRef<string[]>([]);
@@ -473,6 +478,9 @@ export default function WorkoutEditModal({
             )
           );
           setResultsRanked(true);
+          setPinnedSwapId(
+            candidates.find((c) => c.pinned === "indoor-swap")?.id ?? null
+          );
           return;
         }
         // Ranker had nothing for us (no match left, or a backend that predates
@@ -480,6 +488,7 @@ export default function WorkoutEditModal({
       }
 
       setResultsRanked(false);
+      setPinnedSwapId(null);
       const result = await searchExercisesWithFiltersAPI(user.id, {
         query: searchQuery.trim() || undefined,
         muscleGroups:
@@ -1171,6 +1180,18 @@ export default function WorkoutEditModal({
                           >
                             <View className="flex-row items-start justify-between">
                               <View className="flex-1">
+                                {/* [#102] Name the circumstance, not the
+                                    movement — the same voice as "Tell us
+                                    what's different today" and "Short on
+                                    time? Sore shoulder?". Someone who cannot
+                                    get outside should recognise themselves
+                                    here without knowing what the exercise is
+                                    called. */}
+                                {item.id === pinnedSwapId && (
+                                  <Text className="text-xs font-bold tracking-widest text-brand-primary mb-1">
+                                    CAN&apos;T GET OUTSIDE?
+                                  </Text>
+                                )}
                                 <Text className="text-base font-semibold text-text-primary mb-1">
                                   {item.name}
                                 </Text>
