@@ -11,3 +11,5 @@ design_handoff_workout_generation/
 launch_readiness/
 logo-exports/
 .DS_Store
+# Expo export output (`npx expo export`) — regenerable build artifact
+dist/
