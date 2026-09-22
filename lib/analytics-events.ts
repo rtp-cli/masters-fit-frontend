@@ -30,6 +30,23 @@ export const AnalyticsEvent = {
   // it and walked away.
   PLAN_REVEAL_SHOWN: "plan_reveal_shown",
 
+  // [#117] The step between "saw the plan" and "tapped Start". Fired when the
+  // workout screen actually displays a trainable session.
+  //
+  // Why it exists: on 2026-09-21 a review of every non-activated prod user hit
+  // a wall. Five plan-content hypotheses were tested and all falsified —
+  // beginners get FEWER exercises per day than users who activate (12.4 vs
+  // 13.1), an easier difficulty mix (65% low / 2% high vs 44% / 9%), no more
+  // novel movements (39.5 distinct vs 39.0), and 5 of 6 had a session waiting
+  // on day one. The plan is not why they stall.
+  //
+  // But the next question — did they open the session and back out, or never
+  // open it at all? — was unanswerable. workout_started only fires on tapping
+  // Start, and plan_day_logs only exists on COMPLETION (271 rows on prod, all
+  // is_complete), so "never opened" and "opened and left" are indistinguishable
+  // today. Those two findings would send you to completely different work.
+  WORKOUT_VIEWED: "workout_viewed",
+
   // ── Subscription / paywall funnel (client intent; backend owns the verified purchase) ──
   PAYWALL_VIEWED: "paywall_viewed",
   CHECKOUT_STARTED: "checkout_started",
@@ -108,6 +125,18 @@ export interface AnalyticsEventProps {
     scope: string;
     ms_since_start?: number;
   };
+  [AnalyticsEvent.WORKOUT_VIEWED]: {
+    /** Which plan day was on screen, so this joins to plan_days. */
+    plan_day_id: number;
+    /** Movements in the session — the "was it daunting?" question, per view. */
+    exercise_count: number;
+    /**
+     * Whether the session had already been started when it was viewed. A first
+     * view is the funnel step; re-opens of an in-progress session are not.
+     */
+    already_started: boolean;
+  };
+
   [AnalyticsEvent.PLAN_REVEAL_SHOWN]: {
     /**
      * "first" is the user's very first plan out of onboarding, "day" a
@@ -247,6 +276,11 @@ export interface AnalyticsEventProps {
 const PERSISTED_EVENTS: ReadonlySet<string> = new Set<string>([
   AnalyticsEvent.GENERATION_COMPLETED,
   AnalyticsEvent.PLAN_REVEAL_SHOWN,
+  // [#117] The missing rung: plan generated -> reveal seen -> SESSION VIEWED ->
+  // workout started -> first exercise logged. Without it the funnel jumps from
+  // "saw a plan" to "tapped Start" and cannot separate a user who never opened
+  // a session from one who opened it and left.
+  AnalyticsEvent.WORKOUT_VIEWED,
   AnalyticsEvent.EXERCISE_LOGGED,
 ]);
 
