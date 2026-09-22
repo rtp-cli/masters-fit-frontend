@@ -1,4 +1,4 @@
-import { type Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { getCurrentUser } from "@lib/auth";
 import {
   invalidateActiveWorkoutCache,
@@ -20,6 +20,7 @@ import { type DateData } from "react-native-calendars";
 
 import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
+import { LogActivitySheet, LoggedActivityRow } from "@/components/log-activity";
 import {
   CoachingCautionsBanner,
   FeedbackConflictsBanner,
@@ -34,6 +35,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkout } from "@/contexts/workout-context";
+import { useLoggedActivities } from "@/hooks/use-logged-activities";
 import { PaywallError } from "@/lib/api";
 import { clearPendingResume, setPendingResume } from "@/lib/paywall-resume";
 import { tabEvents } from "@/lib/tab-events";
@@ -87,6 +89,16 @@ export default function CalendarScreen() {
   );
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // [LR-077] Activities the user logged themselves.
+  //
+  // Loaded UNWINDOWED rather than per visible month: the list is small (one row
+  // per activity, not per exercise), and a window keyed on currentMonth would
+  // refetch on every month swipe and leave dots missing for the month either
+  // side while it did. Revisit if anyone ever accumulates enough of these for
+  // the payload to matter.
+  const [showLogActivity, setShowLogActivity] = useState(false);
+  const loggedActivities = useLoggedActivities();
   // [LR-069] Which session the user picked when a date holds more than one.
   // Null means "whatever selectSessionForDate would choose".
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
@@ -480,6 +492,26 @@ export default function CalendarScreen() {
       });
     }
 
+    // [LR-077] A logged activity gets its own dot, APPENDED like LR-069's
+    // second session rather than assigned — a date can hold a planned session
+    // AND something the user did on their own, and overwriting here would hide
+    // whichever came second. Its own color so it never reads as a completed
+    // plan day: the plan was not done, something else was.
+    loggedActivities.activities.forEach((activity) => {
+      const dateStr = activity.date;
+      const existingDots = markedDates[dateStr]?.dots ?? [];
+      markedDates[dateStr] = {
+        ...markedDates[dateStr],
+        // brand.primary, NOT brand.secondary: the latter is white in the light
+        // monochrome theme and the dot vanishes (same trap the scheduled dot
+        // above documents).
+        dots: [
+          ...existingDots,
+          { color: colors.brand.primary, key: `activity-${activity.id}` },
+        ],
+      };
+    });
+
     if (!markedDates[today]) {
       markedDates[today] = {};
     }
@@ -577,6 +609,10 @@ export default function CalendarScreen() {
     ? sessionsOnDate.find((session) => session.id === selectedSessionId)
     : undefined;
 
+  // [LR-077] The sibling of sessionsOnDate: everything the USER logged for this
+  // date, as opposed to everything the app planned for it.
+  const activitiesOnDate = loggedActivities.activitiesForDate(selectedDate);
+
   const currentSelectedPlanDay =
     chosenSession ?? (selectedPlanDayResult ? selectedPlanDayResult.day : null);
   const isHistoricalWorkout = selectedPlanDayResult?.isHistorical || false;
@@ -657,6 +693,12 @@ export default function CalendarScreen() {
             <View className="size-2 rounded-full bg-text-secondary mr-1.5" />
             <Text className="text-xs text-text-muted">Scheduled</Text>
           </View>
+          {/* [LR-077] Named separately from "Completed": this dot means the
+              user logged something themselves, not that the plan was done. */}
+          <View className="flex-row items-center">
+            <View className="size-2 rounded-full bg-primary mr-1.5" />
+            <Text className="text-xs text-text-muted">You logged</Text>
+          </View>
           <View className="flex-row items-center">
             <View className="size-3 rounded-full border border-primary mr-1.5" />
             <Text className="text-xs text-text-muted">Today</Text>
@@ -712,7 +754,85 @@ export default function CalendarScreen() {
           }}
           onShowWorkoutChoice={() => setShowWorkoutChoice(true)}
         />
+
+        {/* [LR-077] What the user logged for this date, plus the door to log
+            more. Renders on EVERY date, not just rest days: the point is that a
+            day the plan says was missed can still show what actually happened.
+
+            This ships in the same change as the ability to create one, because
+            a date that accepts a record but never displays it is
+            indistinguishable from data loss — the LR-069 lesson, learned on
+            production. */}
+        <View className="px-lg mb-6">
+          {activitiesOnDate.length > 0 && (
+            <View className="mb-3">
+              <Text
+                className="text-xs font-bold text-text-muted uppercase mb-2"
+                style={{ letterSpacing: 0.78 }}
+              >
+                You logged
+              </Text>
+              <View className="gap-2">
+                {activitiesOnDate.map((activity) => (
+                  <LoggedActivityRow
+                    key={activity.id}
+                    activity={activity}
+                    onDelete={(a) =>
+                      void loggedActivities.removeActivity(a.id)
+                    }
+                    deleting={loggedActivities.deletingId === activity.id}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Hidden on future dates only — you cannot have already done
+              something you have not done yet, and the server rejects it too. */}
+          {selectedDate <= formatDateAsString(new Date()) && (
+            <TouchableOpacity
+              onPress={() => setShowLogActivity(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Log an activity you already did on this day"
+              className="flex-row items-center rounded-xl border border-neutral-medium-1 bg-neutral-light-2"
+              style={{
+                paddingHorizontal: 18,
+                paddingVertical: 14,
+                minHeight: 44,
+              }}
+            >
+              <Ionicons
+                name="add-circle-outline"
+                size={18}
+                color={colors.text.secondary}
+              />
+              <Text className="text-base font-semibold text-text-primary ml-2 flex-1">
+                {activitiesOnDate.length > 0
+                  ? "Log something else"
+                  : "I did something else"}
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={colors.text.muted}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
+
+      {/* [LR-077] Opens against the SELECTED date, not today — the user tapped
+          Saturday because Saturday is what they want to record. */}
+      <LogActivitySheet
+        visible={showLogActivity}
+        onClose={() => setShowLogActivity(false)}
+        initialDate={selectedDate}
+        submitting={loggedActivities.submitting}
+        onSubmit={async (input) => {
+          await loggedActivities.logActivity(input);
+          setShowLogActivity(false);
+        }}
+      />
 
       <WorkoutRegenerationModal
         visible={showRegenerationModal}

@@ -17,6 +17,7 @@ import { RefreshControl,ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Header from "@/components/header";
+import { LogActivitySheet } from "@/components/log-activity";
 import { type PlanEndedRecap } from "@/components/no-active-workout-card";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import PaymentWallModal from "@/components/subscription/payment-wall-modal";
@@ -35,6 +36,7 @@ import { useAppDataContext } from "@/contexts/app-data-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkout } from "@/contexts/workout-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
+import { useLoggedActivities } from "@/hooks/use-logged-activities";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import { useTrainingLocations } from "@/hooks/use-training-locations";
 import { PAYWALL_COPY } from "@/lib/paywall-copy";
@@ -135,6 +137,15 @@ export default function DashboardScreen() {
   const canProgressAnalytics =
     capabilities?.VIEW_PROGRESS_ANALYTICS === true;
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // [LR-077] Activities the user logged themselves. Scoped to today — the
+  // dashboard only ever speaks about today, and the calendar owns the history.
+  const [showLogActivity, setShowLogActivity] = useState(false);
+  const loggedActivities = useLoggedActivities({
+    startDate: getCurrentDate(),
+    endDate: getCurrentDate(),
+  });
+
   const [todaysWorkout, setTodaysWorkout] = useState<TodayWorkout | null>(null);
   const [workoutInfo, setWorkoutInfo] = useState<{
     name: string;
@@ -1036,6 +1047,24 @@ export default function DashboardScreen() {
           todayLocationName={locations.todayLocationName}
           onChangeLocation={locations.openPicker}
           isSessionActive={isWorkoutInProgress}
+          todaysActivities={loggedActivities.activities}
+          onLogActivity={() => setShowLogActivity(true)}
+          onDeleteActivity={(activity) =>
+            void loggedActivities.removeActivity(activity.id)
+          }
+          deletingActivityId={loggedActivities.deletingId}
+        />
+
+        {/* [LR-077] Record something the plan never asked for. */}
+        <LogActivitySheet
+          visible={showLogActivity}
+          onClose={() => setShowLogActivity(false)}
+          initialDate={getCurrentDate()}
+          submitting={loggedActivities.submitting}
+          onSubmit={async (input) => {
+            await loggedActivities.logActivity(input);
+            setShowLogActivity(false);
+          }}
         />
 
         {/* Training locations 1b/1c/1d */}

@@ -2,10 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity,View } from "react-native";
 
+import { LoggedActivityRow } from "@/components/log-activity";
 import NoActiveWorkoutCard, {
   type PlanEndedRecap,
 } from "@/components/no-active-workout-card";
 import {
+  type LoggedActivity,
   type PlanDayWithBlocks,
   type PlanDayWithExercises,
   type TodayWorkout,
@@ -48,6 +50,12 @@ type ActiveWorkoutCardProps = {
       link), so a week-scope intent had to be expressed as a day-scope one
       first. Omitted → the row doesn't render. */
   onAdjustWeek?: () => void;
+  /** [LR-077] Activities the user logged for TODAY, rendered under the card. */
+  todaysActivities?: LoggedActivity[];
+  /** Opens the "log something you already did" sheet. */
+  onLogActivity?: () => void;
+  onDeleteActivity?: (activity: LoggedActivity) => void;
+  deletingActivityId?: number | null;
 };
 
 const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
@@ -68,6 +76,10 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   onChangeLocation,
   isSessionActive,
   onAdjustWeek,
+  todaysActivities = [],
+  onLogActivity,
+  onDeleteActivity,
+  deletingActivityId,
 }) => {
   const colors = useThemeColors();
   const getPlannedExercisesCount = (workout: TodayWorkout | null): number => {
@@ -323,6 +335,75 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
                   ellipsizeMode="tail"
                 >
                   Change my whole week
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.text.muted}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* [LR-077] Sits OUTSIDE the plan / rest-day / no-plan branches on
+            purpose, so it is reachable in every state the card can be in. The
+            people this exists for are the ones with a plan on screen they did
+            not do — putting it only in the empty state would hide it from
+            exactly them.
+
+            It renders today's logged activities above the door, because the
+            ability to SEE one has to ship with the ability to CREATE one: a
+            date that accepts a record but never shows it is indistinguishable
+            from data loss (the LR-069 lesson). */}
+        {(!!onLogActivity || todaysActivities.length > 0) && (
+          <View className="mt-md">
+            {todaysActivities.length > 0 && (
+              <View className="mb-3">
+                <Text
+                  className="text-xs font-bold text-text-muted uppercase mb-2"
+                  style={{ letterSpacing: 0.78 }}
+                >
+                  Also today
+                </Text>
+                <View className="gap-2">
+                  {todaysActivities.map((activity) => (
+                    <LoggedActivityRow
+                      key={activity.id}
+                      activity={activity}
+                      onDelete={onDeleteActivity}
+                      deleting={deletingActivityId === activity.id}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {!!onLogActivity && (
+              <TouchableOpacity
+                onPress={onLogActivity}
+                accessibilityRole="button"
+                accessibilityLabel="Log an activity you already did, outside your plan"
+                className="flex-row items-center rounded-xl border border-neutral-medium-1 bg-neutral-light-2"
+                style={{
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  minHeight: 44,
+                }}
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={18}
+                  color={colors.text.secondary}
+                />
+                <Text
+                  className="text-base font-semibold text-text-primary ml-2 flex-1"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {todaysActivities.length > 0
+                    ? "Log something else"
+                    : "I did something else"}
                 </Text>
                 <Ionicons
                   name="chevron-forward"
