@@ -27,6 +27,10 @@ import DemoChip from "@/components/demo-chip";
 import DemoSheet, { type DemoSheetEntry } from "@/components/demo-sheet";
 import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
+import {
+  LogActivitySheet,
+  TodayActivitiesSection,
+} from "@/components/log-activity";
 import NoActiveWorkoutCard from "@/components/no-active-workout-card";
 import { ShareWorkoutButton } from "@/components/share";
 import { WorkoutSkeleton } from "@/components/skeletons/skeleton-screens";
@@ -58,6 +62,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkout } from "@/contexts/workout-context";
 import { useCircuitSession } from "@/hooks/use-circuit-session";
+import { useLoggedActivities } from "@/hooks/use-logged-activities";
 import { trackWorkoutStarted } from "@/lib/analytics";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { getCurrentUser } from "@/lib/auth";
@@ -219,6 +224,15 @@ export function WorkoutScreen() {
   // placeholder has no blocks so it is absent from todaysSessions, and without
   // this a second tap during generation would sail past the cap into a 400.
   const [todaysSessionCount, setTodaysSessionCount] = useState(0);
+
+  // [LR-077] Activities the user logged themselves. Windowed to today because
+  // this tab renders today and only today (everything below keys off
+  // getCurrentDate()); the calendar owns any other date.
+  const [showLogActivity, setShowLogActivity] = useState(false);
+  const loggedActivities = useLoggedActivities({
+    startDate: getCurrentDate(),
+    endDate: getCurrentDate(),
+  });
 
   // Get data refresh functions
   const {
@@ -2164,8 +2178,37 @@ export function WorkoutScreen() {
                 subtitle="You don't have an active workout plan for this week."
               />
             )}
+
+            {/* [LR-077] The rest-day moment. The app has just said there is
+                nothing scheduled — which for someone who walked this morning is
+                simply wrong, and this is where they can say so. Sits under
+                "Train anyway" because recording what happened is a different
+                act from generating something new. */}
+            <View className="w-full mt-8">
+              <TodayActivitiesSection
+                activities={loggedActivities.activities}
+                onLogActivity={() => setShowLogActivity(true)}
+                onDeleteActivity={(activity) =>
+                  void loggedActivities.removeActivity(activity.id)
+                }
+                deletingId={loggedActivities.deletingId}
+                align="center"
+              />
+            </View>
           </View>
         </ScrollView>
+
+        {/* [LR-077] Record something the plan never asked for. */}
+        <LogActivitySheet
+          visible={showLogActivity}
+          onClose={() => setShowLogActivity(false)}
+          initialDate={getCurrentDate()}
+          submitting={loggedActivities.submitting}
+          onSubmit={async (input) => {
+            await loggedActivities.logActivity(input);
+            setShowLogActivity(false);
+          }}
+        />
 
         {/* Rest Day Regeneration Modal */}
         <WorkoutRegenerationModal
@@ -2519,6 +2562,24 @@ export function WorkoutScreen() {
             <Text className="text-base text-text-secondary leading-6 mb-6">
               {workout.instructions}
             </Text>
+          ) : null}
+
+          {/* [LR-077] A date can hold a planned session AND something the user
+              did on their own, so the tab has to show both — the LR-069 lesson
+              was that a surface which renders only one of them looks like the
+              other was destroyed.
+
+              Pre-start only: mid-session the screen belongs to the set list,
+              and a "log something else" door there is noise at best and a
+              mis-tap out of a running workout at worst. It is read-only here
+              too (no delete) — removing a row while a session is live is not a
+              thing anyone is trying to do; the calendar and dashboard own that. */}
+          {!isWorkoutStarted && loggedActivities.activities.length > 0 ? (
+            <View className="mb-6">
+              <TodayActivitiesSection
+                activities={loggedActivities.activities}
+              />
+            </View>
           ) : null}
 
           {/* Current Block Info — a mid-workout surface. Pre-start, the

@@ -5,6 +5,7 @@ export * from "./common.types";
 export * from "./dashboard.types";
 export * from "./exclusion.types";
 export * from "./exercise.types";
+export * from "./logged-activity.types";
 export { CompletedExercisesResponse, PlanDayLog } from "./logs.types";
 export * from "./profile.types";
 export * from "./search.types";
