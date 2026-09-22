@@ -85,6 +85,9 @@ export interface WorkoutDetailed {
   // [GQ-04] Parts of the user's request the plan couldn't fully honor
   // ("couldn't apply X because Y"), shown in the dismissible week banner.
   feedbackConflicts?: { request: string; reason: string }[];
+  // [GQ-04b] Parts of the request the plan DID honor that carry a training
+  // risk, shown in the separate "One thing to watch" banner.
+  coachingCautions?: { what: string; why: string }[];
   startDate: Date;
   endDate: Date;
   promptId: number;
