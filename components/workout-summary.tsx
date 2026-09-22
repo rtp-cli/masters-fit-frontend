@@ -450,13 +450,17 @@ export default function WorkoutSummary({
     // spuriously, and never the reverse.
     if (current !== "completed") return;
 
-    // Demoting from completed → skipped. Warn only when real (persisted) sets
-    // would be lost.
-    const persistedSets = (exerciseLogs[exId] || []).reduce(
+    // Demoting from completed → skipped destroys a persisted log, so warn
+    // whenever one exists. Guarding on the SET count instead (as this did)
+    // silently skipped the warning for every completion-only exercise — a
+    // warm-up, cool-down or flow has a log but no sets by definition, so one
+    // stray tap deleted the record with no confirmation at all.
+    const persisted = exerciseLogs[exId] || [];
+    const persistedSets = persisted.reduce(
       (n, l) => n + (l.sets?.length || 0),
       0
     );
-    if (baselineStatus[exId] === "completed" && persistedSets > 0) {
+    if (baselineStatus[exId] === "completed" && persisted.length > 0) {
       setPendingDemotion({
         exId,
         name: exercise.exercise.name,
@@ -1280,13 +1284,19 @@ export default function WorkoutSummary({
         {/* Demotion warns before the sets are dropped (SPEC §7). */}
         <CustomDialog
           visible={!!pendingDemotion}
-          title="Delete your logged sets?"
+          title={
+            pendingDemotion?.count
+              ? "Delete your logged sets?"
+              : "Remove this from your log?"
+          }
           description={
-            pendingDemotion
-              ? `This deletes the ${pendingDemotion.count} set${
-                  pendingDemotion.count !== 1 ? "s" : ""
-                } you logged for ${pendingDemotion.name}.`
-              : ""
+            !pendingDemotion
+              ? ""
+              : pendingDemotion.count > 0
+                ? `This deletes the ${pendingDemotion.count} set${
+                    pendingDemotion.count !== 1 ? "s" : ""
+                  } you logged for ${pendingDemotion.name}.`
+                : `This removes your record of doing ${pendingDemotion.name}.`
           }
           primaryButton={{
             text: "Delete",
@@ -1294,7 +1304,7 @@ export default function WorkoutSummary({
             destructive: true,
           }}
           secondaryButton={{
-            text: "Keep them",
+            text: pendingDemotion?.count ? "Keep them" : "Keep it",
             onPress: () => setPendingDemotion(null),
           }}
           onClose={() => setPendingDemotion(null)}
