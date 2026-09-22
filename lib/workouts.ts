@@ -562,6 +562,36 @@ export async function fetchBlockLogsForPlanDay(
 }
 
 /**
+ * Update an EXISTING block-level result (edit-log circuit score).
+ *
+ * Must be a PUT, not another POST: `createBlockLog` is a plain insert with no
+ * upsert, so re-posting would leave a second row for the same block. Reads
+ * take the newest row so it would *look* right, while quietly polluting
+ * `/logs/block/history` and its isBest / PR calculation.
+ */
+export async function updateBlockLog(
+  blockLogId: number,
+  data: {
+    roundsCompleted?: number;
+    totalReps?: number;
+    score?: string;
+    actualTimeMinutes?: number;
+    totalDuration?: number;
+  }
+): Promise<boolean> {
+  try {
+    await apiRequest(`/logs/block/${blockLogId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating block log:", error);
+    return false;
+  }
+}
+
+/**
  * Fetch the user's recent block-level results (score history), newest
  * first. Rows carry an isBest flag computed server-side.
  */

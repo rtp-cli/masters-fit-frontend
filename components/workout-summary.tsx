@@ -20,6 +20,7 @@ import {
   SafeAreaView,
 } from "react-native-safe-area-context";
 
+import CircuitRoundEditor from "@/components/circuit-round-editor";
 import DemoChip from "@/components/demo-chip";
 import SetStepperFields from "@/components/set-stepper-fields";
 import { ShareWorkoutButton } from "@/components/share";
@@ -33,6 +34,7 @@ import { exerciseHasDemo } from "@/lib/exercise-video";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
   createExerciseLog,
+  deleteExerciseLog,
   fetchBlockLogsForPlanDay,
   fetchExerciseLogsForPlanDay,
   getPlanDayLog,
@@ -40,6 +42,7 @@ import {
   recomputePlanDayRollups,
   skipExercise,
   subscribeToWorkoutUpdates,
+  updateBlockLog,
 } from "@/lib/workouts";
 import {
   type BlockLog,
@@ -53,7 +56,7 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
-import { isCircuitBlock } from "@/utils/circuit-utils";
+import { computeCircuitResult, isCircuitBlock } from "@/utils/circuit-utils";
 import { formatDistance, shouldShowWeightInput } from "@/utils/exercise-helpers";
 
 const formatTime = (seconds: number): string => {
@@ -210,6 +213,19 @@ interface WorkoutSummaryProps {
   endedEarly?: boolean;
 }
 
+/** The prescription for one exercise, as a muted subtitle. A Wendler 531 block
+ *  is several `plan_day_exercise` rows for ONE movement, so without this the
+ *  cards are five identical headers with no way to tell which is which. */
+const prescriptionLine = (
+  exercise: WorkoutBlockWithExercise
+): string | null => {
+  const reps = exercise.reps;
+  if (!reps) return null;
+  return exercise.weight && Number(exercise.weight) > 0
+    ? `Prescribed: ${reps} reps @ ${exercise.weight} lb`
+    : `Prescribed: ${reps} reps`;
+};
+
 export default function WorkoutSummary({
   workout,
   footer,
@@ -247,6 +263,20 @@ export default function WorkoutSummary({
   );
   // One set row expanded at a time, keyed `${exId}:${round}:${setNumber}`.
   const [expandedSet, setExpandedSet] = useState<string | null>(null);
+  // Circuit rounds expand PER EXERCISE (exerciseId -> open roundNumber), not
+  // globally: comparing two movements in the same circuit stays possible.
+  const [expandedRound, setExpandedRound] = useState<Record<number, number | null>>(
+    {}
+  );
+  // Demoting a round destroys a persisted log, so it warns first (the same
+  // lesson as the exercise-level guard: warn whenever a log would be lost).
+  const [pendingRoundDemotion, setPendingRoundDemotion] = useState<{
+    exId: number;
+    name: string;
+    round: number;
+    summary: string;
+    isLast: boolean;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -339,6 +369,7 @@ export default function WorkoutSummary({
     setWorkingStatus(status);
     setBaselineStatus(status);
     setExpandedSet(null);
+    setExpandedRound({});
     setIsEditing(true);
   };
 
@@ -346,10 +377,12 @@ export default function WorkoutSummary({
     setShowDiscard(false);
     setIsEditing(false);
     setExpandedSet(null);
+    setExpandedRound({});
     setWorkingLogs({});
     setWorkingStatus({});
     setBaselineStatus({});
     setPendingDemotion(null);
+    setPendingRoundDemotion(null);
   };
 
   const requestCancel = () => {
@@ -428,13 +461,17 @@ export default function WorkoutSummary({
     // spuriously, and never the reverse.
     if (current !== "completed") return;
 
-    // Demoting from completed → skipped. Warn only when real (persisted) sets
-    // would be lost.
-    const persistedSets = (exerciseLogs[exId] || []).reduce(
+    // Demoting from completed → skipped destroys a persisted log, so warn
+    // whenever one exists. Guarding on the SET count instead (as this did)
+    // silently skipped the warning for every completion-only exercise — a
+    // warm-up, cool-down or flow has a log but no sets by definition, so one
+    // stray tap deleted the record with no confirmation at all.
+    const persisted = exerciseLogs[exId] || [];
+    const persistedSets = persisted.reduce(
       (n, l) => n + (l.sets?.length || 0),
       0
     );
-    if (baselineStatus[exId] === "completed" && persistedSets > 0) {
+    if (baselineStatus[exId] === "completed" && persisted.length > 0) {
       setPendingDemotion({
         exId,
         name: exercise.exercise.name,
@@ -533,6 +570,70 @@ export default function WorkoutSummary({
     setExpandedSet(null);
   };
 
+  /** Restore one circuit round's persisted values, that round only. */
+  const resetWorkingRound = (exId: number, roundNumber: number) => {
+    const original = (exerciseLogs[exId] || []).find(
+      (l) => l.roundNumber === roundNumber
+    );
+    if (!original) return;
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).map((log) =>
+        log.roundNumber !== roundNumber
+          ? log
+          : { ...log, sets: JSON.parse(JSON.stringify(original.sets || [])) }
+      ),
+    }));
+  };
+
+  /** "I didn't do this round" — per (exercise, round), never per block.
+   *  "I didn't do the swings in round 3" is a real claim; the other movements
+   *  in that round stand. */
+  const requestRoundDemotion = (
+    exercise: WorkoutBlockWithExercise,
+    roundNumber: number
+  ) => {
+    const working = workingLogs[exercise.id] || [];
+    const log = working.find((l) => l.roundNumber === roundNumber);
+    if (!log) return;
+    const set = (log.sets || [])[0];
+    const reps = set?.reps ?? 0;
+    const weight = Number(set?.weight) || 0;
+    setPendingRoundDemotion({
+      exId: exercise.id,
+      name: exercise.exercise.name,
+      round: roundNumber,
+      summary: weight > 0 ? `${reps} reps × ${weight} lb` : `${reps} reps`,
+      isLast: working.length === 1,
+    });
+  };
+
+  const confirmRoundDemotion = () => {
+    if (!pendingRoundDemotion) return;
+    const { exId, round } = pendingRoundDemotion;
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).filter((l) => l.roundNumber !== round),
+    }));
+    setExpandedRound((prev) => ({ ...prev, [exId]: null }));
+    setPendingRoundDemotion(null);
+  };
+
+  /** Undo a demotion by putting the persisted round back in order. */
+  const restoreWorkingRound = (exId: number, roundNumber: number) => {
+    const original = (exerciseLogs[exId] || []).find(
+      (l) => l.roundNumber === roundNumber
+    );
+    if (!original) return;
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: [
+        ...(prev[exId] || []),
+        JSON.parse(JSON.stringify(original)) as ExerciseLog,
+      ].sort((a, b) => a.roundNumber - b.roundNumber),
+    }));
+  };
+
   const handleSave = async () => {
     // Classify every exercise's intent from its status transition + set diffs.
     // The control only ever yields completed or skipped, so there is no
@@ -540,6 +641,7 @@ export default function WorkoutSummary({
     const promotions: { exId: number; log: ExerciseLog }[] = []; // → completed (write)
     const skips: number[] = []; // → skipped ("I didn't do this")
     const setEdits: { exId: number; log: ExerciseLog }[] = []; // stayed completed, sets changed
+    const roundDeletes: { exId: number; round: number }[] = []; // one circuit round dropped
 
     for (const key of Object.keys(baselineStatus)) {
       const exId = Number(key);
@@ -551,7 +653,23 @@ export default function WorkoutSummary({
           if (log) promotions.push({ exId, log });
         } else {
           const orig = exerciseLogs[exId] || [];
-          for (const wl of workingLogs[exId] || []) {
+          const working = workingLogs[exId] || [];
+          // Demoting EVERY round of an exercise is the claim "I didn't do this
+          // exercise", so it must go through the skip path. Deleting the last
+          // round instead would leave the exercise not_attempted, and
+          // notAttemptedCount drives wasEndedEarly — which would put a
+          // "Workout Ended Early" header, a Resume button and a lost Share on
+          // a day the user actually finished (SPEC §7, amended).
+          if (orig.length > 0 && working.length === 0) {
+            skips.push(exId);
+            continue;
+          }
+          for (const ol of orig) {
+            if (!working.some((w) => w.roundNumber === ol.roundNumber)) {
+              roundDeletes.push({ exId, round: ol.roundNumber });
+            }
+          }
+          for (const wl of working) {
             const ol = orig.find((o) => o.roundNumber === wl.roundNumber);
             if (serializeLog(wl) !== serializeLog(ol)) setEdits.push({ exId, log: wl });
           }
@@ -563,7 +681,7 @@ export default function WorkoutSummary({
     }
 
     const statusChanges = promotions.length + skips.length;
-    if (statusChanges === 0 && setEdits.length === 0) {
+    if (statusChanges === 0 && setEdits.length === 0 && roundDeletes.length === 0) {
       exitEditing();
       return;
     }
@@ -589,6 +707,14 @@ export default function WorkoutSummary({
         const res = await skipExercise(workout.workoutId, exId);
         if (res === null) throw new Error("save-failed");
       }
+      // Dropped rounds are a delete, not a rewrite — POST /logs/exercise only
+      // rewrites a pair. The route demotes the exercise only when no rounds
+      // remain, and the all-rounds case is handled as a skip above, so this
+      // can only ever clear one round of several.
+      for (const { exId, round } of roundDeletes) {
+        const ok = await deleteExerciseLog(exId, round);
+        if (!ok) throw new Error("save-failed");
+      }
       for (const { exId, log } of [...promotions, ...setEdits]) {
         const nextSets = toApiSets(log);
         const res = await createExerciseLog({
@@ -603,9 +729,62 @@ export default function WorkoutSummary({
         setsChanged += nextSets.length;
       }
 
+      // A circuit's score is DERIVED from its rounds, not typed — correcting
+      // reps must move the score with them or the block header keeps showing
+      // the old number. Recompute from the corrected working rounds and PUT
+      // the existing row (createBlockLog is a plain insert, so re-POSTing
+      // would leave a duplicate and pollute the score history's isBest).
+      const changedExIds = new Set<number>([
+        ...promotions.map((x) => x.exId),
+        ...setEdits.map((x) => x.exId),
+        ...roundDeletes.map((x) => x.exId),
+        ...skips,
+      ]);
+      for (const block of workout.blocks) {
+        if (!isCircuitBlock(block.blockType)) continue;
+        const blockLog = blockLogs[block.id];
+        if (!blockLog) continue; // nothing recorded → nothing to correct
+        const touched = block.exercises.some((ex) => changedExIds.has(ex.id));
+        if (!touched) continue;
+
+        // Rebuild the session-shaped rounds this block's working logs imply.
+        // Every round that still carries a log counts as completed — demoting
+        // a round is C2, so there is no partial round to represent yet.
+        const byRound = new Map<number, { actualReps: number }[]>();
+        for (const ex of block.exercises) {
+          for (const log of workingLogs[ex.id] || []) {
+            const set = (log.sets || [])[0];
+            const list = byRound.get(log.roundNumber) || [];
+            list.push({ actualReps: set?.reps ?? 0 });
+            byRound.set(log.roundNumber, list);
+          }
+        }
+        const rounds = [...byRound.keys()]
+          .sort((a, b) => a - b)
+          .map((n) => ({
+            roundNumber: n,
+            isCompleted: true,
+            exercises: (byRound.get(n) || []).map((e) => ({
+              ...e,
+              completed: true,
+            })),
+          }));
+
+        const result = computeCircuitResult(block.blockType || "circuit", rounds as any, {
+          targetRounds: blockLog.roundsCompleted ?? undefined,
+          actualTimeSeconds: blockLog.totalDuration ?? undefined,
+        });
+        const ok = await updateBlockLog(blockLog.id, {
+          roundsCompleted: result.roundsCompleted,
+          totalReps: result.totalReps,
+          score: result.score,
+        });
+        if (!ok) throw new Error("save-failed");
+      }
+
       // One honest recompute after any status change keeps the day's counts
       // truthful (§9). Pure set-value edits don't move the counts, so skip it.
-      if (statusChanges > 0) {
+      if (statusChanges > 0 || roundDeletes.length > 0) {
         await recomputePlanDayRollups(workout.id);
       }
 
@@ -613,6 +792,7 @@ export default function WorkoutSummary({
         ...promotions.map((p) => p.exId),
         ...skips,
         ...setEdits.map((e) => e.exId),
+        ...roundDeletes.map((r) => r.exId),
       ]);
       const hoursSinceCompletion = planDayLog?.updatedAt
         ? Math.round(
@@ -630,6 +810,7 @@ export default function WorkoutSummary({
 
       setIsEditing(false);
       setExpandedSet(null);
+      setExpandedRound({});
       setWorkingLogs({});
       setWorkingStatus({});
       setBaselineStatus({});
@@ -1010,20 +1191,69 @@ export default function WorkoutSummary({
                   {!isCollapsed && (
                     <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2 p-3">
                       {block.exercises.map((exercise) => {
-                        // Circuit exercises stay fully read-only in v1 (§6.4):
-                        // static pill, no status control, no set editor.
+                        // Circuit exercises are editable by ROUND (C1). The
+                        // unit of correction is (exercise, round) — already
+                        // half the key POST /logs/exercise rewrites — so this
+                        // needs no new endpoint. Status changes and add/remove
+                        // round are C2 and deliberately absent here.
                         if (isCircuit) {
+                          const roundLogs = workingLogs[exercise.id] || [];
+                          const prescribedRound = prescriptionLine(exercise);
                           return (
-                            <View key={exercise.id} className="mb-3">
+                            <View key={exercise.id} className="mb-4">
                               <View className="flex-row items-center justify-between mb-1">
                                 <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
                                   {exercise.exercise.name}
                                 </Text>
                                 {statusPill(getExerciseStatus(exercise))}
                               </View>
-                              <Text className="text-xs text-text-muted">
-                                Circuit results aren't editable here.
-                              </Text>
+                              {prescribedRound ? (
+                                <Text className="text-xs text-text-muted mb-2">
+                                  {prescribedRound}
+                                </Text>
+                              ) : null}
+                              {roundLogs.length > 0 ? (
+                                <CircuitRoundEditor
+                                  exercise={exercise}
+                                  logs={roundLogs}
+                                  persisted={exerciseLogs[exercise.id] || []}
+                                  expandedRound={
+                                    expandedRound[exercise.id] ?? null
+                                  }
+                                  onToggleRound={(round) =>
+                                    setExpandedRound((prev) => ({
+                                      ...prev,
+                                      [exercise.id]: round,
+                                    }))
+                                  }
+                                  onPatch={(round, patch) => {
+                                    const log = roundLogs.find(
+                                      (l) => l.roundNumber === round
+                                    );
+                                    const setNumber =
+                                      (log?.sets || [])[0]?.setNumber ?? 1;
+                                    patchWorkingSet(
+                                      exercise.id,
+                                      round,
+                                      setNumber,
+                                      patch
+                                    );
+                                  }}
+                                  onReset={(round) =>
+                                    resetWorkingRound(exercise.id, round)
+                                  }
+                                  onDemote={(round) =>
+                                    requestRoundDemotion(exercise, round)
+                                  }
+                                  onRestore={(round) =>
+                                    restoreWorkingRound(exercise.id, round)
+                                  }
+                                />
+                              ) : (
+                                <Text className="text-xs text-text-muted">
+                                  No rounds were recorded for this exercise.
+                                </Text>
+                              )}
                             </View>
                           );
                         }
@@ -1037,12 +1267,22 @@ export default function WorkoutSummary({
                         const logs = workingLogs[exercise.id] || [];
                         const showSets =
                           !isCompletionOnly && wStatus === "completed";
+                        const prescribed = prescriptionLine(exercise);
 
                         return (
                           <View key={exercise.id} className="mb-4">
-                            <Text className="font-semibold text-text-primary text-sm mb-2">
+                            <Text
+                              className={`font-semibold text-text-primary text-sm${
+                                prescribed ? "" : " mb-2"
+                              }`}
+                            >
                               {exercise.exercise.name}
                             </Text>
+                            {prescribed ? (
+                              <Text className="text-xs text-text-muted mt-1 mb-2">
+                                {prescribed}
+                              </Text>
+                            ) : null}
                             {statusSegment(exercise, isCompletionOnly)}
 
                             {showSets ? (
@@ -1052,6 +1292,17 @@ export default function WorkoutSummary({
                                     {(log.sets || []).map((set) =>
                                       renderSetRow(exercise, log, set)
                                     )}
+                                    {/* A completed exercise can carry a log with
+                                        no sets (FE#75's un-backfilled damage).
+                                        Say so rather than showing a bare
+                                        "Add a set" — tapping it is the recovery
+                                        path, but the user must be the one
+                                        asserting what they did, so never seed. */}
+                                    {(log.sets || []).length === 0 ? (
+                                      <Text className="text-xs text-text-muted">
+                                        No sets were recorded for this exercise.
+                                      </Text>
+                                    ) : null}
                                     <TouchableOpacity
                                       className="flex-row items-center justify-center border rounded-lg py-3 mt-1"
                                       style={{ borderColor: colors.brand.primary }}
@@ -1123,16 +1374,49 @@ export default function WorkoutSummary({
           primaryButton={{ text: "OK", onPress: () => setShowError(false) }}
           onClose={() => setShowError(false)}
         />
+        {/* Dropping one movement from one round (SPEC §5.4). Per-exercise, not
+            per-block: the other movements in that round stand. */}
+        <CustomDialog
+          visible={!!pendingRoundDemotion}
+          title={
+            pendingRoundDemotion?.isLast
+              ? "That's every round"
+              : "Delete this round's log?"
+          }
+          description={
+            !pendingRoundDemotion
+              ? ""
+              : pendingRoundDemotion.isLast
+                ? `This removes the last round you logged for ${pendingRoundDemotion.name}, so it will count as an exercise you didn't do.`
+                : `This removes ${pendingRoundDemotion.summary} for ${pendingRoundDemotion.name}, round ${pendingRoundDemotion.round}.`
+          }
+          primaryButton={{
+            text: "Delete",
+            onPress: confirmRoundDemotion,
+            destructive: true,
+          }}
+          secondaryButton={{
+            text: "Keep it",
+            onPress: () => setPendingRoundDemotion(null),
+          }}
+          onClose={() => setPendingRoundDemotion(null)}
+        />
         {/* Demotion warns before the sets are dropped (SPEC §7). */}
         <CustomDialog
           visible={!!pendingDemotion}
-          title="Delete your logged sets?"
+          title={
+            pendingDemotion?.count
+              ? "Delete your logged sets?"
+              : "Remove this from your log?"
+          }
           description={
-            pendingDemotion
-              ? `This deletes the ${pendingDemotion.count} set${
-                  pendingDemotion.count !== 1 ? "s" : ""
-                } you logged for ${pendingDemotion.name}.`
-              : ""
+            !pendingDemotion
+              ? ""
+              : pendingDemotion.count > 0
+                ? `This deletes the ${pendingDemotion.count} set${
+                    pendingDemotion.count !== 1 ? "s" : ""
+                  } you logged for ${pendingDemotion.name}.`
+                : `This removes your record of doing ${pendingDemotion.name}.`
           }
           primaryButton={{
             text: "Delete",
@@ -1140,7 +1424,7 @@ export default function WorkoutSummary({
             destructive: true,
           }}
           secondaryButton={{
-            text: "Keep them",
+            text: pendingDemotion?.count ? "Keep them" : "Keep it",
             onPress: () => setPendingDemotion(null),
           }}
           onClose={() => setPendingDemotion(null)}
@@ -1451,7 +1735,7 @@ export default function WorkoutSummary({
                             </Text>
                           ) : logs.length > 0 ? (
                             <Text className="text-text-muted text-xs ml-8">
-                              Completed
+                              Completed · no sets recorded
                             </Text>
                           ) : (
                             <Text className="text-text-muted text-xs ml-8">
