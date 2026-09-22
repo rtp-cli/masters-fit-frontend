@@ -20,6 +20,7 @@ import {
   SafeAreaView,
 } from "react-native-safe-area-context";
 
+import CircuitRoundEditor from "@/components/circuit-round-editor";
 import DemoChip from "@/components/demo-chip";
 import SetStepperFields from "@/components/set-stepper-fields";
 import { ShareWorkoutButton } from "@/components/share";
@@ -40,6 +41,7 @@ import {
   recomputePlanDayRollups,
   skipExercise,
   subscribeToWorkoutUpdates,
+  updateBlockLog,
 } from "@/lib/workouts";
 import {
   type BlockLog,
@@ -53,7 +55,7 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
-import { isCircuitBlock } from "@/utils/circuit-utils";
+import { computeCircuitResult, isCircuitBlock } from "@/utils/circuit-utils";
 import { formatDistance, shouldShowWeightInput } from "@/utils/exercise-helpers";
 
 const formatTime = (seconds: number): string => {
@@ -260,6 +262,11 @@ export default function WorkoutSummary({
   );
   // One set row expanded at a time, keyed `${exId}:${round}:${setNumber}`.
   const [expandedSet, setExpandedSet] = useState<string | null>(null);
+  // Circuit rounds expand PER EXERCISE (exerciseId -> open roundNumber), not
+  // globally: comparing two movements in the same circuit stays possible.
+  const [expandedRound, setExpandedRound] = useState<Record<number, number | null>>(
+    {}
+  );
   const [saving, setSaving] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -352,6 +359,7 @@ export default function WorkoutSummary({
     setWorkingStatus(status);
     setBaselineStatus(status);
     setExpandedSet(null);
+    setExpandedRound({});
     setIsEditing(true);
   };
 
@@ -359,6 +367,7 @@ export default function WorkoutSummary({
     setShowDiscard(false);
     setIsEditing(false);
     setExpandedSet(null);
+    setExpandedRound({});
     setWorkingLogs({});
     setWorkingStatus({});
     setBaselineStatus({});
@@ -546,6 +555,22 @@ export default function WorkoutSummary({
     setExpandedSet(null);
   };
 
+  /** Restore one circuit round's persisted values, that round only. */
+  const resetWorkingRound = (exId: number, roundNumber: number) => {
+    const original = (exerciseLogs[exId] || []).find(
+      (l) => l.roundNumber === roundNumber
+    );
+    if (!original) return;
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).map((log) =>
+        log.roundNumber !== roundNumber
+          ? log
+          : { ...log, sets: JSON.parse(JSON.stringify(original.sets || [])) }
+      ),
+    }));
+  };
+
   const handleSave = async () => {
     // Classify every exercise's intent from its status transition + set diffs.
     // The control only ever yields completed or skipped, so there is no
@@ -616,6 +641,57 @@ export default function WorkoutSummary({
         setsChanged += nextSets.length;
       }
 
+      // A circuit's score is DERIVED from its rounds, not typed — correcting
+      // reps must move the score with them or the block header keeps showing
+      // the old number. Recompute from the corrected working rounds and PUT
+      // the existing row (createBlockLog is a plain insert, so re-POSTing
+      // would leave a duplicate and pollute the score history's isBest).
+      const changedExIds = new Set<number>([
+        ...promotions.map((x) => x.exId),
+        ...setEdits.map((x) => x.exId),
+      ]);
+      for (const block of workout.blocks) {
+        if (!isCircuitBlock(block.blockType)) continue;
+        const blockLog = blockLogs[block.id];
+        if (!blockLog) continue; // nothing recorded → nothing to correct
+        const touched = block.exercises.some((ex) => changedExIds.has(ex.id));
+        if (!touched) continue;
+
+        // Rebuild the session-shaped rounds this block's working logs imply.
+        // Every round that still carries a log counts as completed — demoting
+        // a round is C2, so there is no partial round to represent yet.
+        const byRound = new Map<number, { actualReps: number }[]>();
+        for (const ex of block.exercises) {
+          for (const log of workingLogs[ex.id] || []) {
+            const set = (log.sets || [])[0];
+            const list = byRound.get(log.roundNumber) || [];
+            list.push({ actualReps: set?.reps ?? 0 });
+            byRound.set(log.roundNumber, list);
+          }
+        }
+        const rounds = [...byRound.keys()]
+          .sort((a, b) => a - b)
+          .map((n) => ({
+            roundNumber: n,
+            isCompleted: true,
+            exercises: (byRound.get(n) || []).map((e) => ({
+              ...e,
+              completed: true,
+            })),
+          }));
+
+        const result = computeCircuitResult(block.blockType || "circuit", rounds as any, {
+          targetRounds: blockLog.roundsCompleted ?? undefined,
+          actualTimeSeconds: blockLog.totalDuration ?? undefined,
+        });
+        const ok = await updateBlockLog(blockLog.id, {
+          roundsCompleted: result.roundsCompleted,
+          totalReps: result.totalReps,
+          score: result.score,
+        });
+        if (!ok) throw new Error("save-failed");
+      }
+
       // One honest recompute after any status change keeps the day's counts
       // truthful (§9). Pure set-value edits don't move the counts, so skip it.
       if (statusChanges > 0) {
@@ -643,6 +719,7 @@ export default function WorkoutSummary({
 
       setIsEditing(false);
       setExpandedSet(null);
+      setExpandedRound({});
       setWorkingLogs({});
       setWorkingStatus({});
       setBaselineStatus({});
@@ -1023,20 +1100,63 @@ export default function WorkoutSummary({
                   {!isCollapsed && (
                     <View className="bg-surface rounded-b-xl border border-t-0 border-neutral-light-2 p-3">
                       {block.exercises.map((exercise) => {
-                        // Circuit exercises stay fully read-only in v1 (§6.4):
-                        // static pill, no status control, no set editor.
+                        // Circuit exercises are editable by ROUND (C1). The
+                        // unit of correction is (exercise, round) — already
+                        // half the key POST /logs/exercise rewrites — so this
+                        // needs no new endpoint. Status changes and add/remove
+                        // round are C2 and deliberately absent here.
                         if (isCircuit) {
+                          const roundLogs = workingLogs[exercise.id] || [];
+                          const prescribedRound = prescriptionLine(exercise);
                           return (
-                            <View key={exercise.id} className="mb-3">
+                            <View key={exercise.id} className="mb-4">
                               <View className="flex-row items-center justify-between mb-1">
                                 <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
                                   {exercise.exercise.name}
                                 </Text>
                                 {statusPill(getExerciseStatus(exercise))}
                               </View>
-                              <Text className="text-xs text-text-muted">
-                                Circuit results aren't editable here.
-                              </Text>
+                              {prescribedRound ? (
+                                <Text className="text-xs text-text-muted mb-2">
+                                  {prescribedRound}
+                                </Text>
+                              ) : null}
+                              {roundLogs.length > 0 ? (
+                                <CircuitRoundEditor
+                                  exercise={exercise}
+                                  logs={roundLogs}
+                                  persisted={exerciseLogs[exercise.id] || []}
+                                  expandedRound={
+                                    expandedRound[exercise.id] ?? null
+                                  }
+                                  onToggleRound={(round) =>
+                                    setExpandedRound((prev) => ({
+                                      ...prev,
+                                      [exercise.id]: round,
+                                    }))
+                                  }
+                                  onPatch={(round, patch) => {
+                                    const log = roundLogs.find(
+                                      (l) => l.roundNumber === round
+                                    );
+                                    const setNumber =
+                                      (log?.sets || [])[0]?.setNumber ?? 1;
+                                    patchWorkingSet(
+                                      exercise.id,
+                                      round,
+                                      setNumber,
+                                      patch
+                                    );
+                                  }}
+                                  onReset={(round) =>
+                                    resetWorkingRound(exercise.id, round)
+                                  }
+                                />
+                              ) : (
+                                <Text className="text-xs text-text-muted">
+                                  No rounds were recorded for this exercise.
+                                </Text>
+                              )}
                             </View>
                           );
                         }
