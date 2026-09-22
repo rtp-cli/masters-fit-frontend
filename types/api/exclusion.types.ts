@@ -29,6 +29,14 @@ export interface ReplacementCandidate {
   hasDemo: boolean | null;
   /** How many of the ORIGINAL's muscle groups this candidate also trains. */
   overlapCount: number;
+  /**
+   * [#102] Set when the backend RESERVED this row rather than ranking it in.
+   * "indoor-swap" is the Indoor Walk offered to a walking-only user replacing
+   * a walk — the one path by which that row can reach a plan, since it is
+   * excluded from generation for everybody. Optional so a build can run
+   * against a backend that predates it.
+   */
+  pinned?: "indoor-swap";
 }
 
 // Another exercise already scheduled in the plan that overlaps on muscle group
