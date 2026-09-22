@@ -81,3 +81,45 @@ describe("trackEvent", () => {
     ).not.toThrow();
   });
 });
+
+describe("workout_viewed [#117]", () => {
+  // The funnel rung that did not exist: without it, "never opened a session"
+  // and "opened it and left" are indistinguishable, because workout_started
+  // fires on the Start tap and plan_day_logs only exists on completion.
+  it("is registered with the funnel's naming convention", () => {
+    expect(AnalyticsEvent.WORKOUT_VIEWED).toBe("workout_viewed");
+  });
+
+  it("is mirrored to Postgres, or it cannot answer a SQL question", () => {
+    (recordClientEvent as jest.Mock).mockClear();
+    trackEvent(AnalyticsEvent.WORKOUT_VIEWED, {
+      plan_day_id: 42,
+      exercise_count: 12,
+      already_started: false,
+    });
+    expect(recordClientEvent).toHaveBeenCalledWith(
+      "workout_viewed",
+      expect.objectContaining({ plan_day_id: 42, exercise_count: 12 })
+    );
+  });
+
+  it("carries the properties the activation question needs", () => {
+    (recordClientEvent as jest.Mock).mockClear();
+    trackEvent(AnalyticsEvent.WORKOUT_VIEWED, {
+      plan_day_id: 7,
+      exercise_count: 18,
+      already_started: true,
+    });
+    const props = (recordClientEvent as jest.Mock).mock.calls[0][1] as Record<
+      string,
+      unknown
+    >;
+    // exercise_count is what makes "was it daunting?" answerable per view;
+    // already_started separates a first look from a return to one in progress.
+    expect(props).toEqual({
+      plan_day_id: 7,
+      exercise_count: 18,
+      already_started: true,
+    });
+  });
+});

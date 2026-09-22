@@ -1009,6 +1009,39 @@ export function WorkoutScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStartRequested, loading, workout, isWorkoutStarted, isWorkoutCompleted]);
 
+  // [#117] The funnel rung between "saw the plan" and "tapped Start".
+  //
+  // Nothing recorded that a session was ever LOOKED AT. `workout_started` fires
+  // on the Start tap, and plan_day_logs only exists on completion — so a user
+  // who opened today's workout and backed out is indistinguishable from one who
+  // never opened it. Those two answers point at completely different work, and
+  // on 2026-09-21 that ambiguity was the reason a review of every non-activated
+  // prod user could go no further.
+  //
+  // Keyed on the plan day so it fires once per session viewed, not once per
+  // render: without the ref this re-emits on every state change on the screen
+  // and the count becomes meaningless. Re-opening the SAME session later in the
+  // same mount is deliberately not re-counted; `already_started` separates a
+  // first look from a return to something in progress.
+  const viewedPlanDayRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (loading || !workout) return;
+    if (viewedPlanDayRef.current === workout.id) return;
+    viewedPlanDayRef.current = workout.id;
+
+    trackEvent(AnalyticsEvent.WORKOUT_VIEWED, {
+      plan_day_id: workout.id,
+      exercise_count: (workout.blocks ?? []).reduce(
+        (n, block) => n + (block.exercises?.length ?? 0),
+        0
+      ),
+      already_started: isWorkoutStarted,
+    });
+    // isWorkoutStarted is read, not depended on: it is a property OF the view,
+    // and adding it here would re-fire the event the moment the user taps Start.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, workout]);
+
   // Toggle pause
   const togglePause = () => {
     setIsPaused(!isPaused);
