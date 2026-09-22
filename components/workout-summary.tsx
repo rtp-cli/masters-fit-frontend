@@ -210,6 +210,19 @@ interface WorkoutSummaryProps {
   endedEarly?: boolean;
 }
 
+/** The prescription for one exercise, as a muted subtitle. A Wendler 531 block
+ *  is several `plan_day_exercise` rows for ONE movement, so without this the
+ *  cards are five identical headers with no way to tell which is which. */
+const prescriptionLine = (
+  exercise: WorkoutBlockWithExercise
+): string | null => {
+  const reps = exercise.reps;
+  if (!reps) return null;
+  return exercise.weight && Number(exercise.weight) > 0
+    ? `Prescribed: ${reps} reps @ ${exercise.weight} lb`
+    : `Prescribed: ${reps} reps`;
+};
+
 export default function WorkoutSummary({
   workout,
   footer,
@@ -1037,12 +1050,22 @@ export default function WorkoutSummary({
                         const logs = workingLogs[exercise.id] || [];
                         const showSets =
                           !isCompletionOnly && wStatus === "completed";
+                        const prescribed = prescriptionLine(exercise);
 
                         return (
                           <View key={exercise.id} className="mb-4">
-                            <Text className="font-semibold text-text-primary text-sm mb-2">
+                            <Text
+                              className={`font-semibold text-text-primary text-sm${
+                                prescribed ? "" : " mb-2"
+                              }`}
+                            >
                               {exercise.exercise.name}
                             </Text>
+                            {prescribed ? (
+                              <Text className="text-xs text-text-muted mt-1 mb-2">
+                                {prescribed}
+                              </Text>
+                            ) : null}
                             {statusSegment(exercise, isCompletionOnly)}
 
                             {showSets ? (
@@ -1052,6 +1075,17 @@ export default function WorkoutSummary({
                                     {(log.sets || []).map((set) =>
                                       renderSetRow(exercise, log, set)
                                     )}
+                                    {/* A completed exercise can carry a log with
+                                        no sets (FE#75's un-backfilled damage).
+                                        Say so rather than showing a bare
+                                        "Add a set" — tapping it is the recovery
+                                        path, but the user must be the one
+                                        asserting what they did, so never seed. */}
+                                    {(log.sets || []).length === 0 ? (
+                                      <Text className="text-xs text-text-muted">
+                                        No sets were recorded for this exercise.
+                                      </Text>
+                                    ) : null}
                                     <TouchableOpacity
                                       className="flex-row items-center justify-center border rounded-lg py-3 mt-1"
                                       style={{ borderColor: colors.brand.primary }}
@@ -1451,7 +1485,7 @@ export default function WorkoutSummary({
                             </Text>
                           ) : logs.length > 0 ? (
                             <Text className="text-text-muted text-xs ml-8">
-                              Completed
+                              Completed · no sets recorded
                             </Text>
                           ) : (
                             <Text className="text-text-muted text-xs ml-8">
