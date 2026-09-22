@@ -24,6 +24,13 @@ interface CircuitRoundEditorProps {
     patch: { weight?: number; reps?: number }
   ) => void;
   onReset: (roundNumber: number) => void;
+  /** "I didn't do this round" — drops this (exercise, round) from the working
+   *  copy. Lives INSIDE the expanded editor: demotion destroys a log, so
+   *  causing it should cost a deliberate expand. */
+  onDemote: (roundNumber: number) => void;
+  /** Undo a demotion. Always reachable from the collapsed row — recovery must
+   *  never require expanding something that is no longer there. */
+  onRestore: (roundNumber: number) => void;
 }
 
 /** The single set a circuit round carries. Rounds are logged one set per
@@ -73,14 +80,59 @@ export default function CircuitRoundEditor({
   onToggleRound,
   onPatch,
   onReset,
+  onDemote,
+  onRestore,
 }: CircuitRoundEditorProps) {
   const colors = useThemeColors();
   const showWeight = shouldShowWeightInput(exercise);
 
+  // Rounds the user demoted are gone from `logs` but still in `persisted`, and
+  // they must keep a row so Undo stays reachable. Union both, ascending.
+  const rounds = [
+    ...new Set([
+      ...logs.map((l) => l.roundNumber),
+      ...persisted.map((l) => l.roundNumber),
+    ]),
+  ].sort((a, b) => a - b);
+
   return (
     <View className="gap-2">
-      {logs.map((log) => {
-        const round = log.roundNumber;
+      {rounds.map((round) => {
+        const log = logs.find((l) => l.roundNumber === round);
+
+        if (!log) {
+          // Demoted. White, not a grey fill: #757575 on #F4F4F4 is 4.19:1 and
+          // fails, so the row keeps the surface background and darker copy.
+          return (
+            <View
+              key={`${exercise.id}:${round}:demoted`}
+              className="bg-surface rounded-lg flex-row items-center px-4 py-3.5 min-h-[56px]"
+              style={{
+                borderColor: colors.neutral.medium[2],
+                borderWidth: 1,
+              }}
+            >
+              <Text className="text-sm font-bold text-text-secondary w-[72px]">
+                Round {round}
+              </Text>
+              <Text className="text-sm text-text-secondary flex-1">
+                Didn&apos;t do this round
+              </Text>
+              <TouchableOpacity
+                className="py-2 px-1"
+                hitSlop={HIT_SLOP_6}
+                onPress={() => onRestore(round)}
+                accessibilityRole="button"
+                accessibilityLabel={`Undo — put round ${round} of ${exercise.exercise.name} back`}
+              >
+                <Text className="text-sm font-bold text-text-primary">
+                  Undo
+                </Text>
+              </TouchableOpacity>
+            </View>
+          );
+        }
+
         const expanded = expandedRound === round;
         const original = persisted.find((p) => p.roundNumber === round);
         const edited = isRoundEdited(log, original);
@@ -134,9 +186,29 @@ export default function CircuitRoundEditor({
                   />
                 </View>
 
-                {/* Reset restores only this round. "Didn't do this round" is
-                    C2 — demotion deletes a log, so it stays out of C1. */}
-                <View className="flex-row items-center justify-end mt-4">
+                {/* Both destructive-ish actions live here, not on the
+                    collapsed row: a stray tap in a list must not be able to
+                    delete a round's data. */}
+                <View className="flex-row items-center justify-between mt-4">
+                  <TouchableOpacity
+                    className="flex-row items-center py-3 px-1"
+                    hitSlop={HIT_SLOP_6}
+                    onPress={() => onDemote(round)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`I didn't do round ${round} of ${exercise.exercise.name}`}
+                  >
+                    <Ionicons
+                      name="close-circle-outline"
+                      size={14}
+                      color={colors.text.muted}
+                    />
+                    <Text
+                      className="text-xs ml-1.5"
+                      style={{ color: colors.text.muted }}
+                    >
+                      Didn&apos;t do this
+                    </Text>
+                  </TouchableOpacity>
                   <TouchableOpacity
                     className="flex-row items-center py-3 px-1"
                     hitSlop={HIT_SLOP_6}

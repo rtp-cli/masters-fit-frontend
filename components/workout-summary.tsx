@@ -34,6 +34,7 @@ import { exerciseHasDemo } from "@/lib/exercise-video";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
 import {
   createExerciseLog,
+  deleteExerciseLog,
   fetchBlockLogsForPlanDay,
   fetchExerciseLogsForPlanDay,
   getPlanDayLog,
@@ -267,6 +268,15 @@ export default function WorkoutSummary({
   const [expandedRound, setExpandedRound] = useState<Record<number, number | null>>(
     {}
   );
+  // Demoting a round destroys a persisted log, so it warns first (the same
+  // lesson as the exercise-level guard: warn whenever a log would be lost).
+  const [pendingRoundDemotion, setPendingRoundDemotion] = useState<{
+    exId: number;
+    name: string;
+    round: number;
+    summary: string;
+    isLast: boolean;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -372,6 +382,7 @@ export default function WorkoutSummary({
     setWorkingStatus({});
     setBaselineStatus({});
     setPendingDemotion(null);
+    setPendingRoundDemotion(null);
   };
 
   const requestCancel = () => {
@@ -575,6 +586,54 @@ export default function WorkoutSummary({
     }));
   };
 
+  /** "I didn't do this round" — per (exercise, round), never per block.
+   *  "I didn't do the swings in round 3" is a real claim; the other movements
+   *  in that round stand. */
+  const requestRoundDemotion = (
+    exercise: WorkoutBlockWithExercise,
+    roundNumber: number
+  ) => {
+    const working = workingLogs[exercise.id] || [];
+    const log = working.find((l) => l.roundNumber === roundNumber);
+    if (!log) return;
+    const set = (log.sets || [])[0];
+    const reps = set?.reps ?? 0;
+    const weight = Number(set?.weight) || 0;
+    setPendingRoundDemotion({
+      exId: exercise.id,
+      name: exercise.exercise.name,
+      round: roundNumber,
+      summary: weight > 0 ? `${reps} reps × ${weight} lb` : `${reps} reps`,
+      isLast: working.length === 1,
+    });
+  };
+
+  const confirmRoundDemotion = () => {
+    if (!pendingRoundDemotion) return;
+    const { exId, round } = pendingRoundDemotion;
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: (prev[exId] || []).filter((l) => l.roundNumber !== round),
+    }));
+    setExpandedRound((prev) => ({ ...prev, [exId]: null }));
+    setPendingRoundDemotion(null);
+  };
+
+  /** Undo a demotion by putting the persisted round back in order. */
+  const restoreWorkingRound = (exId: number, roundNumber: number) => {
+    const original = (exerciseLogs[exId] || []).find(
+      (l) => l.roundNumber === roundNumber
+    );
+    if (!original) return;
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: [
+        ...(prev[exId] || []),
+        JSON.parse(JSON.stringify(original)) as ExerciseLog,
+      ].sort((a, b) => a.roundNumber - b.roundNumber),
+    }));
+  };
+
   const handleSave = async () => {
     // Classify every exercise's intent from its status transition + set diffs.
     // The control only ever yields completed or skipped, so there is no
@@ -582,6 +641,7 @@ export default function WorkoutSummary({
     const promotions: { exId: number; log: ExerciseLog }[] = []; // → completed (write)
     const skips: number[] = []; // → skipped ("I didn't do this")
     const setEdits: { exId: number; log: ExerciseLog }[] = []; // stayed completed, sets changed
+    const roundDeletes: { exId: number; round: number }[] = []; // one circuit round dropped
 
     for (const key of Object.keys(baselineStatus)) {
       const exId = Number(key);
@@ -593,7 +653,23 @@ export default function WorkoutSummary({
           if (log) promotions.push({ exId, log });
         } else {
           const orig = exerciseLogs[exId] || [];
-          for (const wl of workingLogs[exId] || []) {
+          const working = workingLogs[exId] || [];
+          // Demoting EVERY round of an exercise is the claim "I didn't do this
+          // exercise", so it must go through the skip path. Deleting the last
+          // round instead would leave the exercise not_attempted, and
+          // notAttemptedCount drives wasEndedEarly — which would put a
+          // "Workout Ended Early" header, a Resume button and a lost Share on
+          // a day the user actually finished (SPEC §7, amended).
+          if (orig.length > 0 && working.length === 0) {
+            skips.push(exId);
+            continue;
+          }
+          for (const ol of orig) {
+            if (!working.some((w) => w.roundNumber === ol.roundNumber)) {
+              roundDeletes.push({ exId, round: ol.roundNumber });
+            }
+          }
+          for (const wl of working) {
             const ol = orig.find((o) => o.roundNumber === wl.roundNumber);
             if (serializeLog(wl) !== serializeLog(ol)) setEdits.push({ exId, log: wl });
           }
@@ -605,7 +681,7 @@ export default function WorkoutSummary({
     }
 
     const statusChanges = promotions.length + skips.length;
-    if (statusChanges === 0 && setEdits.length === 0) {
+    if (statusChanges === 0 && setEdits.length === 0 && roundDeletes.length === 0) {
       exitEditing();
       return;
     }
@@ -631,6 +707,14 @@ export default function WorkoutSummary({
         const res = await skipExercise(workout.workoutId, exId);
         if (res === null) throw new Error("save-failed");
       }
+      // Dropped rounds are a delete, not a rewrite — POST /logs/exercise only
+      // rewrites a pair. The route demotes the exercise only when no rounds
+      // remain, and the all-rounds case is handled as a skip above, so this
+      // can only ever clear one round of several.
+      for (const { exId, round } of roundDeletes) {
+        const ok = await deleteExerciseLog(exId, round);
+        if (!ok) throw new Error("save-failed");
+      }
       for (const { exId, log } of [...promotions, ...setEdits]) {
         const nextSets = toApiSets(log);
         const res = await createExerciseLog({
@@ -653,6 +737,8 @@ export default function WorkoutSummary({
       const changedExIds = new Set<number>([
         ...promotions.map((x) => x.exId),
         ...setEdits.map((x) => x.exId),
+        ...roundDeletes.map((x) => x.exId),
+        ...skips,
       ]);
       for (const block of workout.blocks) {
         if (!isCircuitBlock(block.blockType)) continue;
@@ -698,7 +784,7 @@ export default function WorkoutSummary({
 
       // One honest recompute after any status change keeps the day's counts
       // truthful (§9). Pure set-value edits don't move the counts, so skip it.
-      if (statusChanges > 0) {
+      if (statusChanges > 0 || roundDeletes.length > 0) {
         await recomputePlanDayRollups(workout.id);
       }
 
@@ -706,6 +792,7 @@ export default function WorkoutSummary({
         ...promotions.map((p) => p.exId),
         ...skips,
         ...setEdits.map((e) => e.exId),
+        ...roundDeletes.map((r) => r.exId),
       ]);
       const hoursSinceCompletion = planDayLog?.updatedAt
         ? Math.round(
@@ -1155,6 +1242,12 @@ export default function WorkoutSummary({
                                   onReset={(round) =>
                                     resetWorkingRound(exercise.id, round)
                                   }
+                                  onDemote={(round) =>
+                                    requestRoundDemotion(exercise, round)
+                                  }
+                                  onRestore={(round) =>
+                                    restoreWorkingRound(exercise.id, round)
+                                  }
                                 />
                               ) : (
                                 <Text className="text-xs text-text-muted">
@@ -1280,6 +1373,33 @@ export default function WorkoutSummary({
           description="Something went wrong saving your corrections. Your edits are still here — try again."
           primaryButton={{ text: "OK", onPress: () => setShowError(false) }}
           onClose={() => setShowError(false)}
+        />
+        {/* Dropping one movement from one round (SPEC §5.4). Per-exercise, not
+            per-block: the other movements in that round stand. */}
+        <CustomDialog
+          visible={!!pendingRoundDemotion}
+          title={
+            pendingRoundDemotion?.isLast
+              ? "That's every round"
+              : "Delete this round's log?"
+          }
+          description={
+            !pendingRoundDemotion
+              ? ""
+              : pendingRoundDemotion.isLast
+                ? `This removes the last round you logged for ${pendingRoundDemotion.name}, so it will count as an exercise you didn't do.`
+                : `This removes ${pendingRoundDemotion.summary} for ${pendingRoundDemotion.name}, round ${pendingRoundDemotion.round}.`
+          }
+          primaryButton={{
+            text: "Delete",
+            onPress: confirmRoundDemotion,
+            destructive: true,
+          }}
+          secondaryButton={{
+            text: "Keep it",
+            onPress: () => setPendingRoundDemotion(null),
+          }}
+          onClose={() => setPendingRoundDemotion(null)}
         />
         {/* Demotion warns before the sets are dropped (SPEC §7). */}
         <CustomDialog
