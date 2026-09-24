@@ -1,4 +1,5 @@
 import { type ExerciseFromLib as Exercise, type WorkoutExercise } from "@/types/api";
+import { type SearchExercise } from "@/types/api/search.types";
 
 import { apiRequest } from "./api";
 
@@ -206,3 +207,26 @@ export const updateExerciseLink = async (
     };
   }
 };
+
+/**
+ * Create one of the user's own exercises — the "not in the library? add your
+ * own" row in edit-search. Idempotent per user by name, so re-adding
+ * yesterday's "Sled push + pull" returns the same exercise. Returns the row in
+ * the search-result shape so the caller can select it like any other hit.
+ * Throws on failure so the caller can say so; this is a user-initiated write.
+ */
+export async function createCustomExercise(
+  name: string
+): Promise<SearchExercise> {
+  const response = await apiRequest<{
+    success: boolean;
+    exercise: SearchExercise;
+  }>("/exercises/custom", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  if (!response?.success || !response.exercise) {
+    throw new Error("Failed to create exercise");
+  }
+  return response.exercise;
+}

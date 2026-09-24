@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AddOwnExerciseRow } from "@/components/add-own-exercise-row";
 import ExerciseActionSheet from "@/components/exercise-action-sheet";
 import { ExclusionFlow } from "@/components/exercise-exclusion";
 import { OutlineChip } from "@/components/ui";
@@ -559,6 +560,17 @@ export default function WorkoutEditModal({
     setTempMuscleGroups([]);
     setTempDifficulty(null);
     setShowFilters(false);
+  };
+
+  // A just-saved own exercise joins the results and is selected, so the
+  // Replace button (or Add's sets/reps form) picks up exactly as for a hit.
+  const handleOwnExerciseCreated = (exercise: SearchExercise) => {
+    Keyboard.dismiss();
+    setSearchResults((prev) => [
+      exercise,
+      ...prev.filter((e) => e.id !== exercise.id),
+    ]);
+    setSelectedExercise(exercise);
   };
 
   const handleConfirmReplace = async () => {
@@ -1222,6 +1234,9 @@ export default function WorkoutEditModal({
                                       label={formatEquipment(item.equipment)}
                                     />
                                   )}
+                                  {item.ownerUserId != null && (
+                                    <OutlineChip label="Your own" />
+                                  )}
                                 </View>
                               </View>
 
@@ -1240,6 +1255,14 @@ export default function WorkoutEditModal({
                             </View>
                           </TouchableOpacity>
                         )}
+                        ListFooterComponent={
+                          <AddOwnExerciseRow
+                            query={searchQuery}
+                            results={searchResults}
+                            onCreated={handleOwnExerciseCreated}
+                          />
+                        }
+                        keyboardShouldPersistTaps="handled"
                         ListEmptyComponent={
                           <View className="flex-1 justify-center items-center py-12">
                             <Ionicons
@@ -1461,11 +1484,22 @@ export default function WorkoutEditModal({
                                       label={formatEquipment(item.equipment)}
                                     />
                                   )}
+                                  {item.ownerUserId != null && (
+                                    <OutlineChip label="Your own" />
+                                  )}
                                 </View>
                               </View>
                             </View>
                           </TouchableOpacity>
                         )}
+                        ListFooterComponent={
+                          <AddOwnExerciseRow
+                            query={searchQuery}
+                            results={searchResults}
+                            onCreated={handleOwnExerciseCreated}
+                          />
+                        }
+                        keyboardShouldPersistTaps="handled"
                         ListEmptyComponent={
                           <View className="flex-1 justify-center items-center py-12">
                             <Ionicons
