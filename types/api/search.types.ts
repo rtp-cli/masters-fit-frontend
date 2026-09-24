@@ -128,6 +128,9 @@ export interface SearchExercise {
   // oEmbed verdict on the demo link, mirrored from the catalog. Used by the
   // replacement ranking (hasDemo-first tiebreak) and the demo affordance.
   hasDemo?: boolean | null;
+  // Set when this is the signed-in user's own exercise (typed in from
+  // edit-search); null/absent for the shared catalog.
+  ownerUserId?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
