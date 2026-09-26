@@ -1,0 +1,105 @@
+<!-- @dsCard group="Type" name="Typography" subtitle="Manrope · 8-step scale · raised floor" width="1000" height="1080" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Typography</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.spec{display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px solid #F4F4F4}
+  .spec .k{width:150px;flex:none;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#6E6E6E}
+  .wt{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .wt div{padding:16px;background:#F4F4F4;border-radius:10px}
+  .wt .l{font-size:11.5px;color:#6E6E6E;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+  .wt .d{font-size:22px;letter-spacing:-.01em}
+</style>
+<div class="wrap">
+<h1>Typography</h1>
+<p class="lede">One family, four weights, eight sizes. The scale's floor was deliberately raised for a masters-age audience — 11px and 13px body text were removed from the system entirely.</p>
+<h2>Family</h2>
+  <p style="font-size:15px;color:#3C3C3C;margin:0 0 16px">
+    <b>Manrope</b>, loaded via <code>@expo-google-fonts/manrope</code>. Fallback stack: <code>System → Arial → sans-serif</code>.</p>
+  <div class="wt">
+    <div><div class="l">Regular · 400</div><div class="d" style="font-weight:400">Squat 3×5</div></div><div><div class="l">Medium · 500</div><div class="d" style="font-weight:500">Squat 3×5</div></div><div><div class="l">SemiBold · 600</div><div class="d" style="font-weight:600">Squat 3×5</div></div><div><div class="l">Bold · 700</div><div class="d" style="font-weight:700">Squat 3×5</div></div>
+  </div>
+  <h2>Scale</h2>
+  <div class="spec"><div class="k">xs · 13px</div>
+     <div style="font-size:13px;font-weight:400;letter-spacing:-.005em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">sm · 14px</div>
+     <div style="font-size:14px;font-weight:400;letter-spacing:-.005em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">base · 16px</div>
+     <div style="font-size:16px;font-weight:400;letter-spacing:-.005em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">lg · 17px</div>
+     <div style="font-size:17px;font-weight:400;letter-spacing:-.005em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">xl · 20px</div>
+     <div style="font-size:20px;font-weight:700;letter-spacing:-.005em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">2xl · 24px</div>
+     <div style="font-size:24px;font-weight:700;letter-spacing:-.02em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">3xl · 28px</div>
+     <div style="font-size:28px;font-weight:700;letter-spacing:-.02em">Front Squat — 4 sets</div></div><div class="spec"><div class="k">4xl · 32px</div>
+     <div style="font-size:32px;font-weight:700;letter-spacing:-.02em">Front Squat — 4 sets</div></div>
+  <div class="rule"><b>The floor is not negotiable.</b> <code>xs</code> went 11→13, <code>sm</code> 13→14, <code>base</code> 15→16. If a design needs 11px to fit, the layout is wrong, not the type.</div>
+  <h2>Line height</h2>
+  <p style="font-size:15px;color:#3C3C3C;margin:0">
+    <code>tight</code> 1.2 &nbsp;·&nbsp; <code>normal</code> 1.4 &nbsp;·&nbsp; <code>relaxed</code> 1.6</p>
+  <h2>Text variants</h2>
+  <table><thead><tr><th>Variant</th><th>Size</th><th>Weight</th><th>Preview</th><th>Use</th></tr></thead><tbody>
+  <tr><td><code>h1 / h2 / h3</code></td><td>xl 20px</td><td>700</td>
+    <td style="color:#0A0A0A;font-weight:700;font-size:20px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">Screen and section headings. All three map to the same size today — a known flattening, not a scale.</td></tr><tr><td><code>h4 / title</code></td><td>xl 20px</td><td>600</td>
+    <td style="color:#0A0A0A;font-weight:600;font-size:20px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">Card and dialog titles.</td></tr><tr><td><code>subtitle</code></td><td>base 16px</td><td>500</td>
+    <td style="color:#3C3C3C;font-weight:500;font-size:16px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">One-line context under a title.</td></tr><tr><td><code>body</code></td><td>base 16px</td><td>400</td>
+    <td style="color:#0A0A0A;font-weight:400;font-size:16px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">Default reading text.</td></tr><tr><td><code>bodySmall</code></td><td>sm 14px</td><td>400</td>
+    <td style="color:#0A0A0A;font-weight:400;font-size:14px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">Dense rows, list secondary lines.</td></tr><tr><td><code>label</code></td><td>base 16px</td><td>500</td>
+    <td style="color:#3C3C3C;font-weight:500;font-size:16px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">Form labels.</td></tr><tr><td><code>caption</code></td><td>sm 14px</td><td>400</td>
+    <td style="color:#6E6E6E;font-weight:400;font-size:14px;white-space:nowrap">Rest day</td>
+    <td style="font-size:13.5px;color:#3C3C3C">Metadata, timestamps, helper text.</td></tr>
+  </tbody></table>
+</div>

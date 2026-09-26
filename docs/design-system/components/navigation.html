@@ -1,0 +1,105 @@
+<!-- @dsCard group="Components" name="Navigation" subtitle="Header + 3-tab bar" width="1000" height="780" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Navigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.phone{width:340px;background:var(--bg);border:1px solid var(--line);border-radius:26px;overflow:hidden}
+  .hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 20px 16px;gap:12px}
+  .hdr .t{font-size:17px;font-weight:700;color:var(--ink);margin:0}
+  .hdr .s{font-size:14px;color:var(--muted);margin:4px 0 0}
+  .acts{display:flex;align-items:center;gap:8px;flex:none}
+  .ib{width:44px;height:44px;border-radius:999px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .sc{display:inline-flex;align-items:center;gap:5px;background:var(--white);border-radius:999px;
+    padding:6px 12px 6px 10px;font-size:14px;font-weight:700;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .body{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+  .prog{height:6px;background:var(--l-2);margin:0 20px 14px;border-radius:999px;overflow:hidden}
+  .prog > div{height:100%;width:56%;background:var(--primary)}
+  .tabs{display:flex;border-top:1px solid var(--line);height:68px;padding-top:6px;padding-bottom:8px;background:var(--bg)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    font-size:11px;font-weight:600;color:var(--muted)}
+  .tab .gl{font-size:24px;line-height:1}
+  .tab.on{color:var(--primary)}
+  .pair{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+</style>
+<div class="wrap">
+<h1>Navigation</h1>
+<p class="lede">Three tabs — Dashboard, Workout, Calendar — mapped to the three things a user actually does. The header carries a greeting or a title, a one-line subtitle, and at most two icon actions plus the streak chip.</p>
+<h2>Header + tab bar</h2>
+  <div class="stage"><div class="pair">
+    <div class="phone">
+      <div class="hdr"><div><p class="t">Hey Rich!</p><p class="s">Friday, September 12</p></div>
+        <div class="acts"><span class="sc">🔥 5</span><span class="ib">🔍</span><span class="ib">👤</span></div></div>
+      <div class="body">Dashboard</div>
+      <div class="tabs">
+        <div class="tab on"><span class="gl">📊</span>Dashboard</div>
+        <div class="tab"><span class="gl">🏋️</span>Workout</div>
+        <div class="tab"><span class="gl">📅</span>Calendar</div></div>
+    </div>
+    <div class="phone">
+      <div class="hdr"><div><p class="t">Upper Body — Push</p><p class="s">Exercise 3 of 8</p></div>
+        <div class="acts"><span class="sc">24:16</span></div></div>
+      <div class="prog"><div></div></div>
+      <div class="body">Active workout</div>
+      <div class="tabs">
+        <div class="tab"><span class="gl">📊</span>Dashboard</div>
+        <div class="tab on"><span class="gl">🏋️</span>Workout</div>
+        <div class="tab"><span class="gl">📅</span>Calendar</div></div>
+    </div>
+  </div></div>
+  <h2>Rules</h2>
+  <div class="rule"><b>Active tab is a filled glyph; inactive is the outline variant.</b> The tint alone is not the cue — the icon itself changes shape, so the active tab reads even where the tint step is hard to discriminate.</div>
+  <div class="rule"><b>Inactive tint is <code>text.muted</code>, not <code>neutral.medium[3]</code>.</b> The latter failed AA at ~3.7:1 on dark backgrounds; the tab bar was the last place still using it.</div>
+  <div class="rule"><b>During an active workout, tabs guard rather than block.</b> Tapping away opens the three-way dialog (continue / finish &amp; save / abandon). Tapping the <i>current</i> tab scrolls it to top.</div>
+  <div class="rule"><b>Header slots.</b> No title on the dashboard → "Hey {name}!" plus the streak chip when the streak is ≥ 1. A <code>rightAccessory</code> replaces the icons (the elapsed-time clock does this); <code>children</code> renders full-width underneath (the progress rail does this).</div>
+</div>

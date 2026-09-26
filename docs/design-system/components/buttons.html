@@ -1,0 +1,138 @@
+<!-- @dsCard group="Components" name="Button" subtitle="5 variants × 3 sizes, light + dark" width="1000" height="880" -->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MastersFit — Button</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#FAFAFA; --card:#F4F4F4; --white:#FFFFFF;
+    --ink:#0A0A0A; --ink-2:#3C3C3C; --muted:#6E6E6E;
+    --primary:#0A0A0A; --on-primary:#FFFFFF;
+    --line:#E0E0E0; --line-2:#F4F4F4;
+    --danger:#DC2626; --warning:#B06105; --success:#1B7A4B;
+    --l-1:#FAFAFA; --l-2:#F4F4F4; --m-3:#9E9E9E;
+  }
+  .on-dark{
+    --bg:#0A0A0A; --surface:#141414; --card:#1E1E1E; --white:#0A0A0A;
+    --ink:#FFFFFF; --ink-2:#C0C0C0; --muted:#8C8C8C;
+    --primary:#FFFFFF; --on-primary:#0A0A0A;
+    --line:#282828; --line-2:#1E1E1E;
+    --danger:#FF4444; --warning:#FBBF24; --success:#34C77B;
+    --l-1:#141414; --l-2:#1E1E1E; --m-3:#686868;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px;
+    font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:#FFFFFF; color:#0A0A0A;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:16px;color:#6E6E6E;margin:0 0 34px;max-width:62ch}
+  h2{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+     color:#6E6E6E;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid #E0E0E0}
+  h2:first-of-type{margin-top:0}
+  .note{font-size:14px;color:#6E6E6E;margin:10px 0 0;max-width:70ch}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  code{background:#F4F4F4;padding:2px 6px;border-radius:4px;color:#3C3C3C}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;
+     color:#6E6E6E;padding:0 14px 8px 0;border-bottom:1px solid #E0E0E0}
+  td{padding:11px 14px 11px 0;border-bottom:1px solid #F4F4F4;vertical-align:top}
+  .stage{background:var(--bg);border:1px solid #E0E0E0;border-radius:14px;padding:26px}
+  .stage.on-dark{border-color:#282828}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .cap{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--muted);margin:0 0 12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .pass{background:#1B7A4B1A;color:#1B7A4B}
+  .fail{background:#DC26261A;color:#DC2626}
+  .rule{border-left:3px solid #0A0A0A;padding:2px 0 2px 16px;margin:16px 0;font-size:14.5px;color:#3C3C3C}
+  .rule b{color:#0A0A0A}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  border-radius:8px;font-family:inherit;font-weight:600;border:1px solid transparent;cursor:default;white-space:nowrap}
+  .btn.sm{padding:8px 12px;font-size:14px}
+  .btn.md{padding:12px 16px;font-size:16px}
+  .btn.lg{padding:16px 24px;font-size:17px}
+  .primary{background:var(--primary);color:var(--on-primary)}
+  .secondary{background:var(--l-2);color:var(--ink)}
+  .outline{background:transparent;border-color:var(--primary);color:var(--primary)}
+  .ghost{background:transparent;color:var(--primary)}
+  .destructive{background:var(--danger);color:var(--white)}
+  .dis{opacity:.6}
+  .lbl{width:96px;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:var(--muted);flex:none}
+  .r{display:flex;align-items:center;gap:12px;padding:10px 0;flex-wrap:wrap}
+  .spin{width:18px;height:18px;border-radius:999px;border:2px solid currentColor;border-top-color:transparent;opacity:.9}
+</style>
+<div class="wrap">
+<h1>Button</h1>
+<p class="lede">One Button component, five variants. The rule that governs their use is scarcity: a screen gets exactly one primary. Everything else is outline or ghost. Destructive is wired to the semantic danger token — it was once wrongly mapped to the inverted brand colour, which made 'Abandon Workout' look like an ordinary dark button.</p>
+<h2>Variants — light</h2>
+  <div class="stage">
+    <div class="r"><div class="lbl">primary</div>
+       <button class="btn sm primary">Small</button>
+       <button class="btn md primary">Start Workout</button>
+       <button class="btn lg primary">Large action</button>
+       <button class="btn md primary dis">Disabled</button></div><div class="r"><div class="lbl">secondary</div>
+       <button class="btn sm secondary">Small</button>
+       <button class="btn md secondary">Start Workout</button>
+       <button class="btn lg secondary">Large action</button>
+       <button class="btn md secondary dis">Disabled</button></div><div class="r"><div class="lbl">outline</div>
+       <button class="btn sm outline">Small</button>
+       <button class="btn md outline">Start Workout</button>
+       <button class="btn lg outline">Large action</button>
+       <button class="btn md outline dis">Disabled</button></div><div class="r"><div class="lbl">ghost</div>
+       <button class="btn sm ghost">Small</button>
+       <button class="btn md ghost">Start Workout</button>
+       <button class="btn lg ghost">Large action</button>
+       <button class="btn md ghost dis">Disabled</button></div><div class="r"><div class="lbl">destructive</div>
+       <button class="btn sm destructive">Small</button>
+       <button class="btn md destructive">Start Workout</button>
+       <button class="btn lg destructive">Large action</button>
+       <button class="btn md destructive dis">Disabled</button></div>
+  </div>
+  <h2>Variants — dark</h2>
+  <div class="stage on-dark">
+    <div class="r"><div class="lbl">primary</div>
+       <button class="btn sm primary">Small</button>
+       <button class="btn md primary">Start Workout</button>
+       <button class="btn lg primary">Large action</button>
+       <button class="btn md primary dis">Disabled</button></div><div class="r"><div class="lbl">secondary</div>
+       <button class="btn sm secondary">Small</button>
+       <button class="btn md secondary">Start Workout</button>
+       <button class="btn lg secondary">Large action</button>
+       <button class="btn md secondary dis">Disabled</button></div><div class="r"><div class="lbl">outline</div>
+       <button class="btn sm outline">Small</button>
+       <button class="btn md outline">Start Workout</button>
+       <button class="btn lg outline">Large action</button>
+       <button class="btn md outline dis">Disabled</button></div><div class="r"><div class="lbl">ghost</div>
+       <button class="btn sm ghost">Small</button>
+       <button class="btn md ghost">Start Workout</button>
+       <button class="btn lg ghost">Large action</button>
+       <button class="btn md ghost dis">Disabled</button></div><div class="r"><div class="lbl">destructive</div>
+       <button class="btn sm destructive">Small</button>
+       <button class="btn md destructive">Start Workout</button>
+       <button class="btn lg destructive">Large action</button>
+       <button class="btn md destructive dis">Disabled</button></div>
+  </div>
+  <h2>States</h2>
+  <div class="stage"><div class="r">
+    <button class="btn md primary">Default</button>
+    <button class="btn md primary dis"><span class="spin"></span></button>
+    <button class="btn md primary dis">Disabled</button>
+  </div>
+  <p class="note">Loading swaps the label for a spinner and sets <code>accessibilityState.busy</code>; both loading and disabled drop opacity to 60% and block the press. Icons may be slotted left or right of the label.</p></div>
+  <h2>Anatomy</h2>
+  <table><thead><tr><th>Prop</th><th>Values</th><th>Notes</th></tr></thead><tbody>
+    <tr><td><code>variant</code></td><td>primary · secondary · outline · ghost · destructive</td><td>Default <code>primary</code>. One per screen.</td></tr>
+    <tr><td><code>size</code></td><td>sm · md · lg</td><td>Padding only — the 44px min-height is constant.</td></tr>
+    <tr><td><code>loading</code></td><td>boolean</td><td>Spinner tints to on-primary for filled variants, primary otherwise.</td></tr>
+    <tr><td><code>fullWidth</code></td><td>boolean</td><td>Bottom action bars use this.</td></tr>
+    <tr><td><code>leftIcon</code> / <code>rightIcon</code></td><td>node</td><td>Rendered inline with the label.</td></tr>
+  </tbody></table>
+</div>
