@@ -51,6 +51,7 @@ import {
   type WorkoutTypeMetrics,
   type WorkoutWithDetails,
 } from "@/types/api";
+import { canBuildNextPlan } from "@/utils/entitlements";
 
 import { useAuth } from "../../contexts/auth-context";
 import { useThemeColors } from "../../lib/theme";
@@ -119,8 +120,12 @@ export default function DashboardScreen() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { reloadJobs, isGenerating, addJob } = useBackgroundJobs();
   const { isPro, isLoading: subscriptionLoading } = useSubscriptionStatus();
-  const { capabilities, tier, isLoading: entitlementsLoading } =
-    useEntitlements();
+  const {
+    capabilities,
+    tier,
+    freeAllowances,
+    isLoading: entitlementsLoading,
+  } = useEntitlements();
   // Server-authoritative paid state for the upsell banner. Backend-granted
   // PLUS/COMPLIMENTARY/BYPASS users have no RevenueCat entitlement, so the
   // RC-derived `isPro` is false for them and the old check wrongly showed the
@@ -223,6 +228,11 @@ export default function DashboardScreen() {
   // the exact opposite of what this entry wants.
   const [weekAdjustRequested, setWeekAdjustRequested] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
+  // [LR-087] The plan-ended "Repeat a past week" door opens the picker on the
+  // week tab; the existing Repeat Past entry keeps opening on day.
+  const [repeatPickerType, setRepeatPickerType] = useState<"day" | "week">(
+    "day"
+  );
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
 
   // Training locations (1a–1d). The row hides once a session is in progress
@@ -1036,6 +1046,12 @@ export default function DashboardScreen() {
             setRestDayQuickGenerate(true);
             setShowSingleDayRegenModal(true);
           }}
+          canBuildNextPlan={canBuildNextPlan(freeAllowances)}
+          onRepeatPastWeek={() => {
+            setRepeatPickerType("week");
+            setShowRepeatPicker(true);
+          }}
+          onUpgrade={() => openPaywall(PAYWALL_COPY.PLAN_ENDED)}
           onAdjustWeek={
             workoutInfo
               ? () => {
@@ -1222,10 +1238,16 @@ export default function DashboardScreen() {
 
       <WorkoutRepeatPicker
         visible={showRepeatPicker}
-        onClose={() => setShowRepeatPicker(false)}
+        initialType={repeatPickerType}
+        includeMostRecentPlan={repeatPickerType === "week"}
+        onClose={() => {
+          setShowRepeatPicker(false);
+          setRepeatPickerType("day");
+        }}
         onSuccess={() => {
           invalidateActiveWorkoutCache();
           setShowRepeatPicker(false);
+          setRepeatPickerType("day");
           handleRefresh();
         }}
       />

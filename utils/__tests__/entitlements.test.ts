@@ -1,5 +1,6 @@
 import type { AllowanceStatus, Capability, Entitlements } from "@/types/api";
 import {
+  canBuildNextPlan,
   computeFreeAdjustmentNote,
   resolveCapability,
 } from "@/utils/entitlements";
@@ -164,5 +165,35 @@ describe("resolveCapability (useEntitlements can())", () => {
 
   it("fails closed for a capability absent from a resolved map", () => {
     expect(resolveCapability(entitlements({}), "SYNC_HEALTH")).toBe(false);
+  });
+});
+
+describe("canBuildNextPlan [LR-087]", () => {
+  // Uses the file's top-level allowance(limit, remaining).
+  const free = (weekRemaining: number): Entitlements["freeAllowances"] => ({
+    initialPlan: allowance(1, 0),
+    weekAdjustment: allowance(1, weekRemaining),
+    dayAdjustment: allowance(3, 3),
+  });
+
+  it("fails open for paid and comped tiers (no free allowances apply)", () => {
+    expect(canBuildNextPlan(null)).toBe(true);
+  });
+
+  it("lets a free user build while their week allowance remains", () => {
+    expect(canBuildNextPlan(free(1))).toBe(true);
+  });
+
+  it("says no once the one lifetime week allowance is spent", () => {
+    // The Clay case: INITIAL_PLAN 1/1 and WEEK_ADJUSTMENT 1/1 — walled out.
+    expect(canBuildNextPlan(free(0))).toBe(false);
+  });
+
+  it("keys on the WEEK allowance only — spare day adjustments can't build a plan", () => {
+    // Building a plan after the last one ends goes through /regenerate-async,
+    // which spends WEEK_ADJUSTMENT. Day adjustments left over don't help.
+    const f = free(0)!;
+    expect(f.dayAdjustment.remaining).toBe(3);
+    expect(canBuildNextPlan(f)).toBe(false);
   });
 });

@@ -40,6 +40,18 @@ interface NoActiveWorkoutCardProps {
   /** Dashboard-only: the recap is still being fetched. Shows a skeleton in its
    *  place so the generic empty card never flashes before the recap lands. */
   recapLoading?: boolean;
+  /** [LR-087] False when a free user has no plan builds left. The card then
+   *  stops inviting them to "Build my next plan" — a flow the server would
+   *  refuse only AFTER they'd picked Generate and typed a request — and instead
+   *  offers what they can actually do. Defaults to true, and the out-of-builds
+   *  layout also needs both callbacks below; without them the card falls back
+   *  to the normal flow rather than rendering a button that does nothing. */
+  canBuildNextPlan?: boolean;
+  /** Repeat a week they've already had. Costs no AI generation, so it's open to
+   *  every tier — the honest way to keep training on a free account. */
+  onRepeatPastWeek?: () => void;
+  /** Open the paywall with plan-appropriate copy. */
+  onUpgrade?: () => void;
 }
 
 export default function NoActiveWorkoutCard({
@@ -53,9 +65,43 @@ export default function NoActiveWorkoutCard({
   showTitle = true,
   recap,
   recapLoading = false,
+  canBuildNextPlan = true,
+  onRepeatPastWeek,
+  onUpgrade,
 }: NoActiveWorkoutCardProps) {
   const colors = useThemeColors();
   const router = useRouter();
+  const outOfBuilds = !canBuildNextPlan && !!onRepeatPastWeek && !!onUpgrade;
+
+  // [LR-087] The two ways forward for someone with no builds left. Repeat is
+  // PRIMARY on purpose: the goal right now is people training, and it costs no
+  // AI generation, so it's a real option rather than a consolation prize.
+  const outOfBuildsActions = outOfBuilds ? (
+    <View>
+      <TouchableOpacity
+        className="bg-primary rounded-md items-center justify-center"
+        style={{ minHeight: 56 }}
+        onPress={onRepeatPastWeek}
+        accessibilityRole="button"
+        accessibilityLabel="Repeat a past week. Train through a week you've already had again."
+      >
+        <Text className="text-base font-semibold text-content-on-primary">
+          Repeat a past week
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className="border border-neutral-medium-2 rounded-md items-center justify-center"
+        style={{ minHeight: 48, marginTop: 8 }}
+        onPress={onUpgrade}
+        accessibilityRole="button"
+        accessibilityLabel="Get a new plan with MastersFit+"
+      >
+        <Text className="text-sm font-semibold text-text-primary">
+          Get a new plan with MastersFit+
+        </Text>
+      </TouchableOpacity>
+    </View>
+  ) : null;
 
   // Recap still loading (dashboard only): hold the card's shape with a skeleton
   // so the generic "No Active Workout" card never flashes before the finished-
@@ -95,8 +141,18 @@ export default function NoActiveWorkoutCard({
           className="text-sm text-text-secondary leading-6"
           style={{ marginTop: 8 }}
         >
-          The last day of {recap.planName} was {recap.lastDayWeekday}. Build the
-          next one whenever you&rsquo;re ready.
+          {outOfBuilds ? (
+            <>
+              The last day of {recap.planName} was {recap.lastDayWeekday}.
+              You&rsquo;ve used the free plans that come with MastersFit — you can
+              keep training by repeating a week you&rsquo;ve already had.
+            </>
+          ) : (
+            <>
+              The last day of {recap.planName} was {recap.lastDayWeekday}. Build
+              the next one whenever you&rsquo;re ready.
+            </>
+          )}
         </Text>
 
         <View
@@ -136,30 +192,37 @@ export default function NoActiveWorkoutCard({
           </Text>
         </View>
 
-        <TouchableOpacity
-          className={`rounded-md items-center justify-center ${
-            isGenerating ? "bg-primary/50 opacity-50" : "bg-primary"
-          }`}
-          style={{ minHeight: 56 }}
-          onPress={isGenerating ? undefined : onShowWorkoutChoice}
-          disabled={isGenerating}
-        >
-          <Text className="text-base font-semibold text-content-on-primary">
-            {isGenerating ? "Building your plan…" : "Build my next plan"}
-          </Text>
-        </TouchableOpacity>
+        {outOfBuilds ? (
+          outOfBuildsActions
+        ) : (
+          <>
+            <TouchableOpacity
+              className={`rounded-md items-center justify-center ${
+                isGenerating ? "bg-primary/50 opacity-50" : "bg-primary"
+              }`}
+              style={{ minHeight: 56 }}
+              onPress={isGenerating ? undefined : onShowWorkoutChoice}
+              disabled={isGenerating}
+            >
+              <Text className="text-base font-semibold text-content-on-primary">
+                {isGenerating ? "Building your plan…" : "Build my next plan"}
+              </Text>
+            </TouchableOpacity>
 
-        {/* Names the one setting most likely to have drifted between plans.
-            Equipment/limitations stay in Settings — don't fold them in here. */}
-        <TouchableOpacity
-          className="border border-neutral-medium-2 rounded-md items-center justify-center"
-          style={{ minHeight: 48, marginTop: 8 }}
-          onPress={() => router.push("/profile-edit")}
-        >
-          <Text className="text-sm font-semibold text-text-primary">
-            Update my training days first
-          </Text>
-        </TouchableOpacity>
+            {/* Names the one setting most likely to have drifted between plans.
+                Equipment/limitations stay in Settings — don't fold them in here.
+                Not shown when out of builds: there's no new plan for it to shape. */}
+            <TouchableOpacity
+              className="border border-neutral-medium-2 rounded-md items-center justify-center"
+              style={{ minHeight: 48, marginTop: 8 }}
+              onPress={() => router.push("/profile-edit")}
+            >
+              <Text className="text-sm font-semibold text-text-primary">
+                Update my training days first
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     );
   }
@@ -208,10 +271,16 @@ export default function NoActiveWorkoutCard({
         </Text>
       )}
       <Text className="text-sm text-text-muted text-center mb-6 leading-5">
-        {subtitle || variantStyles.subtitle}
+        {outOfBuilds
+          ? "Your plan has finished, and you've used the free plans that come with MastersFit. You can keep training by repeating a week you've already had."
+          : subtitle || variantStyles.subtitle}
       </Text>
 
-      {(!showActionsOnlyForToday || isToday) && (
+      {outOfBuilds && (!showActionsOnlyForToday || isToday) && (
+        <View className="w-full">{outOfBuildsActions}</View>
+      )}
+
+      {!outOfBuilds && (!showActionsOnlyForToday || isToday) && (
         <View className="w-full space-y-3">
           <TouchableOpacity
             className={`rounded-xl py-3 px-6 flex-row items-center justify-center ${

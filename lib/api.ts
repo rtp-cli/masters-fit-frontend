@@ -48,6 +48,16 @@ export function setImpersonationExpiredCallback(
   impersonationExpiredCallback = callback;
 }
 
+/**
+ * [LR-087] Open the app-wide paywall (the PaymentWallModal mounted in
+ * app/_layout.tsx) with a given message, for screens that don't render their own
+ * — the same modal a server 403 opens, driven proactively instead. No-op if the
+ * layout hasn't registered its callback yet.
+ */
+export function openGlobalPaywall(message: string, type = "plan_ended") {
+  paywallCallback?.({ type, message, limits: {} });
+}
+
 // Custom error class for paywall errors
 export class PaywallError extends Error {
   public paywallData: {

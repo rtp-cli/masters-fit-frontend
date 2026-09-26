@@ -68,3 +68,26 @@ export function resolveCapability(
 ): boolean {
   return entitlements ? !!entitlements.capabilities[capability] : true;
 }
+
+/**
+ * [LR-087] Whether this user can build their next plan without hitting the
+ * paywall. Drives the plan-ended screens, so a user who CAN'T isn't invited to
+ * "Build my next plan" — three taps and a typed request — only to be refused by
+ * the server at the end.
+ *
+ * Building a plan once the last one has ended goes through
+ * /regenerate-async, which spends a WEEK_ADJUSTMENT. A free account gets
+ * exactly one, for life, so after its first two plans it is walled out.
+ *
+ * FAILS OPEN, same convention as `resolveCapability`: `freeAllowances` is null
+ * both for paid/comped tiers (no allowance applies) and while entitlements are
+ * still resolving — in either case show the normal build flow and let the
+ * server enforce. Wrongly telling a paying user they're out of plans is worse
+ * than a free user occasionally seeing the old flow for a moment.
+ */
+export function canBuildNextPlan(
+  freeAllowances: Entitlements["freeAllowances"],
+): boolean {
+  if (!freeAllowances) return true;
+  return freeAllowances.weekAdjustment.remaining > 0;
+}

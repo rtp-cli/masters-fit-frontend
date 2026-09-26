@@ -62,12 +62,15 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBackgroundJobs } from "@/contexts/background-job-context";
 import { useWorkout } from "@/contexts/workout-context";
 import { useCircuitSession } from "@/hooks/use-circuit-session";
+import { useEntitlements } from "@/hooks/use-entitlements";
 import { useLoggedActivities } from "@/hooks/use-logged-activities";
 import { trackWorkoutStarted } from "@/lib/analytics";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
+import { openGlobalPaywall } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { logCircuitCompletion } from "@/lib/circuits";
 import { exerciseHasDemo } from "@/lib/exercise-video";
+import { PAYWALL_COPY } from "@/lib/paywall-copy";
 import { tabEvents } from "@/lib/tab-events";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -104,6 +107,7 @@ import {
   isCircuitBlock,
   isRoundActionVisible,
 } from "@/utils/circuit-utils";
+import { canBuildNextPlan } from "@/utils/entitlements";
 import {
   getHealthConnection,
   hasRecentHeartRateSample,
@@ -287,6 +291,11 @@ export function WorkoutScreen() {
   // New modal states for repeat workout
   const [showRegenerationModal, setShowRegenerationModal] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
+  // [LR-087] True when the picker was opened from the plan-ended "Repeat a past
+  // week" door. That door needs the week tab; the existing rest-day door stays
+  // single-day-only, as it always was.
+  const [repeatWeekMode, setRepeatWeekMode] = useState(false);
+  const { freeAllowances } = useEntitlements();
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
 
   // Dialog state
@@ -2176,6 +2185,12 @@ export function WorkoutScreen() {
                 variant="workout"
                 showTitle={false}
                 subtitle="You don't have an active workout plan for this week."
+                canBuildNextPlan={canBuildNextPlan(freeAllowances)}
+                onRepeatPastWeek={() => {
+                  setRepeatWeekMode(true);
+                  setShowRepeatPicker(true);
+                }}
+                onUpgrade={() => openGlobalPaywall(PAYWALL_COPY.PLAN_ENDED)}
               />
             )}
 
@@ -2236,11 +2251,17 @@ export function WorkoutScreen() {
 
         <WorkoutRepeatPicker
           visible={showRepeatPicker}
-          singleDayOnly={true}
-          onClose={() => setShowRepeatPicker(false)}
+          singleDayOnly={!repeatWeekMode}
+          initialType={repeatWeekMode ? "week" : "day"}
+          includeMostRecentPlan={repeatWeekMode}
+          onClose={() => {
+            setShowRepeatPicker(false);
+            setRepeatWeekMode(false);
+          }}
           onSuccess={() => {
             invalidateActiveWorkoutCache();
             setShowRepeatPicker(false);
+            setRepeatWeekMode(false);
             loadWorkout(true);
           }}
         />
