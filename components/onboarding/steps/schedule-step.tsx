@@ -7,6 +7,7 @@ import {
   type FormData,
 } from "@/types/components";
 import { PREFERRED_DAYS } from "@/types/enums";
+import { isSpreadingDays, plannedSessionsPerWeek } from "@/utils/planned-sessions";
 
 import { formatEnumValue } from "../utils/formatters";
 
@@ -32,7 +33,11 @@ export default function ScheduleStep({
   editScreen = false,
 }: ScheduleStepProps) {
   const dayCount = formData.availableDays.length;
-  const sessionWord = dayCount === 1 ? "session" : "sessions";
+  // [LR-085] Count the sessions the plan will actually HOLD, not the days
+  // picked — a "getting moving" plan spreads 3 across the days they're free.
+  const sessions = plannedSessionsPerWeek(formData.fitnessLevel, dayCount);
+  const spreading = isSpreadingDays(formData.fitnessLevel, dayCount);
+  const sessionWord = sessions === 1 ? "session" : "sessions";
 
   return (
     <View className="flex-1 px-6 pb-6">
@@ -50,7 +55,9 @@ export default function ScheduleStep({
               Your first plan
             </Text>
             <Text className="text-sm text-text-primary">
-              {dayCount} {sessionWord} a week. Change your days any time.
+              {spreading
+                ? `${sessions} ${sessionWord} a week, spread across the days you're free. Rest days are part of the plan — you can ask for more any time.`
+                : `${sessions} ${sessionWord} a week. Change your days any time.`}
             </Text>
           </View>
         )}
@@ -80,7 +87,9 @@ export default function ScheduleStep({
         {/* Edit screen: one muted readout below the chips (§A3). */}
         {editScreen && dayCount >= 1 && (
           <Text className="mt-3 text-sm text-text-muted">
-            {dayCount} {sessionWord} a week. Changes apply from your next plan.
+            {spreading
+              ? `${sessions} ${sessionWord} a week, spread across these days — rest is part of the plan. Changes apply from your next plan.`
+              : `${sessions} ${sessionWord} a week. Changes apply from your next plan.`}
           </Text>
         )}
       </View>
