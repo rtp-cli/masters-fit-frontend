@@ -50,6 +50,11 @@ type ActiveWorkoutCardProps = {
       link), so a week-scope intent had to be expressed as a day-scope one
       first. Omitted → the row doesn't render. */
   onAdjustWeek?: () => void;
+  /** [LR-087] Plan-ended state for a free user with no builds left — passed
+      straight through to NoActiveWorkoutCard. See that component. */
+  canBuildNextPlan?: boolean;
+  onRepeatPastWeek?: () => void;
+  onUpgrade?: () => void;
   /** [LR-077] Activities the user logged for TODAY, rendered under the card. */
   todaysActivities?: LoggedActivity[];
   /** Opens the "log something you already did" sheet. */
@@ -76,6 +81,9 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
   onChangeLocation,
   isSessionActive,
   onAdjustWeek,
+  canBuildNextPlan,
+  onRepeatPastWeek,
+  onUpgrade,
   todaysActivities = [],
   onLogActivity,
   onDeleteActivity,
@@ -144,6 +152,9 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
             variant="dashboard"
             recap={endedPlanRecap ?? undefined}
             recapLoading={endedPlanRecapLoading}
+            canBuildNextPlan={canBuildNextPlan}
+            onRepeatPastWeek={onRepeatPastWeek}
+            onUpgrade={onUpgrade}
           />
         ) : isRestDay && cycle ? (
           <View>

@@ -31,6 +31,7 @@ import {
   getHealthConnection,
   writeWorkoutToHealth,
 } from "@/utils/health";
+import { isRepeatable } from "@/utils/repeat-weeks";
 
 import { formatDateAsString, getCurrentDate,getTodayString } from "../utils";
 import { apiRequest, PaywallError } from "./api";
@@ -983,7 +984,8 @@ export function isRepeatablePreviousWorkout(workout: {
   completionRate?: number;
   completedWorkouts?: number;
 }): boolean {
-  return (workout.completionRate ?? 0) > 0 || (workout.completedWorkouts ?? 0) > 0;
+  // One source of truth with the repeat picker's week-offer rule [LR-087].
+  return isRepeatable({ id: 0, endDate: "", ...workout });
 }
 
 /**

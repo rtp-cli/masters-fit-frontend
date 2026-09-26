@@ -25,7 +25,6 @@ import {
   fetchPastCompletedDays,
   fetchPreviousWorkouts,
   invalidateActiveWorkoutCache,
-  isRepeatablePreviousWorkout,
   repeatPastDay,
   repeatPreviousWeekWorkout,
 } from "@/lib/workouts";
@@ -40,6 +39,7 @@ import {
   formatDate,
   formatWorkoutDuration,
 } from "@/utils";
+import { weeksToOffer } from "@/utils/repeat-weeks";
 
 interface WorkoutRepeatPickerProps {
   visible: boolean;
@@ -56,6 +56,15 @@ interface WorkoutRepeatPickerProps {
   // so that entry point asks first. Entry points with nothing to destroy
   // (rest days, dates outside any plan) leave this off and are unchanged.
   replacingWorkoutName?: string;
+  // [LR-087] Which tab to open on. The plan-ended screen passes "week": with no
+  // plan left, the useful move is a whole week back, not one day. Every other
+  // entry point keeps the historical "day".
+  initialType?: "day" | "week";
+  // [LR-087] Always offer — and preselect — the plan that just ended, even if it
+  // was never started. Set by the plan-ended screen only; see
+  // utils/repeat-weeks.ts for why the normal "only plans you did some of" rule
+  // leaves that screen's users with an empty list.
+  includeMostRecentPlan?: boolean;
 }
 
 export default function WorkoutRepeatPicker({
@@ -64,6 +73,8 @@ export default function WorkoutRepeatPicker({
   singleDayOnly = false,
   targetDate,
   replacingWorkoutName,
+  initialType = "day",
+  includeMostRecentPlan = false,
 }: WorkoutRepeatPickerProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -110,15 +121,16 @@ export default function WorkoutRepeatPicker({
 
   useEffect(() => {
     if (visible) {
-      setSelectedType("day");
+      // singleDayOnly hides the week tab, so it always wins over initialType.
+      setSelectedType(singleDayOnly ? "day" : initialType);
       setSelectedDay(null);
       setExpandedDayCards({});
       setSelectedWorkout(null);
       setExpandedWorkouts({});
       loadDayData();
-      loadWeekData();
+      loadWeekData(includeMostRecentPlan);
     }
-  }, [visible]);
+  }, [visible, initialType, singleDayOnly, includeMostRecentPlan]);
 
   // --- Data loading ---
 
@@ -134,15 +146,22 @@ export default function WorkoutRepeatPicker({
     }
   };
 
-  const loadWeekData = async () => {
+  // Takes the flag as an argument rather than reading the prop, so the loader
+  // stays prop-free and the open effect above owns when it runs.
+  const loadWeekData = async (includeMostRecent: boolean) => {
     try {
       setLoadingWeeks(true);
       const user = await getCurrentUser();
       if (!user) return;
       const workouts = await fetchPreviousWorkouts(user.id);
       // Only show plans the user actually did some of — hide stale,
-      // never-started plans left behind by regenerations.
-      setPreviousWorkouts((workouts || []).filter(isRepeatablePreviousWorkout));
+      // never-started plans left behind by regenerations. [LR-087] Except the
+      // plan that just ended, when opened from the plan-ended screen.
+      const { list, preselected } = weeksToOffer(workouts || [], {
+        includeMostRecent,
+      });
+      setPreviousWorkouts(list);
+      if (preselected) setSelectedWorkout(preselected);
     } catch (error) {
       console.error("Error loading previous workouts:", error);
     } finally {

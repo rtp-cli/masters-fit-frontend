@@ -15,6 +15,11 @@ export const PAYWALL_COPY = {
     "Create new personalized training plans whenever your goals, schedule, or available equipment change—with MastersFit+.",
   HEALTH:
     "Automatically sync your workouts with Apple Health and Health Connect using MastersFit+.",
+  // [LR-087] Opened from the plan-ended screen, where the user was trying to
+  // build a PLAN, not adjust one — ADJUSTMENTS_EXHAUSTED ("You've used your free
+  // workout adjustments") described the wrong thing at that moment.
+  PLAN_ENDED:
+    "You've used the free plans that come with MastersFit. With MastersFit+, a fresh plan is built around your goals and schedule every week.",
   ADJUSTMENTS_EXHAUSTED:
     "You've used your free workout adjustments. Upgrade to MastersFit+ to keep your training evolving as your goals, schedule, and recovery change.",
 } as const;
