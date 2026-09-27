@@ -12,8 +12,10 @@ that runtime**, so treat it as a production deploy.
 Run everything from the frontend repo root (`masters-fit-frontend`).
 
 The mechanics live in **`scripts/ota-publish.sh`** — use it rather than calling `eas update` by
-hand. It pins the bundle to an explicit commit, publishes from a throwaway worktree, and always
-prints the device-comparable tag. This skill is the judgment around it.
+hand. It pins the bundle to an explicit commit, publishes from a dedicated worktree
+(`.claude/worktrees/ota-publish`, reset to that commit and verified clean each run, kept between
+runs so the bundler cache stays warm: ~45s cold, ~20s warm), and always prints the
+device-comparable tag. If a publish ever looks off, rerun with `--fresh` to rebuild that tree. This skill is the judgment around it.
 
 ---
 

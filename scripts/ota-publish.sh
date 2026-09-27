@@ -17,8 +17,15 @@
 #      rollout. This script always resolves and prints the per-platform tag.
 #   2. `eas update` bundles the WORKING TREE. Sibling Claude/dev sessions share this checkout,
 #      so a dirty tree (or a local main behind origin) silently ships the wrong code. This
-#      publishes from a throwaway worktree pinned to an explicit commit instead of touching
+#      publishes from a dedicated worktree pinned to an explicit commit instead of touching
 #      whatever state the shared tree happens to be in.
+#   3. That dedicated worktree lives at a FIXED path and is reused, so the bundler cache stays
+#      warm. It used to be a throwaway named after the process id; metro.config.js builds
+#      absolute paths from its own folder, so every new folder produced a new config and threw
+#      the whole Metro cache away — a cold ~10-minute bundle on every publish. Reuse is only
+#      safe because every run re-verifies the exact commit, a clean tree and no .env file.
+#
+#      --fresh deletes and recreates the tree first (a cold, known-clean publish).
 #
 # It deliberately does NOT decide whether the change is OTA-eligible (JS-only) or review what
 # else rides along in the bundle — that is judgment, and it lives in the deploy-ota skill.
@@ -29,6 +36,7 @@ MODE="publish"
 MESSAGE=""
 REF="origin/main"
 DRY=0
+FRESH=0
 
 die() { printf 'error: %s\n' "$1" >&2; exit 1; }
 
@@ -39,7 +47,8 @@ while [ $# -gt 0 ]; do
     --ref)            REF="${2:-}"; shift ;;
     --branch)         EAS_BRANCH="${2:-}"; shift ;;
     --dry-run)        DRY=1 ;;
-    -h|--help)        sed -n '3,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --fresh)          FRESH=1 ;;
+    -h|--help)        sed -n '3,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)                die "unknown argument: $1 (try --help)" ;;
   esac
   shift
@@ -49,13 +58,14 @@ cd "$(git rev-parse --show-toplevel)" || die "not inside a git repo"
 command -v python3 >/dev/null || die "python3 is required"
 
 TMPJSON="$(mktemp -t ota-publish)"
-WORKTREE=""
+# Fixed and reused: see WHY #3. Only this script should ever touch it.
+WORKTREE=".claude/worktrees/ota-publish"
+LOCK=".claude/worktrees/.ota-publish.lock"
+HAVE_LOCK=0
 cleanup() {
   rm -f "$TMPJSON"
-  if [ -n "$WORKTREE" ] && [ -d "$WORKTREE" ]; then
-    rm -f "$WORKTREE/node_modules"
-    git worktree remove "$WORKTREE" --force >/dev/null 2>&1 || true
-  fi
+  # The tree is deliberately KEPT (that's the warm cache); only the lock goes.
+  if [ "$HAVE_LOCK" -eq 1 ]; then rmdir "$LOCK" 2>/dev/null || true; fi
 }
 trap cleanup EXIT
 
@@ -136,14 +146,46 @@ echo "  ref      $REF"
 echo "  commit   ${SHA:0:9}  $SUBJECT"
 echo "  message  $MESSAGE"
 
-# Publish from a throwaway worktree pinned to $SHA, so the shared checkout's state
+# Publish from the dedicated worktree pinned to $SHA, so the shared checkout's state
 # (someone else's uncommitted work, a local main behind origin) cannot leak into the bundle.
-WORKTREE=".claude/worktrees/ota-$$"
 mkdir -p .claude/worktrees
-git worktree add "$WORKTREE" "$SHA" --detach >/dev/null 2>&1 \
-  || die "could not create worktree at $WORKTREE"
-ln -s ../../../node_modules "$WORKTREE/node_modules"
-echo "  tree     $WORKTREE (detached at ${SHA:0:9}, removed afterwards)"
+# One publish at a time — two runs would reset the same tree under each other.
+mkdir "$LOCK" 2>/dev/null \
+  || die "another OTA publish is in progress (lock: $LOCK). If none is, remove that directory."
+HAVE_LOCK=1
+
+is_registered_worktree() {
+  git worktree list --porcelain | grep -qx "worktree $(cd "$WORKTREE" 2>/dev/null && pwd -P)"
+}
+if [ "$FRESH" -eq 1 ] || { [ -e "$WORKTREE" ] && ! is_registered_worktree; }; then
+  git worktree remove "$WORKTREE" --force >/dev/null 2>&1 || rm -rf "$WORKTREE"
+  git worktree prune
+fi
+if [ -d "$WORKTREE" ]; then
+  git -C "$WORKTREE" checkout --detach --force -q "$SHA" \
+    || die "could not reset $WORKTREE to ${SHA:0:9} — rerun with --fresh"
+  # Remove untracked files; ignored ones (the bundler's .expo/ state) stay — that's the cache.
+  git -C "$WORKTREE" clean -fdq
+else
+  git worktree add "$WORKTREE" "$SHA" --detach >/dev/null 2>&1 \
+    || die "could not create worktree at $WORKTREE"
+fi
+[ -L "$WORKTREE/node_modules" ] || ln -s ../../../node_modules "$WORKTREE/node_modules"
+# Previous export output; eas update writes a new one.
+rm -rf "$WORKTREE/dist"
+
+# The guarantees the old throwaway tree gave for free, now checked explicitly.
+[ "$(git -C "$WORKTREE" rev-parse HEAD)" = "$SHA" ] \
+  || die "tree is not at ${SHA:0:9} — refusing to publish"
+[ -z "$(git -C "$WORKTREE" status --porcelain --untracked-files=normal)" ] \
+  || die "tree has local changes — refusing to publish (rerun with --fresh)"
+# Expo reads .env files at bundle time; an ignored one could survive between runs and
+# leak into the bundle. Production values come from EAS (--environment production).
+# (Tracked files like .env.example are fine — the clean-status check above covers them.)
+if [ -n "$(git -C "$WORKTREE" ls-files --others --ignored --exclude-standard -- '.env*')" ]; then
+  die "a .env file exists in $WORKTREE — refusing to publish (rerun with --fresh)"
+fi
+echo "  tree     $WORKTREE (detached at ${SHA:0:9}, verified clean; kept for the warm cache)"
 
 if [ "$DRY" -eq 1 ]; then
   echo
