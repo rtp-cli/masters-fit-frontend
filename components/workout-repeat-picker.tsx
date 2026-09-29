@@ -33,7 +33,7 @@ import type {
   WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import type { PreviousWorkout } from "@/types/api/workout.types";
-import { formatDateAsString } from "@/utils";
+import { formatDateAsString, formatSetDuration } from "@/utils";
 import {
   calculatePlanDayDuration,
   formatDate,
@@ -495,7 +495,7 @@ export default function WorkoutRepeatPicker({
                                 const parts = [];
                                 if (ex.sets) parts.push(`${ex.sets}×${ex.reps || 0}`);
                                 if (ex.weight) parts.push(`${ex.weight} lbs`);
-                                if (ex.duration) parts.push(`${ex.duration}s`);
+                                if (ex.duration) parts.push(formatSetDuration(ex.duration));
                                 const detail = parts.length > 0 ? ` — ${parts.join(", ")}` : "";
                                 return (
                                   <Text

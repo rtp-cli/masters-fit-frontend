@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
+import { formatSetDuration } from "@/utils";
+
 import { useThemeColors } from "../lib/theme";
 import {
   type ExerciseSessionData,
@@ -215,7 +217,7 @@ export default function WorkoutBlockProgress({
                         {exercise.sets && exercise.reps
                           ? `${exercise.sets} × ${exercise.reps}`
                           : exercise.duration
-                            ? `${exercise.duration}s`
+                            ? formatSetDuration(exercise.duration)
                             : "Follow instructions"}
                       </Text>
 

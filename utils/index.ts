@@ -486,6 +486,19 @@ export function formatWorkoutDuration(durationMinutes: number): string {
 }
 
 /**
+ * Format one set's duration (stored in seconds) for display. Short holds stay
+ * in seconds ("45s"); anything a minute or longer reads in minutes, so a
+ * 1200-second walk shows as "20 min", not "1200s".
+ */
+export function formatSetDuration(seconds: number): string {
+  const total = Math.round(seconds);
+  if (total < 60) return `${total}s`;
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  return rest === 0 ? `${minutes} min` : `${minutes} min ${rest}s`;
+}
+
+/**
  * Format exercise duration for display
  * @param duration Duration per set in seconds
  * @param sets Number of sets
