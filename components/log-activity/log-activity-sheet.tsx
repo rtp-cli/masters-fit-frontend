@@ -220,7 +220,7 @@ export default function LogActivitySheet({
                   Log an activity
                 </Text>
                 <Text className="text-sm text-text-muted text-center">
-                  Something you already did, that wasn&apos;t part of your plan.
+                  Something you did outside your MastersFit plan.
                 </Text>
               </View>
 

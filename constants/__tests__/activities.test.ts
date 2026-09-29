@@ -5,6 +5,7 @@ import {
   ACTIVITY_PICKER_ORDER,
   activityIcon,
   activityLabel,
+  logActivityCtaLabel,
 } from "../activities";
 
 describe("logged activity display [LR-077]", () => {
@@ -56,5 +57,13 @@ describe("logged activity display [LR-077]", () => {
     for (const type of LOGGED_ACTIVITY_TYPES) {
       expect(activityIcon(type)).toBe(ACTIVITY_DISPLAY[type].icon);
     }
+  });
+});
+
+describe("log-an-activity button label", () => {
+  it("offers a first activity, then another", () => {
+    expect(logActivityCtaLabel(0)).toBe("Log an activity");
+    expect(logActivityCtaLabel(1)).toBe("Log another activity");
+    expect(logActivityCtaLabel(3)).toBe("Log another activity");
   });
 });

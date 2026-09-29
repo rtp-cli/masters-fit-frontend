@@ -30,6 +30,7 @@ import WorkoutChoiceModal from "@/components/workout-choice-modal";
 import WorkoutEditModal from "@/components/workout-edit-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
+import { logActivityCtaLabel } from "@/constants/activities";
 import { RegenerationType } from "@/constants/global.enum";
 import { useAppDataContext } from "@/contexts/app-data-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -807,9 +808,7 @@ export default function CalendarScreen() {
                 color={colors.text.secondary}
               />
               <Text className="text-base font-semibold text-text-primary ml-2 flex-1">
-                {activitiesOnDate.length > 0
-                  ? "Log something else"
-                  : "I did something else"}
+                {logActivityCtaLabel(activitiesOnDate.length)}
               </Text>
               <Ionicons
                 name="chevron-forward"
