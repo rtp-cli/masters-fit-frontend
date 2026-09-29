@@ -205,199 +205,212 @@ export default function LogActivitySheet({
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <View className="px-6 pt-6 pb-4 items-center">
-                <View
-                  className="size-12 rounded-full items-center justify-center mb-3"
-                  style={{ backgroundColor: colors.brand.primary + "15" }}
-                >
-                  <Ionicons
-                    name="checkmark-done-outline"
-                    size={22}
-                    color={colors.brand.primary}
-                  />
-                </View>
-                <Text className="text-lg font-semibold text-text-primary mb-1">
-                  Log an activity
-                </Text>
-                <Text className="text-sm text-text-muted text-center">
-                  Something you already did, that wasn&apos;t part of your plan.
-                </Text>
-              </View>
-
-              {/* What */}
-              <View className="px-6 pb-2">
-                <Text className="text-sm font-medium text-text-primary mb-3">
-                  What did you do?
-                </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {ACTIVITY_PICKER_ORDER.map((type) => {
-                    const selected = activityType === type;
-                    return (
-                      <TouchableOpacity
-                        key={type}
-                        onPress={() => setActivityType(type)}
-                        disabled={submitting}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
-                        accessibilityLabel={ACTIVITY_DISPLAY[type].label}
-                        className={`flex-row items-center rounded-full px-3 py-2 border ${
-                          selected
-                            ? "bg-primary border-primary"
-                            : "bg-background border-neutral-medium-1"
-                        }`}
-                      >
-                        <Ionicons
-                          name={ACTIVITY_DISPLAY[type].icon as any}
-                          size={15}
-                          color={
-                            selected
-                              ? colors.contentOnPrimary
-                              : colors.text.secondary
-                          }
-                        />
-                        <Text
-                          className="text-sm ml-1.5"
-                          style={{
-                            color: selected
-                              ? colors.contentOnPrimary
-                              : colors.text.primary,
-                          }}
-                        >
-                          {ACTIVITY_DISPLAY[type].label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                {/* The free-text escape hatch, shown only where it applies. */}
-                {needsCustomLabel && (
-                  <View className="mt-3">
-                    <TextInput
-                      value={customType}
-                      onChangeText={setCustomType}
-                      editable={!submitting}
-                      placeholder="What was it? e.g. Pickleball"
-                      placeholderTextColor={colors.text.muted}
-                      maxLength={CUSTOM_TYPE_MAX}
-                      returnKeyType="done"
-                      className="bg-background border border-neutral-medium-1 rounded-xl px-4 py-3 text-text-primary text-base"
+              {/* The tap-catcher lives INSIDE the ScrollView, not around it. A
+                  responder can't be taken over by its own child, so when the
+                  card itself caught the touch, a drag that began on a label or
+                  blank space never became a scroll — only drags that began on a
+                  chip did. Inside, the ScrollView is the ancestor and wins. */}
+              <Pressable onPress={Keyboard.dismiss} accessible={false}>
+                <View className="px-6 pt-6 pb-4 items-center">
+                  <View
+                    className="size-12 rounded-full items-center justify-center mb-3"
+                    style={{ backgroundColor: colors.brand.primary + "15" }}
+                  >
+                    <Ionicons
+                      name="checkmark-done-outline"
+                      size={22}
+                      color={colors.brand.primary}
                     />
                   </View>
-                )}
-              </View>
-
-              {/* How long */}
-              <View className="px-6 pt-4 pb-2">
-                <Text className="text-sm font-medium text-text-primary mb-3">
-                  How long?
-                </Text>
-                <CustomSlider
-                  value={durationMinutes}
-                  minimumValue={DURATION_MIN}
-                  maximumValue={DURATION_MAX}
-                  step={DURATION_STEP}
-                  unit=" min"
-                  onValueChange={setDurationMinutes}
-                />
-              </View>
-
-              {/* When — usually already correct from the entry point. */}
-              <View className="px-6 pt-4 pb-2">
-                <Text className="text-sm font-medium text-text-primary mb-2">
-                  When?
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  disabled={submitting}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Change the date. Currently ${dateLabel}`}
-                  className="flex-row items-center justify-between bg-background border border-neutral-medium-1 rounded-xl px-4 py-3"
-                >
-                  <Text className="text-text-primary text-base">
-                    {dateLabel}
+                  <Text className="text-lg font-semibold text-text-primary mb-1">
+                    Log an activity
                   </Text>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={18}
-                    color={colors.text.secondary}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Effort — genuinely optional, and unset by default. */}
-              <View className="px-6 pt-4 pb-2">
-                <Text className="text-sm font-medium text-text-primary mb-1">
-                  How did it feel?
-                </Text>
-                <Text className="text-xs text-text-muted mb-3">Optional</Text>
-                <View className="flex-row gap-2">
-                  {LOGGED_ACTIVITY_EFFORTS.map((value) => {
-                    const selected = effort === value;
-                    return (
-                      <TouchableOpacity
-                        key={value}
-                        // Tapping the selected chip clears it — otherwise an
-                        // accidental tap can never be undone without closing
-                        // the sheet and starting over.
-                        onPress={() => setEffort(selected ? null : value)}
-                        disabled={submitting}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
-                        className={`flex-1 rounded-xl py-3 items-center border ${
-                          selected
-                            ? "bg-primary border-primary"
-                            : "bg-background border-neutral-medium-1"
-                        }`}
-                      >
-                        <Text
-                          className="text-sm"
-                          style={{
-                            color: selected
-                              ? colors.contentOnPrimary
-                              : colors.text.primary,
-                          }}
-                        >
-                          {value === "easy"
-                            ? "Easy"
-                            : value === "moderate"
-                              ? "Moderate"
-                              : "Hard"}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  <Text className="text-sm text-text-muted text-center">
+                    Something you did outside your MastersFit plan.
+                  </Text>
                 </View>
-              </View>
 
-              {/* Note */}
-              <View className="px-6 pt-4 pb-2">
-                <Text className="text-sm font-medium text-text-primary mb-1">
-                  Anything to remember?
-                </Text>
-                <Text className="text-xs text-text-muted mb-2">Optional</Text>
-                <TextInput
-                  value={notes}
-                  onChangeText={setNotes}
-                  editable={!submitting}
-                  placeholder="e.g. felt good, knee was fine"
-                  placeholderTextColor={colors.text.muted}
-                  maxLength={NOTES_MAX}
-                  multiline
-                  returnKeyType="done"
-                  blurOnSubmit
-                  className="bg-background border border-neutral-medium-1 rounded-xl px-4 py-3 text-text-primary text-base"
-                  style={{ minHeight: 64, textAlignVertical: "top" }}
-                />
-              </View>
+                {/* What */}
+                <View className="px-6 pb-2">
+                  <Text className="text-sm font-medium text-text-primary mb-3">
+                    What did you do?
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {ACTIVITY_PICKER_ORDER.map((type) => {
+                      const selected = activityType === type;
+                      return (
+                        <TouchableOpacity
+                          key={type}
+                          onPress={() => setActivityType(type)}
+                          disabled={submitting}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          accessibilityLabel={ACTIVITY_DISPLAY[type].label}
+                          className={`flex-row items-center rounded-full px-3 py-2 border ${
+                            selected
+                              ? "bg-primary border-primary"
+                              : "bg-background border-neutral-medium-1"
+                          }`}
+                        >
+                          <Ionicons
+                            name={ACTIVITY_DISPLAY[type].icon as any}
+                            size={15}
+                            color={
+                              selected
+                                ? colors.contentOnPrimary
+                                : colors.text.secondary
+                            }
+                          />
+                          <Text
+                            className="text-sm ml-1.5"
+                            style={{
+                              color: selected
+                                ? colors.contentOnPrimary
+                                : colors.text.primary,
+                            }}
+                          >
+                            {ACTIVITY_DISPLAY[type].label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
 
+                  {/* The free-text escape hatch, shown only where it applies. */}
+                  {needsCustomLabel && (
+                    <View className="mt-3">
+                      <TextInput
+                        value={customType}
+                        onChangeText={setCustomType}
+                        editable={!submitting}
+                        placeholder="What was it? e.g. Pickleball"
+                        placeholderTextColor={colors.text.muted}
+                        maxLength={CUSTOM_TYPE_MAX}
+                        returnKeyType="done"
+                        className="bg-background border border-neutral-medium-1 rounded-xl px-4 py-3 text-text-primary text-base"
+                      />
+                    </View>
+                  )}
+                </View>
+
+                {/* How long */}
+                <View className="px-6 pt-4 pb-2">
+                  <Text className="text-sm font-medium text-text-primary mb-3">
+                    How long?
+                  </Text>
+                  <CustomSlider
+                    value={durationMinutes}
+                    minimumValue={DURATION_MIN}
+                    maximumValue={DURATION_MAX}
+                    step={DURATION_STEP}
+                    unit=" min"
+                    onValueChange={setDurationMinutes}
+                  />
+                </View>
+
+                {/* When — usually already correct from the entry point. */}
+                <View className="px-6 pt-4 pb-2">
+                  <Text className="text-sm font-medium text-text-primary mb-2">
+                    When?
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(true)}
+                    disabled={submitting}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Change the date. Currently ${dateLabel}`}
+                    className="flex-row items-center justify-between bg-background border border-neutral-medium-1 rounded-xl px-4 py-3"
+                  >
+                    <Text className="text-text-primary text-base">
+                      {dateLabel}
+                    </Text>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={18}
+                      color={colors.text.secondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Effort — genuinely optional, and unset by default. */}
+                <View className="px-6 pt-4 pb-2">
+                  <Text className="text-sm font-medium text-text-primary mb-1">
+                    How did it feel?
+                  </Text>
+                  <Text className="text-xs text-text-muted mb-3">Optional</Text>
+                  <View className="flex-row gap-2">
+                    {LOGGED_ACTIVITY_EFFORTS.map((value) => {
+                      const selected = effort === value;
+                      return (
+                        <TouchableOpacity
+                          key={value}
+                          // Tapping the selected chip clears it — otherwise an
+                          // accidental tap can never be undone without closing
+                          // the sheet and starting over.
+                          onPress={() => setEffort(selected ? null : value)}
+                          disabled={submitting}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          className={`flex-1 rounded-xl py-3 items-center border ${
+                            selected
+                              ? "bg-primary border-primary"
+                              : "bg-background border-neutral-medium-1"
+                          }`}
+                        >
+                          <Text
+                            className="text-sm"
+                            style={{
+                              color: selected
+                                ? colors.contentOnPrimary
+                                : colors.text.primary,
+                            }}
+                          >
+                            {value === "easy"
+                              ? "Easy"
+                              : value === "moderate"
+                                ? "Moderate"
+                                : "Hard"}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Note */}
+                <View className="px-6 pt-4 pb-2">
+                  <Text className="text-sm font-medium text-text-primary mb-1">
+                    Anything to remember?
+                  </Text>
+                  <Text className="text-xs text-text-muted mb-2">Optional</Text>
+                  <TextInput
+                    value={notes}
+                    onChangeText={setNotes}
+                    editable={!submitting}
+                    placeholder="e.g. felt good, knee was fine"
+                    placeholderTextColor={colors.text.muted}
+                    maxLength={NOTES_MAX}
+                    multiline
+                    returnKeyType="done"
+                    blurOnSubmit
+                    className="bg-background border border-neutral-medium-1 rounded-xl px-4 py-3 text-text-primary text-base"
+                    style={{ minHeight: 64, textAlignVertical: "top" }}
+                  />
+                </View>
+
+                <View className="pb-4" />
+              </Pressable>
+            </ScrollView>
+
+            {/* Pinned, so Save is always in reach however long the form gets
+                (and stays above the keyboard with the note field open). */}
+            <View className="border-t border-neutral-medium-1">
               {error && (
                 <View className="px-6 pt-3">
                   <Text className="text-sm text-danger">{error}</Text>
                 </View>
               )}
 
-              <View className="px-6 pt-5 pb-6">
+              <View className="px-6 pt-4 pb-3">
                 <TouchableOpacity
                   onPress={handleSubmit}
                   disabled={!canSubmit}
@@ -427,7 +440,7 @@ export default function LogActivitySheet({
                   <Text className="text-text-muted text-sm">Not now</Text>
                 </TouchableOpacity>
               </View>
-            </ScrollView>
+            </View>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

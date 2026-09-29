@@ -6,6 +6,7 @@ import { LoggedActivityRow } from "@/components/log-activity";
 import NoActiveWorkoutCard, {
   type PlanEndedRecap,
 } from "@/components/no-active-workout-card";
+import { logActivityCtaLabel } from "@/constants/activities";
 import {
   type LoggedActivity,
   type PlanDayWithBlocks,
@@ -412,9 +413,7 @@ const ActiveWorkoutCard: React.FC<ActiveWorkoutCardProps> = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {todaysActivities.length > 0
-                    ? "Log something else"
-                    : "I did something else"}
+                  {logActivityCtaLabel(todaysActivities.length)}
                 </Text>
                 <Ionicons
                   name="chevron-forward"

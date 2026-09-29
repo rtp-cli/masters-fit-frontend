@@ -70,3 +70,15 @@ export function activityLabel(
 export function activityIcon(activityType: LoggedActivityType): string {
   return ACTIVITY_DISPLAY[activityType]?.icon ?? "ellipse-outline";
 }
+
+/**
+ * The "log an activity" button label, shared by the dashboard, workout tab and
+ * calendar so they never drift apart.
+ *
+ * Deliberately neutral about the plan: an outside walk or round of golf is as
+ * often done ON TOP OF the prescribed session as instead of it, so the copy
+ * must not read as "I skipped my workout".
+ */
+export function logActivityCtaLabel(loggedCount: number): string {
+  return loggedCount > 0 ? "Log another activity" : "Log an activity";
+}

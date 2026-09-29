@@ -2591,7 +2591,7 @@ export function WorkoutScreen() {
               other was destroyed.
 
               Pre-start only: mid-session the screen belongs to the set list,
-              and a "log something else" door there is noise at best and a
+              and a "log an activity" door there is noise at best and a
               mis-tap out of a running workout at worst. It is read-only here
               too (no delete) — removing a row while a session is live is not a
               thing anyone is trying to do; the calendar and dashboard own that. */}

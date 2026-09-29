@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
+import { logActivityCtaLabel } from "@/constants/activities";
 import { useThemeColors } from "@/lib/theme";
 import { type LoggedActivity } from "@/types/api";
 
@@ -79,9 +80,7 @@ export default function TodayActivitiesSection({
             color={colors.text.secondary}
           />
           <Text className="text-base font-semibold text-text-primary ml-2 flex-1">
-            {activities.length > 0
-              ? "Log something else"
-              : "I did something else"}
+            {logActivityCtaLabel(activities.length)}
           </Text>
           <Ionicons
             name="chevron-forward"
