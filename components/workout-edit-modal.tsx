@@ -45,6 +45,7 @@ import {
   calculatePlanDayDuration,
   formatEnumValue,
   formatEquipment,
+  formatSetDuration,
   formatWorkoutDuration,
 } from "@/utils";
 
@@ -710,9 +711,9 @@ export default function WorkoutEditModal({
       details.push(`${exercise.sets} × ${exercise.reps}`);
     } else if (exercise.duration) {
       if (exercise.sets && exercise.sets > 1) {
-        details.push(`${exercise.sets} × ${exercise.duration}s`);
+        details.push(`${exercise.sets} × ${formatSetDuration(exercise.duration)}`);
       } else {
-        details.push(`${exercise.duration}s`);
+        details.push(formatSetDuration(exercise.duration));
       }
     } else if (exercise.reps) {
       details.push(`${exercise.reps} reps`);

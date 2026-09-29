@@ -9,7 +9,11 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "../types/api/workout.types";
-import { formatEquipment, formatWorkoutDuration } from "../utils";
+import {
+  formatEquipment,
+  formatSetDuration,
+  formatWorkoutDuration,
+} from "../utils";
 import DemoChip from "./demo-chip";
 
 interface WorkoutBlockProps {
@@ -105,9 +109,9 @@ export default function WorkoutBlock({
     } else if (exercise.duration) {
       // Time-based exercise
       if (exercise.sets && exercise.sets > 1) {
-        details.push(`${exercise.sets} × ${exercise.duration}s`);
+        details.push(`${exercise.sets} × ${formatSetDuration(exercise.duration)}`);
       } else {
-        details.push(`${exercise.duration}s`);
+        details.push(formatSetDuration(exercise.duration));
       }
     } else if (exercise.reps) {
       // Reps only (no sets)

@@ -56,6 +56,7 @@ import {
   type WorkoutBlockWithExercise,
   type WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
+import { formatSetDuration } from "@/utils";
 import { computeCircuitResult, isCircuitBlock } from "@/utils/circuit-utils";
 import { formatDistance, shouldShowWeightInput } from "@/utils/exercise-helpers";
 
@@ -100,7 +101,7 @@ const setValueLine = (s: ExerciseSetLog): string => {
     case "distance":
       return `${weightPrefix}${formatDistance(s.distanceM || 0)}`;
     case "duration":
-      return `${weightPrefix}${s.durationSeconds}s`;
+      return `${weightPrefix}${formatSetDuration(s.durationSeconds || 0)}`;
     default:
       return `${weightPrefix}${s.reps ?? 0} reps`;
   }
@@ -1724,7 +1725,7 @@ export default function WorkoutSummary({
                                     ? formatDistance(set.distanceM)
                                     : set.durationSeconds &&
                                         set.durationSeconds > 0
-                                      ? `${set.durationSeconds}s`
+                                      ? formatSetDuration(set.durationSeconds)
                                       : `${set.reps} reps`}
                                 </Text>
                               ))}
