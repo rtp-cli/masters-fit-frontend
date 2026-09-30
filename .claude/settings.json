@@ -41,7 +41,8 @@
       "Bash(npx expo start --port 8081:*)",
       "Bash(npx expo start --port 8082:*)",
       "Bash(./scripts/ota-publish.sh --check:*)",
-      "Bash(./scripts/ota-publish.sh --dry-run:*)"
+      "Bash(./scripts/ota-publish.sh --dry-run:*)",
+      "Bash(./scripts/kill-metro.sh:*)"
     ]
   }
 }
