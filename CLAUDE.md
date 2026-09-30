@@ -99,6 +99,14 @@ Other conventions:
    Then actually run the app (`npm start`) and look at the screen you changed. Type-checking
    and "it renders on a device/simulator" are both part of done. Report what you saw.
 
+## Worktrees & Metro
+
+- When working in a git worktree, start Metro (`npm start`) **from that worktree**. Otherwise
+  Metro serves the main checkout and you'll be looking at the wrong code.
+- Remove worktrees and their branches when done, so the branch is free to check out elsewhere.
+- Put files the user needs to see (previews, drafts, screenshots) in the main checkout or
+  `~/Desktop`, not inside a hidden worktree.
+
 ## Troubleshooting a production issue
 
 The live data lives in the backend's Neon database. To read it, use the backend's read-only
