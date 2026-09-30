@@ -24,7 +24,24 @@
       "Bash(eas update:list *)",
       "Bash(eas submit:list *)",
       "Bash(npm run db:check *)",
-      "Bash(npm run db:check)"
+      "Bash(npm run db:check)",
+      "Bash(maestro test:*)",
+      "Bash(maestro hierarchy:*)",
+      "Bash(maestro --device:*)",
+      "Bash(xcrun simctl launch:*)",
+      "Bash(xcrun simctl terminate:*)",
+      "Bash(xcrun simctl listapps:*)",
+      "Bash(xcrun simctl shutdown:*)",
+      "Bash(xcrun simctl ui:*)",
+      "Bash(xcrun simctl status_bar:*)",
+      "Bash(lsof -ti:*)",
+      "Bash(lsof -nP -iTCP:*)",
+      "Bash(curl -s -m 3 http://localhost:8081/status)",
+      "Bash(curl -s -m 3 http://localhost:8082/status)",
+      "Bash(npx expo start --port 8081:*)",
+      "Bash(npx expo start --port 8082:*)",
+      "Bash(./scripts/ota-publish.sh --check:*)",
+      "Bash(./scripts/ota-publish.sh --dry-run:*)"
     ]
   }
 }
