@@ -525,3 +525,47 @@ export async function writeWorkoutToHealth(session: {
     return false;
   }
 }
+
+/**
+ * DEV ONLY (Developer Tools): write a 45-minute walk that ended an hour ago,
+ * so the watch-workout import can be exercised on a simulator, which has no
+ * watch. It is authored by this app, which is why ownSourceIds() is empty in
+ * __DEV__ (lib/health-activity-import.ts).
+ */
+export async function writeTestWalkToHealth(): Promise<boolean> {
+  if (!__DEV__) return false;
+  const end = new Date(Date.now() - 60 * 60 * 1000);
+  const start = new Date(end.getTime() - 45 * 60 * 1000);
+  try {
+    if (Platform.OS === "ios") {
+      if (!AppleHealthKit || typeof AppleHealthKit.saveWorkout !== "function") {
+        return false;
+      }
+      return await new Promise<boolean>((resolve) => {
+        AppleHealthKit.saveWorkout(
+          {
+            type: AppleHealthKit.Constants?.Activities?.Walking || "Walking",
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+            distance: 1.8,
+            distanceUnit: "mile",
+          } as any,
+          (err: any) => resolve(!err)
+        );
+      });
+    }
+    await ensureHealthConnectInitialized();
+    await insertRecords([
+      {
+        recordType: "ExerciseSession",
+        exerciseType: ExerciseType.WALKING,
+        title: "Test walk",
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      },
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+}

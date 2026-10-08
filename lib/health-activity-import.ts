@@ -54,6 +54,10 @@ export async function setImportPref(on: boolean): Promise<void> {
 
 /** Our own bundle id / package, so our write-backs are never re-imported. */
 function ownSourceIds(): string[] {
+  // In development the Developer Tools "test walk" is written BY this app, so
+  // the filter is off. Our real write-backs are strength workouts, which the
+  // type exclusion drops regardless.
+  if (__DEV__) return [];
   const cfg = Constants.expoConfig;
   return [cfg?.ios?.bundleIdentifier, cfg?.android?.package].filter(
     (v): v is string => !!v
