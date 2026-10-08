@@ -361,36 +361,67 @@ export async function fetchCaloriesToday(): Promise<number | null> {
   return total || null;
 }
 
-export async function fetchWorkoutDuration(): Promise<number | null> {
+/**
+ * One workout from the platform health store, normalized across iOS/Android.
+ * `activityName` is set on iOS, `exerciseType` on Android.
+ */
+export interface HealthWorkout {
+  id: string;
+  platform: "ios" | "android";
+  activityName: string | null;
+  exerciseType: number | null;
+  start: Date;
+  end: Date;
+  durationSeconds: number;
+  distanceMeters: number | null;
+  /** Bundle id / package of the app that wrote it. */
+  sourceId: string | null;
+}
+
+const METERS_PER_MILE = 1609.344;
+
+/** Every workout that STARTED in [start, end]. Throws on a read failure. */
+export async function fetchWorkoutsBetween(
+  start: Date,
+  end: Date
+): Promise<HealthWorkout[]> {
   if (Platform.OS === "ios") {
     if (
       !AppleHealthKit ||
       typeof AppleHealthKit.getAnchoredWorkouts !== "function"
     ) {
-      return null;
+      return [];
     }
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
     const options = {
       startDate: start.toISOString(),
       endDate: end.toISOString(),
     } as any;
-    const results: any[] = await new Promise((resolve, reject) => {
-      AppleHealthKit.getAnchoredWorkouts(options, (error: any, res: any) => {
+    const res: any = await new Promise((resolve, reject) => {
+      AppleHealthKit.getAnchoredWorkouts(options, (error: any, r: any) => {
         if (error) reject(error);
-        else resolve(res || []);
+        else resolve(r);
       });
     });
-    const total = results.reduce((sum: number, item: any) => {
-      return sum + (item.duration ?? 0) / 60;
-    }, 0);
-    return total || null;
+    // getAnchoredWorkouts resolves { anchor, data }, not an array. The old
+    // duration reader called .reduce on the object and threw every time.
+    const samples: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+    return samples.map((w) => ({
+      id: String(w.id),
+      platform: "ios" as const,
+      activityName: w.activityName ?? null,
+      exerciseType: null,
+      start: new Date(w.start),
+      end: new Date(w.end),
+      durationSeconds: Number(w.duration) || 0,
+      // react-native-health reports totalDistance in miles; 0 = none recorded.
+      distanceMeters:
+        typeof w.distance === "number" && w.distance > 0
+          ? Math.round(w.distance * METERS_PER_MILE)
+          : null,
+      sourceId: w.sourceId ?? null,
+    }));
   }
   await ensureHealthConnectInitialized();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
   const resp = await readRecords("ExerciseSession", {
     timeRangeFilter: {
       operator: "between",
@@ -398,11 +429,29 @@ export async function fetchWorkoutDuration(): Promise<number | null> {
       endTime: end.toISOString(),
     },
   });
-  const total = (resp?.records || []).reduce((sum: number, r: any) => {
-    const duration =
-      new Date(r.endTime).getTime() - new Date(r.startTime).getTime();
-    return sum + duration / 60000;
-  }, 0);
+  return (resp?.records || []).map((r: any) => {
+    const s = new Date(r.startTime);
+    const e = new Date(r.endTime);
+    return {
+      id: String(r.metadata?.id ?? `${r.startTime}-${r.exerciseType}`),
+      platform: "android" as const,
+      activityName: null,
+      exerciseType: typeof r.exerciseType === "number" ? r.exerciseType : null,
+      start: s,
+      end: e,
+      durationSeconds: Math.max(0, (e.getTime() - s.getTime()) / 1000),
+      // Health Connect keeps distance in separate Distance records; not read.
+      distanceMeters: null,
+      sourceId: r.metadata?.dataOrigin ?? null,
+    };
+  });
+}
+
+export async function fetchWorkoutDuration(): Promise<number | null> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const workouts = await fetchWorkoutsBetween(start, new Date());
+  const total = workouts.reduce((sum, w) => sum + w.durationSeconds / 60, 0);
   return total || null;
 }
 

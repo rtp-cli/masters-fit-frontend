@@ -1,7 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback,useEffect, useState } from "react";
-import { ActivityIndicator,Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
+import { askToImport } from "@/components/health-activity-sync";
+import {
+  getImportPref,
+  setImportPref,
+  syncHealthActivities,
+} from "@/lib/health-activity-import";
+import { type ThemeColorPalette } from "@/lib/theme";
 import {
   clearHealthConnection,
   connectHealth,
@@ -15,12 +29,16 @@ export default function HealthConnectSection() {
   const [healthConnected, setHealthConnected] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
   const [healthError, setHealthError] = useState<string | null>(null);
+  // Unset counts as off here: nothing is imported until the user has said yes,
+  // either to the one-time question or to this switch.
+  const [importOn, setImportOn] = useState(false);
 
   // Health connect status
   const loadHealthStatus = useCallback(async () => {
     try {
       const connected = await getHealthConnection();
       setHealthConnected(connected);
+      setImportOn((await getImportPref()) === "on");
       if (connected) setHealthError(null);
     } catch {
       setHealthConnected(false);
@@ -89,6 +107,19 @@ export default function HealthConnectSection() {
     );
   }
 
+  const handleImportToggle = async (value: boolean) => {
+    setImportOn(value);
+    await setImportPref(value);
+    // Flipping it on is consent already — import right away rather than
+    // waiting for the next app open. (confirm is never reached: pref is on.)
+    if (value) {
+      void syncHealthActivities({ confirm: askToImport, force: true });
+    }
+  };
+
+  const switchOnTrackColor =
+    (colors as ThemeColorPalette).success ?? colors.brand.primary;
+
   const handleDisconnectHealth = async () => {
     await clearHealthConnection();
     setHealthConnected(false);
@@ -134,6 +165,31 @@ export default function HealthConnectSection() {
             </Text>
           </TouchableOpacity>
         </View>
+      </View>
+      <View className="flex-row items-center justify-between mt-3">
+        <View className="flex-1 pr-3">
+          <Text className="text-sm text-text-primary">
+            Import watch workouts
+          </Text>
+          <Text className="text-xs text-text-secondary mt-1">
+            Walks, runs, rides and other workouts you record on your watch
+            appear in your activity log. Strength and interval sessions are
+            skipped so they don't double up with your MastersFit workouts.
+          </Text>
+        </View>
+        <Switch
+          value={importOn}
+          onValueChange={handleImportToggle}
+          trackColor={{
+            false: colors.neutral.medium[1],
+            true: switchOnTrackColor,
+          }}
+          thumbColor={
+            Platform.OS === "android" ? colors.text.primary : undefined
+          }
+          ios_backgroundColor={colors.neutral.medium[1]}
+          accessibilityLabel="Import watch workouts"
+        />
       </View>
       <Text className="text-xs text-text-secondary mt-2">
         Disconnecting stops MastersFit from reading or saving health data. To

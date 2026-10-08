@@ -137,7 +137,7 @@ legal@mastersfit.ai`,
 export const privacyDocument: LegalDocument = {
   title: `Privacy Policy (v${CURRENT_WAIVER_VERSION})`,
   effectiveDate: "September 20, 2025",
-  lastUpdated: "September 14, 2026",
+  lastUpdated: "October 8, 2026",
   disclaimer:
     "MastersFit LLC values your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and safeguard your data when you use the MastersFit mobile application, website, and related services. By using the App, you agree to the terms of this Privacy Policy. If you disagree, please discontinue use.",
   // Kept verbatim in sync with website/privacy.html -- same source text, two
@@ -147,7 +147,7 @@ export const privacyDocument: LegalDocument = {
 - **We ask for your email so you can sign in — that is all it is.** MastersFit has no passwords. We email you a one-time code instead, so there is no password of yours for us to store or for anyone to steal.
 - **We do not sell your personal information, and we never share it for advertising.** That applies to your health information without exception.
 - **Our AI is never told who you are.** When it builds your plan it receives your fitness details — age, goals, limitations, equipment — with no name, email, or account number attached.
-- **Most of your Apple Health and Health Connect data never leaves your phone.** Steps and calories are read on your device to show you, and are not uploaded to us.
+- **Most of your Apple Health and Health Connect data never leaves your phone.** Steps and calories are read on your device to show you, and are not uploaded to us. Workouts you record on your watch are added to your activity log only if you turn that on.
 - **You can erase everything.** Settings, then Delete Account. It is immediate, permanent, and needs no email to us.
 
 The full detail is below.
@@ -164,8 +164,9 @@ The full detail is below.
 
 With your permission, we read health and activity data from Apple Health or Health Connect. How we handle it depends on the type:
 
-- **Read on your device only, never uploaded:** steps, calories burned, and workout duration. These are displayed to you in the app and are not transmitted to or stored by MastersFit.
+- **Read on your device only, never uploaded:** steps, calories burned, and your total workout time for the day. These are displayed to you in the app and are not transmitted to or stored by MastersFit.
 - **Stored by MastersFit:** the average and peak heart rate for a workout you complete in the app, saved alongside that workout so your history is accurate.
+- **Imported only if you turn it on:** workouts you record on a watch or another fitness app — such as walks, runs, rides, swims, and sports — are added to your MastersFit activity log. For each one we store the activity type, date, start time, duration, and distance. Strength and interval workouts, and any workout recorded during a MastersFit session, are not imported. Remove an imported workout and it will not be imported again; you can turn importing off at any time in Settings.
 - **Written back, with your permission:** completed MastersFit workouts can be saved into Apple Health or Health Connect so they appear in your activity rings.
 
 We request only the health permissions the app actually uses, and you can revoke them at any time in your device settings.
@@ -244,7 +245,7 @@ We may also disclose information when required by law, regulation, or valid lega
 
 You can delete your account at any time from Settings, then Delete Account. No request to us is needed and there is no waiting period.
 
-Deletion permanently removes your profile, workouts, plans, logged sets, progress history, imported heart-rate data, subscription record, and your analytics profile. It is not recoverable.
+Deletion permanently removes your profile, workouts, plans, logged sets, logged and imported activities, progress history, imported heart-rate data, subscription record, and your analytics profile. It is not recoverable.
 
 Two things survive deletion, and only these: a one-way cryptographic hash of your email address, which cannot be reversed to recover your address and exists solely so we can honor your deletion and detect abuse; and any billing records we are legally required to keep.
 
