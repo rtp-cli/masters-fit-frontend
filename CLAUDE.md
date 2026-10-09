@@ -109,8 +109,9 @@ Other conventions:
 
 ## Troubleshooting a production issue
 
-The live data lives in the backend's Neon database. To read it, use the backend's read-only
-wrapper by **absolute path** (this repo has no `scripts/db-prod-read.sh` of its own):
+The live data lives in the backend's Render Postgres database (`masters-fit-db`, Oregon). To read
+it, use the backend's read-only wrapper by **absolute path** (this repo has no
+`scripts/db-prod-read.sh` of its own):
 
 ```bash
 /Users/richpusateri/Projects/MastersFit/backend/scripts/db-prod-read.sh -c 'select count(*) from users;'
