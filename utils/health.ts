@@ -386,40 +386,45 @@ export async function fetchWorkoutsBetween(
   end: Date
 ): Promise<HealthWorkout[]> {
   if (Platform.OS === "ios") {
-    if (
-      !AppleHealthKit ||
-      typeof AppleHealthKit.getAnchoredWorkouts !== "function"
-    ) {
+    if (!AppleHealthKit || typeof AppleHealthKit.getSamples !== "function") {
       return [];
     }
     const options = {
+      type: "Workout",
       startDate: start.toISOString(),
       endDate: end.toISOString(),
     } as any;
+    // getSamples, NOT getAnchoredWorkouts: the anchored query builds each
+    // result with a bare [sample metadata], which throws for a workout saved
+    // without metadata, and react-native-health's @catch then DROPS that
+    // workout silently. getSamples' workout path handles nil metadata.
     const res: any = await new Promise((resolve, reject) => {
-      AppleHealthKit.getAnchoredWorkouts(options, (error: any, r: any) => {
+      AppleHealthKit.getSamples(options, (error: any, r: any) => {
         if (error) reject(error);
         else resolve(r);
       });
     });
-    // getAnchoredWorkouts resolves { anchor, data }, not an array. The old
-    // duration reader called .reduce on the object and threw every time.
     const samples: any[] = Array.isArray(res) ? res : (res?.data ?? []);
-    return samples.map((w) => ({
-      id: String(w.id),
-      platform: "ios" as const,
-      activityName: w.activityName ?? null,
-      exerciseType: null,
-      start: new Date(w.start),
-      end: new Date(w.end),
-      durationSeconds: Number(w.duration) || 0,
-      // react-native-health reports totalDistance in miles; 0 = none recorded.
-      distanceMeters:
-        typeof w.distance === "number" && w.distance > 0
-          ? Math.round(w.distance * METERS_PER_MILE)
-          : null,
-      sourceId: w.sourceId ?? null,
-    }));
+    return samples.map((w) => {
+      const s = new Date(w.start);
+      const e = new Date(w.end);
+      return {
+        id: String(w.id),
+        platform: "ios" as const,
+        activityName: w.activityName ?? null,
+        exerciseType: null,
+        start: s,
+        end: e,
+        // This path reports no duration; wall-clock span (includes pauses).
+        durationSeconds: Math.max(0, (e.getTime() - s.getTime()) / 1000),
+        // react-native-health reports totalDistance in miles; 0 = none recorded.
+        distanceMeters:
+          typeof w.distance === "number" && w.distance > 0
+            ? Math.round(w.distance * METERS_PER_MILE)
+            : null,
+        sourceId: w.sourceId ?? null,
+      };
+    });
   }
   await ensureHealthConnectInitialized();
   const resp = await readRecords("ExerciseSession", {

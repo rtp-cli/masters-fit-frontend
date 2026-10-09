@@ -4,6 +4,7 @@ import { Alert, AppState, Platform } from "react-native";
 import { activityLabel } from "@/constants/activities";
 import { useWorkout } from "@/contexts/workout-context";
 import { syncHealthActivities } from "@/lib/health-activity-import";
+import { type LoggedActivityType } from "@/types/api";
 import { type ImportCandidate } from "@/utils/health-activity-mapping";
 
 /**
@@ -17,15 +18,38 @@ import { type ImportCandidate } from "@/utils/health-activity-mapping";
 
 const storeName = Platform.OS === "ios" ? "Apple Health" : "Health Connect";
 
-/** "a walk", "2 walks and a rowing session" — kept short and plain. */
-function describe(candidates: ImportCandidate[]): string {
-  if (candidates.length === 1) {
-    return `a ${activityLabel(candidates[0]).toLowerCase()}`;
+/** How one activity type reads in a sentence: [singular, plural]. */
+const NOUNS: Partial<Record<LoggedActivityType, [string, string]>> = {
+  walk: ["a walk", "walks"],
+  run: ["a run", "runs"],
+  bike: ["a bike ride", "bike rides"],
+  swim: ["a swim", "swims"],
+  hike: ["a hike", "hikes"],
+  yoga: ["a yoga session", "yoga sessions"],
+  racket_sport: ["a racket sport session", "racket sport sessions"],
+  golf: ["a round of golf", "rounds of golf"],
+};
+
+/** "a walk", "2 walks", "2 walks and a round of golf". */
+export function describe(candidates: ImportCandidate[]): string {
+  const counts = new Map<string, { n: number; one: string; many: string }>();
+  for (const c of candidates) {
+    const label = activityLabel(c).toLowerCase();
+    const [one, many] = NOUNS[c.activityType] ?? [
+      `a ${label} workout`,
+      `${label} workouts`,
+    ];
+    const key = `${c.activityType}|${label}`;
+    const entry = counts.get(key) ?? { n: 0, one, many };
+    entry.n += 1;
+    counts.set(key, entry);
   }
-  const labels = [
-    ...new Set(candidates.map((c) => activityLabel(c).toLowerCase())),
-  ];
-  return `${candidates.length} workouts (${labels.join(", ")})`;
+  const parts = [...counts.values()].map((e) =>
+    e.n === 1 ? e.one : `${e.n} ${e.many}`
+  );
+  return parts.length <= 1
+    ? (parts[0] ?? "")
+    : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
 
 /** The one-time consent question. Resolves true for "Add them". */
