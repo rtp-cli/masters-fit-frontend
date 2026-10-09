@@ -6,6 +6,7 @@ import { type GestureResponderEvent,TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GenerationDockChip from "@/components/generation-dock-chip";
+import HealthActivitySync from "@/components/health-activity-sync";
 import { CustomDialog } from "@/components/ui";
 import WorkoutGenerationModal from "@/components/workout-generation-modal";
 import { useWorkout } from "@/contexts/workout-context";
@@ -249,6 +250,9 @@ export default function TabLayout() {
 
         {/* Workout generation progress modal */}
         <WorkoutGenerationModal />
+
+        {/* Imports watch workouts on open/foreground (renders nothing) */}
+        <HealthActivitySync />
       </View>
     </SafeAreaView>
   );

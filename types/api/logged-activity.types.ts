@@ -26,6 +26,9 @@ export const LOGGED_ACTIVITY_EFFORTS = ["easy", "moderate", "hard"] as const;
 
 export type LoggedActivityEffort = (typeof LOGGED_ACTIVITY_EFFORTS)[number];
 
+/** Mirrors LOGGED_ACTIVITY_SOURCES in the backend schema. */
+export type LoggedActivitySource = "manual" | "apple_health" | "health_connect";
+
 export interface LoggedActivity {
   id: number;
   userId: number;
@@ -37,6 +40,11 @@ export interface LoggedActivity {
   durationMinutes: number;
   effort: LoggedActivityEffort | null;
   notes: string | null;
+  /** "manual" = the Log-an-activity sheet; otherwise read off the watch. */
+  source: LoggedActivitySource;
+  /** Imports only. */
+  startedAt: string | null;
+  distanceMeters: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,4 +56,24 @@ export interface CreateLoggedActivityInput {
   durationMinutes: number;
   effort?: LoggedActivityEffort | null;
   notes?: string | null;
+}
+
+/** One watch workout, already mapped, as POST /activities/import takes it. */
+export interface ImportedActivityInput {
+  externalId: string;
+  source: "apple_health" | "health_connect";
+  activityType: LoggedActivityType;
+  customType: string | null;
+  date: string;
+  startedAt: string;
+  endedAt: string;
+  durationMinutes: number;
+  distanceMeters: number | null;
+}
+
+export interface ImportActivitiesResult {
+  imported: LoggedActivity[];
+  skippedExisting: number;
+  skippedSessionOverlap: number;
+  skippedManualDuplicate: number;
 }

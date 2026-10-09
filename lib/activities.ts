@@ -1,5 +1,7 @@
 import {
   type CreateLoggedActivityInput,
+  type ImportActivitiesResult,
+  type ImportedActivityInput,
   type LoggedActivity,
 } from "@/types/api";
 import { getCurrentDate } from "@/utils";
@@ -8,6 +10,8 @@ import { apiRequest } from "./api";
 
 export type {
   CreateLoggedActivityInput,
+  ImportActivitiesResult,
+  ImportedActivityInput,
   LoggedActivity,
   LoggedActivityEffort,
   LoggedActivityType,
@@ -79,4 +83,22 @@ export async function deleteActivityAPI(id: number): Promise<void> {
   await apiRequest<{ success: boolean }>(`/activities/${id}`, {
     method: "DELETE",
   });
+}
+
+/**
+ * Send watch workouts to be stored as activities. Idempotent server-side:
+ * anything already imported (or removed by the user) is skipped, as is the
+ * watch recording of a MastersFit session. Propagates errors to the caller.
+ */
+export async function importActivitiesAPI(
+  activities: ImportedActivityInput[]
+): Promise<ImportActivitiesResult> {
+  const res = await apiRequest<{
+    success: boolean;
+    result: ImportActivitiesResult;
+  }>("/activities/import", {
+    method: "POST",
+    body: JSON.stringify({ activities, today: getCurrentDate() }),
+  });
+  return res.result;
 }

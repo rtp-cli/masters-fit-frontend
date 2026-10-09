@@ -4,6 +4,7 @@ import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 import {
   ACTIVITY_EFFORT_LABELS,
+  ACTIVITY_SOURCE_LABELS,
   activityIcon,
   activityLabel,
 } from "@/constants/activities";
@@ -39,6 +40,11 @@ export default function LoggedActivityRow({
   const colors = useThemeColors();
   const label = activityLabel(activity);
 
+  const imported = activity.source !== "manual" && !!activity.source;
+  const sourceLabel = imported
+    ? (ACTIVITY_SOURCE_LABELS[activity.source] ?? "From your watch")
+    : "You logged this";
+
   const confirmDelete = () => {
     // There is no edit in v1, so delete is the only way back from a mis-tap —
     // which makes confirming it worth the extra tap.
@@ -46,7 +52,11 @@ export default function LoggedActivityRow({
       "Remove this activity?",
       `${label} · ${formatWorkoutDuration(activity.durationMinutes)} will be removed from ${
         activity.date
-      }.`,
+      }.${
+        // Say so, or the user will wonder whether it comes back on the next
+        // sync (it does not — the server keeps a tombstone).
+        imported ? " It won't be imported again." : ""
+      }`,
       [
         { text: "Keep it", style: "cancel" },
         {
@@ -61,6 +71,11 @@ export default function LoggedActivityRow({
   const effortLabel = activity.effort
     ? ACTIVITY_EFFORT_LABELS[activity.effort]
     : null;
+  // Miles: the app's audience and every other distance it shows are US.
+  const distanceLabel =
+    activity.distanceMeters && activity.distanceMeters > 0
+      ? `${(activity.distanceMeters / 1609.344).toFixed(1)} mi`
+      : null;
 
   return (
     <View
@@ -87,11 +102,12 @@ export default function LoggedActivityRow({
         </Text>
         <Text className="text-xs text-text-muted mt-0.5">
           {formatWorkoutDuration(activity.durationMinutes)}
+          {distanceLabel ? ` · ${distanceLabel}` : ""}
           {effortLabel ? ` · ${effortLabel}` : ""}
           {/* Says plainly what this row is, so it can never be mistaken for a
               session the app planned — and quietly explains why it is not
               moving the streak. */}
-          {" · You logged this"}
+          {` · ${sourceLabel}`}
         </Text>
         {!!activity.notes && (
           <Text className="text-xs text-text-secondary mt-1" numberOfLines={2}>

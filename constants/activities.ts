@@ -82,3 +82,12 @@ export function activityIcon(activityType: LoggedActivityType): string {
 export function logActivityCtaLabel(loggedCount: number): string {
   return loggedCount > 0 ? "Log another activity" : "Log an activity";
 }
+
+/** Mirrors MAX_IMPORT_BATCH in the backend schema. */
+export const MAX_IMPORT_BATCH_CLIENT = 50;
+
+/** "From Apple Health" — what an imported row says instead of "You logged this". */
+export const ACTIVITY_SOURCE_LABELS: Readonly<Record<string, string>> = {
+  apple_health: "From Apple Health",
+  health_connect: "From Health Connect",
+};

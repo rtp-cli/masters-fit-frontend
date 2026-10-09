@@ -10,8 +10,11 @@ import {
   View,
 } from "react-native";
 
+import { askToImport } from "@/components/health-activity-sync";
 import { useAuth } from "@/contexts/auth-context";
+import { syncHealthActivities } from "@/lib/health-activity-import";
 import { useThemeColors } from "@/lib/theme";
+import { connectHealth, writeTestWalkToHealth } from "@/utils/health";
 
 interface DeveloperToolsSectionProps {
   isAdmin: boolean;
@@ -124,6 +127,56 @@ export default function DeveloperToolsSection({
         </View>
         <Ionicons name="chevron-forward" size={16} color={colors.brand.primary} />
       </TouchableOpacity>
+
+      {/* Seed a watch-style walk so the health import can be tried on a
+          simulator. Dev builds only. */}
+      {__DEV__ && (
+        <TouchableOpacity
+          className="flex-row items-center justify-between px-4 py-3 border-t"
+          style={{ borderColor: colors.brand.primary }}
+          onPress={async () => {
+            let ok = await writeTestWalkToHealth();
+            if (!ok) {
+              // Usually "Authorization is not determined": HealthKit has never
+              // asked on this simulator. connectHealth shows Apple's sheet
+              // (and marks Health connected), then retry once.
+              try {
+                ok = (await connectHealth()) && (await writeTestWalkToHealth());
+              } catch {
+                ok = false;
+              }
+            }
+            if (!ok) {
+              Alert.alert(
+                "Couldn't add a test walk",
+                "Allow MastersFit to write Workouts in the Health app (Settings → Health → Data Access & Devices → MastersFit), then try again."
+              );
+              return;
+            }
+            // The real consent question, if not answered yet.
+            const added = await syncHealthActivities({
+              confirm: askToImport,
+              force: true,
+            });
+            Alert.alert(
+              "Test walk added to Health",
+              added > 0
+                ? `Imported ${added} activit${added === 1 ? "y" : "ies"}.`
+                : "Nothing new was imported. Is 'Import watch workouts' on in Settings?"
+            );
+          }}
+        >
+          <View className="flex-row items-center flex-1">
+            <Ionicons name="walk-outline" size={20} color={colors.brand.primary} />
+            <Text
+              className="text-sm ml-3"
+              style={{ color: colors.brand.primary }}
+            >
+              Add a test walk to Health
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* Network Logger */}
       <TouchableOpacity
