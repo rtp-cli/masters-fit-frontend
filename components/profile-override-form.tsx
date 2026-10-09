@@ -261,6 +261,12 @@ const getEquipmentConfig = (equipKey: string, _colors: any) => {
         color: "black",
         bgColor: "bg-orange-100",
       };
+    case "SKI_ERG":
+      return {
+        icon: "snow-outline",
+        color: "black",
+        bgColor: "bg-blue-100",
+      };
     case "SLAM_BALLS":
       return {
         icon: "basketball-outline",

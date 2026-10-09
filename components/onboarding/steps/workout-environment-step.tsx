@@ -154,6 +154,12 @@ export default function WorkoutEnvironmentStep({
           color: "black",
           bgColor: "bg-orange-100",
         };
+      case AVAILABLE_EQUIPMENT.SKI_ERG:
+        return {
+          icon: "snow-outline",
+          color: "black",
+          bgColor: "bg-blue-100",
+        };
       case AVAILABLE_EQUIPMENT.SLAM_BALLS:
         return {
           icon: "basketball-outline",
