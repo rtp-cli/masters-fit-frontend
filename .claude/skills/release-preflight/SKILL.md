@@ -59,8 +59,9 @@ npm run db:check   # read-only diff: prints proposed SQL, applies nothing
 - **Empty diff** → code and DB agree; safe.
 - **Additive only** (CREATE / ADD COLUMN / ADD INDEX) → safe to apply via `deploy-db`.
 - **Any DROP / rename / type change** → STOP. Push-based sync has no down-migration; the only
-  rollback is a Neon branch/PITR restore. Before applying, take a Neon branch snapshot as the
-  rollback target and get explicit sign-off. See the `change-db-schema` skill.
+  rollback is a Render point-in-time restore (into a new instance) or a dashboard backup. Before
+  applying, take a `pg_dump -Fc` safety copy as the rollback target and get explicit sign-off.
+  See the `change-db-schema` skill / `deploy-db` command for the exact command.
 
 ## 3. Frontend gates (before deploy-ios / deploy-android)
 
