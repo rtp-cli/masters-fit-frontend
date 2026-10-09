@@ -636,10 +636,18 @@ export function WorkoutScreen() {
       // Only materialize if no sets exist for this exercise yet
       if (currentProgress.sets.length === 0) {
         const targetSets = currentExercise.sets || 1;
+        // Timed prescriptions (a bike, a row, a plank) carry the time, not
+        // reps — same shape AdaptiveSetTracker builds. Its effect runs FIRST
+        // (child before parent) but this render still sees 0 sets, so this
+        // one wins; it used to write "10 reps" with no duration, and 81 of
+        // 120 prod timed set logs read that way.
+        const isTimed =
+          (currentExercise.duration ?? 0) > 0 && !currentExercise.reps;
         // Distance movements (a run) aren't 10 reps — prefill 1 "rep" so
         // the set row is completable without fabricating rep volume
-        const targetReps =
-          currentExercise.reps || (currentExercise.distanceM ? 1 : 10);
+        const targetReps = isTimed
+          ? 0
+          : currentExercise.reps || (currentExercise.distanceM ? 1 : 10);
         const targetWeight = currentExercise.weight || 0;
 
         const prescribedSets = Array.from({ length: targetSets }, (_, i) => ({
@@ -647,6 +655,7 @@ export function WorkoutScreen() {
           setNumber: i + 1,
           weight: targetWeight,
           reps: targetReps,
+          durationSeconds: isTimed ? currentExercise.duration! : undefined,
           distanceM: currentExercise.distanceM || undefined,
           isCompleted: false,
         }));
