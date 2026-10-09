@@ -14,7 +14,7 @@ import { askToImport } from "@/components/health-activity-sync";
 import { useAuth } from "@/contexts/auth-context";
 import { syncHealthActivities } from "@/lib/health-activity-import";
 import { useThemeColors } from "@/lib/theme";
-import { writeTestWalkToHealth } from "@/utils/health";
+import { connectHealth, writeTestWalkToHealth } from "@/utils/health";
 
 interface DeveloperToolsSectionProps {
   isAdmin: boolean;
@@ -135,11 +135,21 @@ export default function DeveloperToolsSection({
           className="flex-row items-center justify-between px-4 py-3 border-t"
           style={{ borderColor: colors.brand.primary }}
           onPress={async () => {
-            const ok = await writeTestWalkToHealth();
+            let ok = await writeTestWalkToHealth();
+            if (!ok) {
+              // Usually "Authorization is not determined": HealthKit has never
+              // asked on this simulator. connectHealth shows Apple's sheet
+              // (and marks Health connected), then retry once.
+              try {
+                ok = (await connectHealth()) && (await writeTestWalkToHealth());
+              } catch {
+                ok = false;
+              }
+            }
             if (!ok) {
               Alert.alert(
                 "Couldn't add a test walk",
-                "Connect Health (with write permission) first."
+                "Allow MastersFit to write Workouts in the Health app (Settings → Health → Data Access & Devices → MastersFit), then try again."
               );
               return;
             }
