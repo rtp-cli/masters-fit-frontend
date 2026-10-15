@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getCurrentUser } from "@lib/auth";
 import { fetchUserProfile, updateUserProfile } from "@lib/profile";
 import {
+  findActivePlanDayIdForDate,
   generateRestDayWorkoutAsync,
   regenerateDailyWorkoutAsync,
   regenerateWorkoutPlanAsync,
@@ -527,7 +528,17 @@ export default function WorkoutRegenerationModal({
           // the plan, or a day past the end of the series -- is generated as a
           // standalone workout for that date. Only an in-plan day (selectedPlanDay
           // set) goes through the daily-regeneration path below.
-          if (selectedDate && !selectedPlanDay) {
+          //
+          // The caller's "no plan day" can be stale, so re-check the server
+          // before taking the rest-day path: if the date does have a session,
+          // regenerate it rather than hit the endpoint's "already has a
+          // workout" 400 (a paying user dead-ended on exactly this, 2026-10-14).
+          const planDayId =
+            selectedPlanDay?.id ??
+            (selectedDate
+              ? await findActivePlanDayIdForDate(selectedDate)
+              : null);
+          if (selectedDate && !planDayId) {
             const result = await generateRestDayWorkoutAsync(user.id, {
               date: selectedDate,
               reason: formatOverridesIntoReason(
@@ -550,11 +561,11 @@ export default function WorkoutRegenerationModal({
               // Only show error for genuine failures, not paywall-intercepted nulls
               reportFailure(undefined, "day");
             }
-          } else if (selectedPlanDay) {
+          } else if (planDayId) {
             // Regular daily regeneration
             const result = await regenerateDailyWorkoutAsync(
               user.id,
-              selectedPlanDay.id,
+              planDayId,
               {
                 reason: formatOverridesIntoReason(
                   customFeedback,

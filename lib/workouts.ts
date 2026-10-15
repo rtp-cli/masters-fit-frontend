@@ -411,6 +411,25 @@ export async function fetchActiveWorkout(
 }
 
 /**
+ * The active plan's session on `date`, read fresh from the server (bypasses
+ * the cache). Null when the date has no session or the plan can't be loaded.
+ *
+ * A screen's "today is a rest day" can be stale — a cached or failed plan
+ * fetch — and the rest-day endpoint 400s on a date that already has a
+ * session ("This date already has a workout scheduled"). Checking here first
+ * lets the caller regenerate that session instead of dead-ending the user.
+ */
+export async function findActivePlanDayIdForDate(
+  date: string
+): Promise<number | null> {
+  const workout = await fetchActiveWorkout(true);
+  const planDay = workout?.planDays?.find(
+    (day) => formatDateAsString(day.date) === date
+  );
+  return planDay?.id ?? null;
+}
+
+/**
  * Get the next upcoming workout
  */
 export function getNextWorkout(workouts: Workout[]): Workout | null {
