@@ -889,7 +889,7 @@ export default function WorkoutRegenerationModal({
             onPress={() => onRepeatPast()}
             disabled={loading}
             accessibilityRole="button"
-            accessibilityLabel="Use a workout you've done before. Replace this day with one of your completed workouts."
+            accessibilityLabel="Use a workout you've done before. Replace this day with one you've done, or one you missed."
           >
             <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
               <Ionicons name="repeat" size={18} color={colors.text.primary} />
@@ -899,7 +899,7 @@ export default function WorkoutRegenerationModal({
                 Use a workout I've done before
               </Text>
               <Text className="text-sm text-text-muted">
-                Replace this day with one you've already completed.
+                Replace this day with one you've done, or one you missed.
               </Text>
             </View>
             <Ionicons

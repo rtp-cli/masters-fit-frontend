@@ -22,6 +22,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import {
+  fetchActiveWorkout,
   fetchPastCompletedDays,
   fetchPreviousWorkouts,
   invalidateActiveWorkoutCache,
@@ -33,12 +34,17 @@ import type {
   WorkoutBlockWithExercises,
 } from "@/types/api/workout.types";
 import type { PreviousWorkout } from "@/types/api/workout.types";
-import { formatDateAsString, formatSetDuration } from "@/utils";
+import {
+  formatDateAsString,
+  formatSetDuration,
+  getCurrentDate,
+} from "@/utils";
 import {
   calculatePlanDayDuration,
   formatDate,
   formatWorkoutDuration,
 } from "@/utils";
+import { selectMissedDays } from "@/utils/missed-days";
 import { weeksToOffer } from "@/utils/repeat-weeks";
 
 interface WorkoutRepeatPickerProps {
@@ -92,6 +98,9 @@ export default function WorkoutRepeatPicker({
 
   // Day tab state
   const [pastDays, setPastDays] = useState<PlanDayWithBlocks[]>([]);
+  // This plan's days the user skipped, so a missed session can be done today
+  // (or whichever day is being changed). See utils/missed-days.ts.
+  const [missedDays, setMissedDays] = useState<PlanDayWithBlocks[]>([]);
   const [selectedDay, setSelectedDay] = useState<PlanDayWithBlocks | null>(null);
   const [expandedDayCards, setExpandedDayCards] = useState<Record<number, boolean>>({});
   const [loadingDays, setLoadingDays] = useState(false);
@@ -127,18 +136,34 @@ export default function WorkoutRepeatPicker({
       setExpandedDayCards({});
       setSelectedWorkout(null);
       setExpandedWorkouts({});
-      loadDayData();
+      loadDayData(targetDate);
       loadWeekData(includeMostRecentPlan);
     }
-  }, [visible, initialType, singleDayOnly, includeMostRecentPlan]);
+  }, [visible, initialType, singleDayOnly, includeMostRecentPlan, targetDate]);
 
   // --- Data loading ---
 
-  const loadDayData = async () => {
+  // Takes the target date as an argument (like loadWeekData's flag) so the
+  // loader stays prop-free and the open effect above owns when it runs.
+  const loadDayData = async (target: string | undefined) => {
     try {
       setLoadingDays(true);
-      const days = await fetchPastCompletedDays();
+      const today = getCurrentDate();
+      // Fresh fetch: a stale cached plan could list a day finished minutes ago
+      // as "missed". The completed list is unaffected if this fails.
+      const [days, activeWorkout] = await Promise.all([
+        fetchPastCompletedDays(),
+        fetchActiveWorkout(true).catch(() => null),
+      ]);
       setPastDays(days);
+      setMissedDays(
+        selectMissedDays(
+          activeWorkout?.planDays,
+          target ?? today,
+          today,
+          formatDateAsString
+        )
+      );
     } catch (error) {
       console.error("Error loading past days:", error);
     } finally {
@@ -304,7 +329,9 @@ export default function WorkoutRepeatPicker({
     blocks.reduce((total, block) => total + (block.exercises?.length || 0), 0);
 
   const formatDayDate = (dateStr: string) => {
-    const date = new Date(dateStr + "T00:00:00");
+    // Normalise first: the active plan can send full ISO timestamps, which
+    // the bare `+ "T00:00:00"` below would turn into an Invalid Date.
+    const date = new Date(formatDateAsString(dateStr) + "T00:00:00");
     return date.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -688,9 +715,37 @@ export default function WorkoutRepeatPicker({
   const isLoading = selectedType === "day" ? loadingDays : loadingWeeks;
   const isEmpty =
     selectedType === "day"
-      ? pastDays.length === 0
+      ? pastDays.length === 0 && missedDays.length === 0
       : previousWorkouts.length === 0;
   const isBusy = copying || repeating;
+  const isMissedSelected =
+    !!selectedDay && missedDays.some((d) => d.id === selectedDay.id);
+
+  // Missed days sit above the completed list, under their own heading. Only
+  // rendered when something was missed, so the picker is unchanged otherwise.
+  const renderDayListHeader = () => {
+    if (missedDays.length === 0) return null;
+    return (
+      <View>
+        <Text className="text-sm font-semibold text-text-primary mb-1">
+          Missed this week
+        </Text>
+        <Text className="text-xs text-text-muted mb-3">
+          Skipped one? Pick it to do on this day instead.
+        </Text>
+        {missedDays.map((item) => (
+          <React.Fragment key={`missed-${item.id}`}>
+            {renderDayItem({ item })}
+          </React.Fragment>
+        ))}
+        {pastDays.length > 0 && (
+          <Text className="text-sm font-semibold text-text-primary my-3">
+            Done before
+          </Text>
+        )}
+      </View>
+    );
+  };
 
   return (
     <Modal
@@ -836,6 +891,7 @@ export default function WorkoutRepeatPicker({
             <FlatList
               data={pastDays}
               renderItem={renderDayItem}
+              ListHeaderComponent={renderDayListHeader}
               keyExtractor={(item) => item.id.toString()}
               showsVerticalScrollIndicator={false}
             />
@@ -895,7 +951,9 @@ export default function WorkoutRepeatPicker({
                     }`}
                   >
                     {selectedType === "day"
-                      ? "Repeat Selected Workout"
+                      ? isMissedSelected
+                        ? "Use Selected Workout"
+                        : "Repeat Selected Workout"
                       : "Repeat Selected Plan"}
                   </Text>
                 </>

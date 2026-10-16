@@ -6,11 +6,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { useThemeColors } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import {
+  fetchActiveWorkout,
   fetchPastCompletedDays,
   fetchPreviousWorkouts,
   isRepeatablePreviousWorkout,
 } from "@/lib/workouts";
 import type { PreviousWorkout } from "@/types/api/workout.types";
+import { formatDateAsString, getCurrentDate } from "@/utils";
+import { selectMissedDays } from "@/utils/missed-days";
 
 interface WorkoutChoiceModalProps {
   visible: boolean;
@@ -43,11 +46,12 @@ export default function WorkoutChoiceModal({
     (async () => {
       try {
         const user = await getCurrentUser();
-        const [pastDays, previousWorkouts] = await Promise.all([
+        const [pastDays, previousWorkouts, activeWorkout] = await Promise.all([
           fetchPastCompletedDays().catch(() => []),
           user
             ? fetchPreviousWorkouts(user.id).catch(() => [])
             : Promise.resolve<PreviousWorkout[]>([]),
+          fetchActiveWorkout().catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -56,8 +60,21 @@ export default function WorkoutChoiceModal({
         const repeatableWeeks = (previousWorkouts ?? []).filter(
           isRepeatablePreviousWorkout
         );
+        // A day missed earlier in this plan counts too: every caller opens the
+        // picker for today, and the picker offers those under "Missed this
+        // week". Without this, someone who skipped Wednesday but hasn't
+        // finished anything yet is forwarded straight to "Generate New".
+        const today = getCurrentDate();
+        const missedDays = selectMissedDays(
+          activeWorkout?.planDays,
+          today,
+          today,
+          formatDateAsString
+        );
         const hasPast =
-          (pastDays?.length ?? 0) > 0 || repeatableWeeks.length > 0;
+          (pastDays?.length ?? 0) > 0 ||
+          repeatableWeeks.length > 0 ||
+          missedDays.length > 0;
 
         if (hasPast) {
           setHasPastWorkouts(true);
@@ -181,7 +198,7 @@ export default function WorkoutChoiceModal({
                   Repeat Past Workout
                 </Text>
                 <Text className="text-text-secondary text-xs mt-0.5">
-                  Pick from one of your completed workouts
+                  Pick one you've done, or one you missed
                 </Text>
               </View>
               <Ionicons
