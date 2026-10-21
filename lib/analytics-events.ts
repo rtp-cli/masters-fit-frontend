@@ -73,6 +73,8 @@ export const AnalyticsEvent = {
   WORKOUT_LOG_EDITED: "workout_log_edited",
   // Rearranging the week by hand ("Swap with another day") — no AI involved.
   WORKOUT_DAY_MOVED: "workout_day_moved",
+  // Replacing a movement mid-session from the exercise card ("Swap").
+  EXERCISE_SWAPPED_IN_SESSION: "exercise_swapped_in_session",
 
   // ── Post-workout feedback + voice input ──
   WORKOUT_FEEDBACK_SHOWN: "workout_feedback_shown",
@@ -220,6 +222,14 @@ export interface AnalyticsEventProps {
     kind: "swap" | "move_to_rest_day";
     /** Target minus source, in days: negative = pulled earlier (e.g. into today). */
     days_moved: number;
+  };
+  [AnalyticsEvent.EXERCISE_SWAPPED_IN_SESSION]: {
+    plan_day_id: number;
+    plan_day_exercise_id: number;
+    from_exercise_id: number;
+    to_exercise_id: number;
+    /** Checked-off sets cleared by the swap (they weren't saved yet). */
+    sets_discarded: number;
   };
   [AnalyticsEvent.WORKOUT_LOG_EDITED]: {
     plan_day_id: number;
