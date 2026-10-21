@@ -947,6 +947,47 @@ export async function repeatPastDay(
   return response;
 }
 
+export interface MovePlanDayResult {
+  success: boolean;
+  planDayId: number;
+  fromDate: string;
+  toDate: string;
+  /** Workouts that were on toDate and now sit on fromDate. Empty = moved onto a rest day. */
+  swappedPlanDayIds: number[];
+}
+
+/**
+ * Move a planned workout to another day of the plan. Whatever is scheduled on
+ * the target date trades places with it; a rest day just receives it. No AI.
+ * Throws with the server's message (e.g. "A workout you've started can't be
+ * moved") so the caller can show it as-is.
+ */
+export async function movePlanDay(
+  planDayId: number,
+  targetDate: string
+): Promise<MovePlanDayResult> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("User not authenticated");
+
+  const response = await apiRequest<MovePlanDayResult>(
+    `/workouts/${user.id}/days/${planDayId}/move`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        targetDate,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    }
+  );
+
+  if (!response?.success) {
+    throw new Error("Failed to move workout");
+  }
+  invalidateActiveWorkoutCache();
+  notifyWorkoutUpdated();
+  return response;
+}
+
 /**
  * Fetch workout history for a user
  */

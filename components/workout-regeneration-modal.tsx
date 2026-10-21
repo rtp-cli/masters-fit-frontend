@@ -130,6 +130,7 @@ interface WorkoutRegenerationModalProps {
   singleTabOnly?: boolean; // When true, hides tab toggle and locks to single day mode
   onEditManually?: () => void; // "Edit it myself" exit — hands off to the manual editor
   onRepeatPast?: () => void; // "Use a workout I've done before" exit — hands off to the repeat picker
+  onSwapDay?: () => void; // "Swap with another day" exit — hands off to the move-day sheet
   onDismiss?: () => void; // iOS: fires once the sheet has finished dismissing
 }
 
@@ -147,6 +148,7 @@ export default function WorkoutRegenerationModal({
   singleTabOnly = false,
   onEditManually,
   onRepeatPast,
+  onSwapDay,
   onDismiss,
 }: WorkoutRegenerationModalProps) {
   const colors = useThemeColors();
@@ -875,6 +877,41 @@ export default function WorkoutRegenerationModal({
             color={colors.text.muted}
           />
         </TouchableOpacity>
+
+        {/* Rearrange the week by hand — "I'm not recovered for this today,
+            do Saturday's yoga instead". Deterministic, no AI allowance, and
+            undoable by swapping back. Opt-in like the repeat door. */}
+        {onSwapDay ? (
+          <TouchableOpacity
+            className="flex-row items-center mt-4"
+            style={{ minHeight: 44 }}
+            onPress={() => onSwapDay()}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Swap with another day. Trade this workout with another day's, or move it to a rest day."
+          >
+            <View className="size-9 rounded-full bg-neutral-light-2 items-center justify-center">
+              <Ionicons
+                name="swap-vertical"
+                size={18}
+                color={colors.text.primary}
+              />
+            </View>
+            <View className="flex-1 ml-3">
+              <Text className="text-base font-semibold text-text-primary">
+                Swap with another day
+              </Text>
+              <Text className="text-sm text-text-muted">
+                Trade this workout with another day's, or move it to a rest day.
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.text.muted}
+            />
+          </TouchableOpacity>
+        ) : null}
 
         {/* Third door. The backend's repeat-day already replaces a scheduled
             day's blocks in place, and the picker was already built — it was
