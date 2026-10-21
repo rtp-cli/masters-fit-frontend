@@ -238,7 +238,7 @@ export default function GetStarted() {
               fontWeight: "600",
             }}
           >
-            Get started with email
+            Get started
           </Text>
           <Ionicons name="arrow-forward" size={18} color={colors.contentOnPrimary} />
         </TouchableOpacity>
@@ -251,7 +251,7 @@ export default function GetStarted() {
             marginTop: 12,
           }}
         >
-          We’ll email you a secure code. No password needed.
+          We’ll send you a secure code by email or text. No password needed.
         </Text>
       </View>
     </SafeAreaView>

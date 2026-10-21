@@ -10,7 +10,9 @@ import {
   loginAPI,
   refreshTokenAPI,
   signupAPI,
+  startPhoneLoginAPI,
   verifyAPI,
+  verifyPhoneAPI,
 } from "./api";
 import { type AuthResponse, type OnboardingData,type User } from "./types";
 
@@ -27,7 +29,7 @@ const STORAGE_KEYS = [
  * Sign up a new user
  */
 export async function signup(params: {
-  email: string;
+  email?: string;
   name: string;
 }): Promise<AuthResponse> {
   try {
@@ -76,44 +78,79 @@ export async function verify(params: {
 }): Promise<AuthResponse> {
   try {
     const data = await verifyAPI(params);
-    if (data.success && data.token) {
-      // Store the auth token and refresh token
-      await setAuthItem("token", data.token);
-      if (data.refreshToken) {
-        await setAuthItem("refreshToken", data.refreshToken);
-      } else {
-        console.warn("[Auth] NO REFRESH TOKEN IN VERIFY RESPONSE!");
-      }
-      if (data.user) {
-        // Include needsOnboarding from the response in the user object
-        const userWithOnboardingStatus = {
-          ...data.user,
-          needsOnboarding: data.needsOnboarding ?? false,
-        };
-        await setAuthItem(
-          "user",
-          JSON.stringify(userWithOnboardingStatus)
-        );
-        // Seed AsyncStorage with theme preferences from backend ONLY if not already set (reinstall restore)
-        // This avoids overwriting the user's local theme choice with stale backend values
-        const [existingThemeMode, existingColorTheme] = await Promise.all([
-          AsyncStorage.getItem("@theme_preference"),
-          AsyncStorage.getItem("@color_theme"),
-        ]);
-        if (!existingThemeMode && data.user.themeMode) {
-          AsyncStorage.setItem("@theme_preference", data.user.themeMode).catch(() => {});
-        }
-        if (!existingColorTheme && data.user.colorTheme) {
-          AsyncStorage.setItem("@color_theme", data.user.colorTheme).catch(() => {});
-        }
-      }
-    } else {
-      console.warn("[Auth] Verify failed or no token received");
-    }
+    await persistVerifiedSession(data);
     return data;
   } catch (error) {
     console.error("Verify error:", error);
     return { success: false, error: "Failed to verify code" };
+  }
+}
+
+/**
+ * Text a sign-in code (also the code screen's "Resend").
+ */
+export async function startPhoneLogin(params: {
+  phone: string;
+}): Promise<AuthResponse> {
+  return startPhoneLoginAPI(params);
+}
+
+/**
+ * Verify a texted code. Same session handling as the email `verify`.
+ */
+export async function verifyPhone(params: {
+  phone: string;
+  code: string;
+}): Promise<AuthResponse> {
+  try {
+    const data = await verifyPhoneAPI(params);
+    await persistVerifiedSession(data);
+    return data;
+  } catch (error) {
+    console.error("Phone verify error:", error);
+    return { success: false, error: "Failed to verify code" };
+  }
+}
+
+/**
+ * Store whatever a successful verify returned — the token, the refresh token,
+ * and (for an existing account) the user plus their theme. Shared by the email
+ * and text sign-in paths so they can never drift.
+ */
+async function persistVerifiedSession(data: AuthResponse): Promise<void> {
+  if (data.success && data.token) {
+    // Store the auth token and refresh token
+    await setAuthItem("token", data.token);
+    if (data.refreshToken) {
+      await setAuthItem("refreshToken", data.refreshToken);
+    } else {
+      console.warn("[Auth] NO REFRESH TOKEN IN VERIFY RESPONSE!");
+    }
+    if (data.user) {
+      // Include needsOnboarding from the response in the user object
+      const userWithOnboardingStatus = {
+        ...data.user,
+        needsOnboarding: data.needsOnboarding ?? false,
+      };
+      await setAuthItem(
+        "user",
+        JSON.stringify(userWithOnboardingStatus)
+      );
+      // Seed AsyncStorage with theme preferences from backend ONLY if not already set (reinstall restore)
+      // This avoids overwriting the user's local theme choice with stale backend values
+      const [existingThemeMode, existingColorTheme] = await Promise.all([
+        AsyncStorage.getItem("@theme_preference"),
+        AsyncStorage.getItem("@color_theme"),
+      ]);
+      if (!existingThemeMode && data.user.themeMode) {
+        AsyncStorage.setItem("@theme_preference", data.user.themeMode).catch(() => {});
+      }
+      if (!existingColorTheme && data.user.colorTheme) {
+        AsyncStorage.setItem("@color_theme", data.user.colorTheme).catch(() => {});
+      }
+    }
+  } else {
+    console.warn("[Auth] Verify failed or no token received");
   }
 }
 

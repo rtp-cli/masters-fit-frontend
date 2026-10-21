@@ -23,7 +23,10 @@ import { useThemeColors } from "@/lib/theme";
 export const NameScreen = () => {
   const colors = useThemeColors();
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  // `email` (email sign-in) or `phone` (text sign-in). Either way the backend
+  // takes the verified identifier from the onboarding token, not this param.
+  const { email, phone } = useLocalSearchParams<{ email?: string; phone?: string }>();
+  const verifiedContact = email || phone;
   const { signup } = useAuth();
 
   const [name, setName] = useState("");
@@ -53,9 +56,9 @@ export const NameScreen = () => {
   };
 
   useEffect(() => {
-    if (!email) navigateAway("/(auth)/login");
+    if (!verifiedContact) navigateAway("/(auth)/login");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email]);
+  }, [verifiedContact]);
 
   const confirmLeave = () => {
     setExitVisible(false);
@@ -70,7 +73,7 @@ export const NameScreen = () => {
     setNameError("");
     setIsLoading(true);
     try {
-      const res = await signup({ email: email as string, name: trimmed });
+      const res = await signup(email ? { email, name: trimmed } : { name: trimmed });
       if (res.success) {
         navigateAway("/(auth)/waiver");
       } else {
@@ -85,7 +88,7 @@ export const NameScreen = () => {
 
   const nameFilled = name.trim().length > 0;
 
-  if (!email) return null;
+  if (!verifiedContact) return null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -267,7 +270,7 @@ export const NameScreen = () => {
         visible={exitVisible}
         onClose={() => setExitVisible(false)}
         title="Leave setup?"
-        description="Your email is verified. You can come back any time and pick up where you left off."
+        description={`Your ${phone ? "number" : "email"} is verified. You can come back any time and pick up where you left off.`}
         icon="warning"
         primaryButton={{ text: "Keep going", onPress: () => setExitVisible(false) }}
         secondaryButton={{ text: "Leave", onPress: confirmLeave }}

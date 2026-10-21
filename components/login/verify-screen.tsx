@@ -2,7 +2,7 @@ import { useVerifyController } from "@components/login/use-verify-controller";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams,useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback,useEffect, useRef, useState } from "react";
+import { useCallback,useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -18,6 +18,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CustomDialog } from "@/components/ui";
+import type { SignInContact } from "@/types/api";
+import { formatPhoneDisplay } from "@/utils/phone";
 
 import { useThemeColors } from "../../lib/theme";
 
@@ -26,7 +28,18 @@ type VerifyStatus = "idle" | "verifying" | "success" | "error";
 export const VerifyScreen = () => {
   const colors = useThemeColors();
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  // Arrives with `email` (email sign-in) or `phone` (text sign-in, E.164).
+  const { email, phone } = useLocalSearchParams<{ email?: string; phone?: string }>();
+  const contact = useMemo<SignInContact | null>(
+    () => (email ? { email } : phone ? { phone } : null),
+    [email, phone],
+  );
+  const isPhone = !!contact && "phone" in contact;
+  const contactLabel = contact
+    ? "email" in contact
+      ? contact.email
+      : formatPhoneDisplay(contact.phone)
+    : "";
 
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [resendCooldown, setResendCooldown] = useState(54);
@@ -60,8 +73,8 @@ export const VerifyScreen = () => {
   }, [resendCooldown]);
 
   useEffect(() => {
-    if (!email) router.replace("/(auth)/login");
-  }, [email]);
+    if (!contact) router.replace("/(auth)/login");
+  }, [contact]);
 
   const showToast = useCallback(
     (message: string) => {
@@ -113,7 +126,7 @@ export const VerifyScreen = () => {
   }, [shakeAnim]);
 
   const handleVerifyWithCode = async (code: string) => {
-    if (!email || isVerifyingRef.current) return;
+    if (!contact || isVerifyingRef.current) return;
     if (code === lastVerifiedCodeRef.current) return;
 
     isVerifyingRef.current = true;
@@ -122,7 +135,7 @@ export const VerifyScreen = () => {
     inputs.current.forEach((input) => input?.blur());
 
     try {
-      const res = await verifyCode(email as string, code);
+      const res = await verifyCode(contact, code);
       if (res.success) {
         setStatus("success");
         lastVerifiedCodeRef.current = "";
@@ -225,8 +238,8 @@ export const VerifyScreen = () => {
   };
 
   const handleResend = useCallback(async () => {
-    if (!email || resendCooldown > 0 || isLoading) return;
-    const res = await requestNewCode(email as string);
+    if (!contact || resendCooldown > 0 || isLoading) return;
+    const res = await requestNewCode(contact);
     if (res.success) {
       setOtp(["", "", "", ""]);
       setStatus("idle");
@@ -234,19 +247,19 @@ export const VerifyScreen = () => {
       showToast("A new code is on its way");
       inputs.current[0]?.focus();
     }
-  }, [email, resendCooldown, isLoading, requestNewCode, showToast]);
+  }, [contact, resendCooldown, isLoading, requestNewCode, showToast]);
 
   const handleBack = useCallback(() => {
-    showToast("Returning to email entry…");
+    showToast(isPhone ? "Returning to number entry…" : "Returning to email entry…");
     setTimeout(() => router.back(), 800);
-  }, [router, showToast]);
+  }, [router, showToast, isPhone]);
 
   const handleChangeEmail = useCallback(() => {
-    showToast("Returning to email entry…");
+    showToast(isPhone ? "Returning to number entry…" : "Returning to email entry…");
     setTimeout(() => router.back(), 800);
-  }, [router, showToast]);
+  }, [router, showToast, isPhone]);
 
-  if (!email) return null;
+  if (!contact) return null;
 
   const locked = status === "verifying" || status === "success";
 
@@ -408,7 +421,7 @@ export const VerifyScreen = () => {
             textAlign: "center",
           }}
         >
-          Check your inbox
+          {isPhone ? "Check your texts" : "Check your inbox"}
         </Text>
         <Text
           style={{
@@ -422,7 +435,7 @@ export const VerifyScreen = () => {
         >
           Enter the 4-digit code we sent to{"\n"}
           <Text style={{ color: colors.text.primary, fontWeight: "600" }}>
-            {email}
+            {contactLabel}
           </Text>
         </Text>
 
@@ -587,7 +600,7 @@ export const VerifyScreen = () => {
         )}
         <TouchableOpacity onPress={handleChangeEmail}>
           <Text style={{ fontSize: 13, color: colors.text.muted }}>
-            Not your email?{" "}
+            {isPhone ? "Not your number?" : "Not your email?"}{" "}
             <Text style={{ color: colors.text.primary, fontWeight: "600" }}>
               Change it
             </Text>

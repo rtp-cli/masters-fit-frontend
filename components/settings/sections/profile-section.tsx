@@ -1,15 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ActivityIndicator, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import IconButton from "@/components/icon-button";
 import { useAuth } from "@/contexts/auth-context";
+import { type ContactKind } from "@/hooks/use-add-contact";
 import { updateUserName } from "@/lib/profile";
 import { type User } from "@/lib/types";
+import { formatPhoneDisplay } from "@/utils/phone";
 
 import {
   type ThemeColorPalette,
   useThemeColors,
 } from "../../../lib/theme";
+import AddContactModal from "../add-contact-modal";
 
 interface ProfileSectionProps {
   user: User | null;
@@ -23,9 +27,11 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
   const successColor =
     (colors as ThemeColorPalette).success ?? colors.brand.primary;
 
-  // Inline name editor ("fix a typo" affordance). Email is deliberately not
-  // editable — it's the account identity.
+  // Inline name editor ("fix a typo" affordance). Email and phone are
+  // deliberately not editable — they're how the account signs in — but a
+  // missing one can be ADDED (verified by a code), so one account holds both.
   const [isEditingName, setIsEditingName] = useState(false);
+  const [addingContact, setAddingContact] = useState<ContactKind | null>(null);
   const [draftName, setDraftName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -156,9 +162,54 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
         </View>
       )}
 
-      <Text className="text-sm text-text-muted mt-1">
-        {user?.email || "No email provided"}
-      </Text>
+      {user?.email ? (
+        <Text className="text-sm text-text-muted mt-1">{user.email}</Text>
+      ) : null}
+      {user?.phone ? (
+        <Text className="text-sm text-text-muted mt-1">
+          {formatPhoneDisplay(user.phone)}
+        </Text>
+      ) : null}
+
+      {/* Phone-only accounts: the "add an email later" prompt. Without one
+          there's nowhere to send renewal notices, and no way back in if the
+          number changes. */}
+      {user && !user.email ? (
+        <TouchableOpacity
+          onPress={() => setAddingContact("email")}
+          className="mt-4 w-full rounded-xl p-4 flex-row items-center border border-neutral-light-2"
+          style={{ backgroundColor: colors.surface }}
+          accessibilityRole="button"
+        >
+          <Ionicons name="mail-outline" size={20} color={colors.text.primary} />
+          <View className="flex-1 ml-3">
+            <Text className="text-sm font-semibold text-text-primary">Add an email</Text>
+            <Text className="text-xs text-text-muted mt-0.5">
+              A backup way to sign in, and where we send renewal reminders.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+        </TouchableOpacity>
+      ) : null}
+
+      {user && user.email && !user.phone ? (
+        <TouchableOpacity
+          onPress={() => setAddingContact("phone")}
+          className="mt-2"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+        >
+          <Text className="text-sm font-semibold" style={{ color: colors.brand.primary }}>
+            Add a phone number
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+
+      <AddContactModal
+        visible={addingContact !== null}
+        kind={addingContact ?? "email"}
+        onClose={() => setAddingContact(null)}
+      />
     </View>
   );
 }
