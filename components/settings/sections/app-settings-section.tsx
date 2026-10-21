@@ -70,7 +70,20 @@ export default function AppSettingsSection({
           />
         </View>
 
-        {/* Hidden until the server answers, so it never shows a guess. */}
+        <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+          <View className="flex-row items-center flex-1">
+            <Ionicons
+              name="color-palette-outline"
+              size={20}
+              color={colors.text.muted}
+            />
+            <Text className="text-sm text-text-primary ml-3">Color Theme</Text>
+          </View>
+          <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
+        </View>
+
+        {/* After the appearance pair (Dark Mode + Color Theme), not between
+            them. Hidden until the server answers, so it never shows a guess. */}
         {workoutReminders !== null && (
           <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
             <View className="flex-row items-center flex-1 mr-3">
@@ -102,18 +115,6 @@ export default function AppSettingsSection({
             />
           </View>
         )}
-
-        <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
-          <View className="flex-row items-center flex-1">
-            <Ionicons
-              name="color-palette-outline"
-              size={20}
-              color={colors.text.muted}
-            />
-            <Text className="text-sm text-text-primary ml-3">Color Theme</Text>
-          </View>
-          <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
-        </View>
 
         <LegalSection
           expanded={legalExpanded}
