@@ -1,10 +1,50 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
+import { apiRequest } from "./api";
 import { getCurrentUser } from "./auth";
 import { registerPushToken } from "./workouts";
 
 export type NotificationData = Record<string, any>;
+
+export interface NotificationPreferences {
+  /** The 8am daily workout reminder push. */
+  workoutReminders: boolean;
+}
+
+/**
+ * Read the server-side notification switches. Null on any failure, so the
+ * Settings row can hide itself rather than show a value it doesn't know.
+ */
+export async function getNotificationPreferences(): Promise<NotificationPreferences | null> {
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      preferences?: NotificationPreferences;
+    }>("/auth/notification-preferences", { method: "GET" });
+    return response.success && response.preferences
+      ? response.preferences
+      : null;
+  } catch (error) {
+    console.error("Failed to load notification preferences:", error);
+    return null;
+  }
+}
+
+export async function updateNotificationPreferences(
+  preferences: NotificationPreferences
+): Promise<boolean> {
+  try {
+    const response = await apiRequest<{ success: boolean }>(
+      "/auth/notification-preferences",
+      { method: "PUT", body: JSON.stringify(preferences) }
+    );
+    return response.success;
+  } catch (error) {
+    console.error("Failed to update notification preferences:", error);
+    return false;
+  }
+}
 
 // Configure notification handling
 Notifications.setNotificationHandler({

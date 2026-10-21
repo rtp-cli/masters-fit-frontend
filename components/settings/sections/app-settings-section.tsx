@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Platform, Switch, Text, View } from "react-native";
 
+import { useWorkoutReminderSetting } from "@/hooks/use-workout-reminder-setting";
+
 import { type ThemeColorPalette,useThemeColors } from "../../../lib/theme";
 import {type ColorTheme, type ThemeMode } from "../../../lib/theme-context";
 import ThemeDropdown from "../../ui/theme-dropdown";
@@ -25,6 +27,8 @@ export default function AppSettingsSection({
 }: AppSettingsSectionProps) {
   const colors = useThemeColors();
   const [legalExpanded, setLegalExpanded] = useState(false);
+  const { enabled: workoutReminders, setWorkoutReminders } =
+    useWorkoutReminderSetting();
   // [Bug fix] iOS silently ignores Switch's thumbColor prop on this RN/iOS
   // version -- the knob is always the native white default, confirmed via
   // pixel sampling (uniform white regardless of the color passed). That
@@ -77,6 +81,40 @@ export default function AppSettingsSection({
           </View>
           <ThemeDropdown value={colorTheme} onChange={setColorTheme} />
         </View>
+
+        {/* After the appearance pair (Dark Mode + Color Theme), not between
+            them. Hidden until the server answers, so it never shows a guess. */}
+        {workoutReminders !== null && (
+          <View className="flex-row items-center justify-between px-4 py-3 border-t border-neutral-light-2">
+            <View className="flex-row items-center flex-1 mr-3">
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={colors.text.muted}
+              />
+              <View className="ml-3 flex-1">
+                <Text className="text-sm text-text-primary">
+                  Workout Reminders
+                </Text>
+                <Text className="text-xs text-text-muted mt-0.5">
+                  A notification at 8am on days you have a workout
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={workoutReminders}
+              onValueChange={setWorkoutReminders}
+              trackColor={{
+                false: colors.neutral.medium[1],
+                true: switchOnTrackColor,
+              }}
+              thumbColor={
+                Platform.OS === "android" ? colors.text.primary : undefined
+              }
+              ios_backgroundColor={colors.neutral.medium[1]}
+            />
+          </View>
+        )}
 
         <LegalSection
           expanded={legalExpanded}
