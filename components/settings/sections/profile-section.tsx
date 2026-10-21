@@ -166,9 +166,23 @@ export default function ProfileSection({ user }: ProfileSectionProps) {
         <Text className="text-sm text-text-muted mt-1">{user.email}</Text>
       ) : null}
       {user?.phone ? (
-        <Text className="text-sm text-text-muted mt-1">
-          {formatPhoneDisplay(user.phone)}
-        </Text>
+        <View className="flex-row items-center mt-1">
+          <Text className="text-sm text-text-muted">{formatPhoneDisplay(user.phone)}</Text>
+          {/* Same pencil as the name. A new number replaces the old one (same
+              send-code → confirm flow as adding). Phone-only accounts depend
+              on this: without it, a new number with no email on file means no
+              way back in. -my-3 keeps the 44px touch target from spreading
+              the contact lines apart. */}
+          <IconButton
+            icon="pencil-outline"
+            accessibilityLabel="Change phone number"
+            variant="ghost"
+            size={14}
+            color={colors.text.muted}
+            onPress={() => setAddingContact("phone")}
+            className="-my-3"
+          />
+        </View>
       ) : null}
 
       {/* Phone-only accounts: the "add an email later" prompt. Without one

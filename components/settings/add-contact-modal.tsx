@@ -32,7 +32,7 @@ export default function AddContactModal({ visible, kind, onClose }: AddContactMo
   const { isDark } = useTheme();
   const [value, setValue] = useState("");
   const [code, setCode] = useState("");
-  const { step, sentTo, isBusy, error, sendCode, verifyCode, reset, setError } =
+  const { step, sentTo, isBusy, error, sendCode, verifyCode, reset, setError, isChange } =
     useAddContact(kind, onClose);
 
   // Fresh form every time it opens.
@@ -49,7 +49,9 @@ export default function AddContactModal({ visible, kind, onClose }: AddContactMo
     step === "enter"
       ? isEmail
         ? "Add an email"
-        : "Add a phone number"
+        : isChange
+          ? "Change your phone number"
+          : "Add a phone number"
       : isEmail
         ? "Check your inbox"
         : "Check your texts";
@@ -96,7 +98,9 @@ export default function AddContactModal({ visible, kind, onClose }: AddContactMo
             {step === "enter"
               ? isEmail
                 ? "You’ll be able to sign in with it too, and we’ll send account notices like renewal reminders there."
-                : "You’ll be able to sign in with a texted code. US and Canadian mobile numbers only."
+                : isChange
+                  ? "We’ll text a code to your new number. Once confirmed, it replaces your current one for sign-in. US and Canadian mobile numbers only."
+                  : "You’ll be able to sign in with a texted code. US and Canadian mobile numbers only."
               : `Enter the 4-digit code we sent to ${sentLabel}.`}
           </Text>
 
