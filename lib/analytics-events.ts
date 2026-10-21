@@ -71,6 +71,8 @@ export const AnalyticsEvent = {
   // Correcting a completed day's log after the fact (edit-log feature). The
   // backend still owns "Workout Completed"; this is a distinct client action.
   WORKOUT_LOG_EDITED: "workout_log_edited",
+  // Rearranging the week by hand ("Swap with another day") — no AI involved.
+  WORKOUT_DAY_MOVED: "workout_day_moved",
 
   // ── Post-workout feedback + voice input ──
   WORKOUT_FEEDBACK_SHOWN: "workout_feedback_shown",
@@ -212,6 +214,13 @@ export interface AnalyticsEventProps {
     log_index?: number;
   };
 
+  [AnalyticsEvent.WORKOUT_DAY_MOVED]: {
+    plan_day_id: number;
+    /** swap = traded places with a scheduled workout; move_to_rest_day = landed on an empty day. */
+    kind: "swap" | "move_to_rest_day";
+    /** Target minus source, in days: negative = pulled earlier (e.g. into today). */
+    days_moved: number;
+  };
   [AnalyticsEvent.WORKOUT_LOG_EDITED]: {
     plan_day_id: number;
     exercises_changed: number;

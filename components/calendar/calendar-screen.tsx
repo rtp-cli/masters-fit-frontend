@@ -21,6 +21,7 @@ import { type DateData } from "react-native-calendars";
 import Header from "@/components/header";
 import JustGeneratedBadge from "@/components/just-generated-badge";
 import { LogActivitySheet, LoggedActivityRow } from "@/components/log-activity";
+import MoveDaySheet from "@/components/move-day-sheet";
 import {
   CoachingCautionsBanner,
   FeedbackConflictsBanner,
@@ -113,6 +114,11 @@ export default function CalendarScreen() {
   const pendingEditRef = useRef(false);
   // Same hand-off for "Use a workout I've done before".
   const pendingRepeatRef = useRef(false);
+  // ...and for "Swap with another day". The workout being moved is captured at
+  // tap time, because closing the sheet nulls selectedPlanDay.
+  const pendingMoveRef = useRef(false);
+  const [moveSource, setMoveSource] = useState<PlanDayWithBlocks | null>(null);
+  const [showMoveSheet, setShowMoveSheet] = useState(false);
 
   const [showWorkoutChoice, setShowWorkoutChoice] = useState(false);
   const [showRepeatPicker, setShowRepeatPicker] = useState(false);
@@ -876,6 +882,15 @@ export default function CalendarScreen() {
           }
         }}
         // Same dismiss-then-present dance as "Edit it myself" above.
+        onSwapDay={() => {
+          setMoveSource(selectedPlanDay);
+          pendingMoveRef.current = true;
+          setShowRegenerationModal(false);
+          if (Platform.OS !== "ios") {
+            pendingMoveRef.current = false;
+            setShowMoveSheet(true);
+          }
+        }}
         onRepeatPast={() => {
           setRepeatTarget({
             date: selectedDate,
@@ -896,6 +911,10 @@ export default function CalendarScreen() {
           if (pendingRepeatRef.current) {
             pendingRepeatRef.current = false;
             setShowRepeatPicker(true);
+          }
+          if (pendingMoveRef.current) {
+            pendingMoveRef.current = false;
+            setShowMoveSheet(true);
           }
         }}
       />
@@ -925,6 +944,28 @@ export default function CalendarScreen() {
           refreshWorkout();
         }}
       />
+
+      {workoutPlan && (
+        <MoveDaySheet
+          visible={showMoveSheet}
+          planDay={moveSource}
+          planDays={workoutPlan.planDays}
+          planStart={formatDateAsString(workoutPlan.startDate)}
+          planEnd={formatDateAsString(workoutPlan.endDate)}
+          onClose={() => {
+            setShowMoveSheet(false);
+            setMoveSource(null);
+          }}
+          // Stay on the selected date: the workout that just landed there is
+          // the confirmation.
+          onMoved={() => {
+            setShowMoveSheet(false);
+            setMoveSource(null);
+            setSelectedPlanDay(null);
+            refreshWorkout();
+          }}
+        />
+      )}
 
       <WorkoutEditModal
         visible={showEditModal}
