@@ -16,6 +16,9 @@ interface DemoChipProps {
   accessibilityLabel: string;
   /** Extra classes for call-site spacing (margins/alignment). */
   className?: string;
+  /** Glyph override. The in-workout "Swap" chip reuses this chip with
+   *  `swap-horizontal` so the two sit side by side as one vocabulary. */
+  icon?: keyof typeof Ionicons.glyphMap;
 }
 
 /**
@@ -34,6 +37,7 @@ export default function DemoChip({
   label,
   accessibilityLabel,
   className,
+  icon = "play-circle-outline",
 }: DemoChipProps) {
   const colors = useThemeColors();
   return (
@@ -56,7 +60,7 @@ export default function DemoChip({
           }`}
         >
           <Ionicons
-            name="play-circle-outline"
+            name={icon}
             size={16}
             color={colors.text.primary}
           />

@@ -48,6 +48,7 @@ import {
   formatSetDuration,
   formatWorkoutDuration,
 } from "@/utils";
+import { difficultyRank, isEasierThan } from "@/utils/difficulty-rank";
 
 import { CustomDialog, type DialogButton } from "./ui";
 
@@ -55,12 +56,22 @@ interface WorkoutEditModalProps {
   visible: boolean;
   onClose: () => void;
   planDay: PlanDayWithBlocks | null;
+  /**
+   * Focused mode: open straight into Replace for this plan-day exercise (the
+   * in-workout "Swap" button). There is no exercise list behind it, so Close
+   * and a successful replace both dismiss the modal.
+   */
+  replaceExerciseId?: number;
+  /** Focused mode only: called after the swap is saved, before closing. */
+  onExerciseReplaced?: (planDayExerciseId: number) => void;
 }
 
 export default function WorkoutEditModal({
   visible,
   onClose,
   planDay,
+  replaceExerciseId,
+  onExerciseReplaced,
 }: WorkoutEditModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -122,6 +133,9 @@ export default function WorkoutEditModal({
   // an id rather than a field on SearchExercise so the shared search type
   // stays free of a replace-only concept.
   const [pinnedSwapId, setPinnedSwapId] = useState<number | null>(null);
+  // "Scale it": narrow the closest matches to easier movements only. A view
+  // over the ranked list, not a new search, so the ranking stays intact.
+  const [easierOnly, setEasierOnly] = useState(false);
   // The muscle groups the replace view was seeded with, so we can tell a
   // still-seeded filter state from one the user has narrowed themselves.
   const seededMuscleGroupsRef = useRef<string[]>([]);
@@ -240,10 +254,18 @@ export default function WorkoutEditModal({
         restTime: "",
       });
       setAddingExercise(false);
+      setEasierOnly(false);
+      if (replaceExerciseId != null) {
+        const target = planDay.blocks
+          .flatMap((block) => block.exercises)
+          .find((ex) => ex.id === replaceExerciseId);
+        if (target) startReplace(target);
+      }
     }
     if (!visible) {
       initializedRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, planDay]);
 
   // Fetch filter options when modal opens
@@ -586,6 +608,12 @@ export default function WorkoutEditModal({
       );
 
       if (result?.success) {
+        if (replaceExerciseId != null) {
+          refreshWorkout();
+          onExerciseReplaced?.(currentExercise.id);
+          onClose();
+          return;
+        }
         // Return to main view immediately, refresh data in background
         setCurrentView("main");
         setCurrentExercise(null);
@@ -741,6 +769,11 @@ export default function WorkoutEditModal({
   };
 
   const handleCancel = () => {
+    if (currentView === "replace" && replaceExerciseId != null) {
+      onClose();
+      return;
+    }
+
     if (currentView === "replace") {
       setCurrentView("main");
       setCurrentExercise(null);
@@ -1162,7 +1195,16 @@ export default function WorkoutEditModal({
                       </View>
                     ) : (
                       <FlatList
-                        data={searchResults}
+                        data={
+                          easierOnly && resultsRanked
+                            ? searchResults.filter((item) =>
+                                isEasierThan(
+                                  item.difficulty,
+                                  currentExercise?.exercise.difficulty
+                                )
+                              )
+                            : searchResults
+                        }
                         keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={{ padding: 20 }}
                         showsVerticalScrollIndicator={false}
@@ -1178,6 +1220,44 @@ export default function WorkoutEditModal({
                               <Text className="text-xs mt-1 text-text-muted">
                                 Same muscles, your equipment.
                               </Text>
+                              {/* "Scale it" — only when there is somewhere
+                                  easier to go from the current movement. */}
+                              {(difficultyRank(
+                                currentExercise?.exercise.difficulty
+                              ) ?? 0) > 0 && (
+                                <TouchableOpacity
+                                  className={`self-start flex-row items-center mt-3 px-3 py-2 rounded-full border ${
+                                    easierOnly
+                                      ? "bg-brand-primary border-brand-primary"
+                                      : "border-neutral-medium-1"
+                                  }`}
+                                  style={{ minHeight: 36 }}
+                                  onPress={() => setEasierOnly((v) => !v)}
+                                  accessibilityRole="switch"
+                                  accessibilityState={{ checked: easierOnly }}
+                                  accessibilityLabel="Easier only"
+                                >
+                                  <Ionicons
+                                    name="trending-down"
+                                    size={14}
+                                    color={
+                                      easierOnly
+                                        ? colors.contentOnPrimary
+                                        : colors.text.primary
+                                    }
+                                  />
+                                  <Text
+                                    className="text-sm font-semibold ml-1.5"
+                                    style={{
+                                      color: easierOnly
+                                        ? colors.contentOnPrimary
+                                        : colors.text.primary,
+                                    }}
+                                  >
+                                    Easier only
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
                             </View>
                           ) : null
                         }

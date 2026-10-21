@@ -44,6 +44,7 @@ import UndoDrainStrip from "@/components/workout/undo-drain-strip";
 import WatchNudgeBanner from "@/components/workout/watch-nudge-banner";
 import WorkoutBlock from "@/components/workout-block";
 import WorkoutChoiceModal from "@/components/workout-choice-modal";
+import WorkoutEditModal from "@/components/workout-edit-modal";
 import WorkoutRegenerationModal from "@/components/workout-regeneration-modal";
 import WorkoutRepeatPicker from "@/components/workout-repeat-picker";
 import WorkoutSummary from "@/components/workout-summary";
@@ -324,6 +325,14 @@ export function WorkoutScreen() {
     setDialogVisible(true);
   }, []);
 
+  // In-session "Swap": the plan-day exercise whose replace view is open, and
+  // the checked sets that swap will clear (they are only saved on completion).
+  const [swapTarget, setSwapTarget] = useState<{
+    planDayExerciseId: number;
+    fromExerciseId: number;
+    setsDiscarded: number;
+  } | null>(null);
+
   // Demo sheet state: the demos in the tapped exercise's block plus which one
   // to open on. null = closed. The sheet overlays this screen, so the list
   // never unmounts and dismissing lands the user exactly where they were.
@@ -458,6 +467,109 @@ export function WorkoutScreen() {
   const exercises = getFlattenedExercises();
   const currentExercise = exercises[currentExerciseIndex];
   const currentProgress = exerciseProgress[currentExerciseIndex];
+
+  // In-session "Swap" (tester feedback: "every now and then I need to change a
+  // movement after I've started"). Checked sets live only in local progress
+  // until the exercise completes, so swapping would quietly drop them — ask
+  // first, naming what goes.
+  const handleSwapPress = () => {
+    if (!currentExercise) return;
+    const checked =
+      currentProgress?.sets.filter((set) => set.isCompleted).length ?? 0;
+    const openSwap = () =>
+      setSwapTarget({
+        planDayExerciseId: currentExercise.id,
+        fromExerciseId: currentExercise.exercise.id,
+        setsDiscarded: checked,
+      });
+    if (checked === 0) {
+      openSwap();
+      return;
+    }
+    setDialogConfig({
+      title: "Swap this exercise?",
+      description: `You've checked off ${checked} ${
+        checked === 1 ? "set" : "sets"
+      } of ${currentExercise.exercise.name}. Swapping clears ${
+        checked === 1 ? "it" : "them"
+      }, and the new movement starts fresh.`,
+      primaryButton: {
+        text: "Swap anyway",
+        onPress: () => {
+          setDialogVisible(false);
+          // iOS can't present the sheet while the dialog is still dismissing.
+          setTimeout(openSwap, 350);
+        },
+      },
+      secondaryButton: {
+        text: "Keep going",
+        onPress: () => setDialogVisible(false),
+      },
+      icon: "swap-horizontal",
+    });
+    setDialogVisible(true);
+  };
+
+  // Swap saved: patch just that exercise in place rather than reloading the
+  // session (loadWorkout rebuilds ALL progress and would wipe the workout so
+  // far). Its progress row resets, so the set list re-materializes from the
+  // new prescription.
+  const handleExerciseSwapped = async (planDayExerciseId: number) => {
+    const target = swapTarget;
+    try {
+      const fresh = await fetchActiveWorkout(true);
+      const swapped = fresh?.planDays
+        .flatMap((day) => day.blocks ?? [])
+        .flatMap((block) => block.exercises)
+        .find((ex) => ex.id === planDayExerciseId);
+      if (!swapped) return;
+
+      setWorkout((prev) =>
+        prev
+          ? {
+              ...prev,
+              blocks: prev.blocks.map((block) => ({
+                ...block,
+                exercises: block.exercises.map((ex) =>
+                  ex.id === planDayExerciseId ? swapped : ex,
+                ),
+              })),
+            }
+          : prev,
+      );
+      const index = exercises.findIndex((ex) => ex.id === planDayExerciseId);
+      setExerciseProgress((prev) =>
+        prev.map((progress, i) =>
+          i === index
+            ? {
+                ...progress,
+                setsCompleted: 0,
+                repsCompleted: 0,
+                weightUsed: swapped.weight || 0,
+                sets: [],
+                duration: swapped.duration || 0,
+              }
+            : progress,
+        ),
+      );
+
+      if (workout && target) {
+        trackEvent(AnalyticsEvent.EXERCISE_SWAPPED_IN_SESSION, {
+          plan_day_id: workout.id,
+          plan_day_exercise_id: planDayExerciseId,
+          from_exercise_id: target.fromExerciseId,
+          to_exercise_id: swapped.exercise.id,
+          sets_discarded: target.setsDiscarded,
+        });
+      }
+    } catch (err) {
+      console.error("Error refreshing swapped exercise:", err);
+      showErrorDialog(
+        "Swap saved",
+        "Pull down to refresh to see the new exercise.",
+      );
+    }
+  };
 
   // Calculate overall workout progress (0 - 100) including skipped exercises
   const completedAndSkippedCount =
@@ -2657,16 +2769,23 @@ export function WorkoutScreen() {
                 {currentExercise.exercise.name}
               </Text>
 
-              {exerciseHasDemo(currentExercise.exercise) && currentBlock && (
+              <View className="flex-row items-center gap-2 mb-3">
+                {exerciseHasDemo(currentExercise.exercise) && currentBlock && (
+                  <DemoChip
+                    label="Demo"
+                    accessibilityLabel={`Demo: ${currentExercise.exercise.name}`}
+                    onPress={() =>
+                      openDemoSheet(currentBlock, currentExercise.exercise.id)
+                    }
+                  />
+                )}
                 <DemoChip
-                  label="Demo"
-                  accessibilityLabel={`Demo: ${currentExercise.exercise.name}`}
-                  onPress={() =>
-                    openDemoSheet(currentBlock, currentExercise.exercise.id)
-                  }
-                  className="mb-3"
+                  label="Swap"
+                  icon="swap-horizontal"
+                  accessibilityLabel={`Swap ${currentExercise.exercise.name} for another exercise`}
+                  onPress={handleSwapPress}
                 />
-              )}
+              </View>
 
               <Text className="text-sm text-text-primary leading-6 mb-3">
                 {currentExercise.exercise.description}
@@ -2835,6 +2954,9 @@ export function WorkoutScreen() {
                       {/* Traditional Exercise Logging Interface */}
                       <View className="rounded-2xl p-4">
                         <AdaptiveSetTracker
+                          // Remount on a swap: same plan-day exercise id, new
+                          // movement — the tracker's own state must reset.
+                          key={`${currentExercise.id}-${currentExercise.exercise.id}`}
                           exercise={currentExercise}
                           sets={currentProgress.sets}
                           onSetsChange={(sets) => updateProgress("sets", sets)}
@@ -3443,6 +3565,14 @@ export function WorkoutScreen() {
       </Modal>
 
       {/* Demo video sheet — the single playback surface for every Demo chip */}
+      <WorkoutEditModal
+        visible={!!swapTarget}
+        planDay={workout}
+        replaceExerciseId={swapTarget?.planDayExerciseId}
+        onExerciseReplaced={handleExerciseSwapped}
+        onClose={() => setSwapTarget(null)}
+      />
+
       <DemoSheet
         visible={!!demoSheet}
         entries={demoSheet?.entries ?? []}
