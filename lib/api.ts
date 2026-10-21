@@ -645,7 +645,9 @@ export async function apiRequest<T>(
  * Sign up a new user
  */
 export async function signupAPI(params: {
-  email: string;
+  // Ignored by the backend when the onboarding token is present (it reads
+  // the verified email/phone from the token). Absent for text sign-in.
+  email?: string;
   name: string;
 }): Promise<AuthResponse> {
   try {
@@ -686,6 +688,73 @@ export async function generateAuthCodeAPI(params: {
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+/**
+ * Text a sign-in code to a US/Canadian mobile number (also the "Resend").
+ * `phone` may be formatted; the backend normalizes it.
+ */
+export async function startPhoneLoginAPI(params: {
+  phone: string;
+}): Promise<AuthResponse> {
+  try {
+    return await apiRequest<AuthResponse>("/auth/phone/start", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  } catch (error) {
+    console.error("Phone login error:", error);
+    return { success: false, error: "Failed to send code" };
+  }
+}
+
+/**
+ * Check a texted code. Unlike /auth/verify, failures come back as HTTP 200
+ * `{ success: false, errorCode }`, so no 401 special-casing is needed.
+ */
+export async function verifyPhoneAPI(params: {
+  phone: string;
+  code: string;
+}): Promise<AuthResponse> {
+  try {
+    return await apiRequest<AuthResponse>("/auth/phone/verify", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  } catch (error) {
+    console.error("Phone verify error:", error);
+    return { success: false, error: "Failed to verify code" };
+  }
+}
+
+/** Settings "Add email" / "Add phone", step 1: send a code to it. */
+export async function startAddContactAPI(
+  contact: { email: string } | { phone: string }
+): Promise<AuthResponse> {
+  try {
+    return await apiRequest<AuthResponse>("/auth/contact/start", {
+      method: "POST",
+      body: JSON.stringify(contact),
+    });
+  } catch (error) {
+    console.error("Add contact error:", error);
+    return { success: false, error: "Failed to send code" };
+  }
+}
+
+/** Settings "Add email" / "Add phone", step 2: check the code; returns the updated user. */
+export async function verifyAddContactAPI(
+  params: ({ email: string } | { phone: string }) & { code: string }
+): Promise<AuthResponse> {
+  try {
+    return await apiRequest<AuthResponse>("/auth/contact/verify", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  } catch (error) {
+    console.error("Add contact verify error:", error);
+    return { success: false, error: "Failed to verify code" };
+  }
 }
 
 /**

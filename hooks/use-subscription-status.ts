@@ -170,7 +170,9 @@ export function useSubscriptionStatus() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.email]);
+    // The id makes it re-run per account even when there is no email (text
+    // sign-in); the email stays because isDemoProAccount reads it.
+  }, [user?.id, user?.email]);
 
   useEffect(() => {
     fetchSubscriptionStatus();

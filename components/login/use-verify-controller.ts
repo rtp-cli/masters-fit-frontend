@@ -6,14 +6,27 @@ import type { DialogButton } from "@/components/ui";
 import { hasAcceptedCurrentWaiver } from "@/constants/waiver";
 import { useAuth } from "@/contexts/auth-context";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
-import { generateAuthCode, verify } from "@/lib/auth";
+import {
+  generateAuthCode,
+  startPhoneLogin,
+  verify,
+  verifyPhone,
+} from "@/lib/auth";
 import { setAuthItem } from "@/lib/secure-store";
+import type { AuthErrorCode, SignInContact } from "@/types/api";
 
 type VerifyResult = {
   success: boolean;
-  errorCode?: "INVALID_CODE" | "EXPIRED_CODE" | "CODE_EXHAUSTED";
+  errorCode?: AuthErrorCode;
   attemptsLeft?: number;
 };
+
+/** The route param for the next screen: `email=…` or `phone=…`, URL-encoded. */
+export function contactQuery(contact: SignInContact): string {
+  return "email" in contact
+    ? `email=${encodeURIComponent(contact.email)}`
+    : `phone=${encodeURIComponent(contact.phone)}`;
+}
 
 export function useVerifyController() {
   const router = useRouter();
@@ -28,18 +41,23 @@ export function useVerifyController() {
     icon?: keyof typeof Ionicons.glyphMap;
   } | null>(null);
 
-  const requestNewCode = useCallback(async (email: string) => {
-    if (!email) return { success: false };
-
+  const requestNewCode = useCallback(async (contact: SignInContact) => {
     setIsLoading(true);
     try {
-      const response = await generateAuthCode({ email });
+      const response =
+        "email" in contact
+          ? await generateAuthCode({ email: contact.email })
+          : await startPhoneLogin({ phone: contact.phone });
       if (response.success) {
         return { success: true };
       } else {
         setDialogConfig({
           title: "Error",
-          description: "Failed to send new code. Please try again.",
+          // The rate limiter's message says how long to wait — show it.
+          description:
+            response.errorCode === "RATE_LIMITED" && response.error
+              ? response.error
+              : "Failed to send new code. Please try again.",
           primaryButton: {
             text: "OK",
             onPress: () => setDialogVisible(false),
@@ -67,9 +85,7 @@ export function useVerifyController() {
   }, []);
 
   const verifyCode = useCallback(
-    async (email: string, code: string): Promise<VerifyResult> => {
-      if (!email) return { success: false };
-
+    async (contact: SignInContact, code: string): Promise<VerifyResult> => {
       if (code.length !== 4) {
         setDialogConfig({
           title: "Error",
@@ -86,7 +102,10 @@ export function useVerifyController() {
 
       setIsLoading(true);
       try {
-        const response = await verify({ authCode: code.trim(), email });
+        const response =
+          "email" in contact
+            ? await verify({ authCode: code.trim(), email: contact.email })
+            : await verifyPhone({ phone: contact.phone, code: code.trim() });
         trackEvent(AnalyticsEvent.OTP_SUBMITTED, { success: response.success }); // [AN-09]
 
         if (response.success) {
@@ -138,9 +157,7 @@ export function useVerifyController() {
             // New user — code valid, no account yet. `response.token` is the
             // onboarding token (now stored above); collect a name next, and
             // signup authorises on that token (Work C).
-            router.replace(
-              `/(auth)/name?email=${encodeURIComponent(email)}`,
-            );
+            router.replace(`/(auth)/name?${contactQuery(contact)}`);
             return { success: true };
           }
         } else {

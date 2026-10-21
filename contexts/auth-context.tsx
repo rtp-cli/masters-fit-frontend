@@ -59,7 +59,9 @@ interface AuthContextType {
   setNeedsFullAppRefresh: (value: boolean) => void;
   triggerWorkoutReady: () => void;
   signup: (params: {
-    email: string;
+    // Absent for text sign-in; the backend reads the verified email/phone
+    // from the onboarding token either way.
+    email?: string;
     name: string;
   }) => Promise<{ success: boolean }>;
   login: (params: { email: string }) => Promise<{ success: boolean }>;
@@ -216,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, isImpersonating]);
 
   // Sign up a new user
-  const signup = async (params: { email: string; name: string }) => {
+  const signup = async (params: { email?: string; name: string }) => {
     setIsLoading(true);
     try {
       const result = await apiSignup(params);

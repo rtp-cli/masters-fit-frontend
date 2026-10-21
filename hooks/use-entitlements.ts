@@ -31,7 +31,9 @@ export function useEntitlements() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.email]);
+    // Keyed on the account id, not the email: a text sign-in account has no
+    // email, so an email key would never change between two such accounts.
+  }, [user?.id]);
 
   useEffect(() => {
     refetch();

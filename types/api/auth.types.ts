@@ -1,7 +1,11 @@
 export interface User {
   id: number;
   uuid: string; // UUID for analytics
-  email: string;
+  // At least one of email / phone is set. A text (SMS) sign-in account has a
+  // null email until they add one in Settings.
+  email: string | null;
+  // E.164 ("+13125550123"). Absent on sessions stored before SMS sign-in.
+  phone?: string | null;
   name: string;
   needsOnboarding?: boolean;
   waiverAcceptedAt?: Date | string | null;
@@ -21,11 +25,26 @@ export interface AuthResponse {
   needsOnboarding?: boolean;
   needsWaiverUpdate?: boolean;
   email?: string;
+  // Set instead of `email` when a NEW user verified by text.
+  phone?: string;
   token?: string;
   refreshToken?: string;
-  errorCode?: "INVALID_CODE" | "EXPIRED_CODE" | "CODE_EXHAUSTED";
+  errorCode?: AuthErrorCode;
   attemptsLeft?: number;
 }
+
+export type AuthErrorCode =
+  | "INVALID_CODE"
+  | "EXPIRED_CODE"
+  | "CODE_EXHAUSTED"
+  // SMS sign-in / add-contact only:
+  | "INVALID_PHONE"
+  | "SMS_UNAVAILABLE"
+  | "RATE_LIMITED"
+  | "TAKEN";
+
+/** How someone signs in: the identifier a code was sent to. */
+export type SignInContact = { email: string } | { phone: string };
 
 export interface OnboardingData {
   userId: number;

@@ -14,7 +14,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { startPhoneLogin } from "@/lib/auth";
 import { isValidEmail } from "@/utils";
+import { formatPhoneAsTyped, toUsE164 } from "@/utils/phone";
 
 import { useAuth } from "../../contexts/auth-context";
 import { useThemeColors } from "../../lib/theme";
@@ -24,16 +26,60 @@ export const LoginScreen = () => {
   const router = useRouter();
   const { login } = useAuth();
 
+  // Email is the default; "Use your phone number instead" switches to a texted
+  // code (US/Canada numbers). Both land on the same code screen.
+  const [mode, setMode] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [sendFailed, setSendFailed] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
 
+  const switchMode = () => {
+    setMode((m) => (m === "email" ? "phone" : "email"));
+    setEmailError("");
+    setSendFailed(false);
+  };
+
+  const handlePhoneContinue = async () => {
+    const e164 = toUsE164(phone);
+    if (!e164) {
+      setEmailError("Enter a 10-digit US or Canadian mobile number.");
+      return;
+    }
+
+    setEmailError("");
+    setSendFailed(false);
+    setIsLoading(true);
+    try {
+      const res = await startPhoneLogin({ phone: e164 });
+      if (res.success) {
+        router.push(`/(auth)/verify?phone=${encodeURIComponent(e164)}`);
+      } else if (
+        res.errorCode === "INVALID_PHONE" ||
+        res.errorCode === "SMS_UNAVAILABLE" ||
+        res.errorCode === "RATE_LIMITED"
+      ) {
+        // The server's own words are the useful ones here (e.g. how long to
+        // wait, or "use your email instead").
+        setEmailError(res.error ?? "We couldn’t text that number.");
+      } else {
+        setSendFailed(true);
+      }
+    } catch {
+      setSendFailed(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Single merged entry point. Account lookup now happens inside `verify`
   // (backend), so the client no longer calls checkEmail or branches on
   // new-vs-returning here — everyone submits an email and gets a code.
   const handleContinue = async () => {
+    if (mode === "phone") return handlePhoneContinue();
+
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return; // button is disabled while empty; guard anyway
 
@@ -59,7 +105,8 @@ export const LoginScreen = () => {
     }
   };
 
-  const emailFilled = email.trim().length > 0;
+  const emailFilled =
+    mode === "email" ? email.trim().length > 0 : phone.replace(/\D/g, "").length > 0;
 
   const getInputStyle = (filled: boolean, focused: boolean, hasError = false) => ({
     height: 54,
@@ -159,7 +206,7 @@ export const LoginScreen = () => {
               textAlign: "center",
             }}
           >
-            Enter your email
+            {mode === "email" ? "Enter your email" : "Enter your mobile number"}
           </Text>
           <Text
             style={{
@@ -172,35 +219,88 @@ export const LoginScreen = () => {
               marginTop: 12,
             }}
           >
-            We’ll send you a secure code to sign in or get started.
+            {mode === "email"
+              ? "We’ll send you a secure code to sign in or get started."
+              : "We’ll text you a secure code to sign in or get started."}
           </Text>
 
-          {/* Email input */}
-          <TextInput
-            style={[
-              { marginTop: 30 },
-              getInputStyle(emailFilled, isEmailFocused, !!emailError),
-            ]}
-            placeholder="Email address"
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              if (emailError) setEmailError("");
-              if (sendFailed) setSendFailed(false);
-            }}
-            onFocus={() => setIsEmailFocused(true)}
-            onBlur={() => setIsEmailFocused(false)}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            inputMode="email"
-            editable={!isLoading}
-            placeholderTextColor={colors.text.muted}
-            selectionColor={colors.brand.primary}
-            autoFocus
-            returnKeyType="go"
-            onSubmitEditing={handleContinue}
-          />
+          {mode === "email" ? (
+            /* Email input */
+            <TextInput
+              key="email"
+              style={[
+                { marginTop: 30 },
+                getInputStyle(emailFilled, isEmailFocused, !!emailError),
+              ]}
+              placeholder="Email address"
+              value={email}
+              onChangeText={(t) => {
+                setEmail(t);
+                if (emailError) setEmailError("");
+                if (sendFailed) setSendFailed(false);
+              }}
+              onFocus={() => setIsEmailFocused(true)}
+              onBlur={() => setIsEmailFocused(false)}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              inputMode="email"
+              editable={!isLoading}
+              placeholderTextColor={colors.text.muted}
+              selectionColor={colors.brand.primary}
+              autoFocus
+              returnKeyType="go"
+              onSubmitEditing={handleContinue}
+            />
+          ) : (
+            /* Phone input — formatted as typed, +1 only */
+            <TextInput
+              key="phone"
+              style={[
+                { marginTop: 30 },
+                getInputStyle(emailFilled, isEmailFocused, !!emailError),
+              ]}
+              placeholder="(555) 555-5555"
+              value={phone}
+              onChangeText={(t) => {
+                setPhone(formatPhoneAsTyped(t));
+                if (emailError) setEmailError("");
+                if (sendFailed) setSendFailed(false);
+              }}
+              onFocus={() => setIsEmailFocused(true)}
+              onBlur={() => setIsEmailFocused(false)}
+              autoComplete="tel"
+              textContentType="telephoneNumber"
+              keyboardType="phone-pad"
+              inputMode="tel"
+              editable={!isLoading}
+              placeholderTextColor={colors.text.muted}
+              selectionColor={colors.brand.primary}
+              autoFocus
+              returnKeyType="go"
+              onSubmitEditing={handleContinue}
+            />
+          )}
+
+          <TouchableOpacity
+            onPress={switchMode}
+            disabled={isLoading}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ alignSelf: "center", marginTop: 14 }}
+            accessibilityRole="button"
+          >
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "600",
+                color: colors.brand.primary,
+              }}
+            >
+              {mode === "email"
+                ? "Use your phone number instead"
+                : "Use your email instead"}
+            </Text>
+          </TouchableOpacity>
 
           {/* Inline validation — replaces the old "Error" dialog */}
           {emailError ? (
@@ -328,11 +428,29 @@ export const LoginScreen = () => {
                 No password to create. We never sell your data.
               </Text>
             </View>
+            {/* Carrier/CTIA convention for texted codes. */}
+            {mode === "phone" && (
+              <Text
+                style={{
+                  fontSize: 12,
+                  lineHeight: 16,
+                  color: colors.text.muted,
+                  textAlign: "center",
+                  marginTop: 4,
+                }}
+              >
+                Msg & data rates may apply.
+              </Text>
+            )}
             <TouchableOpacity
               onPress={() => router.push("/legal-document?type=privacy")}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="link"
-              accessibilityLabel="Read what MastersFit does with your email and health data"
+              accessibilityLabel={
+                mode === "email"
+                  ? "Read what MastersFit does with your email and health data"
+                  : "Read what MastersFit does with your phone number and health data"
+              }
               style={{ marginTop: 6 }}
             >
               <Text
@@ -346,7 +464,9 @@ export const LoginScreen = () => {
                   textAlign: "center",
                 }}
               >
-                What we do with your email
+                {mode === "email"
+                  ? "What we do with your email"
+                  : "What we do with your number"}
               </Text>
             </TouchableOpacity>
           </View>
