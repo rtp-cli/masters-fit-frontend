@@ -8,8 +8,9 @@ import { toUsE164 } from "@/utils/phone";
 export type ContactKind = "email" | "phone";
 
 /**
- * Settings "Add email" / "Add phone": enter it → we send a code → enter the
- * code → it's attached to this account (one account, both identifiers).
+ * Settings "Add email" / "Add phone" / "Change" phone: enter it → we send a
+ * code → enter the code → it's attached to this account (one account, both
+ * identifiers). A verified phone replaces any number already on file.
  *
  * The backend refuses an email or number that's already on another account
  * (TAKEN) before sending anything, so nobody waits on a code they can't use.
@@ -38,6 +39,11 @@ export function useAddContact(kind: ContactKind, onDone: () => void) {
         return;
       }
 
+      if (kind === "phone" && value === user?.phone) {
+        setError("That’s already the number on your account.");
+        return;
+      }
+
       setError("");
       setIsBusy(true);
       try {
@@ -53,7 +59,7 @@ export function useAddContact(kind: ContactKind, onDone: () => void) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [kind],
+    [kind, user?.phone],
   );
 
   const verifyCode = useCallback(
@@ -91,5 +97,9 @@ export function useAddContact(kind: ContactKind, onDone: () => void) {
     setError("");
   }, []);
 
-  return { step, sentTo, isBusy, error, sendCode, verifyCode, reset, setError };
+  // Settings opens this same flow from "Change" when a number is already on
+  // file; verifying the new one overwrites it server-side.
+  const isChange = kind === "phone" && !!user?.phone;
+
+  return { step, sentTo, isBusy, error, sendCode, verifyCode, reset, setError, isChange };
 }
