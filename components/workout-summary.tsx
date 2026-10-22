@@ -27,8 +27,10 @@ import { ShareWorkoutButton } from "@/components/share";
 import { SkeletonLoader } from "@/components/skeletons/skeleton-loader";
 import ConfettiCelebration from "@/components/ui/confetti-celebration";
 import CustomDialog from "@/components/ui/custom-dialog";
+import WorkoutEditModal from "@/components/workout-edit-modal";
 import WorkoutFeedbackCard from "@/components/workout-feedback-card";
 import { getLoggingMode } from "@/constants/block-types";
+import { useAppDataContext } from "@/contexts/app-data-context";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { exerciseHasDemo } from "@/lib/exercise-video";
 import { type ThemeColorPalette,useThemeColors } from "@/lib/theme";
@@ -40,6 +42,7 @@ import {
   getPlanDayLog,
   notifyWorkoutUpdated,
   recomputePlanDayRollups,
+  replaceExercise,
   skipExercise,
   subscribeToWorkoutUpdates,
   updateBlockLog,
@@ -50,6 +53,7 @@ import {
   type ExerciseSetLog,
   type PlanDayLog,
 } from "@/types/api/logs.types";
+import { type SearchExercise } from "@/types/api/search.types";
 import {
   getBlockTypeDisplayName,
   type PlanDayWithBlocks,
@@ -217,6 +221,12 @@ interface WorkoutSummaryProps {
 /** The prescription for one exercise, as a muted subtitle. A Wendler 531 block
  *  is several `plan_day_exercise` rows for ONE movement, so without this the
  *  cards are five identical headers with no way to tell which is which. */
+/** One bordered card per exercise in edit mode, so every control visibly
+ *  belongs to the movement above it (a bare stack of segments and links read
+ *  as one undifferentiated list). */
+const EDIT_CARD =
+  "mb-3 p-3 rounded-lg border border-neutral-light-2 bg-background";
+
 const prescriptionLine = (
   exercise: WorkoutBlockWithExercise
 ): string | null => {
@@ -295,6 +305,20 @@ export default function WorkoutSummary({
     next: ExerciseStatus;
     count: number;
   } | null>(null);
+  // "I did something else": the movement actually done, per plan-day exercise.
+  // Held here and written on Save (replace first, then the log), so Cancel
+  // leaves the plan untouched. The backend keeps the original prescription.
+  const [pendingSubs, setPendingSubs] = useState<
+    Record<number, SearchExercise>
+  >({});
+  // Which exercise the "what did you do instead?" picker is open for.
+  const [subTarget, setSubTarget] = useState<{
+    exercise: WorkoutBlockWithExercise;
+    completionOnly: boolean;
+  } | null>(null);
+  const {
+    refresh: { refreshWorkout },
+  } = useAppDataContext();
 
   const toggleBlock = (blockId: number) => {
     setCollapsedBlocks((prev) => ({
@@ -348,8 +372,10 @@ export default function WorkoutSummary({
 
   const isDirty = useMemo(
     () =>
-      serializeLogs(workingLogs) !== serializeLogs(exerciseLogs) || statusDirty,
-    [workingLogs, exerciseLogs, statusDirty]
+      serializeLogs(workingLogs) !== serializeLogs(exerciseLogs) ||
+      statusDirty ||
+      Object.keys(pendingSubs).length > 0,
+    [workingLogs, exerciseLogs, statusDirty, pendingSubs]
   );
 
   const startEditing = () => {
@@ -371,6 +397,7 @@ export default function WorkoutSummary({
     setBaselineStatus(status);
     setExpandedSet(null);
     setExpandedRound({});
+    setPendingSubs({});
     setIsEditing(true);
   };
 
@@ -384,6 +411,8 @@ export default function WorkoutSummary({
     setBaselineStatus({});
     setPendingDemotion(null);
     setPendingRoundDemotion(null);
+    setPendingSubs({});
+    setSubTarget(null);
   };
 
   const requestCancel = () => {
@@ -635,6 +664,37 @@ export default function WorkoutSummary({
     }));
   };
 
+  // "I did something else" → the chosen movement replaces this one on Save.
+  // The sets already logged stay as the starting point (same set/rep shape is
+  // the common case — "I did landmine press instead of push press"); the user
+  // corrects the numbers here. A not-done exercise becomes done, since the
+  // claim is "I did THIS instead".
+  const chooseSubstitute = (
+    exercise: WorkoutBlockWithExercise,
+    chosen: SearchExercise,
+    completionOnly: boolean
+  ) => {
+    if (chosen.id === exercise.exercise.id) return;
+    setPendingSubs((prev) => ({ ...prev, [exercise.id]: chosen }));
+    if (workingStatus[exercise.id] !== "completed") {
+      changeStatus(exercise, "did", completionOnly);
+    }
+  };
+
+  // Undo puts the exercise back exactly as logged — movement, sets, status.
+  const undoSubstitute = (exId: number) => {
+    setPendingSubs((prev) => {
+      const next = { ...prev };
+      delete next[exId];
+      return next;
+    });
+    setWorkingLogs((prev) => ({
+      ...prev,
+      [exId]: JSON.parse(JSON.stringify(exerciseLogs[exId] || [])),
+    }));
+    setWorkingStatus((prev) => ({ ...prev, [exId]: baselineStatus[exId] }));
+  };
+
   const handleSave = async () => {
     // Classify every exercise's intent from its status transition + set diffs.
     // The control only ever yields completed or skipped, so there is no
@@ -681,8 +741,18 @@ export default function WorkoutSummary({
       // to === "not_attempted" only ever means "unchanged" here → no-op.
     }
 
+    const substitutions = Object.entries(pendingSubs).map(([exId, chosen]) => ({
+      exId: Number(exId),
+      newExerciseId: chosen.id,
+    }));
+
     const statusChanges = promotions.length + skips.length;
-    if (statusChanges === 0 && setEdits.length === 0 && roundDeletes.length === 0) {
+    if (
+      statusChanges === 0 &&
+      setEdits.length === 0 &&
+      roundDeletes.length === 0 &&
+      substitutions.length === 0
+    ) {
       exitEditing();
       return;
     }
@@ -700,6 +770,13 @@ export default function WorkoutSummary({
         distanceM: s.distanceM ?? undefined,
       }));
     try {
+      // The movement swap goes first: the log rows below stay attached to the
+      // same plan-day exercise, so once it points at the new movement they
+      // describe what was actually done.
+      for (const { exId, newExerciseId } of substitutions) {
+        const res = await replaceExercise(exId, newExerciseId);
+        if (!res?.success) throw new Error("save-failed");
+      }
       // Sequentially, demotions before writes — a partial failure stops rather
       // than continuing (SPEC §6.5). Each call is destructive server-side.
       // "I didn't do this" is a skip (deletes logs + sets isSkipped); it never
@@ -794,6 +871,7 @@ export default function WorkoutSummary({
         ...skips,
         ...setEdits.map((e) => e.exId),
         ...roundDeletes.map((r) => r.exId),
+        ...substitutions.map((x) => x.exId),
       ]);
       const hoursSinceCompletion = planDayLog?.updatedAt
         ? Math.round(
@@ -807,6 +885,7 @@ export default function WorkoutSummary({
         sets_changed: setsChanged,
         status_changes: statusChanges,
         hours_since_completion: hoursSinceCompletion,
+        substitutions: substitutions.length,
       });
 
       setIsEditing(false);
@@ -815,8 +894,12 @@ export default function WorkoutSummary({
       setWorkingLogs({});
       setWorkingStatus({});
       setBaselineStatus({});
+      setPendingSubs({});
       await loadData();
       onLogEdited?.();
+      // The movement names live on the workout prop the hosts own — have the
+      // shared workout data refetch so Calendar/Workout show what was done.
+      if (substitutions.length > 0) refreshWorkout();
       // So Dashboard + Calendar pick up the corrected numbers.
       notifyWorkoutUpdated();
     } catch {
@@ -1201,7 +1284,7 @@ export default function WorkoutSummary({
                           const roundLogs = workingLogs[exercise.id] || [];
                           const prescribedRound = prescriptionLine(exercise);
                           return (
-                            <View key={exercise.id} className="mb-4">
+                            <View key={exercise.id} className={EDIT_CARD}>
                               <View className="flex-row items-center justify-between mb-1">
                                 <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
                                   {exercise.exercise.name}
@@ -1268,17 +1351,68 @@ export default function WorkoutSummary({
                         const logs = workingLogs[exercise.id] || [];
                         const showSets =
                           !isCompletionOnly && wStatus === "completed";
-                        const prescribed = prescriptionLine(exercise);
+                        const substitute = pendingSubs[exercise.id];
+                        // The prescription line names the old movement's load,
+                        // so it would mislead under a substitute.
+                        const prescribed = substitute
+                          ? null
+                          : prescriptionLine(exercise);
 
                         return (
-                          <View key={exercise.id} className="mb-4">
-                            <Text
-                              className={`font-semibold text-text-primary text-sm${
-                                prescribed ? "" : " mb-2"
+                          <View key={exercise.id} className={EDIT_CARD}>
+                            {/* Header row: the name owns the card, and the
+                                movement-level action sits beside it so it
+                                can't be read as belonging to the next one. */}
+                            <View
+                              className={`flex-row items-start${
+                                prescribed || substitute ? "" : " mb-2"
                               }`}
                             >
-                              {exercise.exercise.name}
-                            </Text>
+                              <Text className="font-semibold text-text-primary text-base flex-1 mr-2">
+                                {substitute?.name ?? exercise.exercise.name}
+                              </Text>
+                              {!substitute ? (
+                                <TouchableOpacity
+                                  className="flex-row items-center"
+                                  style={{ minHeight: 24 }}
+                                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                  onPress={() =>
+                                    setSubTarget({
+                                      exercise,
+                                      completionOnly: isCompletionOnly,
+                                    })
+                                  }
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`I did something else instead of ${exercise.exercise.name}`}
+                                >
+                                  <Ionicons
+                                    name="swap-horizontal"
+                                    size={14}
+                                    color={colors.text.primary}
+                                  />
+                                  <Text className="text-xs font-semibold text-text-primary ml-1">
+                                    I did something else
+                                  </Text>
+                                </TouchableOpacity>
+                              ) : null}
+                            </View>
+                            {substitute ? (
+                              <View className="flex-row items-center mt-1 mb-2">
+                                <Text className="text-xs text-text-muted flex-1">
+                                  Instead of {exercise.exercise.name}
+                                </Text>
+                                <TouchableOpacity
+                                  onPress={() => undoSubstitute(exercise.id)}
+                                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Undo: go back to ${exercise.exercise.name}`}
+                                >
+                                  <Text className="text-xs font-semibold text-text-primary">
+                                    Undo
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            ) : null}
                             {prescribed ? (
                               <Text className="text-xs text-text-muted mt-1 mb-2">
                                 {prescribed}
@@ -1329,9 +1463,8 @@ export default function WorkoutSummary({
                                 ))}
                               </View>
                             ) : isCompletionOnly && wStatus === "completed" ? (
-                              <Text className="text-xs text-text-muted mt-2">
-                                Marked complete.
-                              </Text>
+                              /* "I did this" being selected already says it. */
+                              null
                             ) : (
                               <Text className="text-xs text-text-muted mt-2">
                                 Tap "I did this" to log what you did.
@@ -1353,6 +1486,22 @@ export default function WorkoutSummary({
           </Text>
         </ScrollView>
 
+        {/* Nested inside the edit modal so iOS presents it over this one. */}
+        <WorkoutEditModal
+          visible={!!subTarget}
+          planDay={workout}
+          replaceExerciseId={subTarget?.exercise.id}
+          onExerciseChosen={(chosen) => {
+            if (subTarget) {
+              chooseSubstitute(
+                subTarget.exercise,
+                chosen,
+                subTarget.completionOnly
+              );
+            }
+          }}
+          onClose={() => setSubTarget(null)}
+        />
         <CustomDialog
           visible={showDiscard}
           title="Discard changes?"

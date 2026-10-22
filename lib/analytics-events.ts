@@ -238,6 +238,8 @@ export interface AnalyticsEventProps {
     /** Phase 2: how many exercises changed status (promote/skip/didn't-do). */
     status_changes?: number;
     hours_since_completion?: number;
+    /** "I did something else": movements replaced with what was actually done. */
+    substitutions?: number;
   };
 
   [AnalyticsEvent.WORKOUT_FEEDBACK_SHOWN]: {
