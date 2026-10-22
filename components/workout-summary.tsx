@@ -221,6 +221,12 @@ interface WorkoutSummaryProps {
 /** The prescription for one exercise, as a muted subtitle. A Wendler 531 block
  *  is several `plan_day_exercise` rows for ONE movement, so without this the
  *  cards are five identical headers with no way to tell which is which. */
+/** One bordered card per exercise in edit mode, so every control visibly
+ *  belongs to the movement above it (a bare stack of segments and links read
+ *  as one undifferentiated list). */
+const EDIT_CARD =
+  "mb-3 p-3 rounded-lg border border-neutral-light-2 bg-background";
+
 const prescriptionLine = (
   exercise: WorkoutBlockWithExercise
 ): string | null => {
@@ -1278,7 +1284,7 @@ export default function WorkoutSummary({
                           const roundLogs = workingLogs[exercise.id] || [];
                           const prescribedRound = prescriptionLine(exercise);
                           return (
-                            <View key={exercise.id} className="mb-4">
+                            <View key={exercise.id} className={EDIT_CARD}>
                               <View className="flex-row items-center justify-between mb-1">
                                 <Text className="font-semibold text-text-primary text-sm flex-1 mr-2">
                                   {exercise.exercise.name}
@@ -1353,14 +1359,43 @@ export default function WorkoutSummary({
                           : prescriptionLine(exercise);
 
                         return (
-                          <View key={exercise.id} className="mb-4">
-                            <Text
-                              className={`font-semibold text-text-primary text-sm${
+                          <View key={exercise.id} className={EDIT_CARD}>
+                            {/* Header row: the name owns the card, and the
+                                movement-level action sits beside it so it
+                                can't be read as belonging to the next one. */}
+                            <View
+                              className={`flex-row items-start${
                                 prescribed || substitute ? "" : " mb-2"
                               }`}
                             >
-                              {substitute?.name ?? exercise.exercise.name}
-                            </Text>
+                              <Text className="font-semibold text-text-primary text-base flex-1 mr-2">
+                                {substitute?.name ?? exercise.exercise.name}
+                              </Text>
+                              {!substitute ? (
+                                <TouchableOpacity
+                                  className="flex-row items-center"
+                                  style={{ minHeight: 24 }}
+                                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                  onPress={() =>
+                                    setSubTarget({
+                                      exercise,
+                                      completionOnly: isCompletionOnly,
+                                    })
+                                  }
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`I did something else instead of ${exercise.exercise.name}`}
+                                >
+                                  <Ionicons
+                                    name="swap-horizontal"
+                                    size={14}
+                                    color={colors.text.primary}
+                                  />
+                                  <Text className="text-xs font-semibold text-text-primary ml-1">
+                                    I did something else
+                                  </Text>
+                                </TouchableOpacity>
+                              ) : null}
+                            </View>
                             {substitute ? (
                               <View className="flex-row items-center mt-1 mb-2">
                                 <Text className="text-xs text-text-muted flex-1">
@@ -1384,29 +1419,6 @@ export default function WorkoutSummary({
                               </Text>
                             ) : null}
                             {statusSegment(exercise, isCompletionOnly)}
-                            {!substitute ? (
-                              <TouchableOpacity
-                                className="flex-row items-center self-start mt-2"
-                                style={{ minHeight: 32 }}
-                                onPress={() =>
-                                  setSubTarget({
-                                    exercise,
-                                    completionOnly: isCompletionOnly,
-                                  })
-                                }
-                                accessibilityRole="button"
-                                accessibilityLabel={`I did something else instead of ${exercise.exercise.name}`}
-                              >
-                                <Ionicons
-                                  name="swap-horizontal"
-                                  size={14}
-                                  color={colors.text.primary}
-                                />
-                                <Text className="text-xs font-semibold text-text-primary ml-1.5">
-                                  I did something else
-                                </Text>
-                              </TouchableOpacity>
-                            ) : null}
 
                             {showSets ? (
                               <View className="mt-2">
@@ -1451,9 +1463,8 @@ export default function WorkoutSummary({
                                 ))}
                               </View>
                             ) : isCompletionOnly && wStatus === "completed" ? (
-                              <Text className="text-xs text-text-muted mt-2">
-                                Marked complete.
-                              </Text>
+                              /* "I did this" being selected already says it. */
+                              null
                             ) : (
                               <Text className="text-xs text-text-muted mt-2">
                                 Tap "I did this" to log what you did.
