@@ -64,6 +64,12 @@ interface WorkoutEditModalProps {
   replaceExerciseId?: number;
   /** Focused mode only: called after the swap is saved, before closing. */
   onExerciseReplaced?: (planDayExerciseId: number) => void;
+  /**
+   * Focused mode, select-only: hand the chosen movement back WITHOUT saving
+   * the swap. The edit-log flow ("I did something else") holds it as pending
+   * and writes it on Save, so Cancel leaves the plan untouched.
+   */
+  onExerciseChosen?: (exercise: SearchExercise) => void;
 }
 
 export default function WorkoutEditModal({
@@ -72,6 +78,7 @@ export default function WorkoutEditModal({
   planDay,
   replaceExerciseId,
   onExerciseReplaced,
+  onExerciseChosen,
 }: WorkoutEditModalProps) {
   const colors = useThemeColors();
   const { isDark } = useTheme();
@@ -599,6 +606,12 @@ export default function WorkoutEditModal({
   const handleConfirmReplace = async () => {
     if (!selectedExercise || !currentExercise) return;
 
+    if (onExerciseChosen) {
+      onExerciseChosen(selectedExercise);
+      onClose();
+      return;
+    }
+
     try {
       setReplacing(true);
 
@@ -964,7 +977,9 @@ export default function WorkoutEditModal({
                   {currentView === "main"
                     ? "Edit Exercises"
                     : currentView === "replace"
-                      ? "Replace Exercise"
+                      ? onExerciseChosen
+                        ? "What Did You Do Instead?"
+                        : "Replace Exercise"
                       : currentView === "editParams"
                         ? "Edit Sets & Reps"
                         : "Add Exercise"}
@@ -1387,7 +1402,9 @@ export default function WorkoutEditModal({
                             color={colors.neutral.white}
                           />
                           <Text className="text-neutral-white font-semibold text-lg ml-2">
-                            Replace Exercise
+                            {onExerciseChosen
+                              ? "Use This Exercise"
+                              : "Replace Exercise"}
                           </Text>
                         </View>
                       )}
