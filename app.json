@@ -49,8 +49,8 @@
         "backgroundColor": "#0A0A0A"
       },
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0A"
       },
       "package": "com.mastersfit.ai",
       "permissions": [
