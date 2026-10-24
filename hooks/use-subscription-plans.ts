@@ -13,6 +13,10 @@ import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { ensureIdentifiedBeforePurchase } from "@/lib/revenuecat-identity";
 import { Sentry } from "@/lib/sentry";
 import { syncSubscription } from "@/lib/subscriptions";
+import {
+  isRevenueCatOfflineError,
+  REVENUECAT_OFFLINE_MESSAGE,
+} from "@/utils/revenuecat-error";
 
 const rcLog = (...args: unknown[]) => {
   if (!SUPPRESS_REVENUECAT_LOGS) console.log(...args);
@@ -143,6 +147,20 @@ export function useSubscriptionPlans(): UseSubscriptionPlansReturn {
           setTimeout(resolve, (retryCount + 1) * 1000),
         );
         return fetchOfferings(retryCount + 1);
+      }
+
+      // Offline is expected, not a bug — leave a breadcrumb instead of an
+      // issue, and show plain copy instead of iOS's raw error text.
+      if (isRevenueCatOfflineError(err)) {
+        Sentry.addBreadcrumb({
+          category: "revenuecat",
+          level: "info",
+          message: "fetchOfferings skipped: device offline",
+        });
+        setError(REVENUECAT_OFFLINE_MESSAGE);
+        setOffering(null);
+        setPackages([]);
+        return;
       }
 
       Sentry.captureException(err, {

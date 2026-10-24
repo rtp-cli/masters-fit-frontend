@@ -19,6 +19,7 @@ import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
 import { AnalyticsEvent, trackEvent } from "@/lib/analytics-events";
 import { useThemeColors } from "@/lib/theme";
 import { type PaywallLimits } from "@/types/api";
+import { REVENUECAT_OFFLINE_MESSAGE } from "@/utils/revenuecat-error";
 
 import SubscriptionPlansList from "./subscription-plans-list";
 
@@ -252,7 +253,7 @@ export default function PaymentWallModal({
                   style={{ marginBottom: 12 }}
                 />
                 <Text className="text-sm text-text-secondary text-center mb-4">
-                  {__DEV__ && error
+                  {__DEV__ || error === REVENUECAT_OFFLINE_MESSAGE
                     ? error
                     : "Unable to load subscription plans. Please try again."}
                 </Text>
